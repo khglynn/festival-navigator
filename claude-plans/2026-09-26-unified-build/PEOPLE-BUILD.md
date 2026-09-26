@@ -21,6 +21,27 @@ This file is the record if the build dies: read "Where it stands" first.
 6. Unit suite: green in UTC, Tokyo and the night clock except the SW stamp test, red on purpose (the
    brief: no stamp; the release stamps). Browser suite: see the log.
 
+## The review round (Codex, on `a1612a0`, 2026-09-26)
+
+An independent Codex review (read-only tree at the head, `npm test` run there: 1,131 pass, the stamp
+test the one expected failure; it could not run the browser files — no browser in its sandbox).
+Five findings, four fixed, one declined:
+
+1. **P2 Pick as someone else could switch to someone removed while the shelf was up** — fixed: the
+   chosen name must still be active (`tests/people-menu.test.mjs`, fails without the fix).
+2. **P2 NOW arriving after a three-disc pill could not be whole at 320** (the "known limit" of call
+   13) — fixed: the pill refits whenever the day row's tabs change (NOW comes or goes, a repaint) and
+   on a turned phone (`refitPill`; browser test: two discs, then three when NOW leaves — fails
+   without it).
+3. **P2 a menu's rows stayed live through its 130 ms fade** — a quick second tap still moved a
+   highlight, and in the Show menu a room — fixed in the shared close: a closing menu takes no
+   pointer (browser test, Highlight and Show).
+4. **P2 the guest's Join the crew handed focus back to a hidden menu row** — fixed: the menu closes
+   (focus back on the +) before the shelf asks where to return (`first-open-shelf-close` now focuses
+   the row first, as Chromium does; fails without the fix).
+5. **P3 "member mode keeps the guest prompt, Pick shows as…"** — declined: the approved design gives
+   the member's shelf exactly that line ("Pick shows as…" · "Tap a name, then confirm.").
+
 ## What the slow motion caught (people-rig.mjs slowmo, a twentieth speed)
 
 1. The avatar's ghost sat IN the flow, beside the pill (`.dock .you` is position: relative and out-

@@ -845,8 +845,11 @@ function openPickAs() {
       if (!shelf || shelf.isClosed()) return;
       shelf.close();
       popShelfEntry();
-      // Only for the crew and the person this shelf was opened for.
-      if (state.getCrewToken() === token && ctx.meName === me && name !== me) switchIdentity(name);
+      // Only for the crew and the person this shelf was opened for, and only
+      // to someone still in it (a crew-mate removed while the shelf was up
+      // is nobody to be — Codex's review of a1612a0).
+      const still = state.activePeople().some(([n]) => n === name);
+      if (state.getCrewToken() === token && ctx.meName === me && name !== me && still) switchIdentity(name);
     },
   });
   shelfUp = shelf;
@@ -1829,6 +1832,10 @@ function closeShowMenu({ instant = false } = {}) {
   // A keyboard standing on a row goes back to the fest name that opened the
   // menu, not to the top of the page (Escape from a row is the usual way out).
   if (pop.contains(document.activeElement)) link.focus({ preventScroll: true });
+  // A menu on its way out takes no more taps: its rows stayed live through
+  // the 130 ms fade, so a tap there still moved a room or a highlight after
+  // the menu had closed (Codex's review of a1612a0). Given back on open.
+  pop.style.pointerEvents = 'none';
   // The people menu's close (2026-09-26): its slot turns into the pill while
   // the menu is still there to measure (its marks are where the faces start).
   if (onClose) onClose({ pop, instant: instant || !canAnimate(pop, ctx) });
@@ -1873,6 +1880,7 @@ function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   if (bar) bar.classList.add('menu-up');
   openMenu = { wrap, link, pop, bar, onClose };
   catchStrayTaps(true);
+  pop.style.pointerEvents = '';
   pop.style.display = '';
   link.setAttribute('aria-expanded', 'true');
   // The way in has the beat.
@@ -2086,7 +2094,9 @@ const PEOPLE_DOORS = {
   everyone: () => setPeopleFilter([]),
   pickAs: () => { closeShowMenu(); openPickAs(); },
   invite: () => { closeShowMenu(); openAddMember(); router.push('sheet:add-member'); },
-  join: () => { if (state.getCrewToken()) askToJoin(null); },
+  // The menu first, so focus is back on the + before the shelf asks where it
+  // should return (a row about to hide is no place to come back to).
+  join: () => { closeShowMenu(); if (state.getCrewToken()) askToJoin(null); },
 };
 
 // Paints both menus (built once, then in place) and both slots. Idempotent:
@@ -2106,7 +2116,8 @@ function paintHighlight() {
 
 // The avatar's slot is the pill while a highlight is on and its menu is shut
 // (design §2). `sources`: where the faces travel from (the menu's marks).
-function paintSlots({ sources = null } = {}) {
+// `instant`: a close that asked for no motion (Back, a boot, a crew switch).
+function paintSlots({ sources = null, instant = false } = {}) {
   const names = new Set(ctx.filterPeople || []);
   const faces = state.activePeople().filter(([n]) => names.has(n)).map(([name, p]) => {
     const ci = colorIndexOf(name, p);
@@ -2120,7 +2131,7 @@ function paintSlots({ sources = null } = {}) {
     // The first paint, and a bar that is not on screen (the dock on a
     // laptop, the dock while the search field has the keyboard), change
     // without motion.
-    const animate = !!wrap.dataset.slot && wrap.offsetParent !== null && canAnimate(wrap, ctx);
+    const animate = !instant && !!wrap.dataset.slot && wrap.offsetParent !== null && canAnimate(wrap, ctx);
     const before = animate && row ? tabLefts(row) : null;
     const edges = row ? edgesOf(row) : [];
     const cap = pillCap(wrap, row, faces.length);
@@ -2162,7 +2173,7 @@ function openHighlight(wrap) {
   paintHighlight();
   const pop = hlPop(wrap);
   if (!you || !pop) return;
-  openShowMenu(wrap, you, pop, { onClose: ({ pop: p, instant }) => paintSlots({ sources: instant ? null : markRects(p, ctx.filterPeople || []) }) });
+  openShowMenu(wrap, you, pop, { onClose: ({ pop: p, instant }) => paintSlots({ instant, sources: instant ? null : markRects(p, ctx.filterPeople || []) }) });
   paintSlots(); // this slot is the avatar while its menu is up
   alignHighlightMenu(wrap, pop);
   marksFromFaces(pop, from, canAnimate(pop, ctx));
@@ -4363,6 +4374,18 @@ export function init() {
   // too, whose menu ends in Join the crew. Jump to top retired with no door
   // (PEOPLE-BUILD.md): its real job was reaching the people row.
   for (const [wrapId, youId] of YOU_SLOTS) $(youId).addEventListener('click', () => toggleHighlight($(wrapId)));
+  // The pill holds what the day row can spare (pillCap), and the row changes
+  // under it: NOW arrives or leaves on the minute tick, a repaint rebuilds
+  // the tabs, a phone turns. Each refits a pill that is up (Codex's review of
+  // a1612a0: NOW arriving after a three-disc pill could not be whole at 320).
+  const refitPill = () => { if ((ctx.filterPeople || []).length) paintSlots(); };
+  const Watch = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (typeof Watch === 'function') {
+    const rows = new Watch(refitPill);
+    for (const [, , rowId] of YOU_SLOTS) if ($(rowId)) rows.observe($(rowId), { childList: true });
+  }
+  let refitTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(refitTimer); refitTimer = setTimeout(refitPill, 160); });
   for (const [id] of NOW_DOORS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);

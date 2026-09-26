@@ -281,6 +281,21 @@ test('Pick as someone else: the join shelf in a member’s words — your chip s
   assert.equal(writes.filter((w) => w.url.startsWith('/api/crew')).length, 0, 'picking as someone is this phone’s own choice: nothing sent');
 });
 
+test('Pick as someone else never switches to someone removed while the shelf was up', async () => {
+  await openMenu();
+  action('pick-as').click();
+  await settle(20);
+  shelf().querySelector('.js-name[data-name="Cy"]').click();
+  const saved = state.crewDoc.people.Cy;
+  state.applyRemoteDoc(deepMerge(state.crewDoc, { people: { Cy: { removed: true } } })); // another phone removes her
+  shelf().querySelector('.js-go').click();
+  await settle(60);
+  assert.equal(crew.me(CREW), 'Ana', 'still Ana: Cy is nobody to be now');
+  assert.equal(shelf(), null, 'the shelf went down all the same');
+  state.applyRemoteDoc(deepMerge(state.crewDoc, { people: { Cy: { ...saved, removed: false } } })); // back for the tests below
+  await settle(10);
+});
+
 test('+ Invite someone: one sheet — the crew link first (Copy), then a name, then the people from your other fests', async () => {
   await openMenu();
   action('invite').click();

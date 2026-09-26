@@ -62,7 +62,9 @@ async function openFromYou() {
   you().focus();
   you().click();
   await settle(10);
-  document.querySelector('#dock-you-wrap .hl-pop [data-act="join"]').click();
+  const join = document.querySelector('#dock-you-wrap .hl-pop [data-act="join"]');
+  join.focus(); // a clicked button takes focus in Chromium: the row must not become where focus returns
+  join.click();
   await settle(20);
   assert.ok(shelf(), 'the shelf is up');
   assert.equal(history.state && history.state.joinShelf, true, 'with its own history entry');

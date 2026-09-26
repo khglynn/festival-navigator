@@ -373,3 +373,60 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 }
+
+// A menu on its way out takes no taps (Codex's review of a1612a0): its rows
+// stayed live through the 130 ms fade, so a quick second tap where a row had
+// been still moved a highlight — or, in Show, a room — after it had closed.
+test('Chromium 390: a tap on a row while its menu fades out does nothing — Highlight and Show alike', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors, press } = await openApp(chromium, { width: 390 });
+  try {
+    // Highlight: close by the avatar, then at once a tap where Ben's row was.
+    await press('#dock-you');
+    const ben = await page.locator('#dock-you-wrap .hl-pop [data-person="Ben"]').boundingBox();
+    const you = await page.locator('#dock-you').boundingBox();
+    await page.touchscreen.tap(you.x + you.width / 2, you.y + you.height / 2);
+    await page.touchscreen.tap(ben.x + ben.width / 2, ben.y + ben.height / 2);
+    await sleep(500);
+    const hl = await menuState(page, 'dock');
+    assert.deepEqual([hl.open, hl.stored, hl.dim], [false, [], 0], `nothing highlighted by the fading menu: ${JSON.stringify(hl)}`);
+    // Show: the same with a room row.
+    await press('#dock-fest-link');
+    const row = await page.locator('#dock-fest-wrap .sort-pop [data-room]').first().boundingBox();
+    const room = await page.locator('#dock-fest-wrap .sort-pop [data-room]').first().getAttribute('data-room');
+    const fest = await page.locator('#dock-fest-link').boundingBox();
+    await page.touchscreen.tap(fest.x + fest.width / 2, fest.y + fest.height / 2);
+    await page.touchscreen.tap(row.x + row.width / 2, row.y + row.height / 2);
+    await sleep(500);
+    const folded = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('fn_fold_v1_portola-2026') || '[]'); } catch { return 'blocked'; } });
+    assert.deepEqual(folded, [], `no room folded by the fading Show menu (${room})`);
+    // And a reopened menu takes taps again.
+    await press('#dock-you');
+    await press('#dock-you-wrap .hl-pop [data-person="Ben"]');
+    assert.deepEqual((await menuState(page, 'dock')).stored, ['Ben'], 'reopened, its rows work');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
+
+// The pill refits when the day row changes under it (Codex's review of
+// a1612a0): at 320 with NOW live four people fit two discs; when NOW leaves
+// (the festival over, the page shown again) the row has room for three.
+test('Chromium 320: the pill refits when NOW leaves the day row — two discs, then three', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320 });
+  try {
+    await press('#dock-you');
+    for (const n of ['Ben', 'Cy', 'Dot', 'Eli']) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
+    await outside();
+    await sleep(500);
+    const discs = () => page.evaluate(() => document.querySelectorAll('#dock-you-wrap .hl-faces .avatar').length);
+    assert.equal(await discs(), 2, 'NOW live: two discs');
+    await page.clock.setFixedTime(new Date('2026-09-29T12:00:00-07:00')); // Tuesday: nothing live
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
+    await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
+    await sleep(600);
+    assert.equal(await discs(), 3, 'NOW gone: the row has room for three');
+    // index.html's new-build check asks reg.update() when the page is shown
+    // again, and with the worker blocked (this harness) there is no reg — a
+    // harness artifact, not this build's (PEOPLE-BUILD.md, follow-ups).
+    assert.deepEqual(errors.filter((e) => !/reading 'update'/.test(e)), []);
+  } finally { await ctx.close(); }
+});
