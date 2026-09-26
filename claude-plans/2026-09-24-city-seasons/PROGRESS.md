@@ -1,6 +1,6 @@
 # City seasons: progress
 
-**last-updated: 2026-09-25 ~6:45 PM PT · status: rolling (go-live Monday)**
+**last-updated: 2026-09-25 ~6:00 PM PT · status: rolling (go-live Monday)**
 
 *(Times are Pacific, from this Mac's clock.)*
 
