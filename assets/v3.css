@@ -335,6 +335,15 @@ html { touch-action: manipulation; }
  * lines up with the rooms' names above it. */
 .sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
 .sort-pop .settings .gear { display: block; }
+/* The view row (Phase 1): Board · List, one row between the rooms and
+ * Settings — the rooms above it are WHAT is on the wall, this row is HOW it
+ * is laid out. Two bare glyph-and-word choices (Kevin: "I like the icon
+ * ones"; no pill, no track), starting in the check column so the words line
+ * up with the rooms'. The chosen one wears brand, as a checked room does. */
+.sort-pop .view-row { display: flex; align-items: center; gap: 2px; }
+.sort-pop .view-row [role="option"] { flex: 1 1 0; width: auto; min-width: 0; color: var(--text-secondary); }
+.sort-pop .view-row [role="option"][aria-selected="true"] { color: rgb(var(--brand)); }
+.sort-pop .view-row .glyph { flex: none; display: block; }
 /* The dock is fixed to the bottom of the phone, so a popover it carries opens
  * UPWARD — downward is off the screen. The rail's is at the top of the page
  * and keeps the default. One rule, on the one bottom-anchored wrap. The
@@ -697,20 +706,23 @@ button.room-head { cursor: pointer; }
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
-/* A button that opens a menu says so, quietly (v93, Kevin): a small caret
- * right after its words, pointing the way the menu opens — up from the dock,
- * down from the rail (`.down`). ONE class for every such button: the fest
- * name now, the avatar's Highlight menu next. It is part of the button (no
- * hit target of its own), in the secondary grey, drawn to the height of the
- * name's capitals, and only there while the button really opens a menu — a
- * one-room fest's name goes straight to Settings, and says nothing. Its
- * negative margins keep it close to the words it belongs to, and cost the day
- * row beside it as little room as they can. */
-.menu-caret { display: inline-block; flex: none; width: 5px; height: 5px; margin: 0 -1px 0 -3px;
-              border: solid var(--text-secondary); border-width: 1.5px 0 0 1.5px;
-              transform: translateY(1.5px) rotate(45deg); }
-.menu-caret.down { transform: translateY(-1.5px) rotate(225deg); }
-button:not([aria-haspopup]) > .menu-caret { display: none; }
+/* The menu bar (Phase 1, 2026-09-26 — Kevin: "an icon to the right of fest
+ * name that's a 3 line hamburger menu icon and then move the dot to the left.
+ * That's a clear 'this opens a menu' affordance"). The fest link reads
+ * `● PORTOLA '26 ☰`: the sync dot leads (the app's state, read first) and the
+ * three lines close it as the thing that opens. They replace v93's caret.
+ * Drawn in the Board · List glyphs' family (tools.js GLYPHS: a 12-unit box,
+ * 1.4 strokes, round caps) at 13px, in the body colour at .72 — a touch
+ * brighter than the old caret so it reads as a control (Kevin kept the grey
+ * as drawn). While the menu is open they turn `--brand`, the menu's own
+ * "chosen" colour — never `--fest`: the name keeps the accent, the glyph is
+ * chrome. Part of the button (no hit target of its own), and only there while
+ * the button really opens a menu — a fest with nothing to choose goes straight
+ * to Settings and says nothing. */
+.fest-link .menu-glyph { flex: none; display: block; color: var(--text-body); opacity: .72;
+                         margin-left: -1px; transition: color .12s ease, opacity .12s ease; }
+.fest-link[aria-expanded="true"] .menu-glyph { color: rgb(var(--brand)); opacity: 1; }
+button:not([aria-haspopup]) > .menu-glyph { display: none; }
 .you-avatar { border: 1.5px solid #fff; background: none; cursor: pointer; padding: 0; }
 /* A guest's "you" (v92): the avatar's place, empty and asking — a dashed
  * ring and a +, in brand (it is about a person, never the festival). It is

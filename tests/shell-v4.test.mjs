@@ -296,24 +296,28 @@ test('Settings from the menu: the menu goes, Settings takes one entry, and Back 
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'and no menu comes back with it');
 });
 
-// A button that opens a menu says so, quietly (v93, Kevin): a caret right
-// after the fest name, pointing the way its menu opens — up from the dock,
-// down from the rail — part of the button, and shown only while the name
-// opens a menu (a one-room fest's name goes straight to Settings). One class,
-// for the avatar's Highlight menu to wear next.
-test('the fest name carries a menu caret after its words: up in the dock, down in the rail, only while it opens a menu', () => {
-  for (const [door, down] of [['dock', false], ['rail', true]]) {
+// The menu bar (Phase 1, 2026-09-26 — Kevin: "an icon to the right of fest
+// name that's a 3 line hamburger menu icon and then move the dot to the
+// left"): sync dot · FEST '26 · three lines, in the dock and the rail alike.
+// The lines replace v93's caret; they are part of the button, shown only
+// while the name opens a menu, and brand (never the accent) while it is open.
+test('the fest link reads dot · name · three lines, in both doors, the lines only while it opens a menu', async () => {
+  const { GLYPHS } = await import('../js/v3/tools.js');
+  for (const door of ['dock', 'rail']) {
     const link = $(`${door}-fest-link`);
-    const kids = [...link.children].map((k) => k.className.split(' ')[0]);
-    assert.deepEqual(kids.slice(0, 3), ['fest-name', 'menu-caret', 'sync-dot'], `${door}: the name, its caret, then the dot`);
-    const caret = link.querySelector('.menu-caret');
-    assert.equal(caret.classList.contains('down'), down, `${door}: it points the way the menu opens`);
-    assert.equal(caret.getAttribute('aria-hidden'), 'true', 'a picture, not a second name for the button');
+    const kids = [...link.children].map((k) => (k.getAttribute('class') || '').split(' ')[0]);
+    assert.deepEqual(kids.slice(0, 3), ['sync-dot', 'fest-name', 'menu-glyph'], `${door}: the dot, the name, then the lines`);
+    const glyph = link.querySelector('.menu-glyph');
+    assert.equal(glyph.getAttribute('aria-hidden'), 'true', 'a picture, not a second name for the button');
+    assert.equal(glyph.querySelector('path').getAttribute('d'), GLYPHS.menu, 'the static shell draws the family\'s own menu glyph');
+    assert.equal(glyph.getAttribute('stroke'), 'currentColor', 'coloured by the stylesheet');
     assert.equal(link.getAttribute('aria-haspopup'), 'listbox', 'Portola has rooms, so the name opens a menu');
   }
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
-  assert.match(css, /\.menu-caret \{[^}]*border: solid var\(--text-secondary\)/, 'drawn in the secondary grey');
-  assert.match(css, /button:not\(\[aria-haspopup\]\) > \.menu-caret \{ display: none; \}/, 'and gone where the button opens no menu');
+  assert.match(css, /\.fest-link \.menu-glyph \{[^}]*color: var\(--text-body\); opacity: \.72/, 'the body colour at .72, as drawn');
+  assert.match(css, /\.fest-link\[aria-expanded="true"\] \.menu-glyph \{ color: rgb\(var\(--brand\)\)/, 'brand while the menu is open — never the accent');
+  assert.match(css, /button:not\(\[aria-haspopup\]\) > \.menu-glyph \{ display: none; \}/, 'and gone where the button opens no menu');
+  assert.equal(css.includes('menu-caret'), false, 'the caret it replaced is gone');
 });
 
 test('the Settings row wears the header\'s gear, left of its word, and it is only decoration', () => {
@@ -757,7 +761,8 @@ test('How it works: nine rows, the fest link says ACL \'26 whatever fest is open
   assert.ok(link && link.tagName === 'SPAN', 'the real component, as a picture');
   assert.equal(link.querySelector('.fest-name').textContent, "ACL '26", 'the one coded-in name, with Portola open');
   assert.ok(link.querySelector('.sync-dot'), 'and the dot beside it');
-  assert.ok(link.querySelector('.menu-caret'), 'with the caret the real one wears while it opens a menu (v93)');
+  assert.ok(link.querySelector('.menu-glyph'), 'with the three lines the real one wears while it opens a menu (Phase 1)');
+  assert.deepEqual([...link.children].map((k) => (k.getAttribute('class') || '').split(' ')[0]), ['sync-dot', 'fest-name', 'menu-glyph'], 'in the real one\'s order');
   // The dot's own row: the real dot in its three states (v93).
   const dotRow = rows.find((r) => /Sync, at a glance\./.test(r.textContent));
   assert.ok(dotRow, 'the dot has a row of its own');

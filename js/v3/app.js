@@ -14,7 +14,7 @@ import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFo
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow, gearIcon } from './tools.js';
+import { disclosureFold, eqLoader, festRow, gearIcon, lineGlyph } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
@@ -412,6 +412,63 @@ function unfoldAll() {
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
+// ---- Board ↔ List (Phase 1, 2026-09-26) --------------------------------------------
+// The show menu's view row. The choice lands at once (memory and storage,
+// and the row's own words), then the switch is a small event (Kevin, the
+// motion law): the old wall fades out quick and plain, the new one is drawn
+// with the page held BY TIME — the set at the top of what you saw is at the
+// same spot, a grid cell become a row or a row become a cell — and the rooms
+// in view rise with the fold's own beat. No card travels from its cell to its
+// row: that would be a layout the whole wall redoes (sixty FLIPs), which the
+// law rules out. Low Power and Reduce Motion: instant, the place still held.
+// The menu stays up behind it (v93's popover), for the next choice.
+let pendingView = null; // { finish } while the old wall is fading
+function settleView() { if (pendingView) pendingView.finish(); }
+function switchView(next) {
+  settleFold();
+  settleView();
+  if (ctx.view === next || !listOffered(state.fest())) return;
+  const root = $('wall-root');
+  let place = takeWallPlace();
+  const tookAt = window.scrollY;
+  saveView(ctx.fid, next);
+  ctx.view = next;
+  for (const b of document.querySelectorAll('.sort-pop .view-row [data-view]')) {
+    b.setAttribute('aria-selected', b.dataset.view === next ? 'true' : 'false');
+  }
+  let fade = null;
+  let done = false;
+  const sw = {};
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingView === sw) pendingView = null;
+    // A hand scroll during the fade wins: the place is read again, there.
+    if (Math.abs(window.scrollY - tookAt) >= 1) place = takeWallPlace();
+    repaintWall();
+    if (fade) { fade.onfinish = null; fade.oncancel = null; try { fade.cancel(); } catch { /* done */ } }
+    keepWallPlace(place, { byTime: true });
+    arriveBlocks(inView(root));
+  };
+  sw.finish = finish;
+  if (!canAnimate(root, ctx)) { finish(); return; }
+  pendingView = sw;
+  fade = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  fade.onfinish = finish;
+  fade.oncancel = finish;
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the switch
+}
+// What is on screen of the new wall, in its order: the rooms (a day's unit of
+// meaning) and anything that stands on its own at the wall's top level (the
+// days line, the notes at the foot). What is off screen needs no arrival.
+function inView(root) {
+  const vh = window.innerHeight || 0;
+  return [...root.querySelectorAll('.room, :scope > :not(.day-block)')].filter((el) => {
+    const r = el.getBoundingClientRect();
+    return r.height > 0 && r.bottom > 0 && r.top < vh;
+  });
+}
+
 // Where the page stands after the wall changed shape under it (v93): where it
 // stood. The element at the top of what you saw — a card or a room's head —
 // is back at the same spot on screen, whatever the rooms above it did; if it
@@ -422,19 +479,52 @@ function unfoldAll() {
 // still. (Until v93 this landed on the top of your day whenever you were
 // scrolled at all — once per menu when a tick closed the menu, and on every
 // tick once the menu stayed up: 3400 -> 552 -> 2812 -> 552 in the walk.)
+//
+// The place also remembers its TIME (Phase 1): the day, the room and the
+// start of the card at the top, so a switch between Board and List — where
+// the same set is a grid cell in one and a row in the other — holds the page
+// by time (keepWallPlace `byTime`).
 function takeWallPlace() {
   const bandTop = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 0;
-  const items = wallAnchors($('wall-root')).map(({ key, el }) => ({ key, top: el.getBoundingClientRect().top }));
-  return pickWallAnchor(items, bandTop, window.scrollY);
+  const anchors = wallAnchors($('wall-root'));
+  const items = anchors.map(({ key, el }) => ({ key, top: el.getBoundingClientRect().top }));
+  const place = pickWallAnchor(items, bandTop, window.scrollY);
+  if (!place) return null;
+  const el = anchors.find((a) => a.key === place.key).el;
+  return { ...place, day: dayKeyOf(el), room: (el.closest('.room') || { dataset: {} }).dataset.room || null,
+    from: el.dataset.nowFrom != null ? Number(el.dataset.nowFrom) : null };
 }
-function keepWallPlace(place) {
+const dayKeyOf = (el) => (el.closest('.day-block') || { dataset: {} }).dataset.day || null;
+// The same moment on the other view: the card itself when it is drawn there
+// too (a List row carries its grid cell's occurrence, so the keys match);
+// else, in the same room on the same day, the set that starts nearest it —
+// at or after it first (the one you were about to read), else just before.
+function atTheSameTime(place, anchors) {
+  const same = anchors.find((a) => a.key === place.key);
+  if (same) return same.el;
+  if (place.from == null) return null;
+  let best = null;
+  let cost = Infinity;
+  for (const { el } of anchors) {
+    if (el.dataset.nowFrom == null || dayKeyOf(el) !== place.day) continue;
+    if ((el.closest('.room') || { dataset: {} }).dataset.room !== place.room) continue;
+    const gap = Number(el.dataset.nowFrom) - place.from;
+    const c = gap >= 0 ? gap : 0.5 - gap;
+    if (c < cost) { cost = c; best = el; }
+  }
+  return best;
+}
+function keepWallPlace(place, { byTime = false } = {}) {
   if (!place) return;
   const was = window.scrollY;
   const anchors = wallAnchors($('wall-root'));
-  const key = resolveWallAnchor(place, anchors.map((a) => a.key));
-  if (!key) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); }
+  let el = byTime ? atTheSameTime(place, anchors) : null;
+  if (!el) {
+    const key = resolveWallAnchor(place, anchors.map((a) => a.key));
+    el = key ? anchors.find((a) => a.key === key).el : null;
+  }
+  if (!el) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); }
   else {
-    const el = anchors.find((a) => a.key === key).el;
     const delta = el.getBoundingClientRect().top - place.top;
     if (Math.abs(delta) >= 1) window.scrollTo({ top: Math.max(0, window.scrollY + delta), behavior: 'auto' });
   }
@@ -1547,19 +1637,55 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   return row;
 }
 
-function buildShowMenu(rooms, folded) {
+// The menu (Phase 1, 2026-09-26): the rooms and their checks, a line, the
+// Board · List row, a line, Settings. Each part only where it has something
+// to choose: the rooms where there are two or more (one room cannot be
+// hidden — wallPlanFor ignores it), the view row where the fest has a clock
+// to list by (wall.js listOffered). There is no Earlier row: the past folds
+// on the wall itself, behind a line you tap (Kevin: "just default to hide
+// with this little expand option").
+const menuDivider = () => {
+  const divider = document.createElement('li');
+  divider.className = 'pop-div';
+  divider.setAttribute('role', 'presentation');
+  divider.setAttribute('aria-hidden', 'true');
+  return divider;
+};
+function viewRow() {
+  const li = document.createElement('li');
+  li.className = 'view-row';
+  li.setAttribute('role', 'group');
+  li.setAttribute('aria-label', 'View');
+  for (const [view, label] of [[BOARD, 'Board'], [LIST, 'List']]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'option');
+    b.dataset.view = view;
+    b.setAttribute('aria-selected', ctx.view === view ? 'true' : 'false');
+    const word = document.createElement('span');
+    word.textContent = label;
+    b.append(lineGlyph(view, 12), word);
+    // The menu stays up (v93's popover): the wall changes behind it.
+    b.addEventListener('click', () => switchView(view));
+    li.appendChild(b);
+  }
+  return li;
+}
+function buildShowMenu(rooms, folded, { views = false } = {}) {
   const pop = document.createElement('ul');
   pop.className = 'sort-pop';
   pop.setAttribute('role', 'listbox');
   pop.setAttribute('aria-label', 'Show on the wall');
-  pop.dataset.rooms = rooms.map((r) => r.key).join('|');
+  pop.dataset.rooms = menuSignature(rooms, views);
   pop.style.display = 'none';
-  const head = document.createElement('li');
-  head.className = 'menu-label';
-  head.setAttribute('role', 'presentation');
-  head.textContent = 'Show';
-  pop.appendChild(head);
-  for (const room of rooms) {
+  if (rooms.length > 1) {
+    const head = document.createElement('li');
+    head.className = 'menu-label';
+    head.setAttribute('role', 'presentation');
+    head.textContent = 'Show';
+    pop.appendChild(head);
+  }
+  for (const room of rooms.length > 1 ? rooms : []) {
     const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
     // A row tap moves the room and the menu stays up for the next one (v93):
     // its check turns at once, and the fold flow owns the wall's motion
@@ -1572,11 +1698,8 @@ function buildShowMenu(rooms, folded) {
     });
     pop.appendChild(row.parentElement);
   }
-  const divider = document.createElement('li');
-  divider.className = 'pop-div';
-  divider.setAttribute('role', 'presentation');
-  divider.setAttribute('aria-hidden', 'true');
-  pop.appendChild(divider);
+  if (rooms.length > 1) pop.appendChild(menuDivider());
+  if (views) pop.append(viewRow(), menuDivider());
   const settings = showMenuRow('Settings', { settings: true });
   settings.addEventListener('click', () => {
     closeShowMenu({ instant: true });
@@ -1595,19 +1718,22 @@ function dropShowMenu(pop) {
   pop.remove();
 }
 
+// What a menu was built for: its rooms and whether it carries the view row.
+const menuSignature = (rooms, views) => `${rooms.map((r) => r.key).join('|')}#${views ? 'views' : ''}`;
 function paintShowMenus() {
   // A search wall has no rooms, and the fest name must not change what it
   // does while someone is typing — the festival's rooms are the same rooms.
   if (ctx.query) return;
   const rooms = roomsOnWall();
+  const views = listOffered(state.fest());
   const folded = new Set(ctx.folded || []);
-  const signature = rooms.map((r) => r.key).join('|');
+  const signature = menuSignature(rooms, views);
   for (const [wrapId, linkId] of SHOW_MENUS) {
     const wrap = $(wrapId);
     const link = $(linkId);
     if (!wrap || !link) continue;
     const existing = wrap.querySelector('.sort-pop');
-    if (rooms.length < 2) {
+    if (rooms.length < 2 && !views) {
       if (existing) dropShowMenu(existing);
       link.removeAttribute('aria-haspopup');
       link.removeAttribute('aria-expanded');
@@ -1624,11 +1750,14 @@ function paintShowMenus() {
         row.setAttribute('aria-selected', on ? 'true' : 'false');
         row.querySelector('.check').textContent = on ? '✓' : '';
       }
+      for (const b of existing.querySelectorAll('.view-row [data-view]')) {
+        b.setAttribute('aria-selected', b.dataset.view === ctx.view ? 'true' : 'false');
+      }
       continue;
     }
     if (existing) dropShowMenu(existing);
     link.setAttribute('aria-expanded', 'false');
-    wrap.appendChild(buildShowMenu(rooms, folded));
+    wrap.appendChild(buildShowMenu(rooms, folded, { views }));
   }
 }
 

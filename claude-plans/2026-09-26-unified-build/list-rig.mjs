@@ -100,7 +100,7 @@ export async function scrollTo(page, sel, pad = 8) {
     const off = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 0;
     window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - off - p);
   }, [sel, pad]);
-  await sleep(250);
+  await sleep(900); // the day row glides to the day you are in (restDayRow)
 }
 
 async function shot(page, id, opts = {}) {
@@ -119,7 +119,24 @@ export const FRAMES = [
   { id: 'list-sat-afters-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', 'Afters') },
   { id: 'list-sat-folsom-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', 'Folsom') },
   { id: 'board-sat-portola-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest') },
+  { id: 'menu-open-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'menu-open-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'menu-open-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: room('Saturday', ':fest'), act: (p) => click(p, '#rail-fest-link') },
+  { id: 'menu-board-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'dock-closed-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), clip: 'dock' },
+  { id: 'dock-closed-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), clip: 'dock' },
 ];
+// Real input: a finger's tap on a phone, a mouse's click on a laptop.
+export async function tap(page, sel) {
+  const b = await page.locator(sel).first().boundingBox();
+  await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+  await sleep(450);
+}
+export async function click(page, sel) {
+  const b = await page.locator(sel).first().boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  await sleep(450);
+}
 
 export async function renderFrames(prefixes = []) {
   const want = (id) => !prefixes.length || prefixes.some((p) => id.startsWith(p));
@@ -132,7 +149,12 @@ export async function renderFrames(prefixes = []) {
         try {
           if (f.at) await scrollTo(page, f.at);
           if (f.act) await f.act(page);
-          await shot(page, f.id, f.full ? { fullPage: true } : {});
+          let opts = f.full ? { fullPage: true } : {};
+          if (f.clip === 'dock') {
+            const b = await page.locator('#dock').boundingBox();
+            opts = { clip: { x: 0, y: b.y - 24, width: b.width, height: b.height + 24 } };
+          }
+          await shot(page, f.id, opts);
           report.push(`${f.id}: ok${errors.length ? ` — page errors: ${errors.join(' | ')}` : ''}`);
         } finally { await ctx.close(); }
       }
