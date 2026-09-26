@@ -124,6 +124,13 @@ export const FRAMES = [
   ...W3('invite-added', { at: PORTOLA, adds: true, act: addFriend('Mo') }),
   { id: 'invite-added-wk-320', width: 320, engine: 'webkit', at: PORTOLA, adds: true, act: addFriend('Mo') },
   { id: 'invite-added-offline-wk-320', width: 320, engine: 'webkit', at: PORTOLA, offline: true, act: addFriend('Mo') },
+  // The header's two lines, removed (Kevin, 2026-09-26: "in the header we
+  // don't need these lines"): the divider stub before the search field and
+  // the rail's hairline. The top of the wall at 1280, at 900 (the people row
+  // wraps there) and 390; and the rail stuck over the wall mid-scroll.
+  ...[1280, 900, 390].map((width) => ({ id: `header-top-${width}`, width, at: 'top' })),
+  ...[1280, 900].map((width) => ({ id: `header-rail-${width}`, width, at: PORTOLA })),
+  { id: 'header-top-twelve-900', width: 900, at: 'top', crew: 12 }, // the row wraps: the stub stood alone on the search line
   { id: 'menu-long-name-320', width: 320, at: PORTOLA, crew: 'long', act: async (p, w) => highlight(p, w, ['Bartholomew-Maximiliana']) },
   { id: 'pill-long-name-320', width: 320, at: PORTOLA, crew: 'long', act: async (p, w) => { await highlight(p, w, ['Bartholomew-Maximiliana']); await outside(p, w); } },
   { id: 'menu-twelve-667', width: 375, height: 667, at: PORTOLA, crew: 12, act: async (p, w) => press(w)(p, you(w)) },

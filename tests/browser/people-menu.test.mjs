@@ -405,24 +405,35 @@ for (const wide of [null, '0.7px']) {
   });
 }
 
-test('the phone top has no people row and the search field starts on the gutter; the laptop keeps its row', { skip: chromium ? false : NO_BROWSER }, async () => {
-  for (const width of [390, 1280]) {
+test('the phone top has no people row and the search field starts on the gutter; the laptop keeps its row, parted from the field by space — no line in the header at any width', { skip: chromium ? false : NO_BROWSER }, async () => {
+  for (const width of [390, 900, 1280]) {
     const { ctx, page, errors } = await openApp(chromium, { width, height: width >= 720 ? 900 : 844 });
     try {
       await page.evaluate(() => window.scrollTo(0, 0));
       await sleep(300);
       const r = await page.evaluate(() => ({
         chips: getComputedStyle(document.getElementById('person-chips')).display,
-        divider: getComputedStyle(document.querySelector('.toolbar .toolbar-divider')).display,
+        chipsBox: (() => { const b = document.getElementById('person-chips').getBoundingClientRect(); return { right: b.right, top: b.top }; })(),
+        // Kevin, 2026-09-26: "in the header we don't need these lines".
+        divider: !!document.querySelector('.toolbar-divider'),
+        rail: getComputedStyle(document.getElementById('day-rail')).borderBottomWidth,
         search: document.querySelector('.toolbar .search-pill').getBoundingClientRect().left,
+        searchTop: document.querySelector('.toolbar .search-pill').getBoundingClientRect().top,
         head: document.querySelector('.app-header .back-btn').getBoundingClientRect().left,
         gutter: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp-gutter')) || null,
       }));
+      assert.equal(r.divider, false, `${width}: no divider stub before the search field`);
       if (width < 720) {
-        assert.deepEqual([r.chips, r.divider], ['none', 'none'], '390: no people row (design §4)');
+        assert.equal(r.chips, 'none', '390: no people row (design §4)');
         assert.ok(r.search <= 16.5, `390: the search field on the left gutter (${r.search})`);
       } else {
-        assert.notEqual(r.chips, 'none', '1280: the people row stays (default 3)');
+        assert.notEqual(r.chips, 'none', `${width}: the people row stays (default 3)`);
+        assert.equal(r.rail, '0px', `${width}: no hairline under the rail`);
+        // Sharing a line, the row and the field are two groups: 18px of space
+        // (the toolbar's 6 + the row's 12), three times the chips' own gap.
+        if (Math.abs(r.searchTop - r.chipsBox.top) < 12) {
+          assert.ok(Math.abs(r.search - r.chipsBox.right - 18) < 1.5, `${width}: 18px between the people row and the field (${r.search - r.chipsBox.right})`);
+        }
       }
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
