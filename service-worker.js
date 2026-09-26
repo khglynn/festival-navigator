@@ -39,6 +39,7 @@ const APP_CORE = [
   '/js/errlog.js',
   '/js/spotify.js',
   '/js/name-rules.mjs',
+  '/js/fold.mjs',
   '/js/v3/app.js',
   '/js/v3/crew-entry.js',
   '/js/v3/welcome.js',
