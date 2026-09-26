@@ -211,9 +211,30 @@ test('a tap outside the open menu only closes it: the card under the tap is not 
   }
 });
 
-// Settings from the menu's last row takes the menu's entry for its own, so
+// Anything else outside does what it was aimed at, on the same tap, once the
+// menu's entry is gone — a day tab here (the join shelf's + and Notes, which
+// open layers of their own, are why the entry goes first).
+test('a tap outside on a day tab closes the menu, and the tab still does its job — on the one tap', async () => {
+  const tab = $('dock-days').querySelector('.day-tab[data-day="Friday"]');
+  let heard = 0;
+  const hear = () => { heard += 1; };
+  tab.addEventListener('click', hear);
+  try {
+    click($('dock-fest-link'));
+    click(tab);
+    assert.equal(heard, 0, 'held while the menu\'s entry goes');
+    await settle(40);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
+    assert.equal(heard, 1, 'and then the tab heard its tap, once');
+    assert.deepEqual(dom.window.history.state, null, 'on the entry the menu found');
+  } finally {
+    tab.removeEventListener('click', hear);
+  }
+});
+
+// Settings from the menu's last row opens once the menu's entry is gone, so
 // Back from Settings lands on the wall — not on a menu that closed.
-test('Settings from the menu: its entry becomes Settings\', and Back lands on the wall', async () => {
+test('Settings from the menu: one entry for Settings where the menu\'s was, and Back lands on the wall', async () => {
   const h = dom.window.history;
   const start = h.length;
   const found = JSON.stringify(h.state);
@@ -222,7 +243,7 @@ test('Settings from the menu: its entry becomes Settings\', and Back lands on th
   await settle(30);
   assert.notEqual($('screen-settings').style.display, 'none', 'Settings is open');
   assert.equal(menu('dock').style.display, 'none', 'the menu is gone');
-  assert.deepEqual(h.state, { layers: ['settings'] }, 'Settings stands on the entry the menu had');
+  assert.deepEqual(h.state, { layers: ['settings'] }, 'Settings stands where the menu\'s entry was');
   assert.ok(h.length <= start + 1, 'one entry, not two');
   h.back();
   await settle(30);
