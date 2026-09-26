@@ -7,7 +7,8 @@
 //   2. On every host, the crew-less landing screen boots in an iPhone-sized
 //      WebKit with no page errors, console errors or failed requests.
 //   3. On the base host, gallery.html (the fixture wall: real cards, zoom and
-//      strip code, no crew, no database) renders its cards with no errors —
+//      strip code, no crew, no database) renders its cards with no errors or
+//      HTTP error responses (a 4xx/5xx the app swallows still fails it) —
 //      far more of the shipped JS than the landing exercises.
 //   4. Every file in the worker's APP_CORE list is byte-identical on all
 //      three hosts, so a secondary host cannot serve different app code.
@@ -153,6 +154,7 @@ async function bootPage(browser, target, readySelector) {
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
+  const httpErrors = []; // a 4xx/5xx completes normally in Playwright; boot may swallow it
 
   await context.route('**/*', (route) => {
     const req = route.request();
@@ -170,6 +172,13 @@ async function bootPage(browser, target, readySelector) {
   page.on('websocket', (ws) => sockets.push(ws.url()));
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   page.on('pageerror', (e) => pageErrors.push(String((e && e.stack) || e)));
+  page.on('response', (res) => {
+    try {
+      if (new URL(res.url()).host === new URL(target).host && res.status() >= 400) {
+        httpErrors.push({ url: res.url(), status: res.status() });
+      }
+    } catch {}
+  });
   page.on('requestfailed', (req) => {
     if (blocked.some((b) => b.url === req.url())) return;
     failedRequests.push({ url: req.url(), failure: req.failure() && req.failure().errorText });
@@ -186,7 +195,9 @@ async function bootPage(browser, target, readySelector) {
 
   let ready = false;
   try {
-    await page.waitForSelector(readySelector, { state: 'visible', timeout: 15000 });
+    for (const sel of [].concat(readySelector)) {
+      await page.waitForSelector(sel, { state: 'visible', timeout: 15000 });
+    }
     ready = true;
   } catch {}
   await page.waitForTimeout(1500); // let late errors and deferred work land
@@ -198,12 +209,12 @@ async function bootPage(browser, target, readySelector) {
 
   const r = {
     target, readySelector, status, navError, ready, ms: Date.now() - t0,
-    consoleErrors, pageErrors, failedRequests, blocked, sockets, screenshot,
+    consoleErrors, pageErrors, failedRequests, httpErrors, blocked, sockets, screenshot,
   };
   r.ok = status === 200 && ready && !navError && !consoleErrors.length &&
-    !pageErrors.length && !failedRequests.length && !blocked.length && !sockets.length;
+    !pageErrors.length && !failedRequests.length && !httpErrors.length && !blocked.length && !sockets.length;
   log(`[page] ${target}: ${status} ready=${ready} errors=${consoleErrors.length + pageErrors.length} ` +
-    `failed=${failedRequests.length} blocked=${blocked.length} sockets=${sockets.length} ${r.ok ? 'ok' : 'FAIL'}`);
+    `failed=${failedRequests.length} http=${httpErrors.length} blocked=${blocked.length} sockets=${sockets.length} ${r.ok ? 'ok' : 'FAIL'}`);
   return r;
 }
 
@@ -228,7 +239,8 @@ async function bootPage(browser, target, readySelector) {
   }
   if (browser) {
     for (const host of HOSTS) report.pages.push(await bootPage(browser, `https://${host}/`, '#screen-landing'));
-    report.pages.push(await bootPage(browser, `${baseURL}/gallery.html`, '.card'));
+    // Cards the gallery's own scripts render, not its static scaffolding.
+    report.pages.push(await bootPage(browser, `${baseURL}/gallery.html`, ['#zoom-gallery .card', '#events-wall .card']));
     report.worker = await checkWorkerInstall(browser, `${baseURL}/`);
     await browser.close();
   }

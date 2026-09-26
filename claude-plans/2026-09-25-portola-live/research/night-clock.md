@@ -1,5 +1,7 @@
 # Night clock: do the suites stay green while Portola is live?
 
+> **Current implementation (2026-09-25, later):** the committed smoke is `ops/prod-smoke.mjs` and the clock helper is `tests/helpers/night-clock.mjs`. They supersede the scratchpad scripts described below (which hard-coded v89 and wrote beside themselves); the run records below are kept as history.
+
 Research slice, 2026-09-25 (Fri, the day before Portola). Read-only. Worktree
 `.claude/worktrees/portola-live` at 47a381c (origin/main at time of reading).
 
