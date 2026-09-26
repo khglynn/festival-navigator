@@ -1,0 +1,65 @@
+
+== 390 board vs list, Saturday
+board sat: {"h":3834,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"","doors":0,"headH":[],"now":0,"overflow":24,"widths":[178],"places":[]},{"room":"Afters","bands":"","doors":0,"headH":[],"now":0,"overflow":7,"widths":[178],"places":[]},{"room":"Folsom","bands":"Daytime:10 Evening:2 9 PM:8 10 PM:3 After-hours:1","doors":0,"headH":[10],"now":8,"overflow":0,"widths":[178],"places":["Mayes Oyster House","Mr. S Leather","Transform1060"]}]}
+  frame board-sat-top-390.png
+writes ["POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+list sat: {"h":4704,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"1 PM:4 2 PM:4 3 PM:4 4 PM:4 5 PM:2 6 PM:3 7 PM:4 8 PM:2 9 PM:4 Time TBA:1","doors":9,"headH":[44],"now":5,"overflow":0,"widths":[178],"places":["Pier","Crane","Warehouse"]},{"room":"Afters","bands":"9 PM:1 10 PM:6 Late:8","doors":0,"headH":[44],"now":0,"overflow":0,"widths":[178],"places":["Regency Ballroom","888 Garage","Public Works"]},{"room":"Folsom","bands":"Daytime:10 Evening:2 9 PM:8 10 PM:3 After-hours:1","doors":0,"headH":[44],"now":8,"overflow":0,"widths":[178],"places":["Mayes Oyster House","Mr. S Leather","Transform1060"]}]}
+  frame list-sat-top-390.png
+  frame list-sat-now-390.png
+sun: {"h":4931,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"1 PM:4 2 PM:4 3 PM:4 4 PM:4 5 PM:4 6 PM:2 7 PM:2 8 PM:4 9 PM:4","doors":9,"headH":[44],"now":0,"overflow":0,"widths":[178],"places":["Pier","Crane","Warehouse"]},{"room":"Afters","bands":"10 PM:9 Late:16","doors":0,"headH":[44],"now":0,"overflow":0,"widths":[178],"places":["The Midway","The Midway","The Midway"]},{"room":"Folsom","bands":"Daytime:10 Evening:6 9 PM:3 10 PM:1 After-hours:1","doors":0,"headH":[44],"now":0,"overflow":0,"widths":[178],"places":["Kink.com Penthouse","Folsom St, 8th-13th","The Foundry"]}]}
+  frame list-sat-portola-390-long.png
+  frame list-sat-afters-390-long.png
+  frame list-sun-portola-390-long.png
+  frame list-sun-folsom-390-long.png
+writes ["POST /api/person","POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+
+== 320 board vs list, Saturday
+board sat: {"h":3855,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"","doors":0,"headH":[],"now":0,"overflow":24,"widths":[143],"places":[]},{"room":"Afters","bands":"","doors":0,"headH":[],"now":0,"overflow":7,"widths":[143],"places":[]},{"room":"Folsom","bands":"Daytime:10 Evening:2 9 PM:8 10 PM:3 After-hours:1","doors":0,"headH":[10],"now":8,"overflow":0,"widths":[143],"places":["Mayes Oyster House","Mr. S Leather","Transform1060"]}]}
+  frame board-sat-top-320.png
+writes ["POST /api/person","POST /api/person","POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+list sat: {"h":4725,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"1 PM:4 2 PM:4 3 PM:4 4 PM:4 5 PM:2 6 PM:3 7 PM:4 8 PM:2 9 PM:4 Time TBA:1","doors":9,"headH":[44],"now":5,"overflow":0,"widths":[143],"places":["Pier","Crane","Warehouse"]},{"room":"Afters","bands":"9 PM:1 10 PM:6 Late:8","doors":0,"headH":[44],"now":0,"overflow":0,"widths":[143],"places":["Regency Ballroom","888 Garage","Public Works"]},{"room":"Folsom","bands":"Daytime:10 Evening:2 9 PM:8 10 PM:3 After-hours:1","doors":0,"headH":[44],"now":8,"overflow":0,"widths":[143],"places":["Mayes Oyster House","Mr. S Leather","Transform1060"]}]}
+  frame list-sat-top-320.png
+  frame list-sat-now-320.png
+writes ["POST /api/person","POST /api/person","POST /api/person","POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+
+== 390 stage readings
+  frame stage-full-390.png
+  frame stage-short-390.png
+  frame stage-caps-390.png
+
+== 390 one-up
+  frame oneup-sat-now-390.png
+1-up sat height 8016
+
+== 390 sunday at 2
+  frame at2-before-390.png
+2 PM head box {"x":14,"y":243.6875,"width":362,"height":44}
+  frame at2-mid-390.png
+  frame at2-pinned-390.png
+pinned: {"at":["2 PM","Daytime · 2 PM"],"jumps":["FOLSOM ↓","PORTOLA ↑"],"lit":["Clearcast","Torren Foot","Dean Turnley","Kaytree","Mind Enterprises","Azzecca","Silva Bumpa","riria","OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW","Folsom Street Fair","BOOF presents MCMLXXXV (Herrensauna)","Party On The Plaza: Folsom Edition","FOLSOM SUNDAY","AIRTIGHT"]}
+  frame at2-folsom-390.png
+  frame at2-folsom-later-390.png
+  frame at2-sunday-390-long.png
+writes ["POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+
+== 320 sunday at 2
+  frame at2-before-320.png
+2 PM head box {"x":14,"y":244.375,"width":292,"height":44}
+  frame at2-pinned-320.png
+pinned: {"at":["2 PM","Daytime · 2 PM"],"jumps":["FOLSOM ↓","PORTOLA ↑"],"lit":["Clearcast","Torren Foot","Dean Turnley","Kaytree","Mind Enterprises","Azzecca","Silva Bumpa","riria","OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW","Folsom Street Fair","BOOF presents MCMLXXXV (Herrensauna)","Party On The Plaza: Folsom Edition","FOLSOM SUNDAY","AIRTIGHT"]}
+  frame at2-folsom-320.png
+writes ["POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person"]; errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+
+== 1280 desktop
+board sun: {"h":3098,"aligned":false,"cols":"","rooms":[{"room":":fest","bands":"","doors":0,"headH":[],"now":0,"overflow":0,"widths":[176],"places":[]},{"room":"Afters","bands":"","doors":0,"headH":[],"now":0,"overflow":0,"widths":[176],"places":[]},{"room":"Folsom","bands":"Daytime:10 Evening:6 9 PM:3 10 PM:1 After-hours:1","doors":0,"headH":[10],"now":0,"overflow":0,"widths":[176],"places":["Kink.com Penthouse","Folsom St, 8th-13th","The Foundry"]}]}
+  frame board-sun-1280.png
+errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+list sun: {"h":4379,"aligned":true,"cols":"359px 176px 359px","rooms":[{"room":":fest","bands":"1 PM:4 2 PM:4 3 PM:4 4 PM:4 5 PM:4 6 PM:2 7 PM:2 8 PM:4 9 PM:4","doors":9,"headH":[30],"now":0,"overflow":0,"widths":[176],"places":["Pier","Crane","Warehouse"]},{"room":"Afters","bands":"10 PM:9 11 PM:6 12 AM:8 1 AM:2","doors":4,"headH":[30],"now":0,"overflow":0,"widths":[176],"places":["The Midway","The Midway","The Midway"]},{"room":"Folsom","bands":"10 AM:1 11 AM:2 12 PM:1 1 PM:1 2 PM:1 3 PM:2 4 PM:2 6 PM:2 7 PM:3 8 PM:1 9 PM:3 10 PM:1 After-hours:1","doors":12,"headH":[30],"now":0,"overflow":0,"widths":[176],"places":["Kink.com Penthouse","Folsom St, 8th-13th","The Foundry"]}]}
+  frame list-sun-1280.png
+  frame list-sun-1280-long.png
+  frame at2-sun-1280.png
+desktop pinned: ["2 PM"] {"x":100,"y":471,"width":942,"height":30}
+  frame list-sat-1280-long.png
+errors ["Failed to load resource: the server responded with a status of 503 (Service Unavailable)"]
+
+all writes attempted (all refused): ["POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person"]

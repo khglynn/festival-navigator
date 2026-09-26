@@ -1,0 +1,18 @@
+sun-whole-390 ok
+sun-2pm-390 ok
+sun-2pm-open-390 ok
+sun-head-390 ok
+sun-whole-320 ok
+sun-2pm-320 ok
+sun-2pm-open-320 ok
+sun-head-320 ok
+sun-live-390 ok
+sun-live-fold-390 ok
+sat-live-390 ok
+menu-390 ok
+filter-mid-390 ok
+filter-after-390 ok
+sun-11pm-390 ok
+board-sun-2pm-390 ok
+sun-2pm-1280 ok
+writes refused: ["POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person","POST /api/person"]
