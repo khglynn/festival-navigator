@@ -1,8 +1,8 @@
-// One thing at a time at the bottom of the screen, three deep (v92). A
-// creator who has never been welcomed makes a second Portola crew: the share
-// moment comes up first, the welcome waits for it to close, and the
-// bring-your-picks offer waits for "Got it". Never two at once, and nothing
-// arriving under a sheet.
+// A creator is not new here (v92, Kevin 2026-09-25: the welcome card is for
+// new people only). A phone that has never been welcomed creates a second
+// Portola crew: the share moment comes up, and when it closes the
+// bring-your-picks offer asks — exactly as in v91, with no welcome card in
+// between, even though this phone has never seen one.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
@@ -54,21 +54,16 @@ test('the share moment comes up first — no welcome and no offer under it', asy
   $('create-go-multi').click();
   assert.notEqual(await within(2000, () => !!sheet()), null, 'the share moment is up');
   await settle(150);
-  assert.equal(welcome(), null, 'the welcome waits for the sheet');
-  assert.equal(offer(), null, 'and the offer waits too');
+  assert.equal(welcome(), null);
+  assert.equal(offer(), null, 'the offer waits for the sheet');
 });
 
-test('the share moment closes: the welcome arrives, the offer still waits', async () => {
+test('the share moment closes: the offer asks, and no welcome card ever comes', async () => {
   buttonNamed(sheet(), 'Later').click();
   assert.notEqual(await within(1500, () => !sheet()), null, 'the sheet is gone');
-  assert.notEqual(await within(1500, () => !!welcome()), null, 'the welcome arrives');
-  await settle(100);
-  assert.equal(offer(), null, 'never two at once');
-});
-
-test('"Got it": the welcome goes and the offer asks', async () => {
-  buttonNamed(welcome(), 'Got it').click();
-  assert.notEqual(await within(1500, () => !!offer()), null, 'the offer arrives');
-  assert.equal(welcome(), null);
+  assert.notEqual(await within(1500, () => !!offer()), null, 'the offer arrives, as in v91');
   assert.match(offer().querySelector('.bring-line').textContent, /from your crew with Ross\?/);
+  await settle(200);
+  assert.equal(welcome(), null, 'a creator knows the crew: no welcome');
+  assert.equal(localStorage.getItem('fn_welcome_v1'), null);
 });

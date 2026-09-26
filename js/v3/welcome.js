@@ -7,14 +7,17 @@
 // It replaces the How it works strip, which sat in the toolbar and was
 // scrolled out of sight by the day-of open (design brief §1.6, measured).
 //
-// Once per PHONE (not per crew): the words explain the app, and a second crew
-// does not need them again. Everyone sees it once, members included — friends
-// who dismissed the old strip never got these words (Kevin's default, 10.5).
+// Once per PHONE (not per crew), and only for someone NEW here: a guest (no
+// name in this crew on this phone) or someone who has just joined. A phone
+// that knows you or recognizes you lands exactly as it did in v91 — on NOW,
+// the top, its own show filter — with no card (Kevin, 2026-09-25: "people
+// that have already connected to a person in the fest should just go to now
+// / the top / their filter selected"). app.js decides who is new.
 //
 // The card is the bring-your-picks offer's anatomy (crew-entry.js): above the
 // dock where the thumb is, an outer box that steps up when a toast arrives,
 // and an inner card that carries its own arrival and exit. It never shares
-// the bottom of the screen with the offer — the offer waits for "Got it".
+// the bottom of the screen with the offer — the offer waits for it to go.
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { getLS } from '../util.js';
 
@@ -36,38 +39,46 @@ export function rememberWelcomeSeen() {
 }
 
 // ---- the words -------------------------------------------------------------------
-// C1 as the frames drew it (F2a, F2d). The crew's name rides the label beside
-// its faces, so the line can say "the crew's plan" and stay one line. A
-// guest adds themselves; a member already has a colour, so they add theirs.
-// "Want to go", never "going": a pick is interest, not a ticket.
-//
-// A guest also gets Kevin's right-hand door (2026-09-25, 7:55 PM: "a right
-// justified button in there to pick with the crew") — for friends who already
-// know they want to pick. A member is already picking, so theirs has none.
+// EVERY word the card says lives in WORDS, so Kevin's pick (still open,
+// 2026-09-25) is one edit here and nowhere else. The two paths read as a
+// choice: look (left, the quiet way, same as dismissing) or join to pick
+// (right). The crew's name rides the label beside its faces, so the line can
+// say "the crew's plan" and stay one line. "Want to go", never "going": a
+// pick is interest, not a ticket. A member who has just joined already has a
+// colour — their card has no join, and "Got it" instead of "Just looking".
+export const WORDS = {
+  look: 'Just looking',          // a guest's left button: dismiss, look around
+  gotIt: 'Got it',               // a fresh member's left button
+  how: 'How it works',
+  join: 'Join to pick',          // a guest's right-hand button (Kevin's door)
+  line: (fest) => `This is the crew’s plan for ${fest}.`,
+  colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
+  guestNext: 'Look around, or join to add your own picks.',
+  memberNext: 'Tap any artist to add yours.',
+  empty: 'Nobody’s in this crew yet.',
+  emptySub: 'Tap any artist to be first — you’ll pick a name as you do.',
+  nobodyPicked: 'Nobody’s picked yet.',
+  startedBy: (name, fest) => `${name} started this plan for ${fest}.`,
+  yours: (fest) => `Your plan for ${fest} is ready.`,
+  firstSub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist to be first.',
+};
+
 export function welcomeCopy({ crewName = '', festName = '', people = [], picked = false, guest = true, meName = null } = {}) {
   const fest = festName || 'this festival';
   const label = crewName || 'Your crew';
-  const buttons = { yes: 'Got it', more: 'How it works', join: guest ? 'Pick with the crew' : null };
-  if (!people.length) {
-    return { label, line: 'Nobody’s in this crew yet.', sub: 'Tap any artist to be first — you’ll pick a name as you do.', ...buttons };
-  }
+  const buttons = guest
+    ? { yes: WORDS.look, more: WORDS.how, join: WORDS.join }
+    : { yes: WORDS.gotIt, more: WORDS.how, join: null };
+  if (!people.length) return { label, line: WORDS.empty, sub: WORDS.emptySub, ...buttons };
   if (!picked) {
-    // The only person here is the one reading it (a creator, just after the
-    // share moment): their plan, in the second person.
+    // The only person here is the one reading it: their plan, in the second person.
     const mine = people.length === 1 && !guest && meName && people[0] === meName;
-    const line = mine
-      ? `Your plan for ${fest} is ready. Nobody’s picked yet.`
-      : people.length === 1
-        ? `${people[0]} started this plan for ${fest}. Nobody’s picked yet.`
-        : `This is the crew’s plan for ${fest}. Nobody’s picked yet.`;
-    return { label, line, sub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist to be first.', ...buttons };
+    const who = mine ? WORDS.yours(fest)
+      : people.length === 1 ? WORDS.startedBy(people[0], fest)
+        : WORDS.line(fest);
+    return { label, line: `${who} ${WORDS.nobodyPicked}`, sub: WORDS.firstSub, ...buttons };
   }
-  return {
-    label,
-    line: `This is the crew’s plan for ${fest}.`,
-    sub: `Every friend has a color — the more color on a card, the more of us want to go. Tap any artist to add ${guest ? 'yourself' : 'yours'}.`,
-    ...buttons,
-  };
+  return { label, line: WORDS.line(fest), sub: `${WORDS.colors} ${guest ? WORDS.guestNext : WORDS.memberNext}`, ...buttons };
 }
 
 // ---- the card --------------------------------------------------------------------
@@ -141,8 +152,8 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   const more = node('button', 'btn-ghost', copy.more);
   actions.append(yes, more);
   // The quiet ways to look stay on the left, as the frame drew them; the way
-  // to pick sits on the right (it wraps under them on a 320 phone, still to
-  // the right).
+  // to join and pick sits on the right (it wraps under them on a 320 phone,
+  // still to the right).
   const join = copy.join && onJoin ? node('button', 'btn-tonal welcome-join', copy.join) : null;
   if (join) actions.append(join);
   card.append(head, text, actions);
@@ -176,10 +187,10 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
     if (onGotIt) onGotIt();
   });
   // How it works leaves the card where it is: Settings hides it with the wall,
-  // and coming back finds it still there for "Got it" — which is also the
+  // and coming back finds it still there for its left button — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.
   more.addEventListener('click', () => { if (onHow) onHow(); });
-  // "Pick with the crew": the ordinary join, with nothing waiting — the app
+  // "Join to pick": the ordinary join, with nothing waiting — the app
   // marks the welcome read and takes the card down on the way (askToJoin).
   if (join) join.addEventListener('click', () => onJoin());
   return box;

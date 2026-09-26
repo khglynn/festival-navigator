@@ -1,6 +1,6 @@
 // v92 walk (2026-09-25): first open, wall first, in a real Chromium with real
 // touch (hasTouch + isMobile, locator.tap), at 390 and 320. Every state the
-// brief names: a new link (the guest wall + welcome), "Got it", a guest's tap
+// brief names: a new link (the guest wall + welcome), "Just looking", a guest's tap
 // (the join screen, "Pick … as"), "Just looking" (back where you were), a
 // join (the first pick lands), a returning member, a recognized member, a
 // crew with nobody in it, the share link with and without `show`, Settings as
@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const WT = path.resolve(HERE, '../..');
+const WT = process.env.WALK_ROOT || path.resolve(HERE, '../..');
 const OUT = path.join(HERE, 'v92-shots');
 fs.mkdirSync(OUT, { recursive: true });
 const { launchBrowser } = await import('../../tests/helpers/browser.mjs');
@@ -147,12 +147,12 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     note(`buttons (label, left, top, right) ${JSON.stringify(rects)}; card right ${cardR}`);
     note(`writes: ${JSON.stringify(writes)}`);
     await shot(page, `${tag}-01-guest-welcome.png`);
-    // Got it: the card leaves, the + pulses.
-    await page.locator('#welcome-card button', { hasText: 'Got it' }).tap();
+    // Just looking: the card leaves, the + pulses.
+    await page.locator('#welcome-card .bring-actions button').first().tap();
     await sleep(250);
     await shot(page, `${tag}-02-got-it-pulse.png`);
     await sleep(700);
-    note(`after Got it: card gone=${!(await page.locator('#welcome-card').count())}; seen=${await page.evaluate(() => localStorage.getItem('fn_welcome_v1'))}`);
+    note(`after Just looking: card gone=${!(await page.locator('#welcome-card').count())}; seen=${await page.evaluate(() => localStorage.getItem('fn_welcome_v1'))}`);
     await shot(page, `${tag}-03-guest-wall.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();
@@ -219,7 +219,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
       note(`${kind}: ${await page.locator('#welcome-card .bring-line').textContent()} | ${await page.locator('#welcome-card .bring-sub').textContent()}`);
       await shot(page, `${tag}-06-${kind}-welcome.png`);
       if (kind === 'empty') {
-        await page.locator('#welcome-card button', { hasText: 'Got it' }).tap();
+        await page.locator('#welcome-card .bring-actions button').first().tap();
         await page.locator('#wall-root .card[data-artist="Robyn"]').first().tap();
         await page.waitForSelector('#screen-join', { state: 'visible' });
         await sleep(200);
@@ -230,17 +230,16 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     }
   });
 
-  await scenario(`${tag} 4 returning member and recognized member`, async () => {
+  await scenario(`${tag} 4 returning member and recognized member: no card, they land as in v91`, async () => {
     resetDocs();
-    // A member who has used the app (claimed), never welcomed yet (v91 phone).
-    const claimed = { fn: ([t]) => { try { localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'The Portola Crew' }])); localStorage.setItem(`fn_me_v3_${t}`, 'Maya'); localStorage.setItem('fn_coach_v1', '1'); } catch {} }, arg: [T.crew] };
+    // A member who has used the app (claimed), never welcomed (a v91 phone).
+    const claimed = { fn: ([t]) => { try { localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'The Portola Crew' }])); localStorage.setItem(`fn_me_v3_${t}`, 'Maya'); localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026'); localStorage.setItem('fn_coach_v1', '1'); } catch {} }, arg: [T.crew] };
     let { ctx, page, errors } = await phone({ width: W, height: H, init: claimed });
     await openWall(page, `#g=${T.crew}`);
-    await page.waitForSelector('#welcome-card', { timeout: 5000 });
     await sleep(900);
-    note(`returning member welcome: ${await page.locator('#welcome-card .bring-sub').textContent()}`);
-    note(`dock you: "${await page.locator('#dock-you').textContent()}"`);
-    await shot(page, `${tag}-08-member-welcome.png`);
+    note(`returning member: now line at viewport y ${await page.evaluate(() => { const l = document.querySelector('#wall-root .now-line'); return l ? Math.round(l.getBoundingClientRect().top) : null; })}`);
+    note(`returning member: card ${await page.locator('#welcome-card').count()}; dock you "${await page.locator('#dock-you').textContent()}"; scrollY ${await page.evaluate(() => Math.round(scrollY))}; active tab ${await page.locator('#dock .day-tab.active').textContent().catch(() => '?')}`);
+    await shot(page, `${tag}-08-member-no-card.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();
     // Recognized: the crew carries this phone's pid.
@@ -248,10 +247,10 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     const person = { fn: ([pid]) => { try { localStorage.setItem('fn_person_v1', JSON.stringify({ token: 'v92walkPERSONkevin_0123456789', id: pid, name: 'Kevin', crews: {} })); } catch {} }, arg: [PID] };
     ({ ctx, page, errors } = await phone({ width: W, height: H, init: person }));
     await openWall(page, `#g=${T.crew}&f=${FID}`);
-    await page.waitForSelector('#welcome-card', { timeout: 5000 });
     await sleep(900);
-    note(`recognized: toast "${await page.locator('#toast-root').textContent()}"; card transform "${await page.locator('#welcome-card').evaluate((n) => n.style.transform)}"`);
-    await shot(page, `${tag}-09-recognized-welcome-over-toast.png`);
+    note(`recognized: now line at viewport y ${await page.evaluate(() => { const l = document.querySelector('#wall-root .now-line'); return l ? Math.round(l.getBoundingClientRect().top) : null; })}; coach strip ${await page.locator('#coach-mark').count()}`);
+    note(`recognized: card ${await page.locator('#welcome-card').count()}; toast "${await page.locator('#toast-root').textContent()}"; dock you "${await page.locator('#dock-you').textContent()}"; scrollY ${await page.evaluate(() => Math.round(scrollY))}`);
+    await shot(page, `${tag}-09-recognized-no-card.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();
   });
@@ -344,7 +343,7 @@ await scenario('1440 8 desktop: the guest ring on the rail, the card bottom-cent
   note(`card box ${JSON.stringify(await page.locator('#welcome-card .bring-card').boundingBox())}`);
   await shot(page, '1440-15-desktop-guest.png');
   // A mouse click on a card: the same question.
-  await page.locator('#welcome-card button', { hasText: 'Got it' }).click();
+  await page.locator('#welcome-card .bring-actions button').first().click();
   await page.locator('#rail-you').click();
   await page.waitForSelector('#screen-join', { state: 'visible' });
   note('rail + opens the join screen');
@@ -402,9 +401,9 @@ await scenario('390 11 storage blocked: the getters throw, and a guest still get
   const { ctx, page, errors } = await phone({ init: blocked });
   await openWall(page, `#g=${T.crew}&f=${FID}`);
   note(`blocked: wall visible ${await visible(page, '#screen-app')}; welcome ${await page.locator('#welcome-card').count()}`);
-  await page.locator('#welcome-card button', { hasText: 'Got it' }).tap();
+  await page.locator('#welcome-card .bring-actions button').first().tap();
   await sleep(300);
-  note(`blocked: after Got it card gone ${!(await page.locator('#welcome-card').count())}`);
+  note(`blocked: after Just looking card gone ${!(await page.locator('#welcome-card').count())}`);
   await page.locator('#wall-root .card[data-artist="Robyn"]').first().tap();
   await page.waitForSelector('#screen-join', { state: 'visible' });
   await page.locator('#join-look').tap();

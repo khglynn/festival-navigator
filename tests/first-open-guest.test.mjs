@@ -124,17 +124,17 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
   assert.equal(box.querySelector('.micro-label').textContent, 'The Test Crew');
   assert.equal(box.querySelector('.bring-line').textContent, 'This is the crew’s plan for Portola.');
   assert.equal(box.querySelector('.bring-sub').textContent,
-    'Every friend has a color — the more color on a card, the more of us want to go. Tap any artist to add yourself.');
+    'Every friend has a color — the more color on a card, the more of us want to go. Look around, or join to add your own picks.');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
-  assert.ok(buttonNamed(box, 'Got it') && buttonNamed(box, 'How it works'));
-  const pick = buttonNamed(box, 'Pick with the crew');
+  assert.ok(buttonNamed(box, 'Just looking') && buttonNamed(box, 'How it works'), 'the quiet way to look, on the left');
+  const pick = buttonNamed(box, 'Join to pick');
   assert.ok(pick, 'Kevin’s right-hand door, for a friend who already knows they want to pick');
   assert.equal(box.querySelector('.bring-actions').lastElementChild, pick, 'after the two ways to look — the right side');
   assert.ok(pick.classList.contains('welcome-join'));
 });
 
-test('"Pick with the crew" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
-  buttonNamed(welcome(), 'Pick with the crew').click();
+test('"Join to pick" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
+  buttonNamed(welcome(), 'Join to pick').click();
   assert.deepEqual(shown(), ['screen-join']);
   assert.equal($('join-for').style.display, 'none', 'no artist waiting');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'the welcome has been read');

@@ -1598,8 +1598,7 @@ async function batchCreateFlow(myName) {
         sync.scheduleSync();
         openShareMoment();
         router.push('sheet:share');
-        maybeWelcome(); // waits for the share moment to close — one thing at a time
-        maybeOfferBringPicks(); // and this waits for the welcome, when there is one
+        maybeOfferBringPicks(); // waits for the share moment to close — never both at once
       } catch {
         history.replaceState(null, '', '/');
         renderLanding();
@@ -2363,9 +2362,11 @@ function maybeOfferBringPicks() {
   if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
   if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
   if (bringOfferCard()) return; // already asking, here
-  // The welcome goes first, once per phone (v92): until it has been read,
-  // the offer does not ask — the welcome's "Got it" asks it.
-  if (!welcomeSeen()) return;
+  // The welcome goes first where there is one (v92): while it is up, or due
+  // for someone new here, the offer does not ask — the welcome's left button
+  // asks it. A member who knows the crew never has one, so theirs asks as in
+  // v91.
+  if (welcomeCard() || (welcomeHere && !welcomeSeen())) return;
   if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
   const plan = planBringPicks(bringContext());
   if (!plan) return;
@@ -2399,12 +2400,13 @@ function offerWhenSheetCloses() {
 }
 
 // ---- the welcome (v92) ------------------------------------------------------------
-// Once per phone, on the first crew wall this phone opens — guest or member.
-// Like the offer it waits for an open sheet (the create flow's share moment),
-// then arrives with its beat; "Got it" is when the offer may ask.
+// Once per phone, for someone new here only: a guest, or someone who has just
+// joined (welcomeHere, set by enterApp). Like the offer it waits for an open
+// sheet, then arrives with its beat; its left button is when the offer may ask.
 let welcomeWaiter = null;
+let welcomeHere = false; // this entry is someone new: a guest, or the join screen's answer
 function maybeWelcome() {
-  if (welcomeSeen() || welcomeCard() || !state.getCrewToken()) return;
+  if (!welcomeHere || welcomeSeen() || welcomeCard() || !state.getCrewToken()) return;
   if ($('screen-app').style.display === 'none') return;
   if (document.getElementById('artist-sheet')) { welcomeWhenSheetCloses(); return; }
   const people = state.activePeople();
@@ -2550,7 +2552,7 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       hint.textContent = 'this link is yours';
       row.appendChild(hint);
     }
-    row.addEventListener('click', () => { crew.setMe(token, name); entered(enterApp(token, doc)); });
+    row.addEventListener('click', () => { crew.setMe(token, name); entered(enterApp(token, doc, undefined, undefined, { joined: true })); });
     list.appendChild(row);
   }
   $('join-add-btn').onclick = async () => {
@@ -2564,7 +2566,7 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     // "drew" typing in must claim Drew, never fork a second member.
     const existingEntry = Object.entries(doc.people || {})
       .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && p && !p.removed);
-    if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc)); return; }
+    if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc, undefined, undefined, { joined: true })); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
     // The answer decides where this goes: "Just looking" waits for it (a join
@@ -2599,13 +2601,13 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       }
       const merged = await res.json();
       crew.setMe(token, name);
-      await entered(enterApp(token, merged));
+      await entered(enterApp(token, merged, undefined, undefined, { joined: true }));
     } catch {
       // Network failure: offline-first join, sync catches up (old behavior).
       state.activateCrew(token, doc, festHint);
       state.recordPerson(name, person);
       crew.setMe(token, name);
-      entered(enterApp(token, state.crewDoc));
+      entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true }));
       sync.scheduleSync();
     } finally {
       delete document.body.dataset.busy;
@@ -2659,9 +2661,12 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // `warm` (boot only): the festival canOpenWarm admitted, `{ fid, fest }` —
 // painting from this phone's own copy, so nothing below may wait on the
 // network, and nothing re-decides the festival (see boot's warm open).
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false } = {}) {
+// `joined` (v92): this entry is the join screen's answer — someone new to the
+// crew, who gets the welcome (once per phone) like a guest does.
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false, joined = false } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
+  welcomeHere = false;                  // decided below, once the name is known
   // A share link's starting view (v92): consumed once, like the fest hint,
   // and only ever for a phone that has never shown the link's festival — read
   // before this entry remembers anything about it.
@@ -2764,6 +2769,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   show('screen-app');
   applyFestTheme();
   refreshCtx();
+  // New here (v92): a guest, or the join screen's answer. A phone that knows
+  // you or recognizes you lands as it did in v91, with no card.
+  welcomeHere = !ctx.meName || joined;
   renderPersonChips();
   renderYou();
   repaintWall();

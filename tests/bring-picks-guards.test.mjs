@@ -64,7 +64,6 @@ const shell = await bootShell({
     [`fn_me_v3_${BORROW}`]: 'Drew',
     [`fn_me_v3_${TWOSRC}`]: 'Kevin',
     [`fn_me_v3_${SWITCH}`]: 'Kevin',
-    fn_welcome_v1: '1', // the welcome card (v92) goes first and is its own file's story
   },
   fetch: network,
 });

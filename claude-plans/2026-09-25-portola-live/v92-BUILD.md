@@ -299,3 +299,30 @@ orchestrator's to run). Then:
    `--keep` restamp passes app-shell-complete and sw-stamp, reverted);
    `npm run test:browser` 191/191.
 
+
+**~10:55 PM — Kevin's review-page answers (relayed on top of 315ecab).
+v92 does not ship until he has seen it and we are aligned.**
+1. **The welcome card is for new people only.** Kevin: "people that have
+   already connected to a person in the fest should just go to now / the top /
+   their filter selected." A guest (no name in this crew here) and someone who
+   has just joined through the join screen see it (`welcomeHere`, set per
+   entry in `enterApp`; the join paths pass `joined: true`). A phone that
+   knows its name, a recognized phone and a creator see no card, and the
+   bring-your-picks offer asks for them exactly as in v91 (it waits only for a
+   card that is up or due). **Proved against v91** by running the same walk
+   on an export of main: a returning member lands at scrollY 2847 in both
+   builds; a recognized phone lands at 2959 in v91 and 2847 in v92 — the 112px
+   is v91's How it works strip (present there, gone here) — and the now line
+   sits at viewport y 279 in all four runs. The member offer tests
+   (`crew-join-recognize`, `bring-picks-guards`, `bring-picks-after-share`)
+   are back to v91's exact setup, no welcome marker, and pass.
+2. **The two paths read as a choice** (provisional words, his to pick):
+   left **Just looking** (was Got it; same behaviour), **How it works**, right
+   **Join to pick** (was Pick with the crew). A guest's line: "Every friend has
+   a color — the more color on a card, the more of us want to go. Look around,
+   or join to add your own picks." A member who has just joined gets "Got it"
+   and "Tap any artist to add yours", no join. **Every word is in one table**,
+   `WORDS` in `js/v3/welcome.js` — a swap is one edit there.
+3. Moving the creator's share sheet and the My link card: left out, as asked.
+Verified: first-open + member offer tests 68/68; full `npm test` 960/961
+(the stamp only); walks at 390/320 for guest, returning member, recognized.
