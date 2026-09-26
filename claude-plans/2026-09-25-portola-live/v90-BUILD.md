@@ -129,3 +129,35 @@ and `tests/browser/meter-contract` green.
 4. Skepta's "Crane Stage" stack lines up with the FIRST column (Pier
    Stage), not with the Crane Stage column. Putting a leftover under its own
    stage's column is a different, bigger idea; not done.
+
+### Item 2 — the notes button beside search (commit decd632)
+
+**Shared or not.** `.notes-chip` is only the toolbar's button (`index.html:209`)
+and its replica in `gallery.html:178`. The zoom's notes chip is a different
+component (`.chip-notes` / `.f-chip`), so it is untouched.
+
+**What changed.** `assets/v3.css:295-307` — the chip keeps its outline,
+colour, type, padding and the `--r-bubble` corner (8 8 8 2); a new
+`.toolbar .notes-chip { align-self: stretch }` takes the field's height on
+their shared line. `assets/v3.css` coarse-pointer block — `.notes-chip` left
+the three borrowed-space lists (min-height 0, position relative, the ::after
+hit area), so on a phone it wears the 44px floor as REAL height, exactly the
+`.search-pill`'s `min-height: 44px`. That is the floor rule's own default
+("REAL HEIGHT is the default... borrowed space is the exception for
+controls where 44px would wreck the design"); it no longer would.
+
+**Checked.** Measured in Chromium: phone 390 (touch, six-person crew)
+field 44 / notes 44, same top (was 44 / 26); desktop 1280 field 33 /
+notes 33 (was 33 / 26). Shots: `v90-shots/before6-portola-2026-390-top.png`
+→ `after6-portola-2026-390-top.png`, `before-1280-toolbar-crop.png` →
+`after-1280-toolbar-crop.png`. New browser contract
+`tests/browser/shell-contract.test.mjs:359` pins height + top + shape at
+both widths; the whole file is green (7/7).
+
+**Notes.**
+1. With a two-person crew on a phone the notes button wraps onto its own
+   line under the field (it did before too); it is 44px there as well.
+2. Pre-existing, not touched: when the toolbar wraps on a phone, the thin
+   divider between the chips and the field starts the second line, a stray
+   tick left of the field (visible in the six-person shots). Tiny; flagging
+   rather than widening this item.
