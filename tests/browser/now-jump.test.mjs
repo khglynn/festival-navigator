@@ -526,7 +526,9 @@ test('390, Dee highlighted at 7 PM: two live picks three columns apart are two s
     const taps = await cycle(page, door);
     const stops = stopsOf(taps);
     assert.deepEqual(stops.map((t) => t.pulsed.map((c) => c.artist)), [['Despacio'], ['DJ Shadow']], `the must first, then the other column: ${JSON.stringify(taps)}`);
-    assert.equal(stops[1].y, stops[0].y, 'one height');
+    // One height, to the pixel the browser rounds a fractional landing to:
+    // the full Folsom Friday above (v94) moved this grid by a fraction.
+    assert.ok(Math.abs(stops[1].y - stops[0].y) <= 1, `one height: ${stops[1].y} vs ${stops[0].y}`);
     assert.ok(Math.abs(stops[1].sl - stops[0].sl) > 100, `the grid slid across: ${stops.map((t) => t.sl).join(' → ')}`);
     for (const t of stops) for (const c of t.pulsed) assert.ok(c.across && c.inView, `${c.artist} is on screen, down and across: ${JSON.stringify(c)}`);
     assert.ok(Math.abs(taps[taps.length - 1].sl - taps[0].sl) <= 2, 'and the third tap comes back to the first');
@@ -572,7 +574,10 @@ test('390, Kat highlighted with nothing on: the stops are everyone’s, nothing 
 // on every daytime grid. A tap that moves nothing now pulses the line and its
 // time label on the rail — and under Reduce Motion, nothing moves at all.
 test('390, Sat 7 PM, the line the only stop: a repeat tap that moves nothing pulses the line and its time label', { skip }, async () => {
-  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  // The festival's clock alone: Folsom folds, since Saturday's daytime
+  // parties (DREAM HOUSE to 8 PM at The Stud, Daddy Day Care at SF Eagle —
+  // v94's full Folsom) are really on at 7 PM and would be a second stop.
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00'), fold: ['Folsom'] });
   try {
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
@@ -741,7 +746,9 @@ test('390: NOW says where it landed in a polite status region — the quiet line
 });
 
 test('390, Sat 7 PM, one stop: a repeat tap is said again, not swallowed as unchanged text', { skip }, async () => {
-  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  // One stop needs the festival's clock alone: Folsom's daytime parties are
+  // on at 7 PM (v94's full Folsom), so it folds.
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00'), fold: ['Folsom'] });
   try {
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
