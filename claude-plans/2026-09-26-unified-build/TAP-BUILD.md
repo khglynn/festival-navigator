@@ -224,3 +224,7 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
 - **13:10** Merged origin/live/list (370952c = v97's 19df64b + one ledger doc) into live/tap (5b05c57),
   clean, v97's stamp untouched. The List's rows are `renderCard` cards: a tap opens the shelf there too
   (a WebKit/Chromium case).
+- **13:55** Coordinator: v97 shipped (main = efeebd0, containing 370952c) — merged origin/main as asked
+  (28cc51c, the same tree as 9e70120: main held nothing live/list had not). Gate on that tree: `npm test`
+  1138/1139 at all three clocks (only the SW stamp), validate-festivals 0 errors, `test:browser` 269/269
+  locally; CI run 36246098584 browser green (261, 2 named skips), checks red only on the stamp.
