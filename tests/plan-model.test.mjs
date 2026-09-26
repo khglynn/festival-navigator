@@ -361,8 +361,7 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
   // Flowers), Oct 8 Brushy Street (Arcy Drive), and three on Sun Oct 4 — Ryan
   // Beatty's Scoot Inn show (a tool guess: 6 PM, from doors at 5) runs while
   // W1 still plays, so the route leaves it for Fcukers and The xx and comes
-  // back (flagged 2026-09-26: a route across town and back is a model
-  // question, not a data one — see the build log).
+  // back (flagged 2026-09-26: open question 7 in the model log).
   assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 6, 3, 5, 0, 0, 1, 5, 4, 2]);
 });
 
@@ -437,10 +436,13 @@ test('ACL: hiding weekend:W1 takes W1\'s stops, keeps its bodies and its Late ni
 
 test('ACL: rule 5 — the same stage on the same weekday on the other weekend is one play; another place is another', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
-  // Every artist in playsAt has two plays or more (45 on the whole festival
-  // since #56 gave the Late nights times; three before). Of this crew's picks:
+  // playsAt is the whole festival's, picked or not: 45 artists since #56 gave
+  // the Late nights times (three before). The Chainsmokers, whom nobody here
+  // picked, play the Snapchat stage on Friday and an Oct 1 Late night.
   const plays = (name) => [...new Set(plan.playsAt.get(name).map((o) => o.play))];
-  assert.ok([...plan.playsAt.values()].every((v) => new Set(v.map((o) => o.play)).size >= 2));
+  assert.equal(plan.playsAt.size, 45);
+  assert.deepEqual(plays('The Chainsmokers'), ['The Concourse Project|2026-10-01', 'Snapchat|Fri']);
+  // Of this crew's picks:
   assert.deepEqual([...plan.playsAt.keys()].filter((k) => ACL_PICKS[k]).sort(), ['Arcy Drive', 'Brandon Flowers', 'Faouzia', 'Fcukers', 'Jess Williamson', 'Ryan Beatty']);
   assert.ok(!plan.playsAt.has('Paris Paloma'), 'W1 3:15 and W2 5:15 at Miller Lite: one play, the time moved');
   assert.ok(!plan.playsAt.has('Turnstile'));

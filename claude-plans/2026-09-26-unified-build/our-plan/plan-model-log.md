@@ -193,10 +193,14 @@ The model did not change; the data under it did, and eight tests moved with it
    (the coordinator's release step; I touched neither).
 7. **A route across town and back (found 2026-09-26, after #56).** Rule 3 seats each person
    at their highest live pick every five minutes, and a room holds them from their first pick
-   to their last. On Portola the rooms open after the grounds close, so nobody bounced. On ACL,
-   7 of the 41 Late nights shows on festival dates start before that day's grid ends (Malcy
-   and Fancy Hagood at 7 PM and Noga Erez at 8:30 PM are posted; Finn Wolfhard, CMAT and Ryan
-   Beatty are guesses from doors). On the made-up crew, Sun Oct 4 reads Scoot Inn 6 PM →
+   to their last. On Portola's made-up nine no route goes back to the grounds after a room
+   (Saturday's Regency opens at 9 PM while the grid runs to 11, but whoever leaves for it
+   stays). On ACL, 16 of the 41 Late nights acts on festival dates start before that day's
+   last grid window ends (9:45–9:55 PM, the unprinted closers' +75); 10 of those times are
+   posted, 6 are guesses, and most start at 9–9:30 PM, during the headliners. The early ones
+   are the Scoot Inn's: Malcy and Fancy Hagood at 7 PM and Noga Erez at 8:30 PM posted, Finn
+   Wolfhard and CMAT at 8 PM and Ryan Beatty at 6 PM guessed from doors. On the made-up crew,
+   Sun Oct 4 reads Scoot Inn 6 PM →
    Tito's 6:30 → Scoot Inn 7:30 → T-Mobile 8:30 → Scoot Inn 9:45: Zilker to East Austin and
    back twice, which no one walks. Candidate rule, not built (it changes Kevin's approved
    rule 3): **a person changes site — the grounds, or one venue — only for a pick they want
