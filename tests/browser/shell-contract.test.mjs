@@ -181,13 +181,21 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.dataset.day)),
       ['Thursday', 'Friday', 'Saturday', 'Sunday']);
 
-    // And Escape puts the menu away without touching anything under it.
-    await page.focus('#dock-fest-link');
-    await page.keyboard.press('Enter');
-    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'true');
+    // The menu stays up for the next row (v93), with the keyboard where it was.
+    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'true', 'still open after the row');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.room), 'Folsom', 'focus stays on the row');
+    // And Escape puts the menu away without touching anything under it, and
+    // hands the keyboard back to the fest name that opened it.
     await page.keyboard.press('Escape');
-    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false');
+    await page.waitForFunction(() => document.getElementById('dock-fest-link').getAttribute('aria-expanded') === 'false', null, { timeout: 3000 });
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'dock-fest-link', 'focus back on the fest name');
     assert.ok(await page.isVisible('#screen-app'), 'the wall is still the wall');
+    // Put Folsom back for whoever runs next on this phone's storage.
+    await page.keyboard.press('Enter');
+    await row.waitFor({ state: 'visible' });
+    await row.focus();
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => localStorage.getItem('fn_fold_v1_portola-2026')), null);
   } finally {
     await ctx.close();
   }

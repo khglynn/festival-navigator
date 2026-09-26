@@ -1287,6 +1287,10 @@ function closeShowMenu({ instant = false } = {}) {
   const { pop, link } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
+  // A keyboard standing on a row goes back to the fest name that opened the
+  // menu, not to the top of the page (the menu stays up across rows now, so
+  // Escape from a row is the usual way out).
+  if (pop.contains(document.activeElement)) link.focus({ preventScroll: true });
   // A menu opened again before its way out finished stays open.
   const hide = () => { if (!openMenu || openMenu.pop !== pop) pop.style.display = 'none'; };
   // The way out is quick and plain.
