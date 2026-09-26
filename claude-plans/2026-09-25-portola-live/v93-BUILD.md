@@ -113,19 +113,29 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   were; a guest's + opens the shelf on one tap with its entry where the menu's was. Escape from
   a row returns focus to the fest name. Probed in Chromium and WebKit: every way out 2500 ->
   2500, FRI tab -> Friday in one tap, Settings -> Back -> 2500, history never grows past +1.
-- **Rebasing onto v92** — v92 has moved past abe7205 (now b29aac0) and touched the same
-  functions, so it is no longer a clean rebase. My `git rebase` was refused by the harness as
-  destructive; I did not force it. `git merge-tree` (read-only) shows three hunks, all in
-  `js/v3/app.js`, resolution:
-  1. `askToJoin(artist, { intent })`: put v93's guard first —
-     `if (openMenu) { leaveShowMenu(() => askToJoin(artist, { intent })); return; }` — then v92's
-     `const opener = shelfOpener();` (v92's later `closeShowMenu({ instant: true })` is then a
-     harmless no-op; drop it or keep it).
-  2. `closeShowMenu`: keep v93's focus return, and merge the two `hide`s —
-     `const hide = () => { if (openMenu && openMenu.pop === pop) return; pop.style.display = 'none'; if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up'); };`
-  3. Escape: `if (openMenu) { leaveShowMenu(); return; }` then v92's `if (leaveShelf('escape')) return;`.
-  v92's `tests/browser/show-menu-stacking.test.mjs` should pass as written (its synthetic
-  `dock-you.click()` is held, the menu's entry goes, then the + opens the shelf).
+- **Rebasing onto v92** — v92 has moved past abe7205 and reworked the same functions, so it is
+  no longer a clean rebase. My `git rebase` was refused by the harness as destructive; I did
+  not force it. Final read-only `git merge-tree` against v92 head 3f40a4f: five hunks, all in
+  `js/v3/app.js` (v3.css and index.html merge clean). Resolution — keep v92's menu-exit
+  machinery (`menuExit`/`settleMenuExit`/`hideShowMenu`/`dropShowMenu`, which supersedes v93's
+  simpler reopen-mid-fade `hide` guard) and add v93's few lines:
+  1. `askToJoin(artist, { intent })`: v93's guard first —
+     `if (openMenu) { leaveShowMenu(() => askToJoin(artist, { intent })); return; }` — then
+     v92's `const opener = shelfOpener();`.
+  2. `closeShowMenu`: v92's body, with v93's two lines right after
+     `link.setAttribute('aria-expanded', 'false');` —
+     `if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;` and
+     `if (pop.contains(document.activeElement)) link.focus({ preventScroll: true });` — then
+     v92's `settleMenuExit();` and the rest. Drop v93's `hide`.
+  3-4. `paintShowMenus` (both branches):
+     `if (existing) { if (openMenu && openMenu.pop === existing) leaveShowMenu(); dropShowMenu(existing); }`
+  5. Escape: `if (openMenu) { leaveShowMenu(); return; }` then v92's
+     `if (leaveShelf('escape')) return;`.
+  `openShowMenu` auto-merges (v92's bar lift, then v93's scroll hold, busy flag and
+  `router.push`); so do the row toggle and `.menu-label`. v92's
+  `tests/browser/show-menu-stacking.test.mjs` should pass as written: its synthetic
+  `dock-you.click()` is held, the menu's entry goes, then the + opens the shelf. Re-run the
+  full unit and browser suites after the merge.
 - **"Show" label** (43f80d1, coordinator from Kevin): the menu's head becomes one reusable
   class, `.menu-label` — 10px/800/`--track-label`/uppercase in `--text-secondary`, lined up
   with the check column — for the Highlight menu to wear too. Shots: `menu-open-390.png`,
@@ -143,3 +153,25 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   Sun live, Thu live, ACL; motion arrive/leave at 390/320 filmed at 0.1x plus Reduce Motion;
   NOW tap + day switch at 390/320/1280; the menu at 390/320/1280; the people row + Robyn's +n
   at 390/320; the welcome card's +4 (guest).
+- **Independent review** (Opus, read-only) — one must-fix and three should-fixes, each checked
+  in a real engine first, then fixed (a61144a): the day row's scroll clipped every tab's 44px
+  reach (NOW and the days answered a finger only on their text; now +/-12px in both engines,
+  dock still 45px); the replayed tap threw on an icon's `<svg>` (desktop gear); the zoom's
+  grown card was not treated as a card (a close-click could pick); an open menu did not hold a
+  new build's reload (now `body[data-busy]`, index.html untouched), and a refresh reopened it.
+  Nits fixed: a menu whose popover goes takes its entry; NOW keeps keyboard focus through a
+  repaint; the hold keeps scrollX; the gap fit is read from layout (19a261d). Also found
+  myself and proved in Chromium: a double way out before the popstate took two entries back
+  and left the app (bd04a2c) — pinned in the browser contract.
+- **Caret + How it works** (8242f72, from Kevin): `.menu-caret` (reusable; `.down` for the
+  rail), after the fest name, part of the button, --text-secondary, hidden where the name
+  opens no menu (EDC Orlando). It costs the row 8px: 390 still FRI SAT NOW SUN, 320 SAT NOW,
+  375 FRI SAT NOW; `--gap-min` 16 -> 15 keeps 430 at all five; under 360px the dock's gap is
+  10px so ACL at 320 keeps SAT 3 whole where Inter draws wide. How it works: nine rows, each
+  "feature. how." (MODEL-V4 §3a.4 and the docs-truth pin follow); the dot's own row draws the
+  real `.sync-dot` in its three states. Shot: `how-it-works-390.png` (and 320).
+- **Final verification** (19a261d): `npm test` 993/994 — the stamp only (one run of three also
+  flaked `shell-v4` "hiding the last room" under full-suite load; 5/5 alone, 0 in the other
+  runs); with `NIGHT_CLOCK` the same. `npm run test:browser` 194/195 — only the pre-existing
+  WebKit notes-chip case, fixed on v92's head. The whole walk re-run (40 scenarios, no page
+  errors).
