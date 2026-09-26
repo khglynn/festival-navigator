@@ -694,19 +694,22 @@ button.room-head { cursor: pointer; }
    * menu glyph (the three lines) costs the day row about 11px, and the
    * dock gives it back — the gutter above returns 4, the fest link's own
    * gap 2, these two gaps 2 (v93 had already taken them from 14 to 10) — so
-   * the day-row frames hold (390 FRI SAT NOW SUN, 320 SAT NOW) and ACL's
-   * long name still leaves the day you are in whole at 320 with Linux-wide
-   * glyphs (tests/browser/now-jump.test.mjs). The row's edge fades keep the
-   * air the eye reads between the parts. */
+   * the day-row frames hold (a Portola Saturday: 430 NOW THU FRI SAT SUN,
+   * 390 THU FRI SAT SUN with NOW past the left edge, 320 FRI SAT SUN) and
+   * ACL's long name still leaves the day you are in whole at 320 with
+   * Linux-wide glyphs (tests/browser/now-jump.test.mjs). The row's edge
+   * fades keep the air the eye reads between the parts. */
   display: flex; align-items: center; gap: 9px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
 
 /* Centered when they fit, scrollable from the START when they don't — plain
  * justify-content:center clips the first tabs unreachably at 390px (AX-6).
- * Whatever is first and last: NOW can be the last tab (SUN · NOW). */
+ * The first item is NOW (v103), hidden while nothing is live — and a hidden
+ * NOW is still the row's :first-child, so the first day after it takes the
+ * margin then. */
 .dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 15px; gap: var(--gap); overflow-x: auto; }
-.dock .days > :first-child { margin-left: auto; }
+.dock .days > :first-child, .dock .days > .now-tab[hidden] + * { margin-left: auto; }
 .dock .days > :last-child { margin-right: auto; }
 /* More days than fit (ACL's seven on a 152px row): the row has always
  * scrolled, but nothing said so and nothing kept the day you were in on
@@ -842,8 +845,9 @@ button.room-head { cursor: pointer; }
   .card button::after { content: none; }
 }
 /* NOW (2026-09-24, Kevin: "where is ross likely right now"): the jump to
- * what is playing — since v93 a tab in the day row itself, right after the
- * day that is live (SAT · NOW), in the dock and the rail. It wears each row's
+ * what is playing — a tab in the day row itself (v93), and since v103 the
+ * row's FIRST item, in one place whatever the day, scrolling with the days
+ * (not pinned over them), in the dock and the rail. It wears each row's
  * own day-tab type and box, so it reads as one of the row, but in the now
  * line's violet (brand, never the fest accent: it is app chrome), with a live
  * dot that breathes. The motion kill rules make the dot still under Reduce

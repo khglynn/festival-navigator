@@ -223,11 +223,13 @@
           </span>
           <!-- NOW (2026-09-24): the jump to what is playing, while something
                is (app.js paintNowTabs / jumpToNow). Not a day: the scrollspy
-               never lights it. It waits here, hidden; while something is live
-               app.js moves it into the day row, right after the live day
-               (v93, D1). The dock's NOW below does the same. -->
-          <button class="now-tab" id="rail-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
-          <span class="rail-days" id="rail-days"></span>
+               never lights it. It is the day row's FIRST item and stays there
+               whatever the day (v103, Kevin: "move the now to the far left in
+               the day bar — just not pinned over everything — don't have it
+               move between days"): it scrolls with the days, and it is hidden
+               while nothing is live. app.js rebuilds only the day tabs after
+               it. The dock's row below is the same. -->
+          <span class="rail-days" id="rail-days"><button class="now-tab" id="rail-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button></span>
           <!-- The fest name is the show menu's door (MODEL-V4 §3.1) — app.js
                hangs the popover in this wrap when the fest has more than one
                room, and the tap goes straight to Settings when it has one. -->
@@ -248,8 +250,7 @@
         <span class="sort-wrap you-wrap" id="dock-you-wrap"><!-- the people menu's door (see the rail's) -->
           <button class="avatar you you-avatar" id="dock-you" aria-label="Highlight people’s picks" aria-haspopup="listbox" aria-expanded="false"></button>
         </span>
-        <button class="now-tab" id="dock-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
-        <span class="days" id="dock-days"></span>
+        <span class="days" id="dock-days"><button class="now-tab" id="dock-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button></span>
         <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
           <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
             <span class="sync-dot"></span>

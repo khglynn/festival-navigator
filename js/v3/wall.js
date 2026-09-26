@@ -2839,14 +2839,15 @@ export const DAY_ANCHOR = '.day-block[data-day]';
 // 24px below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
 
-// ---- where a day row rests (v93) ----------------------------------------------------
+// ---- where a day row rests (v93; NOW first since v103) --------------------------------
 // A day row that cannot show every tab scrolls (Portola's four days and NOW
 // overflow a phone's dock; ACL's seven overflow everything short of a
 // desktop), and where it comes to rest is one rule for the dock and the rail:
 //   1. the day you are standing in is whole — the scrollspy's promise;
-//   2. while something is live, NOW is whole, and so is the day it follows
-//      (Kevin, 2026-09-25, D1: NOW is a tab in the row, right after the day
-//      that is live — "SAT · NOW" — never pinned, never shrunk to a dot);
+//   2. while something is live, NOW is whole (Kevin, 2026-09-26: NOW is the
+//      row's first item, in one place whatever the day, scrolling with the
+//      days — never pinned, never shrunk to a dot), so the row rests at its
+//      start wherever the day you are in still fits beside it;
 //   3. no tab shows as a sliver: a tab past an edge shows all but a sliver
 //      of itself, or nothing but a hint inside the fade (the "RI | SAT | S"
 //      that v91's dock left at 320, and the "HU" of THU at 430);
@@ -2856,20 +2857,28 @@ const LANDED_WITHIN = 32;
 //   5. and, of what is left, the row sits closest to centring those tabs.
 // Each rule outranks the ones after it, so a narrow row gives up centring
 // before a fade, a fade before a sliver, NOW before the day you are in.
-// That is how 390 comes to show FRI SAT NOW SUN and 320 exactly SAT NOW,
-// with no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
+// With no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
 // so the rule is testable without a layout engine: `items` are the row's
 // visible tabs in order, `x` and `w` in the row's scroll coordinates;
-// `active`, `now`, `live` are indexes into them, or -1.
+// `active` and `now` are indexes into them, or -1.
 const EDGE_HINT = 6; // px: at most this much of a tab may show past an edge, or be cut off at one
 // Layout positions are whole pixels and the scroll range rounds on its own,
 // so a tab that ends exactly at the row's end can read half a pixel past it
 // (NOW after SUN at 320 did, and the row hid it). A pixel of slack is not a
 // pixel anyone sees.
 const WHOLE_SLACK = 1;
-export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1, live = -1 }) {
+export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1 }) {
   if (!(max > 0.5) || !items.length) return 0;
-  const focus = [...new Set([active, live, now].filter((i) => i >= 0 && items[i]))];
+  // What the row centres on and keeps clear of the fades: the day you are in,
+  // and NOW with it only where the two fit the row together. NOW is the
+  // row's first item (v103), so on a narrow row it is often far from the day
+  // you are in (390, a Portola Saturday: THU and FRI between them). Centring
+  // on a pair that cannot both show left NOW's violet tail at the left edge
+  // and a sliver of SUN at the right; centring on the day alone rests the row
+  // on whole days, with NOW past the edge where the fade says there is more.
+  const span = (ids) => Math.max(...ids.map((i) => items[i].x + items[i].w)) - Math.min(...ids.map((i) => items[i].x));
+  const focus = active >= 0 && items[active] ? [active] : [];
+  if (now >= 0 && items[now] && now !== active && (!focus.length || span([...focus, now]) <= width + WHOLE_SLACK)) focus.push(now);
   const lo = focus.length ? Math.min(...focus.map((i) => items[i].x)) : 0;
   const hi = focus.length ? Math.max(...focus.map((i) => items[i].x + items[i].w)) : 0;
   const ideal = focus.length ? Math.max(0, Math.min(max, (lo + hi - width) / 2)) : 0;
@@ -2889,7 +2898,7 @@ export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1
       const cut = it.w - seen;
       if (seen > EDGE_HINT && cut > EDGE_HINT) slivers += Math.min(seen, cut);
     }
-    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, whole(live, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
+    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
   };
   const better = (a, b) => {
     for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
@@ -2922,16 +2931,13 @@ const rowMax = (c, items = rowItems(c)) => Math.max(0, items.reduce((e, it) => M
 function dayRowGeometry(c) {
   const kids = rowTabs(c);
   const items = rowItems(c, kids);
-  const now = kids.findIndex((k) => k.classList.contains('now-tab') && !k.dataset.leaving);
-  const live = now > 0 && kids[now - 1].classList.contains('day-tab') ? now - 1 : -1;
   return {
     items,
     width: c.clientWidth,
     max: rowMax(c, items),
     fade: parseFloat(window.getComputedStyle(c).getPropertyValue('--row-fade')) || 0,
     active: kids.findIndex((k) => k.classList.contains('day-tab') && k.classList.contains('active')),
-    now,
-    live: now >= 0 ? live : -1,
+    now: kids.findIndex((k) => k.classList.contains('now-tab') && !k.dataset.leaving),
   };
 }
 
@@ -3021,7 +3027,7 @@ export function wireScrollspy(containers, wallRoot) {
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
   // one place the active day changes, so it is the one place the row glides;
-  // where it comes to rest is restDayRow's rule (NOW's pair included).
+  // where it comes to rest is restDayRow's rule (NOW's promise included).
   let active = null;
   const setActive = (day) => {
     if (day === active) return;

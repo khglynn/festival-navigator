@@ -163,10 +163,12 @@ const menuState = (page, bar) => page.evaluate((b) => {
 // 2026-09-26). What must hold at any glyph width (app.js pillCap):
 //   a. the discs and the +n add up to the people highlighted, faces in the crew's order;
 //   b. the day you are in is whole in the day row;
-//   c. while NOW is live, NOW and the day it follows are whole too — wherever
-//      they fit beside the bare avatar (the pill folds to the avatar's size
-//      before it would take their room; where they do not fit even then, the
-//      pill is not what pushed them out);
+//   c. while NOW is live, the pill leaves the row room for NOW's width and one
+//      gap beside the day you are in (v103: NOW is the row's FIRST item, so
+//      this is the room v93's `SAT · NOW` pair asked for — the disc counts
+//      are what they were), folding to the avatar's size before it would take
+//      it; and wherever NOW and the day you are in fit the row together, the
+//      row rests with both whole (wall.js restingLeft);
 //   d. one to three discs, and a ✕ unless folded.
 const pillRead = (page) => page.evaluate(() => {
   const row = document.getElementById('dock-days');
@@ -174,11 +176,10 @@ const pillRead = (page) => page.evaluate(() => {
   const edges = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.right]; };
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
-  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
-  const now = nowAt >= 0 ? tabs[nowAt] : null;
-  const live = nowAt > 0 ? tabs[nowAt - 1] : null;
+  const now = tabs.find((t) => t.classList.contains('now-tab')) || null;
   const span = (list) => (list.length ? Math.max(...list.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...list.map((t) => t.offsetLeft)) : 0);
   const discs = [...wrap.querySelectorAll('.hl-pill .hl-faces .avatar')];
+  const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
   return {
     slot: wrap.dataset.slot,
     named: discs.filter((a) => a.dataset.name).map((a) => a.dataset.name),
@@ -186,9 +187,12 @@ const pillRead = (page) => page.evaluate(() => {
     discs: discs.length,
     compact: wrap.querySelector('.hl-pill').hasAttribute('data-compact'),
     x: getComputedStyle(wrap.querySelector('.hl-pill .hl-x')).display !== 'none',
-    row: edges(row), active: active && edges(active), now: now && edges(now), live: live && edges(live),
+    row: edges(row), active: active && edges(active), now: now && edges(now),
+    first: !now || row.firstElementChild === now,
     room: row.clientWidth + wrap.getBoundingClientRect().width,
-    focus: span([active, now, live].filter(Boolean)),
+    rowW: row.clientWidth,
+    need: (active ? active.offsetWidth : 0) + (now ? now.offsetWidth + (active ? gap : 0) : 0),
+    together: span([active, now].filter(Boolean)),
     activeW: active ? active.offsetWidth : 0,
     pill: wrap.querySelector('.hl-pill').getBoundingClientRect().width,
   };
@@ -203,15 +207,17 @@ function assertPillPromise(r, people, label) {
   assert.deepEqual(r.named, people.slice(0, r.named.length), `${label}: the faces are the first of the highlighted, in the crew's order`);
   assert.ok(r.discs >= 1 && r.discs <= 3, `${label}: one to three discs (${r.discs})`);
   assert.equal(r.x, !r.compact, `${label}: a ✕ unless folded`);
+  assert.ok(r.first, `${label}: NOW is the row's first item`);
   if (r.activeW <= r.room - BARE) assert.ok(whole(r.active), `${label}: the day you are in is whole (${JSON.stringify(r)})`);
-  if (r.now && r.focus <= r.room - BARE) {
-    assert.ok(whole(r.now) && whole(r.live), `${label}: NOW and its day are whole (${JSON.stringify(r)})`);
+  if (r.now && r.need <= r.room - BARE) {
+    assert.ok(r.pill + r.need <= r.room + 2, `${label}: the pill left NOW's room beside the day's (${JSON.stringify(r)})`);
   }
+  if (r.now && r.together <= r.rowW - 1) assert.ok(whole(r.now) && whole(r.active), `${label}: NOW and the day you are in fit together, so both are whole (${JSON.stringify(r)})`);
 }
 // And it uses the room it has: one disc more would break the promise (the
 // refit's reason to exist; pillWidth is held to the drawn pill below).
 async function assertPillFull(r, people, label) {
-  const need = r.now ? r.focus : r.activeW;
+  const need = r.need;
   if (r.compact) {
     assert.ok(pillWidth(1) + need > r.room, `${label}: folded where one disc and its ✕ would fit (${JSON.stringify(r)})`);
     return;
@@ -557,7 +563,7 @@ for (const wide of [null, '0.7px']) {
       await sleep(600);
       await dockStill(page);
       const gone = await pillRead(page);
-      assert.equal(gone.now, null, 'NOW has left the row');
+      assert.equal(gone.now, null, 'NOW is hidden (still first in the row)');
       assertPillPromise(gone, four, label('NOW gone'));
       const size = (r) => (r.compact ? 0 : r.discs); // folded is the smallest
       assert.ok(size(gone) >= size(live), `more room never yields fewer discs (${size(live)} → ${size(gone)})`);

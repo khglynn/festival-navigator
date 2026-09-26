@@ -1249,17 +1249,17 @@ function tickClock(date = new Date()) {
 // a stack (wall.js nowLanding decides what, and whether). It is not a day, so
 // the scrollspy never lights it.
 //
-// WHERE (v93, Kevin, 2026-09-25 — D1): NOW is a tab in the day row itself,
-// right after the day that is live, `SAT · NOW`, in the dock and the rail
-// alike. v90 pinned it before the days, and the pin cost the days their room:
-// at 390 THU scrolled off, and at 320 NOW shrank to a ringed dot beside day
-// slivers, "RI | SAT | S" ("making it a dot is a bit too clever"). In the row
-// it takes no room from anything, and the row's resting rule (wall.js
-// restingLeft) keeps the pair in view: 390 shows FRI SAT NOW SUN, 320 SAT NOW,
-// and the fest name never gives way. The day it follows is the day of what a
-// tap would land on. Nothing live, it waits hidden where index.html put it,
-// just outside the row, and a rebuilt row (every repaint) gets it back in
-// place without a flicker.
+// WHERE (v103, Kevin, 2026-09-26: "move the now to the far left in the day bar
+// — just not pinned over everything — don't have it move between days"): NOW
+// is the day row's FIRST item, in the dock and the rail alike, in one place
+// whatever the day, and it scrolls with the days. v90 pinned it before the
+// row and the pin cost the days their room (at 320 it shrank to a ringed dot);
+// v93 put it after the live day (`SAT · NOW`), which moved it every day. In
+// the row it takes no room from anything, the fest name never gives way, and
+// the row's resting rule (wall.js restingLeft) keeps the day you are in whole
+// first and NOW whole second — so where both fit, the row rests at its start.
+// index.html puts NOW in the row for good; a rebuild (every repaint) replaces
+// only the day tabs after it, so NOW never leaves the row and never flickers.
 const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // ONE NOW (Our plan, 2026-09-26): once the plan carries a NOW row where a
 // person can see it — the phone's peek, the laptop's corner card or panel —
@@ -1272,12 +1272,8 @@ const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // only for a stop the highlighted people are in (plan.js peekOf), and where
 // it does not, the tab comes back as "what is on for Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
-  const landing = nowLanding($('wall-root'), ctx, date);
-  const at = landing && (landing.card || landing.line);
-  const block = at ? at.closest(DAY_ANCHOR) : null;
-  const day = landing ? (block ? block.dataset.day : '') : null;
-  const planSaysNow = planShowsNow();
-  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow ? null : day);
+  const live = !!nowLanding($('wall-root'), ctx, date) && !planShowsNow();
+  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), live);
 }
 // ---- Our plan (2026-09-26 — Kevin's call #5) ----------------------------------
 // Where most of us will be, as a route of stops, from everyone's picks
@@ -1368,30 +1364,11 @@ function paintPlan(date = ctx.now || new Date()) {
   if (planHere() !== menuHasPlan) paintHighlight();
 }
 
-// The day tab NOW follows: the live day's, else none (the row's start).
-const liveTabIn = (row, day) => [...row.children].find((t) => t.classList.contains('day-tab') && t.dataset.day === day) || null;
-const inPlace = (tab, row, after) => tab.parentElement === row && (after ? tab.previousElementSibling === after : !tab.previousElementSibling);
-function placeNowTab(tab, row, after) {
-  if (after) after.after(tab);
-  else row.prepend(tab);
-}
-// NOW's parking place: just before the row, hidden (renderDayNav rebuilds the
-// row from nothing, and must not take NOW with it). A leave cut short by the
-// rebuild finishes at once — its motion belonged to tabs that are gone.
-function parkNowTab(tab, row) {
-  if (!tab || !row || tab.parentElement !== row) return;
-  if (tab.dataset.leaving) {
-    delete tab.dataset.leaving;
-    tab.hidden = true;
-    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
-  }
-  row.before(tab);
-}
 // Everything in a row that NOW changes slides from where it was to where it
 // lands (a FLIP: transform only, the layout and the row's new resting scroll
 // are already done). Tab by tab, never the row: the row that fits is centred
 // by its margins and the row that scrolls re-rests, so each tab moves its own
-// distance — the pair gliding to the middle, the days after NOW making room.
+// distance — the days after NOW making room for it, or closing up after it.
 const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
 const EDGES = ['overflowing', 'more-left', 'more-right'];
 // `edges`: the row's edge fades before the change, held through the slide
@@ -1410,45 +1387,33 @@ function slideTabs(row, before, edges, { out = false } = {}) {
   if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => Promise.resolve(a && a.finished).catch(() => {}))));
 }
 const edgesOf = (row) => EDGES.filter((k) => row.classList.contains(k));
-// `day`: the live day's key (NOW belongs after its tab), '' (live, but on no
-// day the row lists: the row's start), or null (nothing live).
-function showNowTab(tab, row, day) {
+// `live`: whether NOW is there at all — something live on this wall, and Our
+// plan not already saying NOW (paintNowTabs). NOW never moves (v103): it is
+// the row's first item, so it only ever arrives or leaves, and the days after
+// it make room or close up.
+function showNowTab(tab, row, live) {
   if (!tab || !row) return;
   const shown = !tab.hidden && !tab.dataset.leaving;
-  if (day != null) {
-    const after = liveTabIn(row, day);
-    if (shown && inPlace(tab, row, after)) return;
-    if (shown && tab.parentElement !== row) {
-      // Parked by a rebuild: the tabs beside it are new, so nothing slides.
-      placeNowTab(tab, row, after);
-      restDayRow(row);
-      return;
-    }
-    // Arriving (or coming back while leaving), or moving to another day.
-    const arriving = !shown;
-    if (arriving) {
-      delete tab.dataset.leaving;
-      if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
-    }
+  if (live) {
+    if (shown) return;
+    // Arriving, or coming back while leaving (a leave cut short).
+    delete tab.dataset.leaving;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     const before = tabLefts(row);
     const edges = edgesOf(row);
-    if (arriving) before.delete(tab); // it arrives by its own motion, below
-    placeNowTab(tab, row, after);
+    before.delete(tab); // it arrives by its own motion, below
     tab.hidden = false;
     restDayRow(row);
     slideTabs(row, before, edges);
-    if (arriving && canAnimate(tab, ctx)) {
-      // It fades in from 6px left, in its own place, a beat after the tabs
-      // start to move — the day it follows slides out of that place on the
-      // way to the middle (filmed at a tenth of the speed: a NOW that rode
-      // with its day started out on top of SUN).
+    if (canAnimate(tab, ctx)) {
+      // It fades in from 6px left, in its own place at the row's start, a
+      // beat after the days start to slide over and make room for it.
       tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
         { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
     }
     return;
   }
   if (!shown) return;
-  if (tab.parentElement !== row) { tab.hidden = true; return; } // parked: nothing to leave from
   tab.dataset.leaving = '1';
   const gone = () => {
     if (!tab.dataset.leaving) return; // it came back while leaving
@@ -1457,7 +1422,6 @@ function showNowTab(tab, row, day) {
     const edges = edgesOf(row);
     before.delete(tab);
     tab.hidden = true;
-    row.before(tab);
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     restDayRow(row);
     slideTabs(row, before, edges, { out: true });
@@ -1896,13 +1860,11 @@ function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
   // Every repaint comes through here (a friend's pick on the poll, a
-  // highlight), so the rebuilt rows start where the old ones rested, and NOW
-  // is lifted out before the old tabs go — back in its place below, with
-  // nothing on screen having moved.
-  const focused = NOW_DOORS.map(([tab]) => document.activeElement === $(tab)); // a keyboard on NOW keeps it
-  const rested = NOW_DOORS.map(([tab, row]) => { parkNowTab($(tab), $(row)); return $(row).scrollLeft; });
-  dock.textContent = '';
-  rail.textContent = '';
+  // highlight), so the rebuilt rows start where the old ones rested. Only the
+  // day tabs are rebuilt: NOW is the row's first item for good (v103), so it
+  // never leaves the row, and a keyboard on it keeps its place.
+  const rested = NOW_DOORS.map(([, row]) => $(row).scrollLeft);
+  for (const row of [dock, rail]) for (const t of [...row.children]) if (!t.classList.contains('now-tab')) t.remove();
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
   // days it answered and nothing else.
@@ -1934,12 +1896,6 @@ function renderDayNav() {
   // something live (a repaint, a search, a hidden room can all change that).
   // Our plan's peek paints first, so the one-NOW rule reads this pass's peek.
   paintPlan();
-  // Moving NOW out and back in drops focus; someone walking NOW's stops on a
-  // keyboard must not lose their place to the 25 s poll's repaint.
-  NOW_DOORS.forEach(([tab], i) => {
-    const t = $(tab);
-    if (focused[i] && !t.hidden && document.activeElement !== t) t.focus({ preventScroll: true });
-  });
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -2341,25 +2297,28 @@ function paintSlots({ sources = null, instant = false } = {}) {
 }
 
 // How many discs the pill may hold (design §2: "up to three"): as many as
-// leave the day row its promise (wall.js restingLeft, rules 1-2) — the day
-// you are in whole, and while something is live NOW whole beside the day it
-// follows. At 320 with NOW live a third disc pushes NOW out on a Mac
-// (92px of row for SAT · NOW's 101); Linux and Android draw wider and fit
-// one. Where not even one disc and its ✕ leave that room, the pill folds to
-// the avatar's own size (one disc in the ring, no ✕ — Everyone in the menu
-// clears), so a highlight never costs the row more than the avatar did. The
-// rule only ever gives fewer discs for less room —
-// promising NOW only where it fits made a narrower dock show MORE discs than
-// a wider one (ACL: two at 320, one at 360), so NOW's room is always asked
-// for while it is live. The laptop's rail has room.
+// leave the day row its promise (wall.js restingLeft, rules 1-2) — room for
+// the day you are in whole, and while something is live room for NOW whole
+// too. Since v103 NOW is the row's first item, not the day's neighbour, so
+// its room is asked for as its own width and one gap beside the day's —
+// whether or not the row happens to rest with the two together (at 390 on a
+// Portola Saturday it cannot: THU and FRI sit between). That keeps the ask
+// the same size as v93's `SAT · NOW` pair, so the pill holds as many discs as
+// it did, and it keeps the rule's one property: fewer discs only ever for
+// less room — promising NOW only where it fits made a narrower dock show MORE
+// discs than a wider one (ACL: two at 320, one at 360), so NOW's room is
+// always asked for while it is live. Where not even one disc and its ✕ leave
+// that room, the pill folds to the avatar's own size (one disc in the ring,
+// no ✕ — Everyone in the menu clears), so a highlight never costs the row
+// more than the avatar did. The laptop's rail has room.
 function pillCap(wrap, row, n) {
   if (!n || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
   const room = row.clientWidth + wrap.getBoundingClientRect().width; // the row and the slot share this width
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
-  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
-  const focus = [active, nowAt >= 0 ? tabs[nowAt] : null, nowAt > 0 ? tabs[nowAt - 1] : null].filter(Boolean);
-  const need = focus.length ? Math.max(...focus.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...focus.map((t) => t.offsetLeft)) : 0;
+  const now = tabs.find((t) => t.classList.contains('now-tab') && !t.dataset.leaving) || null;
+  const gap = parseFloat(window.getComputedStyle(row).columnGap) || 0;
+  const need = (active ? active.offsetWidth : 0) + (now ? now.offsetWidth + (active ? gap : 0) : 0);
   for (let k = PILL_FACES; k >= 1; k -= 1) if (pillWidth(Math.min(k, n)) + need <= room) return k;
   return 0;
 }

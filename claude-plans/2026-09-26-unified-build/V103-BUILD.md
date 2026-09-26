@@ -10,7 +10,7 @@ dies, this file and the branch are the handoff.*
 - [x] read the brief, the laws, the code each ask touches (app.js NOW doors,
       wall.js `restingLeft` / the List's `foldPast`, spotify.js `findTrackUris`)
 - [x] merged `origin/main` (v102, the Spotify playlist names) — `3a1a304`, no conflicts
-- [ ] 1. NOW the first item of the day row, one place whatever the day
+- [x] 1. NOW the first item of the day row, one place whatever the day — see "Step 1" below
 - [ ] 2. the List filters by highlight
 - [ ] 3. the crew playlist's top songs: paced, backed off, counted, said
 - [ ] frames 390 / 320 / 1280, Portola and ACL, looked at
@@ -83,6 +83,79 @@ mode), which the old loop would have slept through.
 - Unit tests with a fake Spotify: 429 then 200; persistent 429; a 21-hour
   Retry-After; a 5xx retried once; the ledger leaving the failed ones out.
 
+## Step 1 — NOW first in the day row
+
+What changed: index.html puts each NOW inside its row as the first child, for
+good; `renderDayNav` removes only the day tabs and appends the new ones after
+it (no parking, no re-placing, no focus rescue — it never leaves the DOM);
+`showNowTab(tab, row, live)` only arrives or leaves; `liveTabIn`, `inPlace`,
+`placeNowTab`, `parkNowTab` and `restingLeft`'s `live` are gone. **The order of
+`renderDayNav` → `paintPlan()` is unchanged** (the coordinator's note for the
+Share build). CSS: a hidden NOW is still the row's `:first-child`, so the first
+day after it takes the centring margin then (`.now-tab[hidden] + *`).
+
+Frames (Chromium, Mac glyphs, `v103-shots/now-*`, rendered by `v103-rig.mjs`;
+the rows as the eye sees them, `seen/width` px):
+
+| | Portola Fri 8 PM | Portola Sat 10:30 PM | Portola Sun 5 PM | ACL Sat 8 PM |
+|---|---|---|---|---|
+| 1280 rail | — | **NOW** THU FRI SAT* SUN | **NOW** THU FRI SAT SUN* | **NOW** FRI 2 SAT 3* … LATE NIGHTS |
+| 430 dock | — | **NOW** THU FRI SAT* SUN (gaps tighten) | — | — |
+| 390 dock | **NOW** THU FRI* SAT(30/36) | THU(35/38) FRI SAT* SUN — NOW past the left edge | THU FRI SAT SUN* — NOW past | SAT 3* SUN 4 — NOW past |
+| 320 dock | THU FRI* SAT — NOW past | FRI(25/30) SAT* SUN(32/38) — NOW past | FRI SAT SUN* — NOW past | SAT 3* — NOW past |
+
+With the made-up nine-person crew the peek says NOW at Sat 10:30 PM, so the
+dock shows only days (one NOW, unchanged). The arrival and leave were filmed at
+a tenth of the speed (`v103-film.mjs`, `filmsheet-*`): NOW fades in from 6px
+left at the row's start as the days slide over to make room; leaving, it fades
+and the days close up by sliding. On the rail its dot is clipped for the first
+few frames of the 6px slide (it comes out from behind the row's edge) — read as
+emerging, left as is.
+
+Tests: `tests/day-row.test.mjs` rewritten for the new rule (pure numbers + the
+booted shell: first child, the same element across a repaint, hidden in place
+when nothing is live); `tests/browser/now-jump.test.mjs` — the frames table
+above as exact rows on a Mac and as the contract on Linux, the 44px reach on a
+Friday (NOW whole there), the arrival/leave on a Friday (visible there), and a
+NEW real-input test: at 390 on Saturday NOW rests past the edge, a finger's
+swipe on the row (CDP touches, the finger still before it lifts) brings it
+whole, and a real tap on it lands the now line. `tests/browser/people-menu.test.mjs`
+— the pill's promise restated for NOW-first (call 1b).
+
 ## Calls (the brief left these open)
 
-*(filled in as each is made)*
+**1a. When NOW and the day you are in cannot both show, the row centres on the
+day alone.** The rule already ranked the day you are in above NOW. But it
+centred on the PAIR even when the pair could not fit, which at 390 on Saturday
+rested the row with a 6px violet tail of NOW's W at the left edge and a 5px
+sliver of SUN at the right — a stray mark, exactly the edge case Kevin catches.
+Now `restingLeft` centres on NOW + the day only when the two fit the row
+together; otherwise on the day alone, so the row rests on whole days and NOW
+sits past the edge where the fade says there is more.
+
+**1b. The highlight pill keeps the disc counts it had.** `pillCap` asked for
+room for `SAT · NOW` as a pair. NOW-first has no pair: keeping NOW whole beside
+SAT would need the span NOW…SAT (≈217px at 390), which would fold the pill at
+nearly every phone width on Saturday and on Sunday at every phone width — and
+fold it for nothing below 412, where NOW cannot show beside SAT even with the
+bare avatar. A conditional ask ("only where it fits") is the non-monotonic rule
+v96 already removed (a narrower phone showing more discs). So the pill asks for
+NOW's width and one gap beside the day's — the same size v93's pair asked for,
+monotonic, and the disc counts are exactly what they were. The cost: at 412–430
+on a Saturday with two or more people highlighted, NOW rests past the edge where
+a bare avatar would have left it in view. The browser promise now says this.
+
+**1c. Disagreement, for the coordinator and Kevin — NOW is out of sight at rest
+on most phones on the days it matters.** On a Portola Saturday or Sunday at 390
+and below (and ACL at 390 and below on any day but its first), the row cannot
+hold NOW and the day you are in, and the day you are in wins (the scrollspy's
+promise), so NOW rests a swipe away at the row's start. That is what "scrolling
+with the row, not pinned over it" means at those widths; it is consistent (NOW
+is always in the same place, which is the ask), and the one-NOW rule means the
+peek usually carries NOW on a phone during the festival. But Kevin's own "where
+is Ross" flow — highlight Ross, tap NOW — is exactly the moment the peek hands
+NOW back to the dock, and at 390 on Saturday it is then off screen. If that
+bites, the honest options are: (a) keep this, and teach it (NOW is always at the
+start of the days); (b) v90's fixed slot before the row — always in view, costs
+the days ~65px (THU scrolls off at 390, and at 320 the row holds one day); (c)
+v93's `SAT · NOW`. Not built; his call.
