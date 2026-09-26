@@ -340,6 +340,14 @@ for (const width of [390, 320]) {
     note(`people row: ${JSON.stringify(row)}`);
     const tb = await page.locator('.toolbar').boundingBox();
     await page.screenshot({ path: path.join(OUT, `people-${width}.png`), clip: { x: 0, y: Math.max(0, tb.y - 10), width, height: tb.height + 20 } });
+    // The sheet the chip opens: INVITE SOMEONE (Kevin, 2026-09-26).
+    await page.locator('#person-chips .person-chip.add').tap();
+    await sleep(700);
+    const sheet = await page.evaluate(() => { const s = document.querySelector('.sheet'); return s ? { head: (s.querySelector('.sheet-title') || {}).textContent, label: s.getAttribute('aria-label') } : null; });
+    note(`the invite sheet: ${JSON.stringify(sheet)}`);
+    await page.screenshot({ path: path.join(OUT, `invite-sheet-${width}.png`) });
+    await page.goBack();
+    await sleep(600);
     // A card's +n: Robyn is picked by all six, so her crew corner folds into one.
     const robyn = page.locator('#wall-root .card[data-artist="Robyn"]').first();
     await robyn.scrollIntoViewIfNeeded();
@@ -353,6 +361,24 @@ for (const width of [390, 320]) {
       return { text: g.textContent, border: `${cs.borderTopStyle} ${cs.borderTopWidth}`, w: Math.round(g.getBoundingClientRect().width), gapBetweenCorners: corners.length === 2 ? Math.round(corners[1].left - corners[0].right) : null };
     });
     note(`Robyn's +n: ${JSON.stringify(ghost)}`);
+    // Settings' crew card carries the same chip (the people row's twin).
+    const cb0 = await page.evaluate(() => ({ y: scrollY }));
+    await page.locator('#gear-btn').click();
+    await page.waitForSelector('#screen-settings', { state: 'visible' });
+    await sleep(500);
+    const inv = page.locator('#screen-settings .person-chip.add').first();
+    if (await inv.count()) {
+      await inv.scrollIntoViewIfNeeded();
+      const ib = await inv.boundingBox();
+      const card = await inv.evaluate((n) => { const c = n.closest('.settings-card') || n.parentElement; const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, text: n.textContent, oneLine: n.getBoundingClientRect().height < 30, right: Math.round(n.getBoundingClientRect().right), cardRight: Math.round(r.right) }; });
+      note(`Settings crew chip: ${JSON.stringify(card)}`);
+      await page.screenshot({ path: path.join(OUT, `settings-crew-${width}.png`), clip: { x: 0, y: Math.max(0, card.y - 8), width, height: Math.min(card.h + 16, 600) } });
+      void ib;
+    }
+    await page.goBack();
+    await sleep(600);
+    await page.evaluate((y) => window.scrollTo(0, y), cb0.y);
+    await sleep(300);
     const cb = await robyn.boundingBox();
     await page.screenshot({ path: path.join(OUT, `ghost-ring-${width}.png`), clip: { x: Math.max(0, cb.x - 8), y: Math.max(0, cb.y - 8), width: Math.min(cb.width + 16, width), height: cb.height + 16 } });
     await done(o);
