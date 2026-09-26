@@ -61,6 +61,7 @@ let headEl = null;
 let listEl = null;
 let footEl = null;   // the open plan's last line: its Share
 let footOpens = null; // what the Share's link opens on, beside it
+let shareBtn = null;  // the Share itself (it rests on a day with nothing to send)
 let shareWords = null;
 let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
@@ -170,6 +171,7 @@ function build(host) {
   footEl = mk('div', 'plan-foot');
   footOpens = spanOf('opens');
   const share = mk('button', 'plan-share btn-tonal');
+  shareBtn = share;
   share.type = 'button';
   shareWords = spanOf('w', shareLabel());
   shareWords.setAttribute('aria-live', 'polite');
@@ -286,6 +288,12 @@ function nightAtTop() {
 function paintHead(id) {
   const a = data;
   if (!a) return;
+  // Scrolling into another day turns the head over like a page number: the
+  // new day rises in from the side the list is moving toward (a scroll down
+  // brings the later day up from below). Instant under Reduce Motion / Low
+  // power (canAnimate), and never on the first paint.
+  const turn = topNight && topNight !== id && mode === 'open' && canAnimate(el, ctxRef)
+    ? (a.plan.nights.findIndex((n) => n.id === id) > a.plan.nights.findIndex((n) => n.id === topNight) ? 1 : -1) : 0;
   topNight = id;
   const d = (a.dayOf && a.dayOf(id)) || { weekday: a.weekday, sub: a.sub };
   headEl.textContent = '';
@@ -296,9 +304,14 @@ function paintHead(id) {
   x.setAttribute('aria-label', CLOSE_WORDS);
   x.addEventListener('click', () => closePlan());
   headEl.append(head, x);
+  if (turn) {
+    const rise = [{ transform: `translateY(${turn * 10}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }];
+    for (const part of head.querySelectorAll('.wd, .sub')) part.animate(rise, { duration: 200, easing: 'cubic-bezier(.2, .9, .3, 1.1)' });
+  }
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
   if (!shareTimer) shareWords.textContent = shareLabel(d);
+  shareBtn.disabled = !!(d && d.bare);
   shareWords.dataset.night = id;
 }
 // The last day can scroll to the top like every other (the plan-days round):
@@ -313,7 +326,9 @@ function fitTail() {
   const last = heads[heads.length - 1];
   if (!last || mode !== 'open') return;
   const base = parseFloat(window.getComputedStyle(listEl).paddingBottom) || 0;
-  const tail = listEl.scrollHeight - base - last.offsetTop;
+  // Rects, not offsetTop: the list is not the head's offsetParent.
+  const at = last.getBoundingClientRect().top - listEl.getBoundingClientRect().top + listEl.scrollTop;
+  const tail = listEl.scrollHeight - base - at;
   const need = listEl.clientHeight - base - tail;
   if (need > 0) listEl.style.paddingBottom = `${base + need}px`;
 }
@@ -830,7 +845,8 @@ async function sharePlan() {
 // "Share today's picks" · "Share Sunday's picks" · "Share Sat Oct 10's picks"
 // (the plan-days round: the button names the day it sends, the day at the top
 // of the view). `d.share` is the day's word from app.js dayOf.
-const shareLabel = (d = null) => `${canShare() ? 'Share' : 'Copy'} ${d && d.share ? `${d.share} picks` : PLAN_NAME.toLowerCase()}`;
+const shareLabel = (d = null) => (d && d.bare ? `Nothing to share ${d.name}`
+  : `${canShare() ? 'Share' : 'Copy'} ${d && d.share ? `${d.share} picks` : PLAN_NAME.toLowerCase()}`);
 function sayOnShare(words) {
   clearTimeout(shareTimer);
   shareWords.textContent = words;

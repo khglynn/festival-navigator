@@ -50,6 +50,9 @@ const report = (page) => page.evaluate(() => {
     tagged: (el.querySelector('.plan-row.tagged') || { getAttribute: () => null }).getAttribute('aria-label'),
     rows: list ? [...list.children].filter(inView).map(rowText) : [],
     menu: menu ? (menu.classList.contains('hl-pop') ? 'people' : 'show') : null,
+    shareOff: (el.querySelector('.plan-share') || {}).disabled || false,
+    opens: (el.querySelector('.plan-foot .opens') || {}).textContent || null,
+    shared: window.__shared ? String(window.__shared.text).replace(/#g=[^\s&]+/g, '#g=(crew link)') : null,
     dockNow: (() => { const t = document.getElementById('dock-now'); return t ? (t.getClientRects().length ? 'shown' : 'hidden') : 'none'; })(),
   };
 });
@@ -69,18 +72,23 @@ const openPlan = async (page) => {
 // Scroll the open list by a real wheel (laptop) or a still-ended finger drag
 // (phone: no fling, the flick trap in CLAUDE.md).
 const scrollList = async (page, dy) => {
-  const box = await page.evaluate(() => { const r = document.querySelector('#plan .plan-list').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * 0.7, h: r.height }; });
+  const box = await page.evaluate((dy) => { const r = document.querySelector('#plan .plan-list').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * (dy < 0 ? 0.25 : 0.75), h: r.height }; }, dy);
   if (await isDesk(page)) { await page.mouse.move(box.x, box.y); await page.mouse.wheel(0, dy); await sleep(500); return; }
   const cdp = await page.context().newCDPSession(page);
   const steps = 14;
   let moved = 0;
+  const sign = Math.sign(dy);
+  dy = Math.abs(dy);
   while (moved < dy) {
-    const d = Math.min(box.h * 0.5, dy - moved);
+    const d = sign * Math.min(box.h * 0.5, dy - moved);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x, y: box.y }] });
-    for (let k = 1; k <= steps; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x, y: box.y - (d * k) / steps }] }); await sleep(16); }
+    // Chromium spends the first 15px of a drag on touch slop before the list
+    // follows, so the finger travels that much further than the scroll wanted.
+    const f = d + sign * 15;
+    for (let k = 1; k <= steps; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x, y: box.y - (f * k) / steps }] }); await sleep(16); }
     await sleep(120); // the finger still before it lifts: no fling
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    moved += d;
+    moved += Math.abs(d);
     await sleep(150);
   }
   await sleep(400);
@@ -88,12 +96,21 @@ const scrollList = async (page, dy) => {
 // Scroll so the day head of `night` sits at the list's top (reads the rows'
 // data-night; a real scroll gesture moves it there).
 const scrollToNight = async (page, night) => {
-  const dy = await page.evaluate((n) => {
-    const list = document.querySelector('#plan .plan-list');
-    const row = [...list.children].find((r) => r.dataset.night === n);
-    return row ? row.getBoundingClientRect().top - list.getBoundingClientRect().top - 4 : 0;
-  }, night);
-  if (dy > 4) await scrollList(page, dy);
+  // A drag loses its first few px to touch slop and a wheel can land short, so
+  // measure and scroll again until the day's first row sits at the top.
+  for (let pass = 0; pass < 6; pass++) {
+    const dy = await page.evaluate((n) => {
+      const list = document.querySelector('#plan .plan-list');
+      const row = [...list.children].find((r) => r.dataset.night === n);
+      if (!row) return 0;
+      const want = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      const room = list.scrollHeight - list.clientHeight - list.scrollTop;
+      return Math.min(want, room);
+    }, night);
+    if (Math.abs(dy) <= 3) break;
+    await scrollList(page, dy);
+  }
+  await sleep(300);
 };
 const tapEl = async (page, sel) => {
   const b = await page.locator(sel).first().boundingBox();
@@ -164,6 +181,8 @@ const FRAMES = [
   phone('C5-just-gus-menu-390', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); }, { ...opts('declared'), expect: 'just Gus' }),
   phone('C6-just-gus-390', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'just Gus' }),
   phone('C7-three-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Cy', 'Hal')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'of 3' }),
+  phone('C7a-three-bar1-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Cy', 'Hal')(p); await closeMenus(p); }, { ...opts('declared', { groupBar: 1 }), expect: 'Fatboy Slim' }),
+  phone('C13-pair-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Cy')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'you + Cy' }),
   phone('C8-today-dim-gus-390', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); await closeMenus(p); }, { ...opts('declared', { filter: false }), expect: 'Dog Blood' }),
   phone('C9-five-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Ben', 'Cy', 'Dot', 'Eli')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'of 5' }),
   desk('C10-show-menu-over-open-1280', SAT_645, async (p) => { await openPlan(p); await openMenu(p, 'show'); }, { ...opts('declared'), expect: 'show' }),
@@ -171,6 +190,15 @@ const FRAMES = [
   desk('C12-just-gus-1280', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'JUST GUS' }),
 ];
 
+// The Share's words per day: a tap on it, and what it handed the sheet.
+const tapShare = async (p) => { await tapEl(p, '#plan .plan-share'); await sleep(300); };
+FRAMES.push(
+  phone('D1-share-sat-390', SAT_645, async (p) => { await openPlan(p); await tapShare(p); }, { ...opts('declared'), expect: 'main picks for Sat' }),
+  phone('D2-share-sun-390', SAT_645, async (p) => { await openPlan(p); await scrollToNight(p, '2026-09-27'); await tapShare(p); }, { ...opts('declared'), expect: 'main picks for Sun' }),
+  phone('D3-share-three-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Cy', 'Hal')(p); await closeMenus(p); await tapShare(p); }, { ...opts('declared'), expect: 'Our picks for Sat' }),
+  phone('D4-share-gus-390', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); await closeMenus(p); await tapShare(p); }, { ...opts('declared'), expect: '"shared":"Picks for Sat' }),
+  phone('D5-acl-bare-day-390', ACL_SUN_W1, async (p) => { await openPlan(p); await scrollToNight(p, '2026-10-05'); }, { fest: 'acl-2026', ...opts('declared'), expect: 'Nothing to share Monday' }),
+);
 const only = process.argv.slice(2);
 const todo = FRAMES.filter((f) => !only.length || only.some((o) => f.id.startsWith(o)));
 const rig = await openRig();

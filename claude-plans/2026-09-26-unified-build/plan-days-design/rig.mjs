@@ -39,7 +39,8 @@ export async function openApp(rig, { now, width = 390, height = 844, desktop = f
     window.__planDesign = d;
     // A phone has a share sheet; headless Chromium does not. The frames show
     // what a phone shows ("Share …"); a tap on it is never made here.
-    if (!navigator.share && navigator.maxTouchPoints > 0) navigator.share = () => Promise.reject(new DOMException('frames', 'AbortError'));
+    // A tap on it (the D frames) keeps what it was handed, for the report.
+    if (!navigator.share && navigator.maxTouchPoints > 0) navigator.share = (d) => { window.__shared = d; return Promise.resolve(); };
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Design crew' }]));
     localStorage.setItem(`fn_me_v3_${t}`, m);

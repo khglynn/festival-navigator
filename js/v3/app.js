@@ -1295,7 +1295,7 @@ function currentPlan() {
     // the chosen rule and drops the switch).
     const design = (typeof window !== 'undefined' && window.__planDesign) || {};
     planModel = fest ? planOf(fest, { picks: ctx.picks, members: state.activePeople().map(([n]) => n), folded: ctx.folded,
-      people: design.filter === false ? [] : (ctx.filterPeople || []), dropIn: design.dropIn || 'declared' }) : null;
+      people: design.filter === false ? [] : (ctx.filterPeople || []), dropIn: design.dropIn || 'declared', groupBar: design.groupBar || null }) : null;
     planDirty = false;
     planGen += 1;
   }
@@ -1359,8 +1359,11 @@ function planAnswer(date) {
     const n = plan.nights.find((x) => x.id === id) || {};
     const date = n.iso ? shortDate(n.iso) : '';
     const isToday = id === landing && peek.today;
-    const share = isToday ? 'today’s' : `${wdCount.get(n.wd) > 1 && n.iso ? `${n.wd || ''} ${date}` : (FULL_DAY[n.wd] || n.wd || '')}’s`;
-    return { weekday: String(n.wd || '').toUpperCase(), date, sub: [date, who].filter(Boolean).join(' · '), share };
+    const name = isToday ? 'today' : (wdCount.get(n.wd) > 1 && n.iso ? `${n.wd || ''} ${date}` : (FULL_DAY[n.wd] || n.wd || ''));
+    // A day with no stop has nothing to send: the Share says so and rests.
+    const route = n.id ? (id === peek.night.id ? peek.night : plan.night(id)) : null;
+    const bare = !!route && !route.items.some((i) => i.kind === 'stop');
+    return { weekday: String(n.wd || '').toUpperCase(), date, sub: [date, who].filter(Boolean).join(' · '), share: `${name}’s`, name, bare };
   };
   // A night with no stop says why, in one quiet line (plan.js night().why).
   const emptyWords = (route) => {
@@ -1377,7 +1380,7 @@ function planAnswer(date) {
     nightLabelOf, dayOf, emptyWords, who,
     // The Share's words (plan-rows.js planText): "for Sat Portola", the night
     // called what tells it apart, and the link that opens on the plan.
-    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink, opens: opensLine(),
+    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink, opens: plan.group ? opensForHighlight() : opensLine(),
   };
 }
 const FULL_DAY = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
@@ -2949,6 +2952,13 @@ function opensLine() {
   const view = shareView();
   if (!view) return '';
   return view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
+}
+// Under a highlight the plan's link still opens on everyone's picks: a
+// highlight is this phone's lens and never rides in a link (it would carry
+// names). The foot says so, so the sender is not surprised (rule 10).
+function opensForHighlight() {
+  const view = shareView();
+  return `Opens on everyone’s picks${view && view.label ? ` in ${view.label}` : ''}${view && view.list ? ', as a list' : ''}`;
 }
 function inviteViewLine() {
   const opens = opensLine();

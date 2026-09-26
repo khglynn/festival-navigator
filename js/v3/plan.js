@@ -66,10 +66,13 @@
 //      picks view works"). Bodies are seated on the whole crew exactly as
 //      without it (rule 8's pattern: one body is in one place whoever is
 //      looking); then only the highlighted people's seats are counted. THE
-//      GROUP = the highlighted people with a pick here; its bar is a quarter
-//      of it with no floor (one of them is an answer: the highlight names
-//      them), so 1–4 people → 1, 5–8 → 2, 9–12 → 3. A group of one sees their
-//      own route, with the picks they would give up as "or" lines (`alt`).
+//      GROUP = the highlighted people with a pick here; its bar is "two is
+//      together": a quarter of the group with a floor of TWO (a plan is where
+//      people meet; one of them alone is not a stop, and the rows name who is
+//      where), so 2–8 people → 2, 9–12 → 3 — nine of nine is the crew's own 3.
+//      A group of one sees their own route (bar 1), with the picks they would
+//      give up as "or" lines (`alt`). The frames compared bar 1 for three
+//      (the brief's start): every lone choice became a stop and a fork.
 //      Whether a place is one of theirs is filters.js passesPeople — v103's
 //      one predicate — so the List and the plan never disagree.
 import { wallPlanFor, weekendRoom, computeTimesLayout, applyWeekend, nightMinutes } from './wall.js';
@@ -84,10 +87,11 @@ export const FLOOR_SHARE = 1 / 4;
 export const MIN_STOP = 15;     // a blip shorter than this folds into its neighbour or drops
 export const CHANGEOVER = 20;   // a gap shorter than this is walking between sets, not "scattered"
 export const barFor = (n) => Math.max(FLOOR_MIN, Math.ceil(n * FLOOR_SHARE));
-// Rule 10: a highlighted group's bar — the crew's quarter, without the crew's
-// floor of three (the floor keeps a crew plan from pointing at one or two
-// people; a highlight is those people). Nine of nine gives the crew's own 3.
-export const barForGroup = (n) => Math.max(1, Math.ceil(n * FLOOR_SHARE));
+// Rule 10: a highlighted group's bar — the crew's quarter with a floor of two
+// instead of three ("two is together"); a group of one is that person's own
+// day. Nine of nine gives the crew's own 3.
+export const GROUP_FLOOR = 2;
+export const barForGroup = (n) => (n <= 1 ? 1 : Math.max(GROUP_FLOOR, Math.ceil(n * FLOOR_SHARE)));
 
 // Who is "us": members with a live pick (level > 0) on anything here.
 export function usOf(picks, members) {
@@ -517,7 +521,7 @@ function lightTouch(items) {
 }
 
 // ---- the plan ------------------------------------------------------------------------
-export function planOf(fest, { picks = {}, members = [], folded = [], people = [], dropIn = 'declared' } = {}) {
+export function planOf(fest, { picks = {}, members = [], folded = [], people = [], dropIn = 'declared', groupBar = null } = {}) {
   picks = picks || {};
   folded = Array.isArray(folded) ? folded : [];
   const mode = ['declared', 'shape', 'light', 'today'].includes(dropIn) ? dropIn : 'declared';
@@ -527,7 +531,9 @@ export function planOf(fest, { picks = {}, members = [], folded = [], people = [
   // names as given (the empty line's words name them even with no picks).
   const highlight = (people || []).filter((p) => (members || []).includes(p));
   const group = highlight.length ? usOf(picks, highlight) : null;
-  const bar = group ? barForGroup(group.length) : barFor(us.length);
+  // groupBar: DESIGN-ONLY (the plan-days frames compare the brief's bar 1 for
+  // a group of three against barForGroup's 2); the build keeps barForGroup.
+  const bar = group ? (groupBar > 0 ? Math.min(groupBar, Math.max(1, group.length)) : barForGroup(group.length)) : barFor(us.length);
   const size = group ? group.length : us.length;
   const solo = group && group.length === 1 ? group[0] : null;
   const available = us.length >= FLOOR_MIN;

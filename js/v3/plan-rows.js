@@ -87,6 +87,8 @@ function whatEl(stop, { ctx, plan, also, nightLabelOf }) {
     ? headlinersOf(stop, ctx.picks).map((h) => h.name).join(' → ')
     : whereOf(stop);
   const pl = mk('span', 'pl', second);
+  const who = whoOf(stop.people, plan, ctx.meName);
+  if (who) pl.appendChild(withEl(who));
   if (also) {
     const words = alsoText(stop, plan, nightLabelOf);
     if (words) pl.appendChild(mk('span', 'also', words));
@@ -120,9 +122,8 @@ function whenEl({ tag = null, text = '', soft = false }) {
   return w;
 }
 
-// "5 picked" for the crew; "2 of 3" under a highlight of a few (rule 10: the
-// count is of the highlighted people); nothing for a highlight of one — every
-// row is theirs, and "1 picked" says nothing.
+// How many a row counts: "5 picked" for the crew; under a highlight of a few
+// (rule 10) "2 of 3"; nothing for a highlight of one — every row is theirs.
 function countEl(n, plan = null) {
   const c = mk('span', 'plan-n');
   const g = plan && plan.group;
@@ -136,6 +137,16 @@ const countWords = (n, plan) => {
   if (g && g.length === 1) return '';
   return g ? `${n} of ${g.length}` : `${n} picked`;
 };
+// Rule 10: under a highlight of a few, the rows say WHO — on the place line
+// ("Pier Stage · you + Cy"), when some of them are there and not all (all of
+// them needs no names; the count says "3 of 3"). Names are the crew's own and
+// stay on this screen: the share text never carries them (planText).
+function whoOf(people, plan, meName) {
+  const g = plan && plan.group;
+  if (!g || g.length < 2 || !people || !people.length || people.length >= g.length || people.length > 3) return null;
+  return people.map((p) => (p === meName ? 'you' : p)).sort((a, b) => (b === 'you') - (a === 'you'));
+}
+const withEl = (who) => mk('span', 'with', who.join(' + '));
 
 const approxOf = (stop, picks) => {
   if (kindOf(stop) === 'set') return false;
@@ -189,7 +200,8 @@ function rowWords(stop, { ctx, tag, count, text, plan = null }) {
   const act = actFor(stop, ctx.picks);
   const what = room ? whereOf(stop) : (act ? `${act.name}, ${whereOf(stop)}` : whereOf(stop));
   const lead = tag === 'now' ? 'Now: ' : tag === 'next' ? 'Next: ' : '';
-  return [`${lead}${what}`, text, countWords(count, plan)].filter(Boolean).join(', ');
+  const who = whoOf(stop.people, plan, ctx.meName);
+  return [`${lead}${what}`, text, who ? `with ${who.join(' and ')}` : '', countWords(count, plan)].filter(Boolean).join(', ');
 }
 
 export function forkRow(f, stop, { ctx, plan = null }) {
@@ -202,17 +214,19 @@ export function forkRow(f, stop, { ctx, plan = null }) {
   const where = set ? whereOf(f) : ((headlinersOf({ ...f, people: f.people || [] }, ctx.picks)[0] || {}).name || '');
   nm.append(mk('i', null, 'or'), name);
   if (where) nm.appendChild(mk('span', 'pl-inline', ` · ${where}`));
+  const fwho = whoOf(f.people, plan, ctx.meName);
+  if (fwho) nm.appendChild(withEl(fwho));
   w.appendChild(nm);
   const later = f.from >= stop.from + 30;
   r.append(nodeEl(null, ctx), w, whenEl({ text: later ? quietClock(f.from) : '', soft: true }), countEl(f.count, plan));
-  r.setAttribute('aria-label', [`or ${name}${where ? `, ${where}` : ''}`, countWords(f.count, plan)].filter(Boolean).join(', '));
+  r.setAttribute('aria-label', [`or ${name}${where ? `, ${where}` : ''}`, fwho ? `with ${fwho.join(' and ')}` : '', countWords(f.count, plan)].filter(Boolean).join(', '));
   return r;
 }
 
 // A stretch nothing gathers the bar in. Rule 9: where a drop-in room does
 // gather it, the stretch says where we drift instead — the same quiet row,
 // a truer caption ("Between sets · Despacio"), never a stop.
-function scatteredRow(it, plan = null) {
+function scatteredRow(it, plan = null, meName = null) {
   const r = mk('div', 'plan-row scattered' + (it.dropIn ? ' drift' : ''));
   r.dataset.stop = `scattered|${it.nightId || ''}|${it.from}`;
   const w = mk('span', 'plan-what');
@@ -312,7 +326,7 @@ function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set
   for (const it of items) {
     if (skip && skip(it)) continue;
     const past = nowMin != null && it.to <= nowMin;
-    if (it.kind === 'scattered') { const r = scatteredRow({ ...it, nightId: route.id }, plan); if (past) r.classList.add('past'); rows.push(r); continue; }
+    if (it.kind === 'scattered') { const r = scatteredRow({ ...it, nightId: route.id }, plan, ctx.meName); if (past) r.classList.add('past'); rows.push(r); continue; }
     if (it.kind === 'dropin') { const r = dropInRow(it, { ctx, plan, nowMin }); if (past) r.classList.add('past'); rows.push(r); continue; }
     if (it.kind === 'back') { const r = backRow(it, { plan }); if (past) r.classList.add('past'); rows.push(r); continue; }
     const key = stopKey(it);
@@ -551,7 +565,8 @@ export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], lim
 export function planText(route, { ctx, plan, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
   // Under a highlight (rule 10) the lines are those people's, and still no
   // name leaves the phone: "our" is whoever is sharing with whom.
-  const whose = plan && plan.group ? 'Our picks' : "Our crew's main picks";
+  // A highlight of one shares that one person's day, still unnamed: "Picks".
+  const whose = plan && plan.group ? (plan.group.length === 1 ? 'Picks' : 'Our picks') : "Our crew's main picks";
   const head = `${whose} for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
   const parts = [head];
   const picks = planPicks(route, { ctx, plan, nowMin, highlight });

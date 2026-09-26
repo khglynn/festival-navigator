@@ -2004,6 +2004,13 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-what .pl { color: var(--text-secondary); font: var(--plan-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plan-what .pl .also { color: var(--text-tertiary); }
 .plan-what .pl .also::before { content: ' · '; }
+/* The open plan's head turns over with the day at the top (plan-shelf paintHead):
+ * the weekday must be a box for its transform. */
+.plan-head .room-head .wd { display: inline-block; }
+/* Rule 10: under a highlight of a few, who is there ("· you + Cy"). */
+.plan-what .with { color: var(--text-body); }
+.plan-what .with::before { content: ' · '; color: var(--text-tertiary); }
+.plan-row.or .plan-what .nm .with { font: var(--plan-line); }
 .plan-row.some { --plan-nm: 14.5px; }
 .plan-row.some .plan-what .nm { font-weight: 700; color: var(--text-body); }
 .plan-row.or { --plan-nm: 13px; padding-top: 0; }
@@ -2128,6 +2135,9 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-foot .opens:empty { display: none; }
 .plan-share { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; font-size: 13px; padding: 0 16px 0 14px; } /* 44 on a finger (the floor) */
 .plan-share svg { width: 13px; height: 13px; flex: none; }
+/* A day with nothing to send: the button rests and says so (plan-days round). */
+.plan-share:disabled { opacity: .5; cursor: default; }
+.plan-share:disabled svg { display: none; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */
 #screen-app.searching .plan-shelf { display: none; }
