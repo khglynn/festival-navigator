@@ -1359,16 +1359,42 @@ const isoAfter = (iso) => {
 // plan existed.
 function paintPlan(date = ctx.now || new Date()) {
   if ($('screen-app').style.display !== 'none') {
-    try { paintPlanShelf($('screen-app'), ctx, planAnswer(date)); } catch (e) {
+    let answer = null;
+    try { answer = planAnswer(date); paintPlanShelf($('screen-app'), ctx, answer); } catch (e) {
       record('plan:paint', e);
+      answer = null;
       try { hidePlanShelf({ instant: true }); } catch { /* already gone */ }
     }
+    openPlanForLink(answer);
   }
   paintNowTabs(date);
   // The people menu offers Our plan only while there is one: a plan that
   // comes or goes (the minute past the last stop, the welcome card leaving)
   // redraws the menu's rows, an open menu's included (Codex, 2026-09-26).
   if (planHere() !== menuHasPlan) paintHighlight();
+}
+
+// `&plan=open` (the plan's Share link, crew.js planFromHash): the first paint
+// with this crew's plan on screen opens it — a member's straight away, a
+// newcomer's once the welcome card has gone and the peek has risen. A paint
+// that finds nothing to open with nothing in the way (the festival's over,
+// or no stop left today or tomorrow) drops the wish: a plan that turns up
+// later is not what the link opened on. While a card is up, a search is on,
+// or the festival is still loading, it waits.
+let planOpenFor = null;
+function openPlanForLink(answer) {
+  if (!planOpenFor) return;
+  if (planOpenFor !== state.getCrewToken()) { planOpenFor = null; return; }
+  // The welcome is decided before the wall's first paint and mounts after
+  // it: a peek that rose in between is about to step aside for the card.
+  if (welcomeDue()) return;
+  if (planHere()) {
+    planOpenFor = null;
+    if (!planIsOpen()) openPlan();
+    return;
+  }
+  const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
+  if (!answer && !waiting) planOpenFor = null;
 }
 
 // The day tab NOW follows: the live day's, else none (the row's start).
@@ -4130,6 +4156,11 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   const viewHint = pendingViewHint;
   pendingShowHint = null;
   pendingViewHint = null;
+  // A link that opens on Our picks: the wish belongs to this crew, and it
+  // outlives a join's re-entry (a guest who joins from the welcome card
+  // still came for the plan). Any other crew's entry ends it.
+  planOpenFor = pendingPlanOpen ? token : planOpenFor === token ? token : null;
+  pendingPlanOpen = false;
   const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -4439,6 +4470,7 @@ let pendingFestHint = null; // &f= from the opened invite link, consumed by ente
 let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingViewHint = null; // &view= — Board or List (Phase 1), consumed by enterApp beside it
+let pendingPlanOpen = false; // &plan=open — the plan's Share link, consumed by enterApp (planOpenFor)
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it
@@ -4452,6 +4484,7 @@ export async function boot() {
   pendingMeHint = crew.meFromHash();
   pendingShowHint = crew.showFromHash();
   pendingViewHint = crew.viewFromHash();
+  pendingPlanOpen = crew.planFromHash();
   pendingJoin = null; // a guest's question belongs to the wall it was asked on
   // sp=1 -> reopen the drill. sp=connect -> reopen it AND continue the connect
   // the person already asked for on the other host.
