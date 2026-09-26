@@ -822,13 +822,32 @@ function dayRuleSub(meta) {
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
-// Fold diacritics so "tiesto" finds Tiësto — nobody hunts for the ë on a
-// phone keyboard in a field (audit walker anomaly, verified real).
-const fold = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+// Fold both sides of a search, never a stored name (names are pick keys): so
+// "tiesto" finds Tiësto, "mull" finds MÜLL, "chloe" finds Chloé Caillet, and
+// the other way round — nobody hunts for the ë on a phone keyboard in a
+// field. NFD splits an accented letter into letter + mark and the marks go;
+// the letters NFD leaves whole (a stroke or a ligature, not a mark: CØNTRA,
+// Łaszewo, DØMINA) get their plain spelling from FOLD_LETTERS. And iOS types
+// a curly ’ for ' (Smart Punctuation), so "it’s murph" finds It's Murph.
+// Every search in the app matches through searchMatches — there were two,
+// and the scheduled-fest one (Portola's) had never folded at all (v91,
+// 2026-09-25: friends at Portola typed "mull" and found nothing).
+const FOLD_LETTERS = { 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ħ': 'h', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+export function searchFold(s) {
+  return String(s ?? '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[øłđðħıßæœþ]/g, (c) => FOLD_LETTERS[c])
+    .replace(/[\u2018\u2019\u02bc]/g, "'");
+}
+// The one match every search uses: does this name answer this query? An
+// empty (or all-space) query answers everything.
+export function searchMatches(name, query) {
+  const q = searchFold(query).trim();
+  return !q || searchFold(name).includes(q);
+}
 export function applyFilter(artists, query) {
-  const q = fold((query || '').trim());
-  if (!q) return artists;
-  return artists.filter((a) => fold(a.name).includes(q));
+  if (!searchFold(query).trim()) return artists;
+  return artists.filter((a) => searchMatches(a.name, query));
 }
 
 // Multi-weekend fests (ST-3): 'all' shows everyone; W1/W2 shows that
@@ -2185,10 +2204,10 @@ function renderWallInner(root, ctx) {
   // show answers under its night rather than under its section's name, which
   // is not a place any more (MODEL-V4 §2).
   if (scheduled) {
-    const q = ctx.query.trim().toLowerCase();
     // Every name that matches answers; the people filter dims the answers
     // the selected people did not pick (renderCard), the same as on the wall.
-    const wanted = (name) => name.toLowerCase().includes(q);
+    // The same folded match as a lineup fest's search (searchMatches).
+    const wanted = (name) => searchMatches(name, ctx.query);
     const plan = wallPlanFor(fest, ctx);
     // A search is a LIST: each answer group is a list head over a card grid,
     // and a day's groups sit in the block its tab lands on (dayBlock).
