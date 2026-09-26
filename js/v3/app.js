@@ -2759,8 +2759,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // The welcome first — the offer never asks before it has been read.
   if (!holdOffer) { maybeWelcome(); maybeOfferBringPicks(); }
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
-  // so the member lands exactly where they left off.
-  if (pendingSpotifyOpen) {
+  // so the member lands exactly where they left off. A MEMBER: a guest (the
+  // hop's absorb failed, so this phone has no name here yet) keeps it waiting
+  // — Spotify badges your own picks — and joining picks it back up here.
+  if (pendingSpotifyOpen && ctx.meName) {
     const auto = pendingSpotifyOpen === 'connect';
     pendingSpotifyOpen = false;
     openSettings();
