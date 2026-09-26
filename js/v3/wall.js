@@ -1712,7 +1712,9 @@ export function nowLanding(root, ctx, date = new Date()) {
 // ending at 306: review, 2026-09-25). A stop's landing slides each row that
 // holds one of its cards JUST ENOUGH to show them whole (rowSlide), and not
 // at all when they already are. Unlike a grid, a row never splits a stop:
-// its two columns always fit it together at the far end of its scroll.
+// its scroll is exactly its lead space, so its two columns always fit it
+// together at the far end (and were they ever not to, the slide keeps the
+// left-hand one whole).
 export const NOW_PAD = 8;
 export function landingTarget(m, geo) {
   const pad = NOW_PAD;
@@ -1781,12 +1783,15 @@ export function frameSlide(frame) {
 }
 // A stack card's place in its row's sideways scroll, in the row's own
 // coordinates — null for a card in no row, or in a row that does not scroll
-// (a desktop, one venue).
+// (a desktop, one venue). Read off the card's COLUMN (its venue group), not
+// the card: NOW's pulse scales a card, and its box grows with it — a tap
+// during the last tap's pulse measured the two columns 3px too wide to share
+// the row (the browser cycle test, 2026-09-25).
 function rowSpanIn(m, geo) {
   if (!m.card || m.line || !geo.row) return null;
   const row = geo.row(m.card);
   if (!row || !(row.max > 0)) return null;
-  const r = geo.box(m.card);
+  const r = geo.box(m.card.closest('.venue-group') || m.card);
   const lo = r.left - row.x + row.left;
   return { row, lo, hi: lo + (r.right - r.left) };
 }
@@ -1837,12 +1842,8 @@ export function nowStops(root, ctx, date, geo) {
   // Room across: a frame holds its cells side by side with 8px either side.
   const fits = (frame, span) => !frame || (frame.sc.el === span.sc.el
     && Math.max(frame.hi, span.hi) - Math.min(frame.lo, span.lo) <= span.sc.width - 2 * NOW_PAD);
-  // A stack row, the same question with no pad (rowSlide) — and one stop may
-  // hold several rows, each sliding on its own.
-  const fitsRow = (st, rs) => {
-    const f = st.across.get(rs.row.el);
-    return !f || Math.max(f.hi, rs.hi) - Math.min(f.lo, rs.lo) <= rs.row.width;
-  };
+  // A stack row never splits a stop (see above); one stop may hold several
+  // rows, each sliding on its own.
   const takeRow = (st, rs) => {
     if (!rs) return;
     const f = st.across.get(rs.row.el);
@@ -1850,7 +1851,7 @@ export function nowStops(root, ctx, date, geo) {
   };
   const stops = [];
   for (const m of members) {
-    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)) && (!m.rowSpan || fitsRow(st, m.rowSpan)));
+    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)));
     if (home) {
       home.members.push(m);
       if (m.span) home.frame = home.frame ? { ...home.frame, lo: Math.min(home.frame.lo, m.span.lo), hi: Math.max(home.frame.hi, m.span.hi) } : { ...m.span };
@@ -1860,7 +1861,7 @@ export function nowStops(root, ctx, date, geo) {
     // A stop of its own. Where a stop already shows it at that height and
     // only its column is out of frame, it lands at the same height — the
     // tap's move is the sideways slide.
-    const beside = m.span || m.rowSpan ? stops.find((st) => showsAt(m, st.target, geo)) : null;
+    const beside = m.span ? stops.find((st) => showsAt(m, st.target, geo)) : null;
     const st = { target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null, across: new Map() };
     takeRow(st, m.rowSpan);
     stops.push(st);

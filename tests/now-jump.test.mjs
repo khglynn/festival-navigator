@@ -584,11 +584,11 @@ const rowLayout = (root, { left = 0, at = 0, ...opts } = {}) => {
   for (const row of root.querySelectorAll('.stack-scroll')) {
     rows.set(row, left);
     for (const [i, g] of [...row.querySelectorAll('.venue-group')].entries()) {
-      for (const c of g.querySelectorAll('.card')) {
-        const b = base.box(c);
-        const x = 54 + (i % 2) * 182 - rows.get(row);
-        box.set(c, { ...b, left: x, right: x + 178 });
-      }
+      // Across is read off the column (the venue group); the cards keep
+      // their heights, and a card of their own width.
+      const x = 54 + (i % 2) * 182 - rows.get(row);
+      box.set(g, { top: 0, bottom: 0, left: x, right: x + 178 });
+      for (const c of g.querySelectorAll('.card')) box.set(c, { ...base.box(c), left: x, right: x + 178 });
     }
   }
   // `at`: the page scrolled there — every box moves up by it, as on screen.
@@ -685,5 +685,22 @@ test('the repeat tap counts across: a card clipped by its row is not shown, and 
   assert.equal(stillThere(cycle, held), true);
   const step = nowStep(nowStops(root, ctx, SAT_1030, held), cycle, held);
   assert.deepEqual(step.stop.rows.map((r) => r.slide), [38], 'the landing slides the row, whatever the cycle said');
+  root.remove();
+});
+
+test('a pulsing card does not split its row: across is read off the column, not the scaled card', () => {
+  const { root, ctx } = render(SAT_1030);
+  const g = rowLayout(root);
+  // NOW's pulse on every afters card: each box 6% wider about its centre.
+  const pulsed = { ...g, box: (el) => {
+    const b = g.box(el);
+    if (!el.classList || !el.classList.contains('card') || !el.closest('.stack-scroll')) return b;
+    const grow = (b.right - b.left) * 0.03;
+    return { ...b, left: b.left - grow, right: b.right + grow };
+  } };
+  const calm = nowStops(root, ctx, SAT_1030, g);
+  const busy = nowStops(root, ctx, SAT_1030, pulsed);
+  assert.deepEqual(busy.stops.map((st) => st.members.length), calm.stops.map((st) => st.members.length), 'the same stops, mid-pulse or not');
+  assert.deepEqual(busy.stops.map((st) => st.rows.map((r) => r.slide)), calm.stops.map((st) => st.rows.map((r) => r.slide)), 'and the same slides');
   root.remove();
 });
