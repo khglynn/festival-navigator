@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { deepMerge } from '../js/merge.js';
 import { pointerClick, typedClick, POINTER_IDS } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,13 +26,24 @@ const DOC = {
   festivals: { [FID]: { selections: { Robyn: { Maya: 2 }, 'Dog Blood': { Kevin: 3 } } } },
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+// The made-up server keeps what it is sent, merged in as crew.js merges — so a
+// push's answer (or a poll) carries this phone's own picks back. It used to
+// answer every push with the untouched DOC, and under a loaded full-suite run
+// at the night clock the sync timer fired mid-test and that answer wiped
+// Kevin's pick (2026-09-26 evening: Robyn 1 → 0; 1 run in 3, never alone).
+let served = DOC;
 async function network(url, opts = {}) {
   const u = String(url);
-  if ((opts.method || 'GET') !== 'GET') return json(DOC);
+  if ((opts.method || 'GET') !== 'GET') {
+    if (u.startsWith('/api/crew')) {
+      try { served = deepMerge(served, JSON.parse(opts.body || '{}').data || {}); } catch { /* not a crew write */ }
+    }
+    return json(served);
+  }
   if (u === '/data/festivals/index.json') return json(INDEX);
   if (u === `/data/festivals/${FID}.json`) return json(FEST);
   if (u.startsWith('/api/festival-add?')) return json({ festivals: [] });
-  if (u.startsWith('/api/crew?')) return json(DOC);
+  if (u.startsWith('/api/crew?')) return json(served);
   return json({ error: 'not in this test' }, 503);
 }
 const shell = await bootShell({
