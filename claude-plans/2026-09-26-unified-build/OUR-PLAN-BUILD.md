@@ -153,3 +153,26 @@ findings fixed; an independent Sonnet walker with real input.
 - Merged origin/main after v97 shipped (no content change: main was live/list plus
   its merge). Head e97272f; round two (full browser suite, a Codex re-review of the
   delta, a re-walk) next.
+
+## Gate, round two (2026-09-26, ~7:05–7:35 AM, gated head 666cc6f)
+
+- Codex re-review of round one's delta: two real findings, fixed in bf50a67 with
+  tests. (1) Focus on a stop the minute folds into Earlier was dropped with the old
+  row; a redraw now hands it to the same stop, else Earlier, else the tagged row, else
+  the grabber. (2) The peek's row still said `aria-expanded`, a card it cannot show;
+  the attribute lives only in the open plan. A third Codex pass on the new delta found
+  nothing (cx-20260926-070610-62927-c34dc6).
+- The re-walk (Sonnet, real input, bf50a67): 41 of 42. Tab reaches the corner card in
+  23 presses from page load (it was ~490). The late-font case sits 0.00px on the dock
+  in both engines; a grown card through phone → laptop → phone lands within 0.5px.
+  Its one red was its own: in WebKit a tap on the stage strip (tabindex -1) never
+  takes focus off the search field, so search mode rightly stayed on; with a real
+  blur the peek comes back as the peek and the dock's NOW stays hidden (probed in
+  both engines). Its "resized panel is 28px shorter than a fresh one" was a mouse
+  page beside a touch page: the 44px floor lifts the Earlier row and the ✕ under a
+  coarse pointer. A fresh mouse page at 700px measures 597.11px, exactly the resized
+  one. Its note that a cleared-but-focused search keeps the peek away is the rule
+  (the dock goes with it while the keyboard is up), unchanged.
+- Main's docs after v97 merged (666cc6f, no code). On that head: unit 1168 of 1170 at
+  UTC, Tokyo and the night clock (1 skipped; the red is the stamp, the coordinator's);
+  browser 260 of 261, the skip being the Chromium-only keyboard test.

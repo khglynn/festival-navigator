@@ -35,6 +35,7 @@ p{margin:0;max-width:66ch} a{color:var(--brand)} strong{color:var(--ink);font-we
 .lede{font-size:18.5px;color:var(--ink);max-width:62ch}
 section{display:flex;flex-direction:column;gap:16px}
 .note{color:var(--muted);font-size:15px}
+ol.note{margin:0;padding-left:1.3em;display:grid;gap:6px}
 
 /* Kevin's call, as the plan draws a day: a rail with nodes. */
 .rail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -96,10 +97,10 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
 
 <div class="col">
   <header class="hero">
-    <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, early morning</span></div>
+    <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, morning</span></div>
     <div class="head"><span class="name"><b>Our plan</b>, built</span></div>
     <p class="lede">Your call #5 is built on the phone and the laptop. On a phone, the crew's NOW or NEXT sits just above the dock and pulls up into the whole day's plan. On a laptop it is a card in the bottom-right corner that opens into a panel beside the wall. Everything below is the real app on the real Portola lineup, with a made-up crew of nine.</p>
-    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). Next is the review gate: tests at three clocks, an independent code review, and a real-browser walk. Ten calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page.</p>
+    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, two rounds of independent code review, and a real-browser walk. What it caught is under <a href="#stands">Where it stands</a>, all fixed. Eleven calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page.</p>
   </header>
 
   <section>
@@ -213,14 +214,22 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
   </section>
 
   <section>
-    <div class="head"><span class="name">Where it stands</span><span class="sub">branch live/plan</span></div>
+    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 666cc6f</span></div>
     <div class="status">
-      <div><span class="k">Unit tests</span><span class="v">1151 of 1153 pass</span><span class="note">1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
-      <div><span class="k">Real browsers</span><span class="v" id="browser-line">Chromium + WebKit</span><span class="note">17 Our plan tests with real mouse and touch</span></div>
-      <div><span class="k">Code review</span><span class="v wait">next: Codex, high effort</span></div>
-      <div><span class="k">Walk</span><span class="v wait">next: an independent walker</span></div>
+      <div><span class="k">Unit tests</span><span class="v">1168 of 1170 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
+      <div><span class="k">Real browsers</span><span class="v" id="browser-line">260 of 261 pass</span><span class="note">the whole suite in Chromium and WebKit, 25 of them Our plan's own, with real mouse, touch and keys. The 1 skipped is a keyboard test Safari can't run: it Tabs past buttons unless you turn on Full Keyboard Access</span></div>
+      <div><span class="k">Code review</span><span class="v">Codex, three rounds</span><span class="note">seven real findings, all fixed; the last round found nothing new</span></div>
+      <div><span class="k">Walk</span><span class="v">41 of 42 pass</span><span class="note">an independent walker, real input, phone and laptop. The one miss was its own: a tap in Safari's engine that never took focus off the search field. With the field really left, it passes</span></div>
     </div>
-    <p class="note">Two things this morning's frames caught, both fixed. A mouse on the phone's grabber could neither open nor close the plan: the drag captured the pointer, so its click landed on the shelf instead of the grabber. And a row tap below the NOW card slid the tapped row up under your finger. Both now have real-browser tests in Chromium and WebKit.</p>
+    <p class="note">What the gate caught, all fixed, each with a test that fails without the fix:</p>
+    <ol class="note">
+      <li>On an iPhone-like engine, when the fonts arrived after the first paint, the peek sat 27px above the dock. It now re-measures whenever its own boxes change size.</li>
+      <li>After a search was cleared and the field left, the dock showed a second NOW beside the peek's.</li>
+      <li>A new pick arriving mid-drag snapped the plan away from your finger. It now waits until you let go.</li>
+      <li>A card grown on a phone, then the window widened to a laptop, left the panel short of the bottom.</li>
+      <li>A keyboard couldn't reach the stops in the laptop panel, and the corner card was 40+ Tabs away behind every wall card. It now comes right after the day rail, and Enter grows a stop's card.</li>
+      <li>The open grabber bar was a 13px target. The head takes the tap too (a call above).</li>
+    </ol>
   </section>
 
   <footer>
@@ -232,7 +241,7 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
 <script>
 const CALLS = [
   { id: 'op-ship', q: 'When should Our plan reach friends?',
-    why: 'Two releases are ahead of it in the queue (the List view, then the tap change after your iPhone test), and Sunday is Portola’s last day. A new surface over the dock on the last day of a live festival is the risky order; ACL has a Late-nights week to shake it out.',
+    why: 'The List view shipped this morning (v97); the tap change waits for your iPhone test and the people menu is still building, and Sunday is Portola’s last day. A new surface over the dock on the last day of a live festival is the risky order; ACL has a Late-nights week to shake it out.',
     options: [{ key: 'acl', label: 'Hold it for ACL', pick: true }, { key: 'clean', label: 'Ship as soon as the gate is clean, even Sunday' }, { key: 'change', label: 'Needs changes first (note)' }] },
   { id: 'op-before', q: 'Before a festival: the peek shows tomorrow’s first stop the day before, and nothing earlier.',
     why: 'Wednesday shows “NEXT · Thu ~10:30 PM”; Tuesday shows no peek. A peek days out would sit over the dock with nothing to act on.',
@@ -252,6 +261,9 @@ const CALLS = [
   { id: 'op-grown', q: 'Grown cards: a tap never folds another card, and grown cards are still grown when you reopen the plan the same night.',
     why: 'One-at-a-time folded the NOW card above and slid the tapped row up by a card’s height. Tapping the row again folds its card. A new night starts folded, apart from its NOW card.',
     options: [{ key: 'as-built', label: 'As built', pick: true }, { key: 'one', label: 'One card at a time' }, { key: 'fold', label: 'Reopen with everything folded but NOW' }] },
+  { id: 'op-headtap', q: 'Phone: with the plan open, a tap on its head (“SAT OUR PLAN”) closes it, the same as a tap on the grabber.',
+    why: 'The review found the open grabber bar is only 13px tall, a hard target. The head already drags the plan down and opens nothing of its own, so it now takes a tap too. The ✕ still closes it as well.',
+    options: [{ key: 'keep', label: 'Keep: the head is part of the handle', pick: true }, { key: 'grabber', label: 'Only the grabber and ✕ close it' }] },
   { id: 'op-deskhead', q: 'Laptop: as the card grows, its line crossfades into the panel’s head, and “Open ⌃” becomes “Close ⌄”.',
     why: 'Watch the laptop clip at the top. The alternative is one head that never changes: “OUR PLAN · SAT · 9 OF US” at both sizes.',
     options: [{ key: 'as-built', label: 'Crossfade, as built', pick: true }, { key: 'one', label: 'One head at both sizes' }] },
