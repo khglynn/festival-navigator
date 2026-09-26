@@ -1,49 +1,51 @@
 # NOW — the unified build (arc)
 
-**last-updated: 2026-09-26 6:50 AM PT · mode: arc** · plan: `PLAN.md` beside this
+**last-updated: 2026-09-26 3:30 PM PT · mode: arc** · plan: `PLAN.md` beside this
 (+ `REVIEW-1.md`, and Kevin's calls at the top of PLAN.md) · live-ops rules:
 `claude-plans/2026-09-25-portola-live/RUNBOOK.md` · started as an hg-durable-build.
 
 ## Where it stands
 
-- **Phase 1 — List view + menu bar: SHIPPED** as v97 (6:42 AM PT, PR #54;
-  log `LIST-BUILD.md`). Two Sol nits and the Board's in-room fold are LEDGER
-  follow-ups.
-- **Tap change** (`live/tap`, `TAP-BRIEF.md` / `TAP-BUILD.md`): built, walked,
-  Opus-reviewed; Sol found a VoiceOver route, the composer's ride over the iOS
-  keyboard and a one-time-line nit — fixing. Then a preview with a demo crew for
-  Kevin's iPhone; ships alone after his OK.
-- **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
-  (Opus); leaves a slot for Our plan's row.
-- **Our plan**: SHIPPED as "Our picks", v101 (PR #60, 2:37 PM PT). Its
-  sibling session now builds **the Share** on `live/share` (log
-  `SHARE-BUILD.md`): the open plan's "Share our picks" (the day as five lines
-  and a link that opens on the plan), `&plan=open`, the welcome card's ✕, the
-  Show menu's "Share the crew link", and the window's banked catches (a touch
-  mid-arrival, a grab mid-slide, a font landing mid-arrival). Gated at
-  f7a3d25 (4:40 PM PT: Sol's six findings fixed, a walker 15 of 16 with the
-  16th the harness, CI's browser job green on Linux) and handed to the
-  coordinator to stamp and release after Kevin's look. Next, Kevin's new
-  set, in a design round on `live/plan-days-design`: Despacio crowding the
-  route, the open plan scrolling on to future days (past days folded), and
-  the Show and people menus working while it is open, a highlight filtering
-  the route.
-- **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
-  `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
-  later than the show and fixes `guess-run-times` for date-keyed sections. The
-  Zilker headliners' ends print nowhere — a code rule, decided separately.
+- **Shipped today** (details and rollback targets in the portola-live LEDGER):
+  Phase 1 List + menu bar as v97 (6:42 AM, `LIST-BUILD.md`); ACL Late nights
+  times as data #56 (8:42 AM, `ACL-PREP-LOG.md`); the tap change as v98
+  (11:05 AM, `TAP-BUILD.md`, after Kevin's iPhone test on a preview); the
+  people menu + Invite sheet as v99 (12:05 PM, `PEOPLE-BUILD.md`); the laptop
+  wall's left edge as v100 (12:17 PM, `ALIGN-BUILD.md`); Our plan, renamed
+  **Our picks**, as v101 (2:37 PM, `OUR-PLAN-BUILD.md`); the Spotify playlist
+  names as v102 (2:56 PM).
+- **v103** (`live/v103`, Opus builder, `V103-BRIEF.md` on that branch):
+  NOW first in the day row and fixed there across days (the one-NOW rule
+  kept); the List filters to highlighted people's picks; the crew playlist
+  searches every picked artist's top songs with a backoff for Spotify's rate
+  limit, and reports artists that got none. Gate: Sol → Sonnet real-input
+  walk → merge main → stamp above main → CI both jobs → merge → smoke.
+- **Share for Our picks** (`live/share`, the sibling session; log
+  `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
+  link with `&plan=open`), the welcome card's ✕, "Share the crew link" in the
+  Show menu, and the two touch-timing catches banked from v101. Gated at
+  f7a3d25 and cut as `release/share` (v103). The coordinator's Sol pass found
+  a stale "now" (a stop outlasting its set, live since v101 for up to 10
+  minutes after a set), a plan link that forgets its day, and a highlight's
+  share naming the whole crew's acts; the sibling is fixing them on
+  `live/share`, each with a failing test first. Next for the sibling, Kevin's
+  new set in a design round on `live/plan-days-design`: Despacio crowding the
+  route, the open plan scrolling on to future days, the menus while it is open.
+- **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
+  night and type, `gen.py`); a private Google My Map is being built from them.
+  The in-app version is banked for the reference tab (2027).
 
-## Order (Kevin: "smart dev order please")
+## Order
 
-Before Portola ends (Sun Sep 27): v97 (List), the tap change (after his
-iPhone OK), the people menu + Invite sheet, Our plan — each only on a clean
-gate. After Portola, for ACL (Late nights from Sep 29, Zilker Oct 2): U0 nets
-(the LEDGER's follow-ups) and ACL prep, the shelf primitive with the banked
-numbered-history work (v93-BUILD.md), then a design session for the hour pin
-and the moment lens; add-an-event stays banked (`claude-plans/2026-09-02-add-a-show.md`).
+Before Portola ends (Sun Sep 27): v103, then the Share — each only on a clean
+gate. After Portola, for ACL (Late nights from Sep 29, Zilker Oct 2): the
+LEDGER follow-ups (U0 nets first), the Zilker headliners' ends, the shelf
+primitive with the banked numbered-history work (`v93-BUILD.md`), then a
+design session for the hour pin and the moment lens; add-an-event stays
+banked (`claude-plans/2026-09-02-add-a-show.md`).
 
 ## Next step
 
-Tap: Sol's round → merge main → preview + demo crew → Kevin's iPhone test.
-People and Our plan: gate each as it lands, release in the order they come
-clean. ACL: review round two's rooms before merging the data.
+Read the v103 builder's hand-back → Sol review on its head → walk → release.
+Then the Share head from the sibling → release. Then wrap: worktree cleanup,
+`/save-session`.
