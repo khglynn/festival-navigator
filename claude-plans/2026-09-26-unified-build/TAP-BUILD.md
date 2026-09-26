@@ -126,7 +126,7 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    guest route, touch-ghost, meter, zoom-chips(-burst), zoom-door-row, zoom-chrome, stack-row,
    show-links moved onto the shelf or a mouse/key); CI installs WebKit and requires it; Diagnostics hand
    line (9ac5eaa).
-7. [ ] Gate: `npm test` × 3 clocks, `validate-festivals`, `test:browser`; a real-input walk of every tap
+7. [x] Gate (a5f762f): `npm test` × 3 clocks, `validate-festivals`, `test:browser`; a real-input walk of every tap
    path including the WebKit ghost cases.
 
 ## Log
@@ -190,3 +190,13 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   Weekend 2, Seismic), the edge cards (half off the edge, two-line name, tall set, cancelled act, above the
   dock), Low Power + Reduce Motion (no animation on the shelf), the one-time line, keys up. The one left
   open, Safari's Tab walking out of the shelf, is fixed now (`dialogize`), with a WebKit contract.
+- **10:40 — gated at a5f762f.** Local: `npm test` 1078/1079 at each of the three clocks (only the unstamped
+  SW stamp), validate-festivals 0 errors, `test:browser` 252/252 (Chromium + WebKit). CI run 36243448123:
+  browser GREEN with WebKit installed and required (242 pass; 2 skips: fold-intent's named Linux-WebKit
+  case, and zoom-door-row's own font self-skip), checks red only on the SW stamp. Not stamped, no PR
+  (the coordinator's). Frames on the final code: `tap-design/frames/contact-*.png` (gitignored).
+  **What Kevin's iPhone check should cover** (what no engine here can): a hold then release on a card
+  (one shelf, no pick, no callout); the grabber drag down to close; the composer with the real keyboard
+  up (the box stays visible); + + + quickly (two levels, the row still under the thumb); a guest's + then
+  Look around; Back from the shelf; the one-time line on his first shelf. Against the unique deployment
+  URL, reading the build line.
