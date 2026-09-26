@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -2209,6 +2209,7 @@ function buildShowMenu(rooms, folded, { views = false } = {}) {
   }
   if (rooms.length > 1) pop.appendChild(menuDivider());
   if (views) pop.append(viewRow(), menuDivider());
+  pop.append(shareLinkRow().parentElement, menuDivider());
   const settings = showMenuRow('Settings', { settings: true });
   settings.addEventListener('click', () => {
     closeShowMenu({ instant: true });
@@ -2217,6 +2218,60 @@ function buildShowMenu(rooms, folded, { views = false } = {}) {
   });
   pop.appendChild(settings.parentElement);
   return pop;
+}
+
+// Share the crew link (the Share round, Kevin's pick 2026-09-26): the invite
+// sheet's link, one tap from the fest name. The phone's share sheet, or a copy
+// and "Copied ✓" on the row where there is none. The link carries what this
+// phone is showing, and the row says so under its words (the v92 rule: every
+// place that hands out a link says what it opens on) — repainted with the
+// checks, since a room tapped in the open menu changes it.
+const SHARE_ROW_WORDS = () => (canShare() ? 'Share the crew link' : 'Copy the crew link');
+function shareLinkRow() {
+  const row = showMenuRow(SHARE_ROW_WORDS());
+  row.classList.add('share-link');
+  const check = row.querySelector('.check');
+  check.textContent = '';
+  check.appendChild(glyph(canShare() ? SHARE_MARK : COPY_MARK));
+  const words = row.children[1];
+  words.className = 'words';
+  const said = document.createElement('span');
+  said.className = 'w';
+  said.textContent = SHARE_ROW_WORDS();
+  said.setAttribute('aria-live', 'polite');
+  const opens = document.createElement('span');
+  opens.className = 'opens';
+  words.replaceChildren(said, opens);
+  paintShareRow(row);
+  let timer = 0;
+  const say = (text) => {
+    clearTimeout(timer);
+    said.textContent = text;
+    timer = setTimeout(() => { said.textContent = SHARE_ROW_WORDS(); }, 1800);
+  };
+  row.addEventListener('click', async () => {
+    const link = inviteLink();
+    stampInviteFest();
+    if (canShare()) {
+      closeShowMenu();
+      const mine = !document.body.dataset.busy;
+      if (mine) document.body.dataset.busy = 'crew-share'; // a new build waits for the sheet (index.html quiet)
+      try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); }
+      catch { /* dismissed, or refused: the invite sheet still has the link */ }
+      finally { if (mine && document.body.dataset.busy === 'crew-share') delete document.body.dataset.busy; }
+      return;
+    }
+    try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
+  });
+  return row;
+}
+function paintShareRow(row) {
+  const opens = row && row.querySelector('.opens');
+  if (!opens) return;
+  const line = opensLine();
+  if (opens.textContent !== line) opens.textContent = line;
+  opens.hidden = !line;
+  row.classList.toggle('says', !!line);
 }
 
 // A menu leaving the page (its rooms changed): closed and its fade ended
@@ -2262,6 +2317,7 @@ function paintShowMenus() {
       for (const b of existing.querySelectorAll('.view-row [data-view]')) {
         b.setAttribute('aria-selected', b.dataset.view === ctx.view ? 'true' : 'false');
       }
+      paintShareRow(existing.querySelector('.share-link'));
       continue;
     }
     if (existing) dropShowMenu(existing);
@@ -2827,11 +2883,22 @@ function planLink() {
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
-function inviteViewLine() {
+function opensLine() {
   const view = shareView();
   if (!view) return '';
-  const opens = view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
-  return `${opens} — what you’re showing now.`;
+  return view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
+}
+function inviteViewLine() {
+  const opens = opensLine();
+  return opens ? `${opens} — what you’re showing now.` : '';
+}
+// Only a member stamps the crew's invite festival: a guest writes nothing
+// into the crew until they join (v92). Every door that hands out the crew
+// link does it (the invite sheet, the Show menu's row).
+function stampInviteFest() {
+  if (!ctx.meName || (state.crewDoc.meta || {}).inviteFestId === state.activeFestivalId) return;
+  state.recordInviteFest(state.activeFestivalId);
+  sync.scheduleSync();
 }
 
 // The first-open extras (v92) — the link's view, the welcome — are never
@@ -3039,12 +3106,7 @@ function openInvite({ moment = false } = {}) {
   const viewLine = inviteViewLine();
   if (viewLine) sub.append(document.createElement('br'), viewLine);
   const link = inviteLink();
-  // Only a member stamps the crew's invite festival: a guest writes nothing
-  // into the crew until they join (v92).
-  if (member && (state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
-    state.recordInviteFest(state.activeFestivalId);
-    sync.scheduleSync();
-  }
+  stampInviteFest();
   const actions = document.createElement('div');
   actions.className = 'inv-actions';
   if (navigator.share) {

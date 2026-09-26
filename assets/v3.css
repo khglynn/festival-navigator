@@ -355,6 +355,24 @@ html { touch-action: manipulation; }
  * lines up with the rooms' names above it. */
 .sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
 .sort-pop .settings .gear { display: block; }
+/* Share the crew link (the Share round, 2026-09-26): an action, so tonal
+ * text rather than a room's brand check — its share mark in the check column,
+ * its words lined up with the rooms'. Under them, what the link opens on
+ * (only when it is not everything as a board), in the rows' quiet grey. */
+.sort-pop .share-link { color: var(--tonal-text); font-weight: 700; }
+/* The mark sits on the words' first line (a box its height): centred with
+ * them alone, at the top when the line under them is there (app.js marks
+ * the row .says). */
+.sort-pop .share-link .check { display: inline-flex; align-items: center; height: 18px; }
+.sort-pop .share-link.says .check { align-self: flex-start; }
+.sort-pop .share-link .check svg { display: block; width: 12px; height: 12px; }
+.sort-pop .share-link .words { display: flex; flex-direction: column; min-width: 0; }
+.sort-pop .share-link .w { line-height: 18px; }
+/* The popover is as wide as its widest row, and a row's text wraps to the
+ * narrowest it can (the popover hangs from the small fest-name wrap), so the
+ * line asks for its own width — up to a cap, past which it wraps. */
+.sort-pop .share-link .opens { width: max-content; max-width: 210px; color: var(--text-tertiary);
+                               font-size: 11px; font-weight: 600; line-height: 1.35; margin-top: 1px; }
 /* The view row (Phase 1): Board · List, one row between the rooms and
  * Settings — the rooms above it are WHAT is on the wall, this row is HOW it
  * is laid out. Two bare glyph-and-word choices (Kevin: "I like the icon
