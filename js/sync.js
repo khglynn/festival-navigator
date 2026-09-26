@@ -46,6 +46,9 @@ export function setStayOffline(on) {
   stayOffline = !!on;
   if (stayOffline) setSyncStatus('offline');
 }
+// "This phone sends nothing" (Settings → Stay offline), as this page holds it —
+// for a write that goes to the server outside this engine (the Invite sheet's add).
+export function stayingOffline() { return stayOffline; }
 
 export function initSync(opts) {
   if (opts && opts.onRemoteChange) onRemoteChange = opts.onRemoteChange;

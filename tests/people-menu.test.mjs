@@ -575,6 +575,66 @@ test('a request that hangs is let go at its deadline: a plain word, and the entr
   await doneWithSheet();
 });
 
+// Stay offline means this phone sends nothing (Sol's re-review of 58e75fe).
+const postsNow = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).length;
+const settleSync = async () => { sync.setStayOffline(false); await sync.pushSync(); await settle(10); };
+
+test('under Stay offline an add sends nothing: it is kept here as a pending edit, and the sheet says the crew hears when the phone is online again', async () => {
+  const before = postsNow();
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Vic');
+    await answered('Vic');
+    assert.equal(postsNow(), before, 'no POST under Stay offline');
+    const sheet = document.querySelector('#artist-sheet');
+    assert.match(sheet.querySelector('.inv-sub').textContent, /once this phone is online again/);
+    assert.match(sheet.querySelector('.inv-link input').value, /me=Vic/, 'his link all the same');
+    assert.ok(state.people().Vic, 'Vic is here at once');
+    assert.ok(((state.pendingChanges || {}).people || {}).Vic, 'as a pending edit, for sync to send');
+    await doneWithSheet();
+  } finally { await settleSync(); }
+  assert.equal(postsNow(), before + 1, 'and sync sends him once the setting is off');
+  assert.ok(SERVER[CREW].people.Vic, 'the crew has him');
+});
+
+test('Stay offline switched on while an add is out: its answer keeps the person here as a pending edit, so this phone is not left behind', async () => {
+  await addNamed('Wes', { holdAnswer: true }); // out, and the server has him
+  sync.setStayOffline(true);
+  try {
+    holdPosts = false;
+    heldPosts.splice(0).forEach((r) => r());
+    await answered('Wes');
+    assert.ok(state.people().Wes, 'Wes is here, though no poll runs under the setting');
+    assert.ok(((state.pendingChanges || {}).people || {}).Wes, 'kept as a pending edit (the same as the server’s copy)');
+    assert.match(document.querySelector('#artist-sheet .inv-sub').textContent, /once this phone is online again/);
+    await doneWithSheet();
+  } finally { await settleSync(); }
+  assert.equal(SERVER[CREW].people.Wes.removed, false, 'the push, when it came, changed nothing on the server');
+});
+
+test('bringing back a removed member: a reopened sheet before the poll lands still knows the add is done — no second POST', async () => {
+  assert.equal(state.people().Mo.removed, true, 'Mo left earlier (another phone removed him)');
+  holdGets = 1; // the ordered poll after the add waits
+  await addNamed('mo'); // any capitalisation brings back the same person
+  await answered('Mo');
+  const after = postsNow();
+  await doneWithSheet();
+  assert.equal(state.people().Mo.removed, true, 'this phone still has the old entry — the poll has not landed');
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  sheet.querySelector('.inv-name input').value = 'Mo';
+  sheet.querySelector('.inv-add').click();
+  await settle(20);
+  assert.equal(postsNow(), after, 'no second POST');
+  assert.equal(sheet.querySelector('.inv-status').textContent, 'Mo is already in this crew.', 'the answered add counts, though the old entry is removed');
+  heldGets.splice(0).forEach((r) => r());
+  await until(() => state.people().Mo && !state.people().Mo.removed, 'Mo back, brought by the poll');
+  document.querySelector('#artist-sheet .sheet-close').click();
+  await sheetClosed();
+});
+
 test('the menu gained Zed in place, and a crew-mate who left is gone from it and from the highlight', async () => {
   await openMenu();
   assert.ok(row('Zed'), 'the new person has a row');

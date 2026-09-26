@@ -2875,14 +2875,18 @@ function openInvite({ moment = false } = {}) {
     sheet.appendChild(pickWrap);
   }
 
-  const succeed = (canonical) => {
+  const succeed = (canonical, offline = false) => {
     sheet.textContent = '';
     // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
     // the moment it becomes the thing you are actually looking at.
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.className = 'inv-sub';
-    explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
+    // Kept on this phone for now (offline, or Stay offline): the crew hears
+    // of them when the phone sends again, and the line says so.
+    explain.textContent = offline
+      ? `Send ${canonical} this link. Opening it makes the picks theirs — once this phone is online again.`
+      : `Send ${canonical} this link. Opening it makes the picks theirs.`;
     const theirs = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
     const done = document.createElement('div');
     done.className = 'inv-actions';
@@ -2919,7 +2923,7 @@ function openInvite({ moment = false } = {}) {
       // A sheet that has closed, or a crew that has changed, takes nothing.
       if (!sheet.isConnected || state.getCrewToken() !== token) return;
       setWaiting(false);
-      if (outcome.ok) succeed(outcome.canonical);
+      if (outcome.ok) succeed(outcome.canonical, !!outcome.offline);
       else if (outcome.message) status.textContent = outcome.message;
     });
   };
@@ -2975,7 +2979,10 @@ const addedHere = new Map(); // crew token → Map(lower-case name → { name, p
 function addedNotYetHere(token) {
   const mine = addedHere.get(token);
   if (!mine) return [];
-  const here = new Set(Object.keys(state.people()).map((n) => n.toLowerCase()));
+  // Here means here AS ADDED — active: a removed member being brought back
+  // already has an entry (removed: true), and pruning on that let a reopened
+  // sheet send the same add again (Sol's re-review of 58e75fe).
+  const here = new Set(Object.entries(state.people()).filter(([, p]) => state.isActivePerson(p)).map(([n]) => n.toLowerCase()));
   for (const k of [...mine.keys()]) if (here.has(k)) mine.delete(k);
   return [...mine.values()];
 }
@@ -2988,6 +2995,23 @@ function addPerson(token, canonical, person) {
       try { w(outcome); } catch (e) { record('invite:add', e); }
     }
   };
+  // The offline path: a local pending edit, pushed by sync when this phone
+  // sends again (idempotent with a copy the server may already have).
+  const keepHere = () => {
+    state.recordPerson(canonical, person);
+    state.crewDoc.people[canonical] = person;
+    state.persist();
+    sync.scheduleSync();
+    refreshCtx(); renderPersonChips(); repaintWall();
+  };
+  // Stay offline means this phone sends nothing: no POST at all — the add is
+  // the offline one (Sol's re-review of 58e75fe: it POSTed, said IS IN, and
+  // the ordered poll never ran under the setting, so the server had the
+  // person and this phone did not).
+  if (sync.stayingOffline()) {
+    Promise.resolve().then(() => { keepHere(); finish({ ok: true, canonical, offline: true }); }); // after the sheet is listening
+    return add;
+  }
   const deadline = timeoutSignal(ADD_DEADLINE_MS);
   (async () => {
     try {
@@ -3005,6 +3029,10 @@ function addPerson(token, canonical, person) {
         return;
       }
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+      // Stay offline switched on while this was out: the ordered poll will
+      // not run under it, so the person is kept here as a pending edit
+      // (the server already has them; the push, when it comes, is the same).
+      if (sync.stayingOffline()) { keepHere(); finish({ ok: true, canonical, offline: true }); return; }
       const mine = addedHere.get(token) || new Map();
       mine.set(canonical.toLowerCase(), { name: canonical, person });
       addedHere.set(token, mine);
@@ -3017,12 +3045,8 @@ function addPerson(token, canonical, person) {
         return;
       }
       // Offline: local-first add, sync catches up — same as every pick.
-      state.recordPerson(canonical, person);
-      state.crewDoc.people[canonical] = person;
-      state.persist();
-      sync.scheduleSync();
-      refreshCtx(); renderPersonChips(); repaintWall();
-      finish({ ok: true, canonical });
+      keepHere();
+      finish({ ok: true, canonical, offline: true });
     }
   })();
   return add;

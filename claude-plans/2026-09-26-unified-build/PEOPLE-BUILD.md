@@ -133,7 +133,7 @@ beside the sync engine and outside its ordering (the old add sheet did it since 
 | The Invite sheet's own checks ("already in this crew", the next person's colour) | people the server has that this phone does not yet | `addedNotYetHere` — memory of names answered, pruned when the poll lands; never written to the doc |
 | "From your other fests" chips | who is already here | `state.people()`; a just-added one still showing is caught by the check above |
 | The invite-festival stamp | `meta.inviteFestId` | read at sheet open; untouched by adds |
-| Sync's pending overlay | — | an online add never touches it; offline adds go through it as before (`recordPerson`) |
+| Sync's pending overlay | — | an online add never touches it; offline and Stay-offline adds go through it (`recordPerson`), and so does an add whose answer lands after Stay offline went on |
 | Settings → Crew (member chips, their links) | `activePeople()` | read when Settings renders (as for any remote change) |
 | The wall (marks, auras) | picks | a new person has none |
 
@@ -143,6 +143,27 @@ removal and recolour, arriving while the add's answer is in transit, are not und
 so the answer's own effect is seen alone — red if the answer is applied); a hung request is let go at the
 12 s deadline (stubbed short) with the plain word and a free guard for a reopened sheet (red without the
 deadline); plus every earlier add test, now waiting for the ordered poll instead of reading the answer.
+
+## Sol's re-review of `58e75fe`: Stay offline, and a removed member brought back
+
+The cut held (no ack, retry, blocked-state or poll-ordering fault from the `pushGen` bump; the fresh
+poll still overlays pending edits; the server keeps the submitted key, so the link names the stored
+person). Two left, both fixed:
+
+1. **P1 — Stay offline.** The add still POSTed under the setting, said IS IN, and the ordered poll
+   never ran (polls stop under it), so the server had the person and this phone did not. The setting
+   means *this phone sends nothing*: under it the add takes the **offline path** — no POST, a local
+   pending edit through sync, like a real offline add — and the success line says the crew hears once
+   the phone is online again ("Send Vic this link. Opening it makes the picks theirs — once this phone
+   is online again."). An add already out when the setting goes on keeps the person here as a pending
+   edit when its answer lands (idempotent with the server's copy), so the view is never left behind.
+   `sync.stayingOffline()` (new, one line) is the page's own truth for the setting. Tests: an add under
+   Stay offline sends nothing, is here at once and pending, and sync sends it once the setting is off;
+   the setting switched on mid-flight keeps the person here. Both red without their fix.
+2. **P2 — `addedNotYetHere` pruned on any local entry**, and a removed member being brought back
+   already has one (`removed: true`), so a sheet reopened before the poll landed let the same add go
+   twice. It prunes only when the local entry is the active person. Test: bring back a removed member,
+   reopen before the poll — "Mo is already in this crew.", no second POST (red without the fix).
 
 ## For whoever merges this with live/tap and live/plan
 
