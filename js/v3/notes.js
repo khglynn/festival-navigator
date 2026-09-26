@@ -30,10 +30,10 @@ import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly } from './card-facts.js';
+import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, fingerHand } from './card-facts.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS } from './motion.js';
 import { router } from './router.js';
-import { loadJSON, saveLS } from '../util.js';
+import { loadJSON, saveLS, getLS } from '../util.js';
 
 // MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
 // STANDING, and four places are standable: the festival, a date, a section on
@@ -802,6 +802,29 @@ export function rememberOpener() {
   if (!document.getElementById('sheet-backdrop')) restoreFocusTo = document.activeElement;
 }
 
+// The one-time line (the tap change, 2026-09-26): a friend who learned "a tap
+// lights it" is told once, inside the first shelf a finger opens, that picking
+// moved to the + here. Only a member who has picked on this fest before (a
+// fresh member never learned the old way), only from a finger (a mouse click
+// still picks), once per device. The marker is device-local and try-wrapped,
+// never in the crew doc; an older build never reads it.
+export const TAP_NEWS = 'A tap opens the card now — pick with + here.';
+const LS_TAP_NEWS = 'fn_tap_news_v1';
+let tapNewsSeen = false; // storage blocked: memory holds it for this visit
+function tapNews(ctx) {
+  if (tapNewsSeen || !ctx.meName || !fingerHand()) return null;
+  if (getLS(LS_TAP_NEWS) != null) { tapNewsSeen = true; return null; }
+  const returning = Object.values(ctx.picks || {}).some((by) => ((by || {})[ctx.meName] || 0) > 0);
+  if (!returning) return null;
+  tapNewsSeen = true;
+  try { localStorage.setItem(LS_TAP_NEWS, '1'); } catch { /* memory holds it */ }
+  const line = document.createElement('div');
+  line.className = 'shelf-news';
+  line.setAttribute('role', 'note');
+  line.textContent = TAP_NEWS;
+  return line;
+}
+
 // Remove the sheet WITHOUT touching focus — this is the re-render path.
 // closeSheet() is the "we are really done here" path, and it restores.
 function teardownSheet() {
@@ -931,6 +954,8 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
       headerHost.replaceChildren(card);
     };
     paintHeader();
+    const news = swapping ? null : tapNews(ctx);
+    if (news) sheet.appendChild(news);
   } else {
     // A day target says itself the way the wall said it; the festival says its
     // name. Neither ever shows a storage key.

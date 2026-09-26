@@ -73,7 +73,7 @@
 
 <section id="zoom-gallery">
   <div class="zoom-title">THE ZOOM — every state, live</div>
-  <div class="hint">real <code>renderCard</code> + real <code>zoomCard</code> / <code>dismissZoom</code> / <code>refreshZoom</code> wiring, straight from app.js — no mockups. Hover with intent (mouse), hold (touch), or Tab to a card to grow it; click the grown card to cycle the pick and watch the pills animate; click outside or press Escape to put it away.</div>
+  <div class="hint">real <code>renderCard</code> + real <code>zoomCard</code> / <code>dismissZoom</code> / <code>refreshZoom</code> wiring, straight from app.js — no mockups. Hover with intent (mouse) or Tab to a card to grow it; click the grown card to cycle the pick and watch the pills animate; click outside or press Escape to put it away. A finger's tap (touch) opens the card's notes shelf instead — its facts, − · your meter · +, the thread (the tap change, 2026-09-26) — and the zoom's note door opens the same shelf.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="zoom-lowpower"> Low power (instant)</label>
     <label><input type="checkbox" id="zoom-slowmo"> Slow motion ×4</label>
@@ -105,14 +105,14 @@
     <div class="zoom-controls" id="zoom-chip-cases"></div>
     <div class="zoom-row" id="zoom-row-chips"></div>
 
-    <div class="g-label" style="margin-top: 20px;">20 · the most crowded zoom — a real Portola afters (Femme Jatale b2b erika's own entry: doors, the order door, Tix and Info), a crowd at every level, notes, Spotify, and the − · note · + row along its floor; then its second set, under a bill long enough for two lines. Hold (touch) or hover to grow either; − and + step your level, the note door is the notes chip</div>
+    <div class="g-label" style="margin-top: 20px;">20 · the most crowded zoom — a real Portola afters (Femme Jatale b2b erika's own entry: doors, the order door, Tix and Info), a crowd at every level, notes, Spotify, and the − · note · + row along its floor; then its second set, under a bill long enough for two lines. Hover to grow either, or tap (touch) to open its shelf; − and + step your level, the note door is the notes chip</div>
     <div class="zoom-row" id="zoom-row-crowded"></div>
   </div>
 </section>
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — the composed day, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. Every room wears ONE head naming when and what — SAT GALLERY FEST, SAT AFTERS (one-line heads, 2026-09-23) — and the day's first head carries its date. The heads are the notes doors (§3a.3): the festival's head on a date opens that date, a section's opens that section on that date — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own head. A head never folds its room (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here; hide Gallery Fest and SAT AFTERS takes the date.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / Tab to a card to zoom it, or tap (touch) to open its shelf (the ~ cards show the two-line WHEN with the order door); tap any card to pick. Every room wears ONE head naming when and what — SAT GALLERY FEST, SAT AFTERS (one-line heads, 2026-09-23) — and the day's first head carries its date. The heads are the notes doors (§3a.3): the festival's head on a date opens that date, a section's opens that section on that date — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own head. A head never folds its room (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here; hide Gallery Fest and SAT AFTERS takes the date.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
     <span class="zoom-status">Show:</span>
@@ -448,7 +448,8 @@ import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
 import { renderCard, refreshCard } from '/js/v3/wall.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, dismissZoom, unzoom, zoomedCard, zoomContains, refreshZoom } from '/js/v3/card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, dismissZoom, unzoom, zoomedCard, zoomContains, refreshZoom, fingerHand } from '/js/v3/card-facts.js';
+import { openArtistSheet } from '/js/v3/notes.js';
 
 const GFID = 'gallery-zoom-fest';
 FESTIVAL_INDEX.push({ id: GFID, status: 'scheduled' });
@@ -569,7 +570,9 @@ state.recordAffinity('Kevin', {
 const ctx = {
   fid: GFID, meName: 'Kevin', picks: {}, affinity: null,
   lowPower: false, filterPeople: [], now: null,
-  onOpenNotes: (artist) => zoomStatus(`+ notes tapped for "${artist}" — the notes sheet lives in its own gallery section below, not wired here`),
+  // The real notes shelf (app.js ctx.onOpenNotes, minus the router): the zoom's
+  // note door and a finger's tap both open it, with − · your meter · + on its card.
+  onOpenNotes: (artist, occ = null) => { unzoom({ why: 'notes sheet opened', meant: true }); openArtistSheet(artist, ctx, () => {}, occ); },
   onOpenDayNotes: () => {},
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
@@ -583,8 +586,8 @@ const ctx = {
     wireCardZoom(el, artist, ctx, opts);
     wireCardFocusZoom(el, artist, ctx, opts);
   },
-  // A hold on touch grows the card the same way a hover does.
-  onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
+  // A hold is a slow tap; an engine that turns it into contextmenu opens the shelf too.
+  onHold: (artist, el, occ) => handleTap(artist, el, occ),
 };
 
 function refreshPicks() {
@@ -606,7 +609,10 @@ function zoomStatus(msg) {
 // crewDoc itself so picksFor sees it immediately; skip that mirror and
 // every tap silently no-ops against a stale doc (caught live in this
 // gallery, 2026-08-30 — a click never moved the pill until this landed).
-function handleTap(artistName) {
+// A finger opens the card's shelf (app.js handleTap since the tap change); a
+// mouse click or a key cycles.
+function handleTap(artistName, el = null, occ = null) {
+  if (el && el.isConnected && fingerHand()) { ctx.onOpenNotes(artistName, occ); return; }
   const cur = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   setLevel(artistName, model.nextTapLevel(cur));
 }
@@ -853,7 +859,7 @@ import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
 import { renderWall, renderCard, refreshCard, cardFor, roomOf } from '/js/v3/wall.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom, fingerHand } from '/js/v3/card-facts.js';
 import { toggleFold } from '/js/v3/filters.js';
 
 const EFID = 'gallery-events-fest';
@@ -994,7 +1000,7 @@ const ectx = {
     wireCardZoom(el, artist, ectx, opts);
     wireCardFocusZoom(el, artist, ectx, opts);
   },
-  onPeek: (artist, el, occ) => zoomCard(el, artist, ectx, { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), source: 'touch', occ }),
+  onHold: (artist, el, occ) => eventsTap(artist, el, occ),
 };
 function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
 function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.folded = folded; }
@@ -1013,7 +1019,9 @@ function repaint() {
     if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
   }
 }
-function eventsTap(artistName) {
+function eventsTap(artistName, el = null) {
+  // A finger's tap would open the shelf (app.js); the sheet is not wired in this section.
+  if (el && el.isConnected && fingerHand()) { eventsStatus(`a finger's tap on "${artistName}" opens its shelf in the app`); return; }
   const cur = (ectx.picks[artistName] || {})[ectx.meName] || 0;
   const next = model.nextTapLevel(cur);
   state.recordSelection(artistName, ectx.meName, next);

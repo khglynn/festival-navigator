@@ -1,10 +1,12 @@
-// A guest's zoom has the same − · note · + a member's does (v92 — Kevin,
-// 2026-09-25: "The zoom has no special 'Pick shows' button"). Every door asks
-// who they are on the join shelf, naming the artist, and only + carries a pick
-// through the join: − and the notes door just join, so their shelf promises
-// nothing more. One judgment call pinned here and flagged in the build log: a
-// notes door that HAS notes opens them to read (the sheet's own "Add yourself"
-// door waits under them); an empty one asks, because there is nothing to read.
+// A guest's doors (v92 — Kevin, 2026-09-25: "The zoom has no special 'Pick
+// shows' button"; the tap change, 2026-09-26: a finger's tap opens the card's
+// SHELF, a guest's included). Every door asks who they are on the join shelf,
+// naming the artist, and only + carries a pick through the join: − and the
+// note door just join, so their shelf promises nothing more. A card that HAS
+// notes shows them to read on its shelf, the "Add yourself" door under them.
+// The join shelf takes the notes shelf's place AND its history entry, so
+// "Look around" lands on the wall, never on a sheet the page no longer shows.
+// A mouse's zoom (a desktop guest) carries the same doors.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -54,36 +56,45 @@ await settle(160);
 
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const zoomCard = () => document.querySelector('#zoom-layer .zoom-card');
-const door = (sel) => zoomCard().querySelector(`.f-step-row > ${sel}`);
+const notesShelf = () => { const s = document.getElementById('artist-sheet'); return s && !s.classList.contains('join-shelf') ? s : null; };
+const door = (sel) => notesShelf().querySelector(`.sheet-card .f-step-row > ${sel}`);
 const shelf = () => document.querySelector('.join-shelf');
 const shelfLine = () => shelf().querySelector('.js-line').textContent;
 const press = (el, pointerType) => el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
 const fingerTap = (el) => { press(el, 'touch'); el.click(); };
+const layers = () => (history.state && history.state.layers) || [];
 async function openCard(artist) {
   fingerTap(cardOf(artist));
   await settle(10);
-  assert.ok(zoomCard(), `${artist} is open`);
+  assert.ok(notesShelf(), `${artist}'s shelf is open`);
+  assert.equal(zoomCard(), null, 'a finger grows no zoom');
 }
-async function lookAround() { shelf().querySelector('.js-look').click(); await settle(40); }
+async function lookAround() { shelf().querySelector('.js-look').click(); await settle(60); }
 
-test('− asks on the shelf naming the artist, and promises no pick', async () => {
+test('− on a guest’s shelf asks naming the artist, promises no pick — and the question takes the shelf’s place', async () => {
   await openCard('Robyn');
+  assert.equal(door('.f-meter').classList.contains('empty'), true, 'a guest’s meter is hollow');
+  assert.ok(layers().some((k) => k.startsWith('sheet:notes:')), 'the notes shelf has its entry');
   door('.f-step.minus').click();
   await settle(10);
-  assert.equal(zoomCard(), null, 'the zoom goes back into its card');
-  assert.ok(shelf(), 'the shelf is up');
+  assert.equal(notesShelf(), null, 'the notes shelf gave way');
+  assert.ok(shelf(), 'the question is up');
   assert.equal(shelfLine(), 'Join the plan for Robyn as…');
   assert.equal(shelf().getAttribute('aria-label'), 'Join the plan for Robyn as');
+  assert.equal(history.state && history.state.joinShelf, true, 'on the notes shelf’s own entry, not a second one');
   await lookAround();
   assert.equal(shelf(), null);
+  assert.equal(notesShelf(), null, 'Look around lands on the wall');
+  assert.equal(layers().length, 0, 'and the history under it holds no sheet');
   assert.deepEqual(writes, []);
 });
 
-test('an empty notes door asks on the shelf the same way', async () => {
+test('the note door’s place asks the same way, naming the artist', async () => {
   await openCard('Robyn');
-  const notes = door('button.f-chip.notes');
-  assert.equal(notes.textContent, '+ note');
-  notes.click();
+  assert.equal(notesShelf().querySelector('.composer'), null, 'a guest has no composer');
+  const join = notesShelf().querySelector('button.join-door');
+  assert.equal(join.textContent, 'Add yourself to write a note');
+  join.click();
   await settle(10);
   assert.ok(shelf());
   assert.equal(shelfLine(), 'Join the plan for Robyn as…');
@@ -91,46 +102,42 @@ test('an empty notes door asks on the shelf the same way', async () => {
   assert.deepEqual(writes, []);
 });
 
-test('a notes door with notes opens them to read, with the sheet’s own door in', async () => {
+test('a card with notes shows them to read, the door in under them', async () => {
   await openCard('Dog Blood');
-  const notes = door('button.f-chip.notes');
-  assert.equal(notes.textContent, '1 note');
-  notes.click();
-  await settle(20);
-  assert.equal(shelf(), null, 'no question: there is something to read');
-  const sheet = document.getElementById('artist-sheet');
-  assert.ok(sheet, 'the notes are open');
-  assert.match(sheet.textContent, /Front left\./);
-  assert.equal(sheet.querySelector('.composer'), null, 'read-only for a guest');
-  assert.ok(sheet.querySelector('button.join-door'), 'and the door in waits under them');
+  assert.match(notesShelf().textContent, /Front left\./);
+  assert.equal(notesShelf().querySelector('.composer'), null, 'read-only for a guest');
+  assert.ok(notesShelf().querySelector('button.join-door'), 'and the door in waits under them');
   history.back();
   await settle(60);
+  assert.equal(notesShelf(), null, 'Back closes it');
   assert.deepEqual(writes, []);
 });
 
-test('a close-tap swallows only a click on a card — a quick tap elsewhere still lands', async () => {
-  await openCard('Robyn');
-  press(cardOf('Dog Blood'), 'touch'); // the press that closes the zoom
-  assert.equal(zoomCard(), null, 'closed');
-  const tab = document.querySelector('#dock .day-tab');
-  // jsdom lays nothing out and has no scrollIntoView; the tab's own jump asks for one.
-  if (!shell.dom.window.HTMLElement.prototype.scrollIntoView) shell.dom.window.HTMLElement.prototype.scrollIntoView = () => {};
-  let heard = 0;
-  tab.addEventListener('click', () => { heard += 1; }, { once: true });
-  tab.click(); // the next click lands on a day tab, not a card
-  assert.equal(heard, 1, 'the day tab heard its tap');
+test('a mouse’s zoom (a desktop guest) carries the same doors: its − asks the same way', async () => {
+  const el = cardOf('Robyn');
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerenter', { pointerType: 'mouse', clientX: 30, clientY: 30 }));
+  await settle(260);
+  assert.ok(zoomCard(), 'hover grew the zoom');
+  assert.equal(zoomCard().querySelector('.f-step-row > button.f-chip.notes').textContent, '+ note', 'the zoom keeps its note door');
+  zoomCard().querySelector('.f-step.minus').click();
+  await settle(10);
+  assert.equal(zoomCard(), null, 'the zoom goes back into its card');
+  assert.equal(shelfLine(), 'Join the plan for Robyn as…');
+  await lookAround();
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerleave', { pointerType: 'mouse' }));
 });
 
-test('a flick that began on a card (its cancel) disarms the swallow: the next tap on a card is a tap', async () => {
-  await openCard('Robyn');
-  const other = cardOf('Dog Blood');
-  press(other, 'touch');
-  other.dispatchEvent(new shell.dom.window.PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' })); // it became a scroll
-  fingerTap(cardOf('Robyn'));
-  await settle(10);
-  assert.ok(zoomCard(), 'the next tap opened its card — nothing was left armed to eat it');
-  document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+test('a finger’s tap on another card while a zoom stands opens THAT card’s shelf — nothing is eaten any more', async () => {
+  const el = cardOf('Robyn');
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerenter', { pointerType: 'mouse', clientX: 30, clientY: 30 }));
+  await settle(260);
+  assert.ok(zoomCard(), 'a mouse’s zoom on a touch screen');
+  fingerTap(cardOf('Dog Blood'));
   await settle(20);
+  assert.equal(zoomCard(), null, 'the press outside closed the zoom');
+  assert.equal(notesShelf() && notesShelf().querySelector('.f-name').textContent, 'Dog Blood', 'and the tap opened its card');
+  history.back();
+  await settle(60);
 });
 
 test('joining from − joins, and picks nothing', async () => {

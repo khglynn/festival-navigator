@@ -115,7 +115,7 @@ test('someone who has just joined under a new name is new: the card, in a member
   assert.equal($('dock-you').textContent, 'A');
   const box = welcome();
   assert.ok(box, 'the welcome, for someone new');
-  assert.match(box.querySelector(".bring-sub").textContent, /Tap any artist to add yours\. More info$/);
+  assert.match(box.querySelector(".bring-sub").textContent, /Tap any artist, then \+ to add yours\. More info$/);
   assert.deepEqual([...box.querySelectorAll('.bring-actions button')].map((b) => b.textContent), ['Got it'], 'one door, full width');
   assert.equal(box.querySelector('.bring-sub .welcome-more').textContent, 'More info');
   assert.equal(buttonNamed(box, 'Pick shows'), undefined, 'already joined: no door to join');
@@ -137,7 +137,7 @@ test('the words: one table, a clear choice for a guest, and the crews a friend c
   assert.deepEqual([member.yes, member.join], ['Got it', null]);
   assert.deepEqual(
     [welcomeCopy({ ...base, people: [] }).line, welcomeCopy({ ...base, people: [] }).sub],
-    ['Nobody’s in this crew yet.', 'Tap any artist to be first — you’ll pick a name as you do.'],
+    ['Nobody’s in this crew yet.', 'Tap any artist, then + to be first — you’ll pick a name as you do.'],
   );
   assert.equal(welcomeCopy({ ...base, people: [], guest: true }).join, 'Pick shows', 'an empty crew too: someone has to be first');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).line, 'Kevin started this plan for Portola. Nobody’s picked yet.');

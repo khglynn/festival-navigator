@@ -572,7 +572,7 @@ function askToJoin(artist = null, { intent = 'pick' } = {}) {
   // page no longer shows. The notes shelf drops as the question rises.
   const layered = !!document.getElementById('artist-sheet') && !joinShelf() && `${router.top() || ''}`.startsWith('sheet:');
   if (layered) { router.reset(); closeSheet(); }
-  const opener = shelfOpener(); // before the zoom and the welcome go: where focus returns
+  const opener = shelfOpener(artist); // before the zoom and the welcome go: where focus returns
   // The question comes up over the wall, which never moves: a zoom shrinks
   // back into its card as the shelf rises, and the welcome has done its job.
   unzoom({ why: 'asked who you are', meant: true });
@@ -583,13 +583,14 @@ function askToJoin(artist = null, { intent = 'pick' } = {}) {
   openJoinShelf(token, artist, intent, opener, { replace: layered });
 }
 // Where keyboard focus goes back to when the shelf closes: what had it (a
-// button in Settings, the dashed +), or the card a zoom's door asked about —
-// never a node on its way out (the zoom's own door, the welcome card), and
-// failing all of those the "you" slot, where the question lives.
-function shelfOpener() {
+// button in Settings, the dashed +), or the card a zoom's door (or its notes
+// shelf's door) asked about — never a node on its way out (the zoom's own
+// door, the notes shelf, the welcome card), and failing all of those the
+// "you" slot, where the question lives.
+function shelfOpener(artist = null) {
   const a = document.activeElement;
-  if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card')) return a;
-  const card = zoomedCard();
+  if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card, #artist-sheet, .sheet')) return a;
+  const card = zoomedCard() || (artist ? document.querySelector(`#wall-root .card[data-artist="${CSS.escape(artist)}"]`) : null);
   if (card) return card;
   const you = [$('dock-you'), $('rail-you')].find((n) => n && n.offsetParent !== null);
   return you || $('dock-you');

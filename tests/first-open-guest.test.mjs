@@ -5,11 +5,12 @@
 //   no "who are you?" list — with a welcome card above the dock saying what
 //   this is, once per phone;
 //
-//   a guest's FINGER tap on a card opens it (its zoom, with the same − · note
-//   · + a member's has); a click, or any of those doors, asks who they are on
-//   a shelf over the wall that never moves (the guest shelf round), and on
-//   join a + (or a click) becomes their pick through the ordinary pick path
-//   while − and the notes door just join; "Look around" drops it;
+//   a guest's FINGER tap on a card opens its shelf (the tap change,
+//   2026-09-26: the card, − · meter · +, the thread — what a member's tap
+//   opens); a click, or any of the shelf's doors, asks who they are on a
+//   shelf over the wall that never moves (the guest shelf round), and on join
+//   a + (or a click) becomes their pick through the ordinary pick path while
+//   − and the note door just join; "Look around" drops it;
 //
 //   the dock's empty "you" slot is a dashed + that asks the same question;
 //
@@ -181,46 +182,47 @@ test('"Pick shows" on the welcome asks on the shelf, over the wall — nothing w
   localStorage.removeItem('fn_welcome_v1');
 });
 
-test('a guest’s finger tap on a card opens it — − · note · + along its floor — and writes nothing', async () => {
+const notesShelf = () => { const n = document.getElementById('artist-sheet'); return n && !n.classList.contains('join-shelf') ? n : null; };
+test('a guest’s finger tap on a card opens its shelf — − · meter · + along the card’s floor — and writes nothing', async () => {
   fingerTap(cardOf('Robyn'));
   await settle(10);
-  const zoom = document.querySelector('#zoom-layer .zoom-card');
-  assert.ok(zoom, 'the card’s zoom, the view a member gets by holding');
+  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom on a finger');
+  const sheet = notesShelf();
+  assert.ok(sheet, 'the card’s shelf, the view a member gets by tapping');
   assert.equal(shelf(), null, 'nothing asked yet: a tap looks');
-  const doors = [...zoom.querySelectorAll('.f-step-row > *')];
-  assert.deepEqual(doors.map((b) => b.textContent), ['−', '+ note', '+'], 'the same three doors a member gets');
-  assert.ok(doors.every((b) => b.tagName === 'BUTTON' && !b.disabled), 'all three live: each one asks who you are');
-  assert.equal(zoom.lastElementChild, zoom.querySelector('.f-step-row'), 'the row is the card’s floor');
-  assert.equal(zoom.querySelector('.f-pick'), null, 'no special Pick shows button any more');
+  const doors = [...sheet.querySelectorAll('.sheet-card .f-step-row > *')];
+  assert.deepEqual(doors.map((b) => b.className.split(' ')[0]), ['f-step', 'f-meter', 'f-step'], '− · a hollow meter · +');
+  assert.ok(doors.filter((b) => b.tagName === 'BUTTON').every((b) => !b.disabled), '− and + both live: each one asks who you are');
+  assert.equal(sheet.querySelector('.f-pick'), null, 'no special Pick shows button');
+  assert.equal(sheet.querySelector('.composer'), null, 'no composer for a guest');
   // (a tap taking the welcome down: first-open-tap-welcome.test.mjs, where it is up)
-  // A tap on the zoom's body does nothing for a guest: reading never asks by accident.
-  zoom.click();
+  // A tap on the shelf's card does nothing: reading never asks by accident.
+  sheet.querySelector('.sheet-card .f-name').click();
   await settle(10);
   assert.equal(shelf(), null);
   assert.deepEqual(writes, []);
 });
 
-test('with a card open, a guest finger’s tap on another card only closes it — it never opens the next one', async () => {
-  const other = cardOf('Dog Blood');
-  press(other, 'touch'); // the app's outside-press rule runs on this pointerdown
-  other.click();
-  await settle(10);
-  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'closed');
+test('a tap on the dimmed wall only closes the shelf — it never opens the card under it', async () => {
+  const back = document.getElementById('sheet-backdrop');
+  press(back, 'touch');
+  back.click();
+  await settle(60);
+  assert.equal(notesShelf(), null, 'closed');
   assert.equal(shelf(), null, 'and nothing asked');
   fingerTap(cardOf('Robyn')); // the next tap opens again
   await settle(10);
-  assert.ok(document.querySelector('#zoom-layer .zoom-card'), 'a fresh tap opens a card');
+  assert.ok(notesShelf(), 'a fresh tap opens a card');
 });
 
-test('+ in the zoom asks on the shelf, naming the artist; the zoom goes back into its card', async () => {
-  const pick = document.querySelector('#zoom-layer .f-step.plus');
-  pick.dispatchEvent(new shell.dom.window.MouseEvent('mousedown', { bubbles: true })); // a real press on the overlay
+test('+ on the card’s shelf asks on the join shelf, naming the artist; the notes shelf gives way', async () => {
+  const pick = notesShelf().querySelector('.sheet-card .f-step.plus');
+  pick.dispatchEvent(new shell.dom.window.MouseEvent('mousedown', { bubbles: true })); // a real press
   pick.click();
   await settle(10);
   const { recent } = await import('../js/errlog.js');
-  assert.ok(!recent().some((r) => JSON.stringify(r).includes('zoom-close-after-click')),
-    'a close that IS the press’s purpose is not journaled as a surprise (the false report the design rig found)');
-  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'the zoom is put away');
+  assert.ok(!recent().some((r) => JSON.stringify(r).includes('zoom-close-after-click')), 'nothing journaled as a surprise');
+  assert.equal(notesShelf(), null, 'the notes shelf gave way');
   assert.ok(shelf());
   assert.equal(shelfLine(), 'Pick Robyn as…');
   assert.deepEqual([...shelf().querySelectorAll('.js-name')].map((b) => b.dataset.name), ['Kevin', 'Maya'], 'the crew’s names, to tap');
@@ -319,7 +321,7 @@ test('Settings, as a guest: no door writes into the crew, and You says how to jo
 test('joining from a tap: one POST for the person, and the + they tapped is their first pick', async () => {
   fingerTap(cardOf('Kettama'));
   await settle(10);
-  document.querySelector('#zoom-layer .f-step.plus').click();
+  notesShelf().querySelector('.sheet-card .f-step.plus').click();
   await settle(10);
   assert.equal(shelfLine(), 'Pick Kettama as…');
   typeName('Sam');
@@ -339,10 +341,10 @@ test('joining from a tap: one POST for the person, and the + they tapped is thei
   assert.ok(!$('dock-you').classList.contains('guest'));
   // The just-joined welcome (the independent walk of b29aac0): the guest card
   // was read before the join could land, and this one has its own marker —
-  // it is where Sam learns that a tap now picks.
+  // it is where Sam learns how to pick.
   const card = welcome();
   assert.ok(card, 'the just-joined welcome is up');
-  assert.match(card.querySelector('.bring-sub').textContent, /Tap any artist to add yours/);
+  assert.match(card.querySelector('.bring-sub').textContent, /Tap any artist, then \+ to add yours/);
   assert.deepEqual([...card.querySelectorAll('.bring-actions button')].map((b) => b.textContent), ['Got it'], 'a member’s one door');
   assert.equal(localStorage.getItem('fn_welcome_joined_v1'), '1', 'once per phone: shown is seen');
 });

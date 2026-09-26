@@ -1576,3 +1576,6 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 /* The shelf rises from the bottom edge in script on a phone (notes.js arrive);
  * the dialog's CSS scale-fade stands down for it. */
 .sheet.rising { animation: none; }
+/* The one-time line under the shelf's card for a friend who learned "a tap
+ * lights it" (notes.js tapNews): quiet, centred, once. */
+.shelf-news { color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; margin-top: -2px; }
