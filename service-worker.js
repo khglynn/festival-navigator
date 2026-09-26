@@ -54,7 +54,6 @@ const APP_CORE = [
   '/js/v3/palette.js',
   '/js/v3/favicon.js',
   '/js/v3/router.js',
-  '/js/v3/nav.js',
   '/js/v3/sort-control.js',
   '/js/v3/filters.js',
   '/js/v3/now.js',

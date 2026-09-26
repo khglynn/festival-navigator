@@ -233,13 +233,10 @@ it was on screen through every tick (the next one after it, if it left with
 the room). It closes on a tap or click outside it (on a card that is all it
 does — never a pick; on a control, the control acts too), on Escape, on the
 fest name again, and on Back — it holds a history entry of its own (the
-router's `menu:` layer) that each way out takes back, and that Settings
-takes over, so history ends as the menu found it. When its screen goes with
-the menu up (a crew deleted on the server, a crew opened over it), that
-entry opens nothing, and no Back or Forward is ever spent on it: every entry
-the app writes is numbered in order (`js/v3/nav.js`), and a press that would
-arrive somewhere showing nothing new goes on, the same way, to the first
-entry that does.
+router's `menu:` layer, carrying the menu's id) that each way out takes
+back, and that Settings takes over, so history ends as the menu found it.
+When its screen goes with the menu up (a crew deleted on the server, a crew
+opened over it), that entry opens nothing and never costs a Back.
 `Settings` wears the header's gear in the check column.
 
 **Since the ship round (2026-09-17):**

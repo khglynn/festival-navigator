@@ -63,7 +63,7 @@ const openMenu = () => {
   assert.equal(pop().style.display, '', 'the menu is up');
   assert.equal(busy(), 'show-menu', 'and holding a new build’s reload');
   assert.deepEqual(h.state.layers, ['menu:show'], 'on its own history entry');
-  assert.equal(h.state.kind, 'menu', 'numbered and named as the menu’s (nav.js)');
+  assert.equal(typeof h.state.menu, 'string', 'which names this menu');
 };
 // Wait for what a test is about to assert, not a fixed time: under a loaded
 // suite the popstate and the replayed tap land later.

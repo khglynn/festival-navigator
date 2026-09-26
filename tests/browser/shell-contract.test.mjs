@@ -271,8 +271,7 @@ test('the show menu: a refresh with it open lands on the wall without it', { ski
     await page.waitForTimeout(600);
     assert.equal(await page.isVisible('#dock-fest-wrap .sort-pop'), false, 'the menu is not reopened');
     assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false');
-    const st = await page.evaluate(() => history.state);
-    assert.ok(st && st.kind === 'wall' && !(st.layers || []).length, `and the entry is the wall's: ${JSON.stringify(st)}`);
+    assert.deepEqual(await page.evaluate(() => history.state.layers), [], 'and the entry is the wall\'s (keeping the gone menu\'s id: tests/browser/show-menu-history)');
   } finally {
     await ctx.close();
   }
@@ -311,8 +310,8 @@ test('the show menu: the crew deleted on the server while it is up — the fest 
     // Its entry is taken back before the fest list opens (v93), so the menu
     // leaves the ordinary way — its quick fade — rather than at once.
     await page.waitForFunction(() => getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display === 'none', null, { timeout: 2000 }).catch(() => {});
-    const r = await page.evaluate(() => ({ busy: document.body.dataset.busy || null, kind: history.state && history.state.kind, layers: (history.state && history.state.layers) || [], menu: getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display }));
-    assert.deepEqual(r, { busy: null, kind: 'wall', layers: [], menu: 'none' }, `the menu went with the wall, and the page stands on the wall's entry: ${JSON.stringify(r)}`);
+    const r = await page.evaluate(() => ({ busy: document.body.dataset.busy || null, state: history.state, menu: getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display }));
+    assert.deepEqual(r, { busy: null, state: null, menu: 'none' }, `the menu went with the wall: ${JSON.stringify(r)}`);
   } finally {
     await ctx.close();
   }

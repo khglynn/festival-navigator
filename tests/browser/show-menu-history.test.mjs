@@ -9,15 +9,11 @@
 // the entry still named the menu, and a Back into it reopened a menu over a
 // wall it never belonged to.
 //
-// Now a switch that can wait a frame (the 404's fest list, a boot in place,
-// a join from the shelf) takes the entry it would leave behind back first;
-// every entry is numbered in order (js/v3/nav.js), so a press knows which way
-// it went; and an arrival that would change nothing on screen — a menu whose
-// screen went, a second wall entry for one address — is passed the same way,
-// and only while arrivals change nothing (app.js onPopState). Asserted here
-// by where the page is and what it shows after each press, in a real engine
-// — the router's model alone once said all was well while the page sat
-// still.
+// Now a switch that can wait a frame (the 404's fest list) takes the menu's
+// entry back first, and an entry whose menu is gone opens nothing and never
+// costs a Back (app.js arrivedAt, and the hashchange handler). Asserted here
+// by where the page is and what it shows after each Back, in a real engine —
+// the router's model alone once said all was well while the page sat still.
 // WebKit runs when it is installed (iPhones); CI runs Chromium.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -37,37 +33,26 @@ const FID = 'portola-2026';
 const A = 'menuhistorycrewaaa_012345'; // made-up crews, never real links
 const B = 'menuhistorycrewbbb_012345';
 
-// `guestOf`: crews this phone opens as a guest (no name on it yet).
-async function phone(browser, { guestOf = [] } = {}) {
+async function phone(browser) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
-  await ctx.addInitScript(([a, b, f, guests]) => {
+  await ctx.addInitScript(([a, b, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: a, name: 'Crew A' }, { token: b, name: 'Crew B' }]));
     for (const t of [a, b]) {
-      if (!guests.includes(t)) localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     }
     localStorage.setItem('fn_welcome_v1', '1');
-  }, [A, B, FID, guestOf]);
+  }, [A, B, FID]);
   const gone = new Set();
-  const docs = {};
-  const docOf = (t) => (docs[t] = docs[t] || { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } });
+  const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
   await ctx.route('**/api/crew**', (route) => {
-    const req = route.request();
-    const t = new URL(req.url()).searchParams.get('t');
+    const t = new URL(route.request().url()).searchParams.get('t');
     if (t && gone.has(t)) return route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Crew not found"}' });
-    const doc = docOf(t);
-    if (req.method() !== 'GET') {
-      // The server merges a write into its copy (a join adds the person).
-      const data = (JSON.parse(req.postData() || '{}').data) || {};
-      Object.assign(doc.people, data.people || {});
-    }
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) });
   });
   await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-  await ctx.route('**/api/person**', (route) => (route.request().method() === 'POST'
-    ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ token: 'menuhistoryperson_0123456', id: 'pid_menuhistory_01', doc: { v: 1, name: 'Sam', crews: {} } }) })
-    : route.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
+  await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => { throw e; });
   return { ctx, page, gone };
@@ -113,8 +98,7 @@ for (const [name, get] of [['WebKit', () => webkit], ['Chromium', () => chromium
       await page.waitForTimeout(300);
       const list = await at(page);
       assert.deepEqual(list, { url: crewUrl(B), screen: 'screen-landing', menu: 'false' }, 'the fest list, the menu gone');
-      const st = await page.evaluate(() => history.state);
-      assert.ok(st && st.kind === 'wall' && !(st.layers || []).length, `standing on the wall’s entry — the menu’s was taken back first: ${JSON.stringify(st)}`);
+      assert.equal(await page.evaluate(() => history.state), null, 'standing on the wall’s entry — the menu’s was taken back first');
       await press(page, 'back');
       await onWall(page);
       assert.deepEqual(await at(page), { url: crewUrl(A), screen: 'screen-app', menu: 'false' }, 'one Back: crew A’s wall');
@@ -152,7 +136,7 @@ for (const [name, get] of [['WebKit', () => webkit], ['Chromium', () => chromium
     }
   });
 
-  test(`${name}: back and forth across a menu whose screen went — every press shows something, and the dead entry is passed both ways`, { skip }, async () => {
+  test(`${name}: Forward over a menu whose screen went, then Back — neither press sits still for long, and Back never does`, { skip }, async () => {
     const { ctx, page } = await phone(get());
     try {
       await page.goto(`${server.origin}/404.html`);
@@ -162,22 +146,12 @@ for (const [name, get] of [['WebKit', () => webkit], ['Chromium', () => chromium
       await page.evaluate((u) => { location.hash = u; }, crewUrl(B).slice(1));
       await page.waitForTimeout(400);
       await onWall(page);
-      const A_WALL = { url: crewUrl(A), screen: 'screen-app', menu: 'false' };
-      const B_WALL = { url: crewUrl(B), screen: 'screen-app', menu: 'false' };
-      await press(page, 'back');
+      await press(page, 'back'); // crew A
       await onWall(page);
-      assert.deepEqual(await at(page), A_WALL, 'Back: crew A, no menu');
-      await press(page, 'back');
-      assert.equal(new URL(page.url()).pathname, '/404.html', `Back: out of the app, not onto A again: ${page.url()}`);
-      await press(page, 'forward');
-      await onWall(page);
-      assert.deepEqual(await at(page), A_WALL, 'Forward: crew A');
-      await press(page, 'forward');
-      await onWall(page);
-      assert.deepEqual(await at(page), B_WALL, 'Forward: crew B — the menu’s dead entry passed, nothing reopened on the way');
-      await press(page, 'back');
-      await onWall(page);
-      assert.deepEqual(await at(page), A_WALL, 'Back: crew A again');
+      await press(page, 'forward'); // the menu's dead entry: A's wall, nothing opens
+      assert.deepEqual(await at(page), { url: crewUrl(A), screen: 'screen-app', menu: 'false' }, 'the dead entry opens nothing');
+      await press(page, 'back'); // not onto the same wall again: out of the app
+      assert.equal(new URL(page.url()).pathname, '/404.html', `Back from the dead entry does not stop on the same screen: ${page.url()}`);
     } finally {
       await ctx.close();
     }
@@ -201,74 +175,6 @@ for (const [name, get] of [['WebKit', () => webkit], ['Chromium', () => chromium
       } finally {
         await ctx.close();
       }
-    }
-  });
-
-  // Sol 6's first shape: a guest joins from the shelf, opens the menu, and the
-  // crew is deleted on the server. The join used to leave the shelf's entry
-  // rewritten as a second wall entry for the same address, so Back from the
-  // fest list moved between two wall entries and nothing changed.
-  test(`${name}: a guest joins, opens the Show menu, the crew is deleted — Back from the fest list is the crew before`, { skip }, async () => {
-    const { ctx, page, gone } = await phone(get(), { guestOf: [B] });
-    try {
-      await page.goto(`${server.origin}${crewUrl(A)}`, { waitUntil: 'load' });
-      await onWall(page);
-      await page.evaluate((u) => { location.hash = u; }, crewUrl(B).slice(1)); // crew B, as a guest
-      await page.waitForTimeout(400);
-      await onWall(page);
-      await page.click('#dock-you'); // the guest's + : the join shelf
-      await page.waitForSelector('.join-shelf .js-field', { state: 'visible' });
-      await page.fill('.join-shelf .js-field', 'Sam');
-      await page.click('.join-shelf .js-go');
-      await page.waitForFunction(() => !document.querySelector('.join-shelf'), null, { timeout: 5000 });
-      await page.waitForTimeout(600);
-      assert.equal(await page.evaluate(() => document.getElementById('dock-you').textContent), 'S', 'joined as Sam');
-      await page.evaluate(() => { document.getElementById('welcome-card')?.remove(); });
-      await openMenu(page);
-      gone.add(B);
-      await page.evaluate(() => import('/js/sync.js').then((s) => s.pollSync()));
-      await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
-      await page.waitForTimeout(300);
-      assert.deepEqual(await at(page), { url: crewUrl(B), screen: 'screen-landing', menu: 'false' });
-      await press(page, 'back');
-      await onWall(page);
-      assert.deepEqual(await at(page), { url: crewUrl(A), screen: 'screen-app', menu: 'false' }, 'one Back from the fest list: crew A');
-    } finally {
-      await ctx.close();
-    }
-  });
-
-  // Sol 6's second shape, the way this model reads it: a boot on a menu entry
-  // whose screen went (Back from a crew opened over it), with a REAL entry
-  // for the same crew further back — the fest list between two visits. The
-  // press passes exactly the one entry that shows nothing (the menu's own
-  // wall entry) and stops on the fest list: never further, never short.
-  test(`${name}: Back from a boot on a dead menu entry passes only the entry that changes nothing — the fest list between two visits is where it stops`, { skip }, async () => {
-    const { ctx, page } = await phone(get());
-    try {
-      await page.goto(`${server.origin}/404.html`);
-      await page.goto(`${server.origin}${crewUrl(A)}`, { waitUntil: 'load' });
-      await onWall(page);
-      await page.click('#fest-list-btn'); // the fest list, a real entry of its own
-      await page.waitForSelector('#screen-landing', { state: 'visible' });
-      await page.evaluate((u) => { location.hash = u; }, crewUrl(A).slice(1)); // crew A again, from the list
-      await page.waitForTimeout(400);
-      await onWall(page);
-      await openMenu(page);
-      await page.evaluate((u) => { location.hash = u; }, crewUrl(B).slice(1)); // a crew link opened over the menu
-      await page.waitForTimeout(400);
-      await onWall(page);
-      await press(page, 'back'); // onto the menu's dead entry: crew A boots there
-      await onWall(page);
-      assert.deepEqual(await at(page), { url: crewUrl(A), screen: 'screen-app', menu: 'false' }, 'crew A, nothing reopened');
-      await press(page, 'back');
-      await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
-      assert.deepEqual(await at(page), { url: '/', screen: 'screen-landing', menu: 'false' }, 'the fest list — one entry passed, no more');
-      await press(page, 'back');
-      await onWall(page);
-      assert.deepEqual(await at(page), { url: crewUrl(A), screen: 'screen-app', menu: 'false' }, 'and the first visit to crew A is still there, a real step');
-    } finally {
-      await ctx.close();
     }
   });
 
