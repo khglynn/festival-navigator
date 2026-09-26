@@ -470,7 +470,7 @@ function openHowItWorks(actions) {
   }, '~ a guessed start time and artist order.', 'Based on limited intel.'));
 
   // 7-9. The dock: the fest link (the show menu, MODEL-V4 §3.1 — the real
-  // component, caret and dot), then the dot's own row (v93, Kevin: every row
+  // component: the dot, the name, the menu's three lines), then the dot's own row (v93, Kevin: every row
   // leads with the feature, and the dot's colours are a fact of their own, so
   // they no longer ride on the menu's row — drawn as the real dot, in its
   // three states), and the gear.
