@@ -107,6 +107,10 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
   await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 15000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+  // The fonts first: on the full Folsom wall (v94) a late font reflowed the
+  // days above Saturday's grid between one tap and the next, and two landings
+  // meant to share a height came out 3px apart. Every tap measures at rest.
+  await page.evaluate(() => document.fonts.ready);
   await sleep(600); // the day-of open's own landing
   // `doc` is the crew the route serves: change it, then `pull(page)`, and the
   // app takes it as a real remote change (a poll that repaints the wall).
@@ -325,7 +329,7 @@ for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here�
       await settled(page);
       await sleep(900); // past the 750 ms pulse fallback
       const r = await page.evaluate(() => {
-        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now');
+        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now');
         const b = first.getBoundingClientRect();
         return {
           toast: (document.querySelector('#toast-root') || {}).textContent || '',
@@ -452,7 +456,7 @@ const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
         return !!hit && c.contains(hit);
       });
     };
-    const seen = [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')].filter(visible).map(show);
+    const seen = [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')].filter(visible).map(show);
     const sc = line && line.closest('.times-scroll');
     return { y: Math.round(scrollY), sl: sc ? Math.round(sc.scrollLeft) : null, pulsed, seen, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
   });
@@ -486,14 +490,25 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
         assert.ok(stops[i].pulsed.length, `stop ${i + 1} pulses what it landed on`);
         for (const c of stops[i].pulsed) assert.ok(c.now && c.inView, `${c.artist}: live, and in view: ${JSON.stringify(stops[i])}`);
       }
-      // Side by side is one stop: some stop pulses two cards at one height.
-      assert.ok(stops.some((st) => st.pulsed.some((a) => st.pulsed.some((b) => a !== b && Math.abs(a.top - b.top) <= 1))), 'cards side by side land together, in one tap');
+      // Side by side is one stop: every pair of live cards at one height on
+      // the page lands together, in one tap (pulsed there, or seen there
+      // without a pulse). Read off the page rather than assumed: on a phone
+      // the afters rows always hold such a pair; at 1280 whether one exists
+      // is the night's own shape (v94: Folsom reads by time, so Magnitude and
+      // PERVERT XXL are two bands, one above the other, not two stacks side
+      // by side).
+      const livePos = await page.evaluate(() => [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')]
+        .map((c) => ({ show: `${c.dataset.artist}|${c.dataset.occ || ''}`, top: Math.round(c.getBoundingClientRect().top + scrollY) })));
+      const pairs = livePos.flatMap((a, i) => livePos.slice(i + 1).filter((b) => b.show !== a.show && Math.abs(a.top - b.top) <= 1).map((b) => [a.show, b.show]));
+      if (width < 720) assert.ok(pairs.length, 'a phone has live cards side by side at 10:30 PM');
+      const at = (st, show) => st.pulsed.some((c) => c.show === show) || st.seen.includes(show);
+      for (const [a, b] of pairs) assert.ok(stops.some((st) => at(st, a) && at(st, b)), `side by side, one tap: ${a} / ${b}`);
       // Every live show is brought into view by some tap — pulsed at its own
       // stop, or seen without a pulse where a stop (the line's, say) already
       // shows it — exactly the live ones, and none pulses twice. (The first cut
       // only checked that no more cards pulsed than were live, which passes
       // with a show never reached at all — Codex, 2026-09-24.)
-      const live = await page.evaluate(() => [...new Set([...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')]
+      const live = await page.evaluate(() => [...new Set([...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')]
         .map((c) => `${c.dataset.artist}|${c.dataset.occ || ''}`))].sort());
       assert.ok(live.length >= 4, `the afters are on at 10:30 PM: ${live.length} live shows`);
       const seen = [...new Set(stops.flatMap((st) => st.seen))].sort();
@@ -539,7 +554,9 @@ test('390, Dee highlighted at 7 PM: two live picks three columns apart are two s
     const taps = await cycle(page, door);
     const stops = stopsOf(taps);
     assert.deepEqual(stops.map((t) => t.pulsed.map((c) => c.artist)), [['Despacio'], ['DJ Shadow']], `the must first, then the other column: ${JSON.stringify(taps)}`);
-    assert.equal(stops[1].y, stops[0].y, 'one height');
+    // One height, to the pixel the browser rounds a fractional landing to:
+    // the full Folsom Friday above (v94) moved this grid by a fraction.
+    assert.ok(Math.abs(stops[1].y - stops[0].y) <= 1, `one height: ${stops[1].y} vs ${stops[0].y}`);
     assert.ok(Math.abs(stops[1].sl - stops[0].sl) > 100, `the grid slid across: ${stops.map((t) => t.sl).join(' → ')}`);
     for (const t of stops) for (const c of t.pulsed) assert.ok(c.across && c.inView, `${c.artist} is on screen, down and across: ${JSON.stringify(c)}`);
     assert.ok(Math.abs(taps[taps.length - 1].sl - taps[0].sl) <= 2, 'and the third tap comes back to the first');
@@ -585,7 +602,10 @@ test('390, Kat highlighted with nothing on: the stops are everyone’s, nothing 
 // on every daytime grid. A tap that moves nothing now pulses the line and its
 // time label on the rail — and under Reduce Motion, nothing moves at all.
 test('390, Sat 7 PM, the line the only stop: a repeat tap that moves nothing pulses the line and its time label', { skip }, async () => {
-  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  // The festival's clock alone: Folsom folds, since Saturday's daytime
+  // parties (DREAM HOUSE to 8 PM at The Stud, Daddy Day Care at SF Eagle —
+  // v94's full Folsom) are really on at 7 PM and would be a second stop.
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00'), fold: ['Folsom'] });
   try {
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
@@ -754,7 +774,9 @@ test('390: NOW says where it landed in a polite status region — the quiet line
 });
 
 test('390, Sat 7 PM, one stop: a repeat tap is said again, not swallowed as unchanged text', { skip }, async () => {
-  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  // One stop needs the festival's clock alone: Folsom's daytime parties are
+  // on at 7 PM (v94's full Folsom), so it folds.
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00'), fold: ['Folsom'] });
   try {
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
@@ -836,6 +858,26 @@ test('outside the live window there is no NOW (Saturday 9 AM)', { skip }, async 
   try {
     const shown = await page.evaluate((d) => { const n = document.getElementById(`${d}-now`); return !n.hidden && n.getBoundingClientRect().width > 0; }, door);
     assert.equal(shown, false);
+  } finally { await ctx.close(); }
+});
+
+// Past the festival clock's 5 AM rollover a night is not over (Sol's review of
+// v94, 2026-09-26): Saturday's after-hours run to their own printed ends —
+// PERVERT XXL to 6 AM, Aftershock to 10 AM Sunday. At 5:30 AM Sunday NOW is
+// there, and a real tap lands on and pulses them, under Saturday. Before the
+// fix their rings went out at 5:00 on the dot and NOW left with them.
+test('390, Sunday 5:30 AM: Saturday\'s after-hours are still on — NOW is there and a tap lands on them, under Saturday', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-27T05:30:00-07:00') });
+  try {
+    const shown = await page.evaluate((d) => { const n = document.getElementById(`${d}-now`); return !n.hidden && n.getBoundingClientRect().width > 0; }, door);
+    assert.equal(shown, true, 'NOW is there: parties are open');
+    const rings = await page.evaluate(() => [...document.querySelectorAll('#wall-root .card.now')].map((c) => `${c.dataset.artist}@${c.closest('.day-block').dataset.day}`));
+    assert.deepEqual(rings.sort(), ['Aftershock@Saturday', 'PERVERT XXL@Saturday'], `exactly the two running past 5 AM: ${rings}`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const t = await tapAndLook(page, door);
+    assert.ok(t.pulsed.length > 0, `the tap lands on them and pulses: ${JSON.stringify(t)}`);
+    for (const c of t.pulsed) assert.ok(c.now && c.inView && ['Aftershock', 'PERVERT XXL'].includes(c.artist), `${c.artist}: live and in view`);
   } finally { await ctx.close(); }
 });
 
@@ -1047,6 +1089,14 @@ for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
       assert.ok(rest.card.right > rest.row.right + 30, `at rest his card runs off its row: ${JSON.stringify(rest)}`);
       await watchRows(page);
       await tapNow(page, door);
+      // Judge the card at rest, not mid-pulse: NOW's pulse scales the card it
+      // lands on for ~460 ms, and a scaled card reads ~3px wider on each side.
+      // tapNow waits for the scrolling to stop; on a longer wall (the
+      // 2026-09-25 Folsom data) the pulse can still be running then.
+      await page.waitForFunction((sel) => {
+        const c = [...document.querySelector(sel).querySelectorAll('.card')].find((x) => x.dataset.artist === 'Milli Meng');
+        return Math.abs(c.getBoundingClientRect().width - c.offsetWidth) < 0.5;
+      }, AFTERS_ROW, { timeout: 3000 });
       const v = await rowView(page);
       assert.ok(v.card.left >= v.row.left - 0.5 && v.card.right <= v.row.right + 0.5, `the card is whole inside its row: ${JSON.stringify(v)}`);
       assert.ok(v.card.right <= v.innerWidth, 'and on the screen');

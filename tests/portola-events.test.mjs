@@ -36,6 +36,7 @@ const { renderWall } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { frozenKeyProblems } = await import('../api/_lib/pick-keys.mjs');
 const { timeToMinutes } = await import('../js/time.js');
+const { showsOnItsOwn } = await import('../js/v3/events.js');
 const { planFestival, loadRegistry } = await import('../scripts/guess-run-times.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,10 +56,14 @@ const midway = midwayAll.filter((a) => a.order);
 const midwayBilled = midwayAll.filter((a) => !a.order);
 const clone = (x) => JSON.parse(JSON.stringify(x));
 // Every venue-night in the file, however many acts are in it.
+// A ROOM: one venue on one night, where the acts are one show. A party in a
+// section read by time (v94, Folsom) is its own show and is in no room
+// (events.js showsOnItsOwn), so the room rules below never reach it.
 const roomsOf = (fest) => {
   const rooms = new Map();
   for (const a of fest.artists) {
     if (typeof a.stage !== 'string' || !a.stage.includes(' · ')) continue;
+    if (showsOnItsOwn(fest, a)) continue;
     const { night, venue } = splitStage(a.stage);
     const k = `${a.day}|${night}|${venue}`;
     if (!rooms.has(k)) rooms.set(k, []);
@@ -378,7 +383,9 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 0,
     'the inline tilde whisper is gone — How it works explains it once (Kevin, 2026-09-17)');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
-  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.room, c.querySelector('.time')?.textContent]),
+  // The window is the time label's first line: a by-time Folsom card (v94)
+  // says its place on a second one.
+  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.room, c.querySelector('.time')?.textContent.split('\n')[0]]),
     [['Afters', '9 PM – 3 AM'], ['Folsom', '9 PM – 3 AM']],
     'Friday: one show, two rooms, the same printed window on both cards');
   root.remove();

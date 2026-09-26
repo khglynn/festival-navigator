@@ -610,3 +610,22 @@ Pinned in `tests/browser/zoom-door-row.test.mjs` (every statement one line,
 a pair's separator only when it is one line, the window and order share a
 line at 390, the middle within the column and centred); each fails with its
 rule removed.
+
+**Re-review of a73df70 (Sol 6): the pairs were fitted only on open and
+refresh — fixed.** A rotation, a resized window or Inter landing after the
+zoom opened left a pair in the layout it was opened with (and on a narrower
+screen the zoom kept its old width and ran off the edge). Now the standing
+zoom is laid out again from its rules — size, pairs, place — on resize (the
+scroll follower's frame, one pass) and when fonts finish loading
+(`document.fonts` 'loadingdone' and `ready`, guarded where there is no
+`document.fonts`; nothing at all with no zoom open; one pass per frame).
+Tests in `tests/browser/zoom-door-row.test.mjs`, each red without its half:
+(1) the crowded card open at 390, the screen narrowed to 330 — the zoom
+refits inside it and the window · order pair restacks, then shares a line
+again back at 390; (2) the font case, measured rather than assumed: the
+pair's one-line width in the fallback font (300px here) and in Inter
+(290px), a screen whose column sits between them (295px), the zoom opened
+while Inter's file is held back, then Inter released — the pair goes to one
+line. The guest-route browser test's crew stub now merges writes like the
+real server (a fixed doc erased the join's pick on its own echo — a flake,
+not the app).

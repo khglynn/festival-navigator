@@ -52,6 +52,12 @@ export function venueOf(entry) {
   }
   return null;
 }
+// The part of town a show is in ("SoMa", "Castro"), when the file says. A
+// by-time card has no room head above it, so it says its own place: the
+// venue, and this after it (v94).
+export function areaOf(entry) {
+  return entry && typeof entry.area === 'string' && entry.area.trim() ? entry.area.trim() : null;
+}
 // The occurrence a card for this entry represents — what the zoom, the
 // notes sheet and the route key carry, and what tells one card from another
 // (wall.js writes it into `data-occ`).
@@ -296,6 +302,109 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
   return groups;
 }
 
+// ---- the list BY TIME (v94, 2026-09-25) --------------------------------------------
+// A third presentation, and the data declares it — never a threshold. A
+// section says how it wants to be read in ONE place, its own dayMeta entry:
+//
+//   "dayMeta": { "Folsom": { "date": "Sep 25-27", "layout": "by-time" } }
+//
+// `by-venue` (the default, and what a section without the field gets) is the
+// stack of cards under each room (MODEL-V4 §1.2): right where a night is a
+// handful of rooms, each with a run of acts. `by-time` is for a night that is
+// many one-party rooms — Folsom weekend is 68 parties in 39 venues, and on a
+// night only two or three rooms host more than one — where stacks would be
+// twenty one-card columns and a clock would pile ten 9 PM starts on a phone.
+// There the question is "what's on around ten?", so the cards run in start
+// order under quiet time bands and wrap, each card saying where it is.
+//
+// One declaration per section, so a section cannot disagree with itself about
+// how it reads (a field on every entry could); the validator rejects a
+// declaration that names no section (festival-rules.mjs checkLayouts).
+export const BY_VENUE = 'by-venue';
+export const BY_TIME = 'by-time';
+export const LAYOUTS = [BY_VENUE, BY_TIME];
+export function sectionLayoutOf(fest, key) {
+  const meta = fest && fest.dayMeta && typeof key === 'string' ? fest.dayMeta[key] : null;
+  return meta && meta.layout === BY_TIME ? BY_TIME : BY_VENUE;
+}
+
+// Where every room an entry sits in reads by time, each party there is ITS
+// OWN SHOW (v94): its own start, its own page and ticket link, never a run.
+// So the rules that make a ROOM one show — a timed room needs a running order,
+// one venue-night is one bill with one page and one ticket link — do not reach
+// it. The validator (festival-rules.mjs) and the file's own tests ask this one
+// question, so they cannot drift apart. A combined label ("Afters & Folsom")
+// still has a room in Afters, and the room's rules still hold it there.
+const DAY_PARTS = /\s*[&+/]\s*|\s+and\s+/i;
+export function showsOnItsOwn(fest, entry) {
+  const parts = String((entry && entry.day) || '').split(DAY_PARTS).map((s) => s.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((p) => sectionLayoutOf(fest, p) === BY_TIME);
+}
+
+// The bands, on the festival-day clock (9 AM starts the day; activityMinutes).
+// Fixed boundaries, never fitted to the data, so a night with two parties
+// reads the same way as a night with twenty-six: a band with nothing in it is
+// simply not drawn. The words are the ones a night out uses — the happy hours
+// and the fair are DAYTIME and EVENING, the doors most parties open are 9 PM
+// and 10 PM, LATE runs to bar close (2 AM in San Francisco), and anything
+// that starts after it is AFTER-HOURS. A party with no clock at all is TIME
+// TBA, last: nothing is hidden, and nothing pretends to know when.
+const H = 60;
+export const TIME_BANDS = [
+  { key: 'day', label: 'Daytime', from: 9 * H, to: 17 * H },
+  { key: 'evening', label: 'Evening', from: 17 * H, to: 21 * H },
+  { key: '9pm', label: '9 PM', from: 21 * H, to: 22 * H },
+  { key: '10pm', label: '10 PM', from: 22 * H, to: 23 * H },
+  { key: 'late', label: 'Late', from: 23 * H, to: 26 * H },
+  { key: 'after', label: 'After-hours', from: 26 * H, to: 33 * H },
+];
+export const TIME_TBA = { key: 'tba', label: 'Time TBA', from: null, to: null };
+export const bandOf = (startMin) => (startMin == null ? TIME_TBA
+  : TIME_BANDS.find((b) => startMin >= b.from && startMin < b.to) || TIME_TBA);
+
+// The night in start order, cut into bands. Built ON the stacks' own model
+// (venueGroupsOf), so everything a stack card knows — its now window, a
+// cancelled party's place, the tilde on a guessed time — a by-time card knows
+// the same way. Only the arrangement differs: every member leaves its room
+// and lines up by when it starts (a set's time, else the room's doors), a
+// cancelled party last in its band, file order settling a tie.
+//
+// One difference in the now window, and it is the point of the layout: a
+// stack is a RUN, where an act plays until the next act starts; a by-time
+// room holds separate parties, so a party's PRINTED end wins — the 3–8 PM tea
+// dance at The Stud is over at 8, not when Friday's 9 PM party opens the same
+// door. Without a printed end the stack's rule stands (the next party in the
+// room, else the room's close, else an hour); a longer guess is data's to
+// make (`close`, closeApprox), never the renderer's.
+export function timeBandsOf(entries, opts = {}) {
+  const list = entries || [];
+  const at = new Map(list.map((e, i) => [e, i]));
+  const members = [];
+  for (const g of venueGroupsOf(list, opts)) {
+    for (const m of g.members) {
+      const t = parseEventTime(m.e.time) || parseEventTime(m.e.doors);
+      const set = parseEventTime(m.e.time);
+      const nowTo = m.nowFrom != null && set && set.endMin != null ? set.endMin : m.nowTo;
+      members.push({ ...m, nowTo, venue: g.venue, tba: g.tba, startMin: t ? t.startMin : null, i: at.get(m.e) ?? 0 });
+    }
+  }
+  const byBand = new Map();
+  for (const m of members) {
+    const b = bandOf(m.startMin);
+    if (!byBand.has(b.key)) byBand.set(b.key, { ...b, members: [] });
+    byBand.get(b.key).members.push(m);
+  }
+  const order = [...TIME_BANDS, TIME_TBA].map((b) => b.key);
+  return [...byBand.values()]
+    .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    .map((b) => ({
+      ...b,
+      members: b.members.sort((x, y) => (x.cancelled - y.cancelled)
+        || ((x.startMin ?? Infinity) - (y.startMin ?? Infinity))
+        || x.i - y.i),
+    }));
+}
+
 // ---- the model ----------------------------------------------------------------------
 // `groups` is the wall's own grouping (wall.js groupByDay: combined days
 // already split, known-day order): Map(dayKey → entries). `gridDays` are the
@@ -513,31 +622,61 @@ export function findEventEntry(fest, name, occ) {
 }
 
 
-// ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24) ------------
+// ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24;
+// prices 2026-09-26) ------------
 // "when it's afters or shows like this I naturally want to click through to
 // the event page. we have tix but do those always have details… and what
 // about before tix are available." So a show that is not the festival's own
-// set can carry two links, each `{ url, at }`, and the zoom says each in
-// Kevin's words ("For all of these lets do 'Tixs @ [location]' - tigher and
-// clearer"):
+// set can carry two links, each at least `{ url, at }`, and the zoom says
+// each as a plain word — "Tix $69 · Info" — never the seller's name (Kevin,
+// 2026-09-26, from Portola: "I actually think we never need to see the name
+// of the site where the tix are sold. No necessary info. Just tix if we
+// don't know price or Tix $69 for example… some of these events are
+// expensive"):
 //
 //   `page`    the show's own page for people — details, the whole bill, and
-//             the one place to look before tickets exist: "Info @ DoTheBay".
+//             the one place to look before tickets exist: "Info".
 //   `tickets` the buy link exactly as the listing printed it (a referral tag
-//             stays: it pays the small company that listed the show) and the
-//             seller it lands on: "Tix @ AXS".
+//             stays: it pays the small company that listed the show):
+//             "Tix" with no price on file, "Tix $69" with one, "Tix free"
+//             for a $0 ticket/RSVP.
 //
-// `at` is data, never parsed from the URL at render: a referral wrapper hides
-// the seller's domain, and a venue's domain is not its name. Both URLs must
-// be https (the validator refuses anything else). A cancelled show keeps its
-// page (what happened, refunds) and loses its tickets. When the page IS the
-// ticket page, one door says it. An entry without links has no doors, which
-// is every festival grid set.
+// `at` (the seller the link lands on, e.g. "AXS") stays in the data and
+// stays REQUIRED — it is provenance, since a referral wrapper hides the
+// seller's domain and a venue's domain is not its name — it is just no
+// longer shown; sourceDoor (card-facts.js) folds it into the accessible
+// label instead ("Tix $69 — buy tickets at AXS"), which nobody sees. Both
+// URLs must be https (the validator refuses anything else). A cancelled show
+// keeps its page (what happened, refunds) and loses its tickets. When the
+// page IS the ticket page, one door says it. An entry without links has no
+// doors, which is every festival grid set.
 const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
+// The cheapest ticket on file, in Kevin's words: no price → "Tix", $0 → "Tix
+// free", a whole dollar amount → "Tix $69" (no decimals, no thousands
+// separator). A price shows only with its `checked` date and inside the
+// validator's range — the same shape the validator enforces, held here too
+// because a phone can render a festival file its cache kept (Sol's review,
+// 2026-09-26: a price without its date, or $2001, rendered). Anything else
+// falls back to the bare word rather than a number nobody vouched for.
+// A real calendar date, the validator's rule (festival-rules.mjs realDate):
+// years 1900–2199, and 2026-13-40 is shaped like a date and is not one.
+const realDate = (d) => {
+  const m = typeof d === 'string' && /^((?:19|20|21)\d{2})-(\d{2})-(\d{2})$/.exec(d);
+  if (!m) return false;
+  const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
+};
+const tixWord = ({ price, checked }) => {
+  if (!Number.isInteger(price) || price < 0 || price > 2000) return 'Tix';
+  if (!realDate(checked)) return 'Tix';
+  return price === 0 ? 'Tix free' : `Tix $${price}`;
+};
 const linkOf = (l, kind, word) => {
   if (!l || typeof l !== 'object' || !httpsUrl(l.url)) return null;
   const at = typeof l.at === 'string' ? l.at.trim() : '';
-  return at ? { kind, text: `${word} @ ${at}`, url: l.url } : null;
+  if (!at) return null;
+  const text = kind === 'tix' ? tixWord(l) : word;
+  return { kind, text, url: l.url, at };
 };
 const sameTarget = (a, b) => {
   try {

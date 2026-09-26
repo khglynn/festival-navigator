@@ -18,6 +18,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
 import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -48,9 +49,15 @@ async function guestPhone(engine) {
   };
   const writes = [];
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  // The crew answers like the real one: a write is merged in and the merged
+  // doc comes back (a fixed doc would erase a join's pick on its own echo).
+  let crewDoc = doc;
   await ctx.route('**/api/crew**', (r) => {
-    if (r.request().method() !== 'GET') writes.push(r.request().url());
-    return r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) });
+    if (r.request().method() !== 'GET') {
+      writes.push(r.request().url());
+      try { crewDoc = deepMerge(crewDoc, JSON.parse(r.request().postData() || '{}').data || {}); } catch { /* not JSON */ }
+    }
+    return r.fulfill({ contentType: 'application/json', body: JSON.stringify(crewDoc) });
   });
   await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
@@ -140,6 +147,14 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       if (cdp) {
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: o2.x, y: o2.y }] });
         for (let i = 1; i <= 6; i += 1) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: o2.x, y: o2.y - i * 25 }] });
+        // The finger stops before it lifts, so the drag ends with no fling.
+        // A fling would still be coasting at the quick tap below, and a tap on
+        // a coasting page only stops it (an iPhone does the same; Chromium on
+        // Linux suppresses that tap's click) — that is the platform, not the
+        // swallow this checks. CI caught it twice on 623a50b (2026-09-26).
+        await sleep(120);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: o2.x, y: o2.y - 150 }] });
+        await sleep(40);
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       } else {
         // WebKit has no drag input here: the same press, then the pointercancel a scroll sends.
@@ -150,6 +165,11 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
         }, o2);
       }
       await sleep(80);
+      // The page is still (no fling coasting under the tap), and the tap
+      // still comes well inside the swallow's 700 ms — so if the swallow
+      // outlived the flick's cancel, it would eat this click.
+      const still = await page.evaluate(() => new Promise((res) => { const a = scrollY; requestAnimationFrame(() => requestAnimationFrame(() => res(Math.abs(scrollY - a) < 1))); }));
+      assert.ok(still, 'the page is not coasting when the quick tap comes');
       // A dock control that is itself under its centre: a day tab, or NOW.
       // (The dock's days scroll, so one can sit under NOW; and while the row
       // is still gliding to centre its active day, WebKit takes a tap on it
@@ -221,7 +241,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       assert.match(await page.locator('#welcome-card .bring-sub').textContent(), /Tap any artist to add yours/, 'the just-joined welcome, in a member’s words');
       assert.deepEqual(await page.locator('#welcome-card .bring-actions button').allTextContents(), ['Got it']);
       assert.equal(await page.locator('#dock-you').textContent(), 'A', 'Ana is in');
-      assert.equal(await level(page, 'Tove Lo'), JSON.stringify({ Maya: 4, Ana: 1 }), 'and Tove Lo is her first pick');
+      assert.deepEqual(JSON.parse(await level(page, 'Tove Lo')), { Maya: 4, Ana: 1 }, 'and Tove Lo is her first pick');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

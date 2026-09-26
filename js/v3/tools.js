@@ -6,6 +6,7 @@ import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
 import { loadFolded } from './filters.js';
 import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf } from './events.js';
+import { BY_TIME, sectionLayoutOf, timeBandsOf } from './events.js'; // the list by time (v94)
 
 // The header's own gear (index.html, #gear-btn), for anywhere else Settings
 // is named: the show menu's Settings row and How it works' last row (v93). A
@@ -283,13 +284,19 @@ function looseOf(plan) {
 // one — every other row stays name + time.
 const offRow = (e, ...where) => ({ name: e.name, time: [...where, 'Cancelled'].filter(Boolean).join(' · '), occ: occOf(e) });
 const liveFirst = (list) => [...list.filter((a) => !isCancelled(a)), ...list.filter(isCancelled)];
+// A section's members in the order its room on the wall shows them: venue
+// by venue for the stacks, by start time for a by-time section (v94) — the
+// image is the wall you see. Each member carries its venue either way.
+function membersOf(fest, key, list) {
+  if (sectionLayoutOf(fest, key) === BY_TIME) return timeBandsOf(list).flatMap((b) => b.members);
+  return venueGroupsOf(list).flatMap((g) => g.members.map((m) => ({ ...m, venue: g.venue })));
+}
 function sectionRows(plan, dayKey, out) {
+  const fest = state.fest();
   for (const sec of plan.model.sections) {
-    for (const g of venueGroupsOf(sec.byDay.get(dayKey) || [])) {
-      for (const m of g.members) {
-        out.push(m.cancelled ? offRow(m.e, sec.label, g.venue)
-          : { name: m.e.name, time: [sec.label, g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
-      }
+    for (const m of membersOf(fest, sec.key, sec.byDay.get(dayKey) || [])) {
+      out.push(m.cancelled ? offRow(m.e, sec.label, m.venue)
+        : { name: m.e.name, time: [sec.label, m.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
     }
   }
 }
@@ -325,14 +332,12 @@ export function dayArtistsFor(day) {
     const dated = extra.byDate ? [...extra.byDate] : [[null, extra.entries || []]];
     const out = [];
     for (const [iso, list] of dated) {
-      for (const g of venueGroupsOf(list)) {
-        for (const m of g.members) {
-          out.push(m.cancelled ? offRow(m.e, iso && shortDateLabel(iso), g.venue) : {
-            name: m.e.name,
-            time: [iso && shortDateLabel(iso), g.venue, m.e.time ? approxMark(m.e, m.e.time) : null]
-              .filter(Boolean).join(' · '),
-          });
-        }
+      for (const m of membersOf(fest, extra.key, list)) {
+        out.push(m.cancelled ? offRow(m.e, iso && shortDateLabel(iso), m.venue) : {
+          name: m.e.name,
+          time: [iso && shortDateLabel(iso), m.venue, m.e.time ? approxMark(m.e, m.e.time) : null]
+            .filter(Boolean).join(' · '),
+        });
       }
     }
     return out;

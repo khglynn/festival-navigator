@@ -1348,6 +1348,51 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .stack-scroll > .venue-grid[data-clock][data-venues="1"] { grid-template-columns: var(--col-w); }
 }
 
+/* THE LIST BY TIME (v94 — wall.js timeGroups; a section that declares
+ * `layout: "by-time"`). Bands down, cards across: each band a quiet line —
+ * smaller and paler than the room head above it, never the fest accent (a band
+ * is not a stage) — then its cards on the one card track, `--col-w`, wrapping.
+ * Every gap is the wall's own: the card gap across and down (so a band reads as
+ * one block of cards, not rows of pairs), the room's 9px to the first band and
+ * a little more between bands than inside one. Cards in a row share a height
+ * (the grid's stretch), so a two-line name beside a one-line one is still one
+ * row with one bottom edge; the card centres its text as it does everywhere. */
+.time-list { display: flex; flex-direction: column; gap: 14px; }
+.time-band { display: flex; flex-direction: column; gap: 7px; }
+.band-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.band-head .label { flex: none; color: var(--text-secondary); font-size: 10px; font-weight: 800;
+                    letter-spacing: .09em; text-transform: uppercase; line-height: 1; }
+.band-head .line { flex: 1 1 0; min-width: 0; height: 1px;
+                   background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+.band-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
+             justify-content: start; gap: var(--col-gap); }
+/* A by-time card's WHERE (wall.js renderCard `place`): phrases, the venue and
+ * then the area, and a phrase never breaks inside itself (Kevin, 2026-09-25:
+ * "Mayes Oyster House · Polk / Gulch" split the neighbourhood). One line with a
+ * dot between while every phrase fits whole; otherwise `.stacked` (wall.js
+ * fitPlaces, from the drawn widths, before paint): a phrase a line, no dot. A
+ * venue too long for a line on its own wraps between its words, as a name
+ * does. The time above it never wraps. `.pdot` is a fixed 11px (fitPlaces
+ * counts on it). */
+.band-grid .card .time { white-space: nowrap; }
+.card .place { position: relative; align-self: stretch; display: block; text-align: center;
+               font-size: 9px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.card .place .phrase { display: inline-block; max-width: 100%; vertical-align: top; white-space: nowrap;
+                    overflow: hidden; text-overflow: ellipsis; }
+.card .place .pdot { display: inline-block; width: 11px; text-align: center; vertical-align: top; }
+.card .place.stacked { display: flex; flex-direction: column; align-items: center; white-space: normal; }
+.card .place.stacked .pdot { display: none; }
+.card .place.stacked .phrase.lead { white-space: normal; }
+
+/* Under a day's timetable, from 720 up: step in by the hour rail and take the
+ * clock's track gap, so column n sits under the clock's column n, as the
+ * stacks do (.venue-grid[data-clock="day"]). The phone keeps the shell's two
+ * columns (wall.js timeGroups says why). */
+@media (min-width: 720px) {
+  .time-list[data-clock] { padding-inline-start: var(--hour-rail-w); }
+  .time-list[data-clock] .band-grid { column-gap: var(--clock-gap); }
+}
+
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
  * one piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }

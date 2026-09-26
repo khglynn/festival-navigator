@@ -2,6 +2,44 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-24 → 26 — v87 to v91 during Portola, and the live-ops lane
+
+Moved here from NOW.md on 2026-09-26, when NOW became a cursor for the live
+lane again. Per-release detail, reviews and Kevin's calls live in
+`claude-plans/2026-09-25-portola-live/LEDGER.md`; the ship and undo rules in
+the RUNBOOK beside it.
+
+- **v87** — the NOW jump: a NOW tab before the day tabs while something is
+  live; taps go down the page stop by stop and wrap; with a person
+  highlighted, only their live picks (MODEL-V4 §3d) —
+  `claude-plans/2026-09-24-now-jump-build.md`. Also the full-width now line,
+  the zoom clearing the sticky rail and stage strip as well as the dock
+  (`claude-plans/2026-09-24-zoom-chrome-build.md`), and an untimed act in a
+  timed room never lit as playing.
+- **v88** — event-page and ticket doors in the zoom for every afters, Folsom
+  and Late-nights show ("Event pages and tickets" in
+  `docs/add-a-festival.md`); the app reporting its own errors to PostHog
+  project 627900 through `js/errlog.js`, crew links and notes scrubbed, a
+  Settings switch (`claude-plans/2026-09-24-analytics/BUILD.md`); no
+  zoom-on-focus on iPhone (iOS alone gets `maximum-scale=1`), no double-tap
+  zoom, the search box shaped like a text field. The walk's one bug (a door
+  tapped in the settle beat closed the zoom) fixed before ship; Kevin checked
+  it live.
+- **v89** (Kevin's v88 feedback, 2026-09-25) — the zoom's notes chip opens on
+  the first tap on iPhone (Safari's unfocused button had sent focus nowhere
+  and closed the zoom — diagnosed from his phone's own PostHog reports);
+  holding a note reveals its actions instead of selecting text on touch; no
+  undo toast when a must clears; error kinds read as words in PostHog.
+- **The live-ops lane** (from 2026-09-25 ~5 PM PT, Kevin at Portola on his
+  phone): one session, a worktree per release, gates of CI (unit in three
+  clocks + browser) → Codex Sol 6 review → a real-browser walk → merge →
+  `ops/prod-smoke.mjs`. Shipped: **v90** (6:32 PM — stacks under a clock line
+  up on desktop, taller notes button, Settings → Get the latest version),
+  the MÜLL / Big Muscle / Aftershock parties (#40), **v91** (7:59 PM — phone
+  afters line up under the timetable and scroll sideways, NOW frames a
+  phone's stack row, search ignores accents), and the PostHog → Slack alerts
+  (#45, #46 — each alert says what the error means in plain words).
+
 ## 2026-09-23 — the pre-Portola round: data re-read, one line per room, Skepta cancelled, your meter, the warm open
 
 - **Data first, live the same morning (PR #23).** A readiness check against

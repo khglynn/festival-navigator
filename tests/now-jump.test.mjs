@@ -174,12 +174,19 @@ test('just after the grid closes, the line is still drawn but the afters are the
     assert.equal(l.card, root.querySelector('.venue-grid[data-iso] .card.now'), 'the first in the wall’s order');
     root.remove();
   }
+  // Since 2026-09-25 Saturday's Folsom has daytime parties that are really on
+  // at 12:40 PM (a drag brunch from 11 AM, the Mr. S alley party from noon), so
+  // "before doors with nothing marked" hides Folsom; with it showing, those
+  // parties are the answer, not the top of a grid that has not opened.
   const early = clock(doors - 20);
-  const { root, ctx } = render(early);
+  const { root, ctx } = render(early, [], { folded: ['Folsom'] });
   assert.ok(root.querySelector('.now-line'), 'twenty minutes before doors the line is drawn');
   assert.equal(root.querySelectorAll('.venue-grid .card.now').length, 0, 'and nothing is marked');
   assert.equal(nowLanding(root, ctx, early).kind, 'line', 'so the top of the grid is the answer');
   root.remove();
+  const withFolsom = render(early);
+  assert.equal(nowLanding(withFolsom.root, withFolsom.ctx, early).kind, 'card', 'with Folsom showing, a daytime party on now is the answer');
+  withFolsom.root.remove();
 });
 
 test('outside the live window there is no NOW: a Saturday morning, a week early, a lineup fest with no clock', () => {
@@ -231,7 +238,18 @@ const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2
   const line = root.querySelector('.times-grid .now-line');
   if (line) box.set(line, { top: 1000, bottom: 1002, left: 60 });
   let y = 2000;
-  for (const vg of root.querySelectorAll('.venue-grid[data-iso]')) {
+  for (const vg of root.querySelectorAll('.venue-grid[data-iso], .time-list[data-iso]')) {
+    // A time list (v94 — a section read by time): its cards wrap `perRow`
+    // across in wall order, a row every 160px.
+    if (vg.classList.contains('time-list')) {
+      const cards = [...vg.querySelectorAll('.card')];
+      cards.forEach((c, i) => {
+        const top = y + Math.floor(i / perRow) * 160;
+        box.set(c, { top, bottom: top + 150, left: 16 + (i % perRow) * 180 });
+      });
+      y += Math.ceil(cards.length / perRow) * 160 + 200;
+      continue;
+    }
     const groups = [...vg.querySelectorAll('.venue-group')];
     const rows = Math.ceil(groups.length / perRow);
     groups.forEach((g, i) => {
@@ -268,7 +286,7 @@ test('stops, nobody highlighted: the line, then each row of afters top to bottom
   assert.deepEqual(targets, [...targets].sort((x, y) => x - y), 'top to bottom');
   for (let i = 1; i < targets.length; i++) assert.ok(targets[i] - targets[i - 1] > 400, 'every next stop really moves the page');
   // Two venues a row: the first row's live cards are one stop.
-  const all = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  const all = [...root.querySelectorAll('.venue-grid[data-iso] .card.now, .time-list[data-iso] .card.now')];
   assert.equal(plan.stops.reduce((n, st) => n + st.members.filter((m) => m.card).length, 0), all.length, 'every NOW card is somewhere, once');
   assert.ok(plan.stops.some((st) => st.members.length > 1), 'and side by side is one stop, not two taps that go nowhere');
   root.remove();
@@ -315,7 +333,8 @@ test('stops after the grid closes: the afters only, first NOW card first; before
   const doors = Number(probe.querySelector('.times-grid[data-iso="2026-09-26"]').dataset.startRow) * 15;
   probe.remove();
   const early = pt(`2026-09-26T${String(Math.floor((doors - 20) / 60)).padStart(2, '0')}:${String((doors - 20) % 60).padStart(2, '0')}:00`);
-  const { root: r2, ctx: c2 } = render(early);
+  // Folsom hidden: its daytime parties are really on at 12:40 PM (2026-09-25).
+  const { root: r2, ctx: c2 } = render(early, [], { folded: ['Folsom'] });
   const pre = nowStops(r2, c2, early, layout(r2));
   assert.deepEqual(pre.stops.map(namesOf), [['LINE']], 'twenty minutes before doors: the top of the grid, nothing else');
   r2.remove();
@@ -508,7 +527,7 @@ test('stops: a show that renders in two rooms is one stop member, not two taps',
   const at = pt('2026-09-25T23:30:00');
   for (const people of [[], ['Ross']]) {
     const { root, ctx } = render(at, people, people.length ? { picks: { 'Horse Meat Disco': { Ross: 4 } } } : {});
-    const hmd = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
+    const hmd = [...root.querySelectorAll('.venue-grid[data-iso] .card.now, .time-list[data-iso] .card.now')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
     assert.equal(hmd.length, 2, 'two cards, one in each room');
     assert.equal(hmd[0].dataset.occ, hmd[1].dataset.occ, 'one occurrence');
     assert.notEqual(roomOf(hmd[0]), roomOf(hmd[1]), 'two rooms');
@@ -554,7 +573,8 @@ test('what NOW says: the line’s time and what crosses it, cards by name and pl
   const hh = Math.floor((doors - 20) / 60);
   const mm = (doors - 20) % 60;
   const early = pt(`2026-09-26T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
-  const { root: r4, ctx: c4 } = render(early);
+  // Folsom hidden: its daytime parties are really on at 12:40 PM (2026-09-25).
+  const { root: r4, ctx: c4 } = render(early, [], { folded: ['Folsom'] });
   const pre = nowStops(r4, c4, early, layout(r4));
   assert.equal(nowSaid(pre, pre.stops[0]), `Now, ${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}.`, 'before doors: the time, and nothing claimed');
   r4.remove();

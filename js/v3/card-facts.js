@@ -25,7 +25,12 @@ export function timeRange(t) {
   const [s, e] = t.split(' - ');
   if (!e) return t;
   const ps = s.trim().split(' '), pe = e.trim().split(' ');
-  return ps[1] === pe[1] ? `${ps[0]} – ${e.trim()}` : `${s.trim()} – ${e.trim()}`;
+  // "12 – 6 PM" drops the start's AM/PM only when both ends sit in the SAME
+  // half-day, end after start. 10 AM to 12 AM is ten in the morning to
+  // MIDNIGHT, and "10 – 12 AM" read as a two-hour brunch (the Kink.com
+  // Penthouse Preview, Folsom Sunday, v94).
+  const mins = (c) => { const [h, m] = String(c).split(':'); return (Number(h) % 12) * 60 + Number(m || 0); };
+  return ps[1] === pe[1] && mins(pe[0]) > mins(ps[0]) ? `${ps[0]} – ${e.trim()}` : `${s.trim()} – ${e.trim()}`;
 }
 
 const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMeta[day].wd) || day;
@@ -88,8 +93,8 @@ export function factsFor(artistName, ctx, occ = null) {
     note: typeof offEntry.cancelled.note === 'string' ? offEntry.cancelled.note : null,
   } : null;
   const run = occ && !cancelled ? runFactsOf(entry) : null;
-  // The show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf):
-  // only from the entry this card IS. A card that knows only a name (a list,
+  // The show's doors out, "Tix $69 · Info" (events.js linksOf): only from
+  // the entry this card IS. A card that knows only a name (a list,
   // an old link's notes sheet) takes its when and where from the grid, so
   // borrowing another show's links by name would put an afters' tickets under
   // a festival set (the review of #29: Overmono "Sun · Warehouse" with the
@@ -422,23 +427,23 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // Once the venue posts the order the word goes and the door stays.
 // The cancellation's "Announced Sep 21" is the same kind of door, to the
 // report it came from.
-function sourceDoor({ text, url }, className, why) {
+function sourceDoor({ text, url, at }, className, why) {
   const w = document.createElement(url ? 'a' : 'span');
   w.className = className;
   if (url) {
     w.href = url;
     w.target = '_blank';
     w.rel = 'noopener';
-    w.setAttribute('aria-label', `${text} — ${why}`);
+    // Nobody sees the seller (events.js, 2026-09-26) — but the accessible
+    // label may still name it ("Tix $69 — buy tickets at AXS"), since that
+    // is not something a sighted person reads off the card.
+    w.setAttribute('aria-label', at ? `${text} — ${why} at ${at}` : `${text} — ${why}`);
     w.addEventListener('click', (e) => e.stopPropagation());
   }
   w.textContent = text;
   return w;
 }
 const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order came from');
-// "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
-// Each is a sourceDoor, so a click opens the page and never reaches the
-// card's pick (a click on the zoom picks, by design).
 // A pair's separator: shown only when the pair sits on one line.
 function pairSep() {
   const dot = document.createElement('span');
@@ -462,6 +467,35 @@ function fitPairs(root) {
   for (const p of over) p.classList.remove('inline');
 }
 
+// The standing zoom, laid out again from its rules: its size (the screen's
+// width decides a finger's zoom), its pairs, its place. For what changes the
+// measures under an open zoom — the viewport (a rotation, a resized window)
+// and a late font (Inter landing after the zoom opened draws every
+// statement wider; wall.js refits its cards for the same reason). One pass
+// per frame, and nothing at all with no zoom open.
+function relayoutZoom(z) {
+  if (zoomed !== z || !z.el.isConnected) return;
+  sizeSlot(z.slot, rect(z.el), doorsOf(z));
+  fitPairs(z.card);
+  place(z.slot, z.el);
+}
+let fontRaf = 0;
+function refitForFonts() {
+  if (!zoomed || fontRaf) return;
+  fontRaf = requestAnimationFrame(() => { fontRaf = 0; if (zoomed) relayoutZoom(zoomed); });
+}
+let fontsWatched = false;
+function watchFonts() {
+  if (fontsWatched || typeof document === 'undefined' || !document.fonts) return;
+  fontsWatched = true;
+  const f = document.fonts;
+  if (typeof f.addEventListener === 'function') f.addEventListener('loadingdone', refitForFonts);
+  if (f.ready && typeof f.ready.then === 'function') f.ready.then(refitForFonts, () => {});
+}
+
+// "Tix $69 · Info": the show's doors out, one row under WHERE. Each is a
+// sourceDoor, so a click opens the page and never reaches the card's pick (a
+// click on the zoom picks, by design).
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';
@@ -997,6 +1031,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   sizeSlot(slot, r0, doors);
   zoomLayer().appendChild(slot);
   fitPairs(card);
+  watchFonts();
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
@@ -1463,6 +1498,7 @@ function wireSlot(z) {
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
+  let refitNext = false; // the viewport changed: size and pairs are measured again, not just the place
   const follow = () => {
     followRaf = 0;
     if (zoomed !== z) return;
@@ -1480,15 +1516,20 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
+    // A rotation or a resized window changes what the zoom may be (a finger's
+    // zoom is as wide as the screen allows) and so what its pairs fit — the
+    // re-review of a73df70: a pair kept the layout it was opened with.
+    if (refitNext) { refitNext = false; relayoutZoom(z); return; }
     place(z.slot, z.el);
   };
   const onScroll = () => { if (!followRaf) followRaf = requestAnimationFrame(follow); };
+  const onResize = () => { refitNext = true; onScroll(); };
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
   z.cleanup.push(() => {
     if (followRaf) cancelAnimationFrame(followRaf);
     window.removeEventListener('scroll', onScroll, true);
-    window.removeEventListener('resize', onScroll);
+    window.removeEventListener('resize', onResize);
   });
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the

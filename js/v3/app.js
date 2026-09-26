@@ -990,7 +990,22 @@ const pageGeo = (root) => ({
   scrollY: window.scrollY,
   maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
   now: performance.now(),
-  box: (el) => el.getBoundingClientRect(),
+  // A card's LAYOUT box, never its pulsed one. NOW's pulse scales a card
+  // about its centre for ~0.9 s, and a tap inside that window read the grown
+  // box: a time list (v94) pulses a whole band at once, and the next stop
+  // regrouped around the few pixels the pulse added — the same show landed
+  // twice (the browser cycle test, 2026-09-26). The centre is where a scale
+  // leaves it; the size is the layout's.
+  box: (el) => {
+    const r = el.getBoundingClientRect();
+    if (!el.classList || !el.classList.contains('card')) return r;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    if (!w || !h || (Math.abs(r.width - w) < 0.5 && Math.abs(r.height - h) < 0.5)) return r;
+    const cx = (r.left + r.right) / 2;
+    const cy = (r.top + r.bottom) / 2;
+    return { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2, width: w, height: h };
+  },
   band: (grid) => seenBand(grid),
   scroller: (cell) => {
     const el = cell.closest('.times-scroll');

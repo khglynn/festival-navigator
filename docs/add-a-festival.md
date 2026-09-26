@@ -1,7 +1,8 @@
 # Adding a festival
 
-*Updated 2026-09-23 — a cancelled act keeps its entry and says so
-(`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
+*Updated 2026-09-25 — a section can read by time (`layout: "by-time"` in its
+`dayMeta`, below) and a card can say its part of town (`area`). 2026-09-23 — a
+cancelled act keeps its entry and says so (`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
 `date`; one rule for guessed times; doors go in `doors`.*
 
 Two files, one command:
@@ -185,24 +186,29 @@ multi-line), on a cancelled name that still has a set on a grid day its entry
 names, and on `cancelled` written on a grid set. It does not warn that the act
 has no set on the grid, or that its venue has no map.
 
-### Event pages and tickets (2026-09-24)
+### Event pages and tickets (2026-09-24; prices 2026-09-26)
 
 A show that is not the festival's own set — an afters night, a Folsom party,
 a Late nights gig — can say where to read about it and where to buy. Kevin:
 "when it's afters or shows like this I naturally want to click through to the
 event page… and what about before tix are available." The zoom shows one
-line under the place, **Tix @ AXS · Info @ DoTheBay**:
+line under the place, **Tix $69 · Info** — never the seller's name (Kevin,
+2026-09-26, from Portola: "I actually think we never need to see the name of
+the site where the tix are sold. No necessary info. Just tix if we don't
+know price or Tix $69 for example… some of these events are expensive"):
 
 ```json
 { "name": "Six Sex", "day": "Afters", "night": "Fri", "venue": "Great American Music Hall",
   "page":    { "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets", "at": "DoTheBay" },
-  "tickets": { "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff", "at": "AXS" } }
+  "tickets": { "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff", "at": "AXS", "price": 69, "checked": "2026-09-26" } }
 ```
 
 | Field | What |
 |---|---|
-| `page` | The show's own page for people: the whole bill, the details, and the one place to look before tickets exist. A DoStuff listing (DoTheBay, Do512) when there is one, else the venue's or promoter's page. `at` is the site as a person says it. |
-| `tickets` | Where to buy, exactly as the listing printed it. Keep a referral tag (`SharedId=DoStuff`, `pubref:dostuff`): it pays the small company that listed the show. `at` is the seller the link lands on (`AXS`, `Ticketmaster`, `Tixr`, `Eventim`), written out because a referral wrapper hides it. |
+| `page` | The show's own page for people: the whole bill, the details, and the one place to look before tickets exist. A DoStuff listing (DoTheBay, Do512) when there is one, else the venue's or promoter's page. `at` is the site as a person says it — never shown, but required (provenance: a referral wrapper hides the seller's domain). |
+| `tickets` | Where to buy, exactly as the listing printed it. Keep a referral tag (`SharedId=DoStuff`, `pubref:dostuff`): it pays the small company that listed the show. `at` is the seller the link lands on (`AXS`, `Ticketmaster`, `Tixr`, `Eventim`) — required for the same reason as `page.at`, but likewise never shown on the card. |
+| `tickets.price` | Optional, with `checked` (both or neither). Whole US dollars — the cheapest ticket on sale when checked, rounded cents up (never understate). `0` means free/RSVP. Drives the door's text: no price → "Tix", `69` → "Tix $69", `0` → "Tix free". |
+| `tickets.checked` | Optional, with `price`. The `YYYY-MM-DD` date the price was read — not shown, just how stale a price can be judged. |
 
 Leave `tickets` off a free night, a door-only night, or a sold-out one with no
 resale link — the page is then the only door, which is the point. One room on
@@ -213,11 +219,14 @@ links, and an opener found on the venue's own page takes its headliner's
 times in one room are two shows and may differ. When the
 page and the tickets are the same page, the zoom shows one door. A cancelled
 show keeps its page and drops the tickets door. The validator errors on
-anything but `{ url, at }`, a URL that is not `https`, an empty `at`, an
-`at` longer than 24 characters, and either field on a festival set (an entry
-whose day is a grid day). Research for a new festival never writes them:
-`api/festival-add.js` drops both from what the model returns, because a page
-it read could steer it to a look-alike ticket site.
+anything but `{ url, at, price?, checked? }` on `tickets` (`{ url, at }` on
+`page`), a URL that is not `https`, an empty `at`, an `at` longer than 24
+characters, `price` without `checked` or vice versa, a `price` that is not a
+whole number 0–2000, a `checked` that is not a real date, and either field on
+a festival set (an entry whose day is a grid day). Research for a new
+festival never writes them: `api/festival-add.js` drops both from what the
+model returns, because a page it read could steer it to a look-alike ticket
+site or a stale price.
 
 ### Event fields — where a section goes (MODEL-V4 §6)
 
@@ -251,6 +260,48 @@ by the section's label:
 A dated entry renders under its date, not under the section label, so one
 artist playing two nights is two cards and one pick. Only the same name on
 the same date is a duplicate.
+
+### How a section reads — by venue or by time (v94, 2026-09-25)
+
+A section's cards stack under the room they happen in (below). That is right
+when a night is a handful of rooms, each with a run of acts: Portola's afters.
+It is wrong when a night is many one-party rooms: Folsom weekend is 68
+parties in 39 venues, and only two or three rooms host more than one party a
+night. So a section can say, **once, in its own `dayMeta` entry**, that it
+reads by time:
+
+```json
+"dayMeta": { "Folsom": { "date": "Sep 25-27", "layout": "by-time" } }
+```
+
+| `layout` | What the wall draws for each night of the section |
+|---|---|
+| `by-venue` (the default; leaving it off means this) | A stack of cards under each venue, in play order. |
+| `by-time` | The night's cards in start order, wrapping across the one card column (two on a phone), under fixed bands: DAYTIME (before 5 PM), EVENING (5–9), 9 PM, 10 PM, LATE (11 PM to 2 AM), AFTER-HOURS (2 AM on), then TIME TBA for a card with no clock. Each card says its own place under its time: `9 PM – 3 AM` / `Public Works · Mission`. |
+
+It is the section's choice, not each entry's: one declaration cannot
+disagree with itself. The validator errors on a value that is not a layout,
+on a grid day (that's a timetable), on a combined label like `Afters & Folsom`
+(declare it on each part), on a label no entry plays under, and on a
+festival with no grid (no sections). A by-time entry with neither `time` nor
+`doors` gets a warning: it shows last, under TIME TBA.
+
+What a by-time entry carries is what any section entry carries, plus one
+optional field:
+
+| Field | What |
+|---|---|
+| `area` | The part of town, `"SoMa"`, `"Castro"` (≤ 40 chars). The card says it after the venue, because no venue head sits above a by-time card. |
+
+Keep `venue` short, the name a person would say ("Power Exchange"), with the
+street address in `venues{}` as the map link. A party that starts after
+midnight belongs to the night before, so its `night` is that night (3 AM
+Sunday is Saturday's `"Sat"`, `"3 AM"`), and it shows under that night's
+AFTER-HOURS. A printed end (`"9 PM - 3 AM"`) is when the card's now ring goes
+out. Without one, the ring lasts an hour, or until the room's `close` when the
+entry has one, and the card then reads `9:30 PM – ~2 AM` with `closeApprox`.
+The rule below about a room with two shows needing a running order does not
+apply here: two parties in one venue on one night are two parties, not a run.
 
 **A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
 2026-09-01). The wall draws every room as a vertical run — stacked in the time

@@ -5,9 +5,11 @@
 // events everywhere." And the words: "For all of these lets do 'Tixs @
 // [location]' - tigher and clearer."
 //
-// An artists[] entry may carry `page: { url, at }` and `tickets: { url, at }`;
-// the zoom reads them as "Tix @ AXS · Info @ DoTheBay" (events.js linksOf).
-// Shape: docs/add-a-festival.md, "Event pages and tickets".
+// An artists[] entry may carry `page: { url, at }` and
+// `tickets: { url, at, price?, checked? }`; the zoom reads them as
+// "Tix $69 · Info" (events.js linksOf) — never the seller's name (Kevin,
+// 2026-09-26: "we never need to see the name of the site where the tix are
+// sold"). Shape: docs/add-a-festival.md, "Event pages and tickets".
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -34,7 +36,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { factsFor, sheetCard } = await import('../js/v3/card-facts.js');
-const { linksOf } = await import('../js/v3/events.js');
+const { linksOf, showsOnItsOwn } = await import('../js/v3/events.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -42,27 +44,33 @@ const load = (id) => JSON.parse(readFileSync(join(ROOT, 'data/festivals', `${id}
 const onGrid = (fest, a) => String(a.day || '').split('&').every((p) => Object.keys(fest.days || {}).includes(p.trim()));
 
 const PAGE = { url: 'https://dothebay.com/events/2026/9/25/six-sex-tickets', at: 'DoTheBay' };
-const TIX = { url: 'https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff', at: 'AXS' };
+const TIX = { url: 'https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff', at: 'AXS', price: 69, checked: '2026-09-26' };
 
-test('linksOf: tickets first, then the page, each in Kevin’s words', () => {
+test('linksOf: tickets first, then the page, each a plain word — never the seller (2026-09-26)', () => {
   assert.deepEqual(linksOf({ page: PAGE, tickets: TIX }), [
-    { kind: 'tix', text: 'Tix @ AXS', url: TIX.url },
-    { kind: 'info', text: 'Info @ DoTheBay', url: PAGE.url },
+    { kind: 'tix', text: 'Tix $69', url: TIX.url, at: 'AXS' },
+    { kind: 'info', text: 'Info', url: PAGE.url, at: 'DoTheBay' },
   ]);
 });
 
+test('linksOf: no price on file reads a bare "Tix"; a $0 ticket reads "Tix free"', () => {
+  const noPrice = { url: TIX.url, at: 'AXS' };
+  assert.deepEqual(linksOf({ tickets: noPrice }).map((l) => l.text), ['Tix']);
+  assert.deepEqual(linksOf({ tickets: { ...noPrice, price: 0, checked: '2026-09-26' } }).map((l) => l.text), ['Tix free']);
+});
+
 test('linksOf: before tickets exist the page is the one door; tickets alone are one door too', () => {
-  assert.deepEqual(linksOf({ page: PAGE }), [{ kind: 'info', text: 'Info @ DoTheBay', url: PAGE.url }]);
-  assert.deepEqual(linksOf({ tickets: TIX }), [{ kind: 'tix', text: 'Tix @ AXS', url: TIX.url }]);
+  assert.deepEqual(linksOf({ page: PAGE }), [{ kind: 'info', text: 'Info', url: PAGE.url, at: 'DoTheBay' }]);
+  assert.deepEqual(linksOf({ tickets: TIX }), [{ kind: 'tix', text: 'Tix $69', url: TIX.url, at: 'AXS' }]);
 });
 
 test('linksOf: when the page IS the ticket page, one door says it', () => {
   const same = { url: 'https://www.eventbrite.com/e/deviants-123', at: 'Eventbrite' };
-  assert.deepEqual(linksOf({ page: same, tickets: { ...same, url: 'https://eventbrite.com/e/deviants-123/' } }).map((l) => l.text), ['Tix @ Eventbrite']);
+  assert.deepEqual(linksOf({ page: same, tickets: { ...same, url: 'https://eventbrite.com/e/deviants-123/' } }).map((l) => l.text), ['Tix']);
 });
 
 test('linksOf: a cancelled show keeps its page (what happened) and loses its tickets', () => {
-  assert.deepEqual(linksOf({ page: PAGE, tickets: TIX }, { cancelled: true }).map((l) => l.text), ['Info @ DoTheBay']);
+  assert.deepEqual(linksOf({ page: PAGE, tickets: TIX }, { cancelled: true }).map((l) => l.text), ['Info']);
   assert.equal(linksOf({ tickets: TIX }, { cancelled: true }), null);
 });
 
@@ -74,7 +82,26 @@ test('linksOf: nothing insecure, nothing unnamed, and nothing at all for a festi
   assert.equal(linksOf(null), null);
 });
 
-test('the validator: page and tickets are { url: https, at: a short name }, and nothing else', () => {
+test('linksOf: a price shows only with its checked date and inside 0–2000 — anything else reads a bare "Tix" (a cached file can skip the validator)', () => {
+  const base = { url: 'https://www.axs.com/events/1', at: 'AXS' };
+  const word = (t) => linksOf({ tickets: { ...base, ...t } })[0].text;
+  assert.equal(word({ price: 69, checked: '2026-09-26' }), 'Tix $69');
+  assert.equal(word({ price: 0, checked: '2026-09-26' }), 'Tix free');
+  assert.equal(word({ price: 69 }), 'Tix', 'no checked date');
+  assert.equal(word({ price: 0 }), 'Tix', 'free needs its date too');
+  assert.equal(word({ price: 2001, checked: '2026-09-26' }), 'Tix', 'out of range');
+  assert.equal(word({ price: -5, checked: '2026-09-26' }), 'Tix');
+  assert.equal(word({ price: 19.5, checked: '2026-09-26' }), 'Tix');
+  assert.equal(word({ price: '69', checked: '2026-09-26' }), 'Tix', 'a string is not a price');
+  assert.equal(word({ price: 69, checked: 'yesterday' }), 'Tix');
+  assert.equal(word({ price: 69, checked: '2026-13-40' }), 'Tix', 'shaped like a date, not one');
+  assert.equal(word({ price: 69, checked: '2026-02-30' }), 'Tix');
+  assert.equal(word({ price: 69, checked: '2028-02-29' }), 'Tix $69', 'a real leap day');
+  assert.equal(word({ price: 69, checked: '1800-01-01' }), 'Tix', 'outside the validator\'s years');
+  assert.equal(word({ price: 69, checked: '2200-01-01' }), 'Tix');
+});
+
+test('the validator: page and tickets are { url: https, at: a short name }, tickets may add price + checked', () => {
   const doc = (extra) => ({
     id: 'x-2026', name: 'X', year: "'26", dates: 'Sep 1', status: 'lineup', location: 'Austin, TX',
     artists: [{ name: 'A', day: 'Late nights', date: '2026-09-29', venue: 'Mohawk', ...extra }],
@@ -86,6 +113,17 @@ test('the validator: page and tickets are { url: https, at: a short name }, and 
   assert.match(errs({ tickets: { url: 'https://x.com', at: 'A name far too long for one zoom line' } }).join(), /24 chars at most/);
   assert.match(errs({ page: { ...PAGE, label: 'x' } }).join(), /page\.label is not a field/);
   assert.match(errs({ page: 'https://x.com' }).join(), /page must be an object \{ url, at \}/);
+  // price and checked travel together, and only tickets carries them.
+  assert.deepEqual(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 25, checked: '2026-09-26' } }), []);
+  assert.deepEqual(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 0, checked: '2026-09-26' } }), []);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 25 } }).join(), /price and checked travel together/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', checked: '2026-09-26' } }).join(), /price and checked travel together/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 19.5, checked: '2026-09-26' } }).join(), /price must be a whole number/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: -1, checked: '2026-09-26' } }).join(), /price must be a whole number/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 2001, checked: '2026-09-26' } }).join(), /price must be a whole number/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 25, checked: '2026-13-40' } }).join(), /checked must be the real/);
+  assert.match(errs({ tickets: { url: 'https://x.com', at: 'AXS', price: 25, checked: '09-26-2026' } }).join(), /checked must be the real/);
+  assert.match(errs({ page: { ...PAGE, price: 25, checked: '2026-09-26' } }).join(), /page\.price is not a field/);
   // A festival's own set carries neither: the doors belong to shows in a section.
   const grid = validateFestivalDoc({
     id: 'x-2026', name: 'X', year: "'26", dates: 'Sep 1', status: 'lineup', location: 'Austin, TX',
@@ -106,6 +144,18 @@ for (const id of ['portola-2026', 'acl-2026']) {
         assert.ok(!onGrid(fest, a), `${a.name}: a festival set carries no ${f}`);
         assert.match(a[f].url, /^https:\/\/\S+$/, `${a.name}.${f}.url`);
         assert.ok(a[f].at && a[f].at.length <= 24, `${a.name}.${f}.at`);
+        // price and checked travel together, only on tickets (2026-09-26).
+        if (f === 'tickets') {
+          const hasPrice = a.tickets.price !== undefined;
+          const hasChecked = a.tickets.checked !== undefined;
+          assert.equal(hasPrice, hasChecked, `${a.name}.tickets: price and checked travel together`);
+          if (hasPrice) {
+            assert.ok(Number.isInteger(a.tickets.price) && a.tickets.price >= 0 && a.tickets.price <= 2000, `${a.name}.tickets.price must be a whole number 0–2000`);
+            assert.match(a.tickets.checked, /^\d{4}-\d{2}-\d{2}$/, `${a.name}.tickets.checked must be YYYY-MM-DD`);
+          }
+        } else {
+          assert.equal(a.page.price, undefined, `${a.name}.page carries no price — only tickets does`);
+        }
       }
     }
     // One room on one night with one doors time is one show with one page
@@ -116,9 +166,13 @@ for (const id of ['portola-2026', 'acl-2026']) {
     // nights openers pointed at the venue or the festival instead, the review
     // of #29). Two doors times in one room are two shows (an early and a late
     // show) and may differ. A brand-new room with no known page yet is fine.
+    //
+    // A party in a section read by time (v94, Folsom) is its own show with its
+    // own links (events.js showsOnItsOwn): The Stud hosts four separate
+    // parties on Folsom Friday and Saturday, each with its own page. Not a bill.
     const shows = new Map();
     for (const a of off) {
-      if (a.cancelled) continue;
+      if (a.cancelled || showsOnItsOwn(fest, a)) continue;
       const k = `${a.day}|${a.night || a.date}|${a.venue}|${a.doors || ''}`;
       if (!shows.has(k)) shows.set(k, []);
       shows.get(k).push(a);
@@ -145,7 +199,10 @@ test('the zoom’s facts: a Portola afters set says where to buy and where to re
   const gelli = portola.artists.find((a) => a.name === 'Gelli Haha' && a.venue === 'Regency Ballroom');
   const occ = { day: gelli.day, stage: gelli.stage, time: gelli.time, date: null, venue: gelli.venue };
   const run = factsFor('Gelli Haha', ctx, occ);
-  assert.deepEqual(run.links.map((l) => l.text), ['Tix @ AXS', 'Info @ DoTheBay']);
+  // Expected text is derived from the live data's own price (whatever it is
+  // priced at today), not hardcoded — a re-priced show shouldn't break this.
+  const wantLinks = linksOf({ page: gelli.page, tickets: gelli.tickets }).map((l) => l.text);
+  assert.deepEqual(run.links.map((l) => l.text), wantLinks);
   // A card that knows only a name borrows nobody's links: Overmono is a
   // Sunday festival set AND a Public Works afters, and its name-only facts
   // take the festival set's when and where (the review of #29).
@@ -154,5 +211,5 @@ test('the zoom’s facts: a Portola afters set says where to buy and where to re
   assert.equal(factsFor(setOnly.name, ctx, { day: 'Saturday', stage: setOnly.stage, time: setOnly.time }).links, null);
   // The notes sheet's header is the same builder: the doors ride along.
   const sheet = sheetCard(run, {});
-  assert.deepEqual([...sheet.querySelectorAll('.f-links a.f-link')].map((a) => a.textContent), ['Tix @ AXS', 'Info @ DoTheBay']);
+  assert.deepEqual([...sheet.querySelectorAll('.f-links a.f-link')].map((a) => a.textContent), wantLinks);
 });

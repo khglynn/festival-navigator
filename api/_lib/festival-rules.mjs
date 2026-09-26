@@ -2,7 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
-import { parseEventTime, shortDate } from '../../js/v3/events.js';
+import { parseEventTime, shortDate, LAYOUTS, BY_TIME, showsOnItsOwn } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -104,6 +104,10 @@ function checkEventFields(fest, err, warn) {
   // section label -> the axes its entries claim. A section that sits on the
   // day tabs AND on its own tab is half a wall in each place.
   const sectionAxis = new Map();
+  // A by-time section (checkLayouts) draws no rooms: its parties line up by
+  // the clock, each its own show (events.js showsOnItsOwn — how the validator
+  // knows is the section's own `dayMeta.layout`), so two parties in one venue
+  // on one night are two parties, not a run missing its order.
 
   artists.forEach((a, i) => {
     if (!plain(a)) return;
@@ -147,6 +151,10 @@ function checkEventFields(fest, err, warn) {
         if (venueMap && a.cancelled === undefined && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — its place line will not open a map`);
       }
     }
+
+    // The part of town (v94): a by-time card says its own place under its
+    // time — "Public Works · Mission" — because no room head says it for it.
+    if (a.area !== undefined && (typeof a.area !== 'string' || !a.area.trim() || a.area.length > 40)) err(`${at}: area must be a short non-empty string (the neighbourhood, at most 40 chars)`);
 
     for (const k of ['approx', 'closeApprox']) {
       if (a[k] !== undefined && typeof a[k] !== 'boolean') err(`${at}: ${k} must be true or false`);
@@ -209,6 +217,7 @@ function checkEventFields(fest, err, warn) {
   // renders it, it just cannot tell anyone who is on when.
   for (const [key, sets] of rooms) {
     if (sets.length < 2 || sets.every((a) => a.order !== undefined)) continue;
+    if (showsOnItsOwn(fest, sets[0])) continue;
     const where = safeKey(key.replace(/\|/g, ' · '));
     const starts = new Set(sets.map((a) => startOf(a.time)));
     warn(starts.size === 1
@@ -243,6 +252,50 @@ function checkEventFields(fest, err, warn) {
       .sort((x, y) => x.seq - y.seq);
     for (let i = 1; i < timed.length; i++) {
       if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// How a section reads (v94, 2026-09-25): `dayMeta[<section>].layout`.
+//
+// MODEL-V4's law — the data's shape picks the presentation, never a
+// threshold — gains one declared shape. A section's cards stack under their
+// venues (`by-venue`, the default) unless its own dayMeta entry says
+// `"layout": "by-time"`, which lines the night's cards up by start time
+// under time bands (Folsom weekend: 68 parties in 39 rooms). The declaration
+// lives in ONE place per section, so a section cannot disagree with itself;
+// a field on every entry could, and was not chosen for that reason. What can
+// still go wrong is a declaration that lands nowhere, and each of those is an
+// error, because the file would render differently from what it says:
+//   · a value that is not a layout (a typo renders the default, silently)
+//   · on a grid day — a grid day is a timetable, the one rule
+//   · on a combined label ("Afters & Folsom") — it splits into its parts, and
+//     the parts are what render; declare it on each part
+//   · on a label no artists[] entry plays under — nothing to lay out
+//   · on a festival with no grid — it has no sections, only lineup days
+// A by-time entry with no clock at all is fine and says so as a warning: it
+// renders last, under TIME TBA, rather than guessing a place for itself.
+function checkLayouts(fest, err, warn) {
+  const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  if (!plain(fest.dayMeta)) return;
+  const artists = Array.isArray(fest.artists) ? fest.artists.filter(plain) : [];
+  const gridDays = new Set(Object.keys(plain(fest.days) ? fest.days : {}).map((d) => d.toLowerCase()));
+  const played = new Set();
+  for (const a of artists) if (typeof a.day === 'string') for (const p of dayParts(a.day)) played.add(p);
+  for (const [label, meta] of Object.entries(fest.dayMeta)) {
+    if (!plain(meta) || meta.layout === undefined) continue;
+    const at = `dayMeta.${safeKey(label)}.layout`;
+    if (!LAYOUTS.includes(meta.layout)) { err(`${at} must be one of ${LAYOUTS.join('|')} (got ${JSON.stringify(safeKey(meta.layout))})`); continue; }
+    if (!gridDays.size) { err(`${at}: a festival with no grid has no sections to lay out — every day of a lineup is a lineup`); continue; }
+    if (dayParts(label).length > 1) { err(`${at}: ${JSON.stringify(safeKey(label))} is a combined label, and its parts are what render — declare the layout on each part`); continue; }
+    if (gridDays.has(label.toLowerCase())) { err(`${at}: ${JSON.stringify(safeKey(label))} is a grid day, and a grid day is its timetable — layout is for a section`); continue; }
+    if (!played.has(label)) { err(`${at}: no artists[] entry plays under ${JSON.stringify(safeKey(label))} — the layout lays out nothing (check the spelling)`); continue; }
+    if (meta.layout !== BY_TIME) continue;
+    for (const a of artists) {
+      if (typeof a.day !== 'string' || !dayParts(a.day).includes(label) || a.cancelled !== undefined) continue;
+      const clock = (typeof a.time === 'string' && TIME_RE.test(a.time)) || (typeof a.doors === 'string' && CLOCK_RE.test(a.doors));
+      if (!clock) warn(`${safeKey(a.name)} (${safeKey(label)}): no time and no doors — a by-time section shows it last, under TIME TBA`);
     }
   }
 }
@@ -303,16 +356,23 @@ function checkCancelled(fest, err) {
 
 // ---------------------------------------------------------------------------
 // A show's doors out (2026-09-24, Kevin: "when it's afters or shows like this
-// I naturally want to click through to the event page"). An artists[] entry
-// may carry
-//   page:    { url: "https://…", at: "DoTheBay" }   the show's own page
-//   tickets: { url: "https://…", at: "AXS" }        where to buy
-// and the zoom reads them as "Info @ DoTheBay" and "Tix @ AXS" (events.js
-// linksOf). `at` is a short name a person recognises, written as data because
-// a referral wrapper hides the seller's domain. Both URLs must be https: the
-// app is served over it, and a door that opens an insecure page is a door
-// the browser may refuse. The shape is small, so an unknown key is an error.
+// I naturally want to click through to the event page"; prices 2026-09-26).
+// An artists[] entry may carry
+//   page:    { url: "https://…", at: "DoTheBay" }                                 the show's own page
+//   tickets: { url: "https://…", at: "AXS", price: 69, checked: "2026-09-26" }    where to buy
+// and the zoom reads them as "Info" and "Tix $69" (events.js linksOf) —
+// never the seller's name (Kevin, 2026-09-26: "I actually think we never need
+// to see the name of the site where the tix are sold… Just tix if we don't
+// know price or Tix $69 for example… some of these events are expensive").
+// `at` is still required on both — it is provenance, written as data because
+// a referral wrapper hides the seller's domain, even though the zoom no
+// longer shows it. Both URLs must be https: the app is served over it, and a
+// door that opens an insecure page is a door the browser may refuse. The
+// shape is small, so an unknown key is an error; `tickets` alone may also
+// carry `price` (whole US dollars, 0 meaning free) and `checked` (the
+// YYYY-MM-DD date it was read), always together.
 const LINK_KEYS = new Set(['url', 'at']);
+const TICKET_KEYS = new Set([...LINK_KEYS, 'price', 'checked']);
 function checkLinks(fest, err) {
   const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   const gridDays = plain(fest.days) ? Object.keys(fest.days).map((d) => d.toLowerCase()) : [];
@@ -328,12 +388,23 @@ function checkLinks(fest, err) {
       if (onGrid) { err(`${at}: a festival set carries no ${field} — the doors belong to shows in a section (afters, late nights)`); continue; }
       const l = a[field];
       if (!plain(l)) { err(`${at} must be an object { url, at }`); continue; }
+      const allowed = field === 'tickets' ? TICKET_KEYS : LINK_KEYS;
       for (const k of Object.keys(l)) {
-        if (!LINK_KEYS.has(k)) err(`${at}.${safeKey(k)} is not a field — ${field} carries url and at`);
+        if (!allowed.has(k)) err(`${at}.${safeKey(k)} is not a field — ${field} carries ${field === 'tickets' ? 'url, at, price and checked' : 'url and at'}`);
       }
       if (typeof l.url !== 'string' || !/^https:\/\/[^\s]+$/.test(l.url)) err(`${at}.url must be an https URL — the zoom's line is a door to it`);
       if (typeof l.at !== 'string' || !l.at.trim() || l.at.length > 24 || /[\x00-\x1f\x7f]/.test(l.at)) {
         err(`${at}.at must name the site in a few words (24 chars at most), e.g. "DoTheBay" or "AXS"`);
+      }
+      if (field === 'tickets') {
+        const hasPrice = l.price !== undefined;
+        const hasChecked = l.checked !== undefined;
+        if (hasPrice !== hasChecked) {
+          err(`${at}: price and checked travel together — one with no other is not enough to show a price`);
+        } else if (hasPrice) {
+          if (!Number.isInteger(l.price) || l.price < 0 || l.price > 2000) err(`${at}.price must be a whole number 0–2000 US dollars (got ${JSON.stringify(safeKey(l.price))})`);
+          if (!realDate(l.checked)) err(`${at}.checked must be the real YYYY-MM-DD date the price was read (got ${JSON.stringify(safeKey(l.checked))})`);
+        }
       }
     }
   });
@@ -447,6 +518,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   checkEventFields(fest, err, warn);
   checkCancelled(fest, err);
   checkLinks(fest, err);
+  checkLayouts(fest, err, warn);
 
   const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   // days{} is an object keyed by day label. An array or a scalar here used to
