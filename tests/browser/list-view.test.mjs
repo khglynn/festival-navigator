@@ -228,3 +228,62 @@ for (const [name, get, width] of ENGINES) {
     } finally { await ctx.close(); }
   });
 }
+
+// 6. In the List a highlight FILTERS (v103 — Kevin, 2026-09-26: "our grid can
+// highlight. our list can filter."): with Maya highlighted through the people
+// menu (real taps / clicks, the menu staying up), only her rows are in the
+// List; a room she picked nothing in is one quiet line whose words are never
+// cut; the change moves (the rows that go fade, the rest slide — transforms
+// and opacity only); Everyone brings every row back; nothing is written.
+for (const [name, get, width] of ENGINES) {
+  const skip = get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER);
+  const bar = width < 720 ? 'dock' : 'rail';
+  test(`${name}: a highlight filters the List — her rows only, a quiet line where she picked nothing, and Everyone brings it back`, { skip }, async () => {
+    const { ctx, page, errors, writes, phone } = await open(get(), { width });
+    try {
+      await scrollAt(page, '.day-block[data-day="Saturday"] .room[data-room=":fest"]', 120);
+      await page.evaluate(() => {
+        window.__anims = [];
+        const was = Element.prototype.animate;
+        Element.prototype.animate = function (kf, opts) {
+          if (this.closest && this.closest('#wall-root')) window.__anims.push(JSON.stringify(kf));
+          return was.call(this, kf, opts);
+        };
+      });
+      const everyone = await page.evaluate(() => document.querySelectorAll('#wall-root .card[data-artist]').length);
+      await press(page, phone, `#${bar}-you`);
+      await sleep(400);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person="Maya"]`);
+      await motionDone(page, { within: '#wall-root' });
+      await sleep(300);
+      const r = await page.evaluate((b) => {
+        const cards = [...document.querySelectorAll('#wall-root .card[data-artist]')].map((c) => c.dataset.artist);
+        const quiet = [...document.querySelectorAll('#wall-root .room.quiet')].map((q) => {
+          const h = q.querySelector('.room-head').getBoundingClientRect();
+          const w = q.querySelector('.quiet-words');
+          const wr = w.getBoundingClientRect();
+          return { room: q.dataset.room, day: q.closest('.day-block').dataset.day, kids: q.children.length, words: w.textContent, whole: w.scrollWidth <= w.clientWidth + 0.5 && wr.right <= h.right + 0.5 };
+        });
+        const menu = document.querySelector(`#${b}-you-wrap .hl-pop`);
+        return { cards, quiet, menuOpen: !!menu && getComputedStyle(menu).display !== 'none' };
+      }, bar);
+      assert.ok(r.cards.length > 0 && r.cards.every((a) => ['Tricky', 'Tove Lo'].includes(a)), `only Maya's rows: ${r.cards}`);
+      assert.ok(r.menuOpen, 'the menu stays up while you choose');
+      const folsom = r.quiet.find((q) => q.day === 'Saturday' && q.room === 'Folsom');
+      assert.ok(folsom, `SAT FOLSOM is a quiet line: ${JSON.stringify(r.quiet)}`);
+      assert.equal(folsom.kids, 1, 'one line: the head and nothing under it');
+      assert.equal(folsom.words, 'nothing Maya picked');
+      for (const q of r.quiet) assert.ok(q.whole, `the words are never cut: ${JSON.stringify(q)}`);
+      const anims = await page.evaluate(() => window.__anims.splice(0));
+      assert.ok(anims.length > 0, 'the change moves');
+      assert.ok(anims.every((kf) => !/"(top|left|height|width|margin)/.test(kf)), `transforms and opacity only: ${anims.slice(0, 4)}`);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person=""]`);
+      await motionDone(page, { within: '#wall-root' });
+      await sleep(300);
+      const back = await page.evaluate(() => ({ n: document.querySelectorAll('#wall-root .card[data-artist]').length, quiet: document.querySelectorAll('#wall-root .room.quiet').length }));
+      assert.deepEqual(back, { n: everyone, quiet: 0 }, 'Everyone brings every row back');
+      assert.deepEqual(writes.filter((u) => u.includes('/api/crew')), [], 'nothing written to the crew');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

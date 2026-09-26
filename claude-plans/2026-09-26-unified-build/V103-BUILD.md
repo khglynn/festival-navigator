@@ -11,7 +11,7 @@ dies, this file and the branch are the handoff.*
       wall.js `restingLeft` / the List's `foldPast`, spotify.js `findTrackUris`)
 - [x] merged `origin/main` (v102, the Spotify playlist names) — `3a1a304`, no conflicts
 - [x] 1. NOW the first item of the day row, one place whatever the day — see "Step 1" below
-- [ ] 2. the List filters by highlight
+- [x] 2. the List filters by highlight — see "Step 2" below
 - [ ] 3. the crew playlist's top songs: paced, backed off, counted, said
 - [ ] frames 390 / 320 / 1280, Portola and ACL, looked at
 - [ ] npm test at UTC, Tokyo, NIGHT_CLOCK; `npm run test:browser`; CI green on both jobs
@@ -122,6 +122,56 @@ swipe on the row (CDP touches, the finger still before it lifts) brings it
 whole, and a real tap on it lands the now line. `tests/browser/people-menu.test.mjs`
 — the pill's promise restated for NOW-first (call 1b).
 
+## Step 2 — the List filters by highlight
+
+What changed: `wall.js foldPast` now judges every room's past up front on the
+WHOLE wall, folds whole days, then (List only) calls `thinByPeople`, then folds
+each room's own past counting only what the highlight left. `thinByPeople`
+removes every row `passesPeople` (filters.js) rejects, drops an hour band it
+empties and a non-room list it empties (EVERYTHING ELSE, with its head), and
+turns an emptied room into its quiet line: the head alone, name in the quiet
+tone, the room's own place dropped, the date it leads with kept in the sub,
+and the words in their own `.quiet-words` span that never gives way.
+`app.js setPeopleFilter` keeps the Board's `dimInPlace` and, when the wall is a
+List, runs `thinFlow`: the rows (and the band hours / whispers / EARLIER lines
+that go with them) fade quick and plain, the wall is redrawn with the page held
+where you were standing (`takeWallPlace` / `keepWallPlace`), what stayed on
+screen slides from its old place (a FLIP, transforms only — crisp when rows
+closed up, with the arrival's overshoot when rows came back), and what came
+back arrives with the beat. `settleThin` joins the other settles (NOW, a day
+tab, the fold, the view switch, the past), and `pastMayMove` waits for it; the
+page is busy (`data-busy="thin"`) while rows fade, so a new build never reloads
+mid-fade. `paintPlan` is called exactly where it was.
+
+**The one predicate (coordinator's note):** `filters.js passesPeople` is the
+single "did the highlighted people pick this" check — the Board's dim, this
+filter, and (next) Our picks' route all call it; its header now says so.
+
+Frames (`v103-shots/list-*`, `board-ben-390`; Saturday 4:15 PM, the nine-person
+crew, Ben highlighted with real taps/clicks on the people menu): 390 / 320 /
+1280 everyone, menu open mid-choice, Ben, SAT AFTERS + SAT FOLSOM quiet, Sunday,
+Ben + Cy ("nothing Ben or Cy picked"), Ana ("nothing you picked"), his EARLIER
+opened, the Board dimming beside it, ACL at 390, and both Our picks orders. Filmed
+at a tenth of the speed (`filmsheet-thin-on/off`): on, the rows go, then the rest
+slide up and the ones below arrive; off, his rows slide down to make room and the
+others come in top first.
+
+Our picks open (Kevin: "does filters work with our picks open"): yes, both ways.
+Highlight first, then Our picks from the same menu: the open plan over a List
+already thinned to Ben, the plan's rows none of his stepping back (as they did
+before). Our picks open first: a tap on the avatar puts the plan down to its
+peek (unchanged; the Share build owns the menus and the plan) and opens
+Highlight; the wall thins behind it and the peek follows (NEXT for Ben).
+
+Tests: `tests/list-highlight.test.mjs` (the real modules on the real Portola
+file: only his rows; the quiet line; the date kept; the words; two people; the
+fold counts following while the days line does not move; the Board still dims;
+a search dims; nothing written), `tests/list-highlight-shell.test.mjs` (the real
+shell in the List: the people menu thins in place, widens with a second person,
+Everyone restores, the Board beside it dims, no crew write),
+`tests/browser/list-view.test.mjs` §6 (Chromium touch, WebKit touch, 1280
+mouse — real input, the words never cut, transforms and opacity only).
+
 ## Calls (the brief left these open)
 
 **1a. When NOW and the day you are in cannot both show, the row centres on the
@@ -159,3 +209,44 @@ bites, the honest options are: (a) keep this, and teach it (NOW is always at the
 start of the days); (b) v90's fixed slot before the row — always in view, costs
 the days ~65px (THU scrolls off at 390, and at 320 the row holds one day); (c)
 v93's `SAT · NOW`. Not built; his call.
+
+**2a. The quiet line is the room's own head, stepped back.** "One quiet line,
+not an empty head": the head stays (it is the door to that night's notes, and
+the day keeps its shape as you toggle), its name drops to the quiet tone, the
+room's own place goes (nothing there to find), and it says "nothing Ross
+picked" / "nothing you picked" / "nothing Ross or Kat picked" / "nothing they
+picked" (three or more — the pill beside it names them). The day's first head
+keeps the date it leads with. The words sit in their own span that never
+shrinks: on ACL's "SAT ACL MUSIC FESTIVAL · OCT 3 · WEEKEND 1" the date and then
+the name ellipsize first (found in the ACL frame, where the first cut lost the
+words to the ellipsis).
+
+**2b. A quiet room drops its note whisper.** One line means one line; the
+night's notes are still behind the head (it stays a door) and in the all-notes
+sheet. EVERYTHING ELSE, which is not a room and not a door, simply goes when it
+empties.
+
+**2c. The past is judged on the whole wall, then filtered.** Whole days fold
+behind "EARLIER · THU · FRI" whatever the highlight (a night is over or not
+regardless of Ross), and each room's line counts what is left of his ("EARLIER ·
+1 SET"). A room whose only rows of his are over keeps its EARLIER line — it is
+not quiet, there is something to open.
+
+**2d. A pick while filtered is not a filter change.** In a List filtered to you,
+un-picking a row dims it where it is (the Board's language, `renderCard`'s
+`.dim`) instead of pulling it out from under your finger; the next repaint (a
+poll, a highlight change) leaves it out. A friend's change arriving on the poll
+redraws the List like any remote change, as a cut.
+
+**2e. NOW under a filter follows the filter.** In a List thinned to Ross, what
+is live is what is live of his: with nothing of his on, the wall has nothing
+live and NOW is not offered (the peek's NOW already follows the highlight —
+Kevin: "the filters should filter the now too"). On the Board it still lands on
+what IS on, with the quiet toast.
+
+**2f. Follow-up, not built — ACL's Late nights under a filter.** Late nights is
+a room per date, so a person with no late-night picks gets one quiet line per
+night (up to eleven, frame `list-acl-ben-390`). Truthful and per the brief, but
+a run that long reads as noise; collapsing a run of quiet nights into one line
+("LATE NIGHTS · SEP 29 – OCT 6 · nothing Ben picked") would lose the per-date
+doors in the filtered view. Kevin's call before ACL (Oct 2).

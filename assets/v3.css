@@ -563,6 +563,18 @@ button.room-head { cursor: pointer; }
 .room-head .line { flex: 1 1 0; min-width: 0; height: 1px;
                    background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 
+/* A room the List's highlight emptied (v103, wall.js thinByPeople) is one
+ * quiet line: its own head, stepped back to the quiet tone, its sub saying
+ * "nothing Ross picked". Still the head, still the door to the night's notes;
+ * nothing under it. */
+.room.quiet > .room-head .name, .room.quiet > .room-head .wd { color: var(--text-tertiary); }
+/* The words never give way (flex: none): the date before them ellipsizes
+ * first, then the name — "SAT ACL MUSIC FEST…  OCT 3 · WEE…  · NOTHING BEN
+ * PICKED". The sub's own type, so the line reads as one. */
+.room-head .quiet-words { flex: none; white-space: nowrap; color: var(--text-tertiary); font-size: 9.5px;
+                          font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.room-head .sub:not(:empty) + .quiet-words::before { content: '· '; }
+
 /* A LIST's head: one line over a list of answers — a day in a search or a
  * lineup fest's by-day list, and THE LINEUP / EVERYTHING ELSE / NOTES · FEST.
  * Never a door and never an anchor (the day's block is). The look the old day

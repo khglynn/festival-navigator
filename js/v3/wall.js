@@ -1850,19 +1850,18 @@ function foldPast(root, ctx, { days, weekends }) {
   const date = ctx.pastAt || ctx.now || new Date();
   const open = ctx.pastOpen || new Set();
   const blocks = [...root.querySelectorAll(':scope > .day-block')];
+  // Every room judged up front, on the WHOLE wall: a night is over or not
+  // whatever a highlight leaves of it, and a card's own over-ness is read
+  // while every card of its night is still there to judge by (v103).
   const judged = new Map(); // room → roomPast
+  for (const room of root.querySelectorAll(':scope > .day-block > .room')) judged.set(room, roomPast(room, date));
   const dayOver = (block) => {
     const rooms = [...block.querySelectorAll(':scope > .room')];
-    if (!rooms.length) return false;
-    return rooms.every((room) => {
-      const p = roomPast(room, date);
-      judged.set(room, p);
-      return !!p && p.all;
-    });
+    return rooms.length > 0 && rooms.every((room) => { const p = judged.get(room); return !!p && p.all; });
   };
   const over = blocks.filter(dayOver);
-  if (over.length === blocks.length) return; // over from end to end: a record, read whole
-  if (over.length) {
+  const record = over.length === blocks.length; // over from end to end: a record, read whole
+  if (over.length && !record) {
     const daysOpen = open.has('days');
     const twoWeekends = (weekends || [null]).length > 1;
     const tabs = new Map(days.map((d) => [d.key, twoWeekends && d.num ? `${d.short} ${d.num}` : d.short]));
@@ -1872,13 +1871,16 @@ function foldPast(root, ctx, { days, weekends }) {
     else over.forEach((b) => b.classList.add('past-day')); // what the fold's motion moves (app.js togglePast)
   }
   if (ctx.view !== 'list') return;
+  thinByPeople(root, ctx);
+  if (record) return;
   for (const block of blocks) {
     if (over.includes(block)) continue; // an opened day that is over is shown whole
     for (const room of block.querySelectorAll(':scope > .room')) {
-      const p = judged.has(room) ? judged.get(room) : roomPast(room, date);
+      const p = judged.get(room);
       const list = room.querySelector(':scope > .time-list[data-iso]');
       if (!p || !list) continue;
-      const past = p.cards.filter((c) => p.overs.get(c));
+      // What the highlight left (a thinned card is out of the DOM).
+      const past = p.cards.filter((c) => c.isConnected && p.overs.get(c));
       if (!past.length) continue;
       const key = `${list.dataset.iso}|${room.dataset.room}`;
       const isOpen = open.has(key);
@@ -1889,6 +1891,66 @@ function foldPast(root, ctx, { days, weekends }) {
       for (const band of list.querySelectorAll(':scope > .time-band')) if (!band.querySelector('.card')) band.remove();
     }
   }
+}
+
+// ---- the List's highlight is a filter (v103, 2026-09-26) ----------------------------
+// Kevin: "when in list view — let's have highlight actually filter — only show
+// that person(s) picks. our grid can highlight. our list can filter." The
+// Board still dims (cardFor's `.dim`); in the List every row none of the
+// highlighted people picked leaves the DOM, a band it empties goes with it,
+// and a room it empties becomes ONE quiet line — its own head, quiet, saying
+// so ("SAT AFTERS · nothing Ross picked"): not an empty head, and still the
+// door to that night's notes. A list that is not a room (EVERYTHING ELSE)
+// simply goes when it empties. The highlight is the viewer's alone (filters.js,
+// this tab's memory) — nothing here is ever written anywhere. Whether a row
+// stays is filters.js `passesPeople`, the ONE "did the highlighted people pick
+// this" predicate: the Board's dim, this filter, and Our picks' route (next)
+// all ask it, so they can never disagree.
+// Runs inside foldPast, after the days are judged and before each room folds
+// its past, so "EARLIER · 2 SETS" counts Ross's two.
+export function listFilters(ctx) {
+  return ctx.view === 'list' && !ctx.query && (ctx.filterPeople || []).length > 0;
+}
+export function thinnedWords(people, meName = null) {
+  const who = people.map((p) => (p === meName ? 'you' : p));
+  if (!who.length) return '';
+  if (who.length === 1) return `nothing ${who[0]} picked`;
+  if (who.length === 2) return `nothing ${who[0]} or ${who[1]} picked`;
+  return 'nothing they picked';
+}
+function thinByPeople(root, ctx) {
+  if (!listFilters(ctx)) return;
+  const people = ctx.filterPeople;
+  for (const card of [...root.querySelectorAll('.card[data-artist]')]) {
+    if (!passesPeople(ctx.picks, card.dataset.artist, people)) card.remove();
+  }
+  for (const band of [...root.querySelectorAll('.time-band')]) if (!band.querySelector('.card')) band.remove();
+  for (const grid of [...root.querySelectorAll('.wall-grid')]) {
+    if (grid.querySelector('.card')) continue;
+    const head = grid.previousElementSibling;
+    if (head && head.classList.contains('list-head') && !grid.closest('.room')) head.remove();
+    grid.remove();
+  }
+  const words = thinnedWords(people, ctx.meName || null);
+  for (const room of root.querySelectorAll('.room')) {
+    if (room.querySelector('.card')) continue;
+    const head = room.querySelector(':scope > .room-head');
+    if (!head) continue;
+    for (const kid of [...room.children]) if (kid !== head) kid.remove();
+    room.classList.add('quiet');
+    // The words are what this line is for, so they never give way: the date
+    // the head leads with stays in its sub (which ellipsizes first — ACL's
+    // "SAT ACL MUSIC FESTIVAL  OCT 3 · WEEKEND 1" fills a phone), the room's
+    // own place goes (there is nothing there to find), and the words sit in
+    // their own span after it (v3.css `.quiet-words`).
+    const sub = head.querySelector('.sub');
+    if (sub) sub.textContent = head.dataset.when || '';
+    const said = mk('span', 'quiet-words', words);
+    if (sub) sub.after(said);
+    else head.insertBefore(said, head.querySelector('.line'));
+  }
+  // (A day block is never emptied: a composed day holds only rooms, and a
+  // room stays as its quiet line — so every day tab still lands.)
 }
 
 export function positionNowMarks(root, date = new Date()) {
@@ -2415,6 +2477,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
     let when = day.when;
     const head = (label, ownSub, door) => {
       const h = roomHead({ weekday, label, sub: joinSub(when, ownSub), ...(door || {}) });
+      if (when) h.dataset.when = when; // the date it leads with, kept for its quiet form (thinByPeople)
       when = '';
       return h;
     };
@@ -2465,6 +2528,9 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
 
   if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
   else foldPast(root, ctx, { days: plan.days, weekends });
+  // (foldPast thins the List by the highlight between its two passes —
+  // thinByPeople — so the days line is judged on the whole wall and each
+  // room's own fold counts only what the highlight leaves.)
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -2520,7 +2586,9 @@ function renderExtra(root, ctx, fest, extra) {
       room.dataset.iso = iso; // the day-of open lands here when tonight is one of these dates
       const door = dateDoor(ctx, iso);
       const wd = weekdayOfIso(iso);
-      room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
+      const h = roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) });
+      if (shortDate(iso)) h.dataset.when = shortDate(iso);
+      room.appendChild(h);
       if (door) dayNoteWhisper(room, iso, door.aria, ctx);
       sectionBody(fest, extra.key, ctx)(room, list, ctx, { day: { iso }, fest });
       block.appendChild(room);

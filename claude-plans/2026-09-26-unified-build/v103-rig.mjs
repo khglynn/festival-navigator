@@ -172,7 +172,48 @@ export const FRAMES = [
   { id: 'now-design-sat-1280', width: 1280, height: 900, crew: 'design', now: SAT_1030, clip: 'rail' },
   { id: 'now-acl-sat-1280', width: 1280, height: 900, crew: 'sparse', fid: ACL, now: ACL_SAT, clip: 'rail' },
   { id: 'now-sparse-sat-full-390', width: 390, crew: 'sparse', now: SAT_1030 },
+
+  // 2. The List filters by highlight (Saturday 4:15 PM, the nine-person crew;
+  // Ben highlighted through the people menu with real taps / clicks).
+  ...[390, 320, 1280].flatMap((w) => [
+    { id: `list-all-${w}`, width: w, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest') },
+    { id: `list-ben-menu-${w}`, width: w, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, w, ['Ben'], { keepOpen: true }) },
+    { id: `list-ben-${w}`, width: w, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, w, ['Ben']) },
+    { id: `list-ben-afters-${w}`, width: w, view: 'list', now: SAT_4PM, at: room('Saturday', 'Afters'), act: (p) => highlight(p, w, ['Ben']).then(() => scrollTo(p, room('Saturday', 'Afters'))) },
+    { id: `list-ben-sunday-${w}`, width: w, view: 'list', now: SAT_4PM, at: room('Sunday', ':fest'), act: (p) => highlight(p, w, ['Ben']).then(() => scrollTo(p, room('Sunday', ':fest'))) },
+  ]),
+  { id: 'list-ben-cy-390', width: 390, view: 'list', now: SAT_4PM, at: room('Saturday', 'Afters'), act: (p) => highlight(p, 390, ['Ben', 'Cy']).then(() => scrollTo(p, room('Saturday', 'Afters'))) },
+  { id: 'list-me-390', width: 390, view: 'list', now: SAT_4PM, at: room('Saturday', 'Afters'), act: (p) => highlight(p, 390, ['Ana']).then(() => scrollTo(p, room('Saturday', 'Afters'))) },
+  { id: 'list-ben-past-open-390', width: 390, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, 390, ['Ben']).then(() => tap(p, `${room('Saturday', ':fest')} .past-line`)) },
+  { id: 'board-ben-390', width: 390, view: 'board', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, 390, ['Ben']) },
+  // Our picks open (Kevin: "does filters work with our picks open"). Both
+  // orders: Ben highlighted, then Our picks opened from the same menu (the
+  // open plan over the filtered wall); and Our picks open, then the avatar —
+  // which puts the plan down to its peek as it always has — and Ben.
+  { id: 'list-ben-then-plan-390', width: 390, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, 390, ['Ben'], { keepOpen: true }).then(() => tap(p, '#dock-you-wrap .hl-pop [data-act="plan"]')).then(() => sleep(900)) },
+  { id: 'list-ben-then-plan-1280', width: 1280, height: 900, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => highlight(p, 1280, ['Ben'], { keepOpen: true }).then(() => click(p, '#rail-you-wrap .hl-pop [data-act="plan"]')).then(() => sleep(900)) },
+  { id: 'list-plan-then-ben-390', width: 390, view: 'list', now: SAT_4PM, at: room('Saturday', ':fest'), act: (p) => openPlan(p, 390).then(() => highlight(p, 390, ['Ben'])) },
+  { id: 'list-acl-ben-390', width: 390, view: 'list', fid: ACL, now: ACL_SAT, at: '.day-block[data-day="Saturday|W1"] .room[data-room=":fest"]', act: (p) => highlight(p, 390, ['Ben']) },
 ];
+
+// The people menu, with real input: the avatar opens Highlight, each name is
+// tapped (a finger) or clicked (a mouse), and the avatar again puts it away.
+export async function highlight(page, width, people, { keepOpen = false } = {}) {
+  const bar = width >= 720 ? 'rail' : 'dock';
+  const press = width >= 720 ? click : tap;
+  await press(page, `#${bar}-you`);
+  for (const n of people) await press(page, `#${bar}-you-wrap .hl-pop [data-person="${n}"]`);
+  await sleep(500); // the rows leave, the rest close up
+  if (!keepOpen) { await press(page, `#${bar}-you`); await sleep(400); }
+}
+// Our picks, opened from the people menu's row.
+export async function openPlan(page, width) {
+  const bar = width >= 720 ? 'rail' : 'dock';
+  const press = width >= 720 ? click : tap;
+  await press(page, `#${bar}-you`);
+  await press(page, `#${bar}-you-wrap .hl-pop [data-act="plan"]`);
+  await sleep(900);
+}
 
 export async function renderFrames(prefixes = [], { engine = 'chromium' } = {}) {
   const want = (id) => !prefixes.length || prefixes.some((p) => id.startsWith(p));

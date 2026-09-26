@@ -372,6 +372,7 @@ let pendingFold = null; // { finish }
 function settleFold() { if (pendingFold) pendingFold.finish(); }
 function toggleFoldFlow(key) {
   settleFold();
+  settleThin();
   // The setting lands NOW — memory, storage and ctx; only the room's leaving
   // is deferred.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
@@ -475,6 +476,7 @@ function togglePast(key) {
   settleFold();
   settleView();
   settlePast();
+  settleThin();
   const root = $('wall-root');
   const lineOf = () => root.querySelector(`.past-line[data-past="${CSS.escape(key)}"]`);
   const line = lineOf();
@@ -541,13 +543,115 @@ function togglePast(key) {
 // keep the wall as it is until the next chance.
 function pastMayMove() {
   return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy
-    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast;
+    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast && !pendingThin;
 }
 function recomputePast() {
   ctx.pastAt = new Date();
   const place = takeWallPlace();
   repaintWall();
   keepWallPlace(place, { byTime: true });
+}
+
+// ---- the List's highlight: a filter that moves (v103, 2026-09-26) ------------------------
+// Kevin: "when in list view — let's have highlight actually filter — only show
+// that person(s) picks." wall.js thinByPeople decides what stays; this is how
+// the change looks (the motion law): the rows the highlight takes away leave
+// quick and plain; then the wall is drawn again with the page held where you
+// were standing, the rows that stayed glide from where they were to where they
+// are (a FLIP of what is on screen — transforms only), and the rows a wider
+// highlight brings back arrive with the beat. What was off screen, before or
+// after, just is where it is. Low Power and Reduce Motion: instant, the place
+// still held. The highlight itself landed already (filters.js, this tab only).
+let pendingThin = null; // { finish } while the rows a highlight took are fading
+function settleThin() { if (pendingThin) pendingThin.finish(); }
+// Everything that moves when rows come and go, by a key that survives the
+// rebuild: the wall's own anchors (heads and cards — wallAnchors), and the
+// lines between them (a band's hour, a room's EARLIER, a day's whisper).
+function thinItems(root) {
+  const where = (el) => {
+    const room = el.closest('.room');
+    return `${(el.closest('.day-block') || { dataset: {} }).dataset.day || ''}|${room ? room.dataset.room : ''}|${room && room.dataset.iso ? room.dataset.iso : ''}`;
+  };
+  const items = wallAnchors(root);
+  for (const el of root.querySelectorAll('.band-head, .past-line, .day-whisper, .list-head')) {
+    let key;
+    if (el.classList.contains('band-head')) key = `band|${where(el)}|${(el.closest('.time-band') || { dataset: {} }).dataset.band || ''}`;
+    else if (el.classList.contains('past-line')) key = `past|${el.dataset.past}`;
+    else if (el.classList.contains('day-whisper')) key = `whisper|${where(el)}`;
+    else key = `list|${el.textContent}`;
+    items.push({ key, el });
+  }
+  return items;
+}
+function thinBefore() {
+  const root = $('wall-root');
+  const at = new Map();
+  for (const { key, el } of thinItems(root)) at.set(key, el.getBoundingClientRect().top);
+  return { at, place: takeWallPlace(), y: window.scrollY };
+}
+function thinFlow(before) {
+  settleFold();
+  settleView();
+  settlePast();
+  const root = $('wall-root');
+  const vh = window.innerHeight || 0;
+  const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < vh; };
+  const people = ctx.filterPeople || [];
+  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people);
+  // What leaves: the rows the new highlight does not keep, and with them the
+  // lines that belong to nothing any more — a band's hour whose rows all go,
+  // a room's whisper and EARLIER when the room goes quiet.
+  const going = new Set([...root.querySelectorAll('.card[data-artist]')].filter((c) => !stays(c)));
+  const allGo = (host) => { const cards = [...host.querySelectorAll('.card[data-artist]')]; return cards.length > 0 && cards.every((c) => going.has(c)); };
+  for (const band of root.querySelectorAll('.time-band')) if (allGo(band)) band.querySelectorAll('.band-head').forEach((h) => going.add(h));
+  for (const room of root.querySelectorAll('.room')) if (allGo(room)) room.querySelectorAll('.day-whisper, .past-line').forEach((l) => going.add(l));
+  const leaving = [...going].filter((el) => onScreen(el) && canAnimate(el, ctx));
+  let done = false;
+  const flow = {};
+  const anims = [];
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingThin === flow) pendingThin = null;
+    if (document.body.dataset.busy === 'thin') delete document.body.dataset.busy;
+    for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
+    // A hand scroll during the fade wins: the place is read again, there.
+    const place = Math.abs(window.scrollY - before.y) >= 1 ? takeWallPlace() : before.place;
+    repaintWall();
+    keepWallPlace(place);
+    if (!canAnimate(root, ctx)) return;
+    const arriving = [];
+    const moves = [];
+    for (const { key, el } of thinItems(root)) {
+      if (!onScreen(el)) continue;
+      const was = before.at.get(key);
+      // Off screen before (or not there at all): it arrives where it is.
+      if (was == null || was > vh || was < -el.getBoundingClientRect().height) { arriving.push(el); continue; }
+      const dy = was - el.getBoundingClientRect().top;
+      if (Math.abs(dy) >= 1) moves.push([el, dy]);
+    }
+    // Rows closing up after others left are the way out, crisp; rows making
+    // room for ones coming back are the way in, with its touch of overshoot.
+    const easing = arriving.length ? EASE_ARRIVE : EASE_SURFACE;
+    for (const [el, dy] of moves) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing });
+    arriving.forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: STAGGER_MS + Math.min(i, 12) * PAST_STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+  };
+  flow.finish = finish;
+  if (!leaving.length) { finish(); return; }
+  pendingThin = flow;
+  // Busy while it fades (index.html quiet()): a new build's reload must not
+  // land in the middle of it.
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'thin';
+  let pending = leaving.length;
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
+  for (const el of leaving) {
+    const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = settle;
+    a.oncancel = settle;
+    anims.push(a);
+  }
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the filter
 }
 
 // Land on picks just made elsewhere (the schedule import, Phase 1 — Sol's
@@ -610,6 +714,7 @@ let viewPlace = null; // { place, y }
 function switchView(next) {
   settleFold();
   settleView();
+  settleThin();
   if (ctx.view === next || !listOffered(state.fest())) return;
   const root = $('wall-root');
   let place = viewPlace && Math.abs(window.scrollY - viewPlace.y) < 1 ? viewPlace.place : takeWallPlace();
@@ -1181,12 +1286,19 @@ function renderPersonChips() {
 // repaint's cut. The rule is the one wall.js renders with (`passesPeople`,
 // cardFor's `.dim`), so a later repaint draws exactly this; a standing zoom
 // takes the repaint path, which knows how to keep it.
+//
+// In the List a highlight is a FILTER (v103): the rows it takes away leave and
+// the rest close up (thinFlow), for the same `passesPeople` rule.
 function setPeopleFilter(names) {
+  settleThin();
+  const list = $('wall-root').dataset.view === 'list';
+  const before = list ? thinBefore() : null; // where the List stands, read before anything changes
   savePeopleFilter(ctx.fid, names);
   refreshCtx();
   renderPersonChips();
   if (zoomedCard()) { repaintWall(); return; }
-  dimInPlace();
+  if (list) thinFlow(before);
+  else dimInPlace();
   paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
@@ -1532,6 +1644,7 @@ function jumpToNow() {
   settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
   settleView();
   settlePast();
+  settleThin();
   // A NOW tap long after the past was judged (Phase 1): judge it first, so
   // NOW lands on the wall as it is now, not with an hour of ended sets above.
   if (ctx.pastAt && !ctx.now && Date.now() - ctx.pastAt.getTime() > 5 * 60 * 1000 && pastMayMove()) recomputePast();
@@ -1874,6 +1987,7 @@ function renderDayNav() {
       settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
       settleView();
       settlePast();
+      settleThin();
       let target = document.querySelector(anchorFor(at));
       // A day that is over sits behind the days line (Phase 1): its tab stays
       // in the row (it is navigation), and a tap opens the line and lands.
