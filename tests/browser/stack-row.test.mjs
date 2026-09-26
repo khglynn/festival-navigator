@@ -109,8 +109,21 @@ const geometry = (page) => page.evaluate(() => {
     };
   });
   const shell = document.querySelector('#wall-root').getBoundingClientRect();
+  // The wall's box starts at the shell's content edge; from 720 up its own
+  // left padding is the wall's edge (v3.css #wall-root).
   const shellLeft = shell.left;
-  return { clocks, rows, lists, shellLeft, shellRight: shell.right, pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+  // The wall's own left edge, as the eye sees it: every room head, every
+  // EARLIER line, and each hour mark's drawn text.
+  const round = (x) => Math.round(x * 2) / 2;
+  const edges = {
+    heads: [...document.querySelectorAll('#wall-root .room-head')].map((h) => round(h.getBoundingClientRect().left)),
+    past: [...document.querySelectorAll('#wall-root .past-line')].map((h) => round(h.getBoundingClientRect().left)),
+    hours: [...document.querySelectorAll('#wall-root .hour-label')].map((h) => {
+      const rg = document.createRange(); rg.selectNodeContents(h); const b = rg.getBoundingClientRect();
+      return { text: h.textContent, left: round(b.left), right: round(b.right) };
+    }),
+  };
+  return { clocks, rows, lists, edges, shellLeft, shellRight: shell.right, pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
 });
 
 const phoneCases = [
@@ -171,34 +184,53 @@ for (const { width, engine, name, skip: why } of phoneCases) {
   });
 }
 
-test('1280px desktop: the row is an ordinary box — nothing scrolls, and v90\'s lining up stands', { skip }, async () => {
-  const { ctx, page } = await open(1280, { touch: false });
-  try {
-    const g = await geometry(page);
-    for (const r of g.rows.filter((x) => x.clock)) {
-      assert.equal(r.overflowX, 'visible', `${r.where}: not a scroller on a desktop`);
-      assert.equal(r.scrolls, 0, `${r.where}`);
-      assert.ok(Math.abs(r.cols[0] - g.clocks[r.day].cols[0]) < 0.75, `${r.where}: under the clock's first column`);
-    }
-    // By time (v94): under a clock, column n sits under the clock's column n;
-    // without one (Friday), the list starts at the shell's edge.
-    assert.ok(g.lists.length >= 3, 'Folsom reads by time');
-    for (const l of g.lists) {
-      assert.equal(l.cols.length, Math.min(5, l.most), `${l.where}: as many across as the busiest band has, five at 1280 (${l.cols})`);
-      if (l.clock) {
-        const c = g.clocks[l.day];
-        l.cols.slice(0, 2).forEach((x, i) => assert.ok(Math.abs(x - c.cols[i]) < 0.75, `${l.where}: column ${i + 1} under the clock's (${x} vs ${c.cols[i]})`));
-        assert.ok(Math.abs(l.widths[0] - c.width) < 0.75, `${l.where}: the clock's card width`);
-      } else {
-        assert.ok(Math.abs(l.cols[0] - g.shellLeft) < 0.75, `${l.where}: at the shell's edge`);
+// From 720 up the wall has ONE left edge (2026-09-26, Kevin: "alignment
+// straight down the left with the cards and titles"): every room head, venue
+// head, card column, band head and the EARLIER line starts on the gutter's
+// width in from the shell — on a day with a clock and on one without — and
+// only the hour marks stand left of it. Every card column is one track, so
+// column n sits under the clock's column n on any day.
+for (const width of [1280, 900]) {
+  test(`${width}px desktop: one left edge down the whole wall, one track across it, the times alone in the gutter`, { skip }, async () => {
+    const { ctx, page } = await open(width, { touch: false });
+    try {
+      const g = await geometry(page); // before the festival: every day on the wall, nothing folded
+      assert.equal(g.pageOverflow, 0, 'the page itself never scrolls sideways');
+      const edge = g.shellLeft + 40;
+      const on = (x, what) => assert.ok(Math.abs(x - edge) < 0.75, `${what} on the wall's edge (${x} vs ${edge})`);
+      const days = Object.keys(g.clocks);
+      assert.ok(days.length >= 2, `Saturday and Sunday draw clocks (${days})`);
+      const track = g.clocks[days[0]];
+      for (const [day, c] of Object.entries(g.clocks)) on(c.cols[0], `${day}'s clock`);
+      assert.ok(g.edges.heads.length >= 6, `the room heads are on the wall (${g.edges.heads.length})`);
+      g.edges.heads.forEach((x, i) => on(x, `room head ${i + 1}`));
+      g.edges.past.forEach((x) => on(x, 'an EARLIER line'));
+      for (const r of g.rows) {
+        assert.equal(r.overflowX, 'visible', `${r.where}: not a scroller on a desktop`);
+        assert.equal(r.scrolls, 0, `${r.where}`);
+        on(r.cols[0], `${r.where}${r.clock ? '' : ' (no clock)'}`);
+        if (r.cols[1] != null) assert.ok(Math.abs(r.cols[1] - track.cols[1]) < 0.75, `${r.where}: column 2 under the clock's (${r.cols[1]} vs ${track.cols[1]})`);
+        assert.ok(Math.abs(r.width - track.width) < 0.5, `${r.where}: the one card width`);
       }
-      assert.deepEqual(l.heads, [l.cols[0]], `${l.where}: band heads on the list's edge`);
-      assert.ok(l.right <= g.shellRight + 0.5, `${l.where}: nothing past the shell`);
+      assert.ok(g.rows.some((r) => !r.clock), 'a day with no clock (Thursday, Friday) is checked too');
+      assert.ok(g.lists.length >= 3, 'Folsom reads by time');
+      for (const l of g.lists) {
+        assert.ok(l.cols.length >= Math.min(width >= 1100 ? 5 : 4, l.most), `${l.where}: as many across as fit (${l.cols})`);
+        on(l.cols[0], `${l.where}`);
+        if (l.cols[1] != null) assert.ok(Math.abs(l.cols[1] - track.cols[1]) < 0.75, `${l.where}: column 2 under the clock's (${l.cols[1]} vs ${track.cols[1]})`);
+        assert.deepEqual(l.heads, [l.cols[0]], `${l.where}: band heads on the edge`);
+        assert.ok(l.right <= g.shellRight + 0.5, `${l.where}: nothing past the shell`);
+      }
+      // The gutter holds the times and nothing else, and they stay on screen.
+      assert.ok(g.edges.hours.length >= 10, 'the hour marks');
+      for (const h of g.edges.hours) {
+        assert.ok(h.right <= edge - 6 && h.left >= 0, `"${h.text}" stands in the gutter (${h.left}–${h.right}, edge ${edge})`);
+      }
+    } finally {
+      await ctx.close();
     }
-  } finally {
-    await ctx.close();
-  }
-});
+  });
+}
 
 // A finger, frame by frame: the browser decides who takes the gesture.
 async function swipe(cdp, x, y, dx, dy, steps = 12) {

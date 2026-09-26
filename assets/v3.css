@@ -382,6 +382,21 @@ html { touch-action: manipulation; }
 .day-block { display: flex; flex-direction: column; gap: inherit;
              scroll-margin-top: var(--jump-offset, 8px); }
 
+/* THE WALL'S ONE LEFT EDGE (Kevin, 2026-09-26, from the live app: "remove
+ * most special logic and just always have the left justify in a bit so
+ * things are lined up … alignment straight down the left with the cards and
+ * titles"). The Board is padded by --wall-edge, once, so every room head,
+ * stage and venue head, card column, band head, whisper and the EARLIER line
+ * starts on one x whatever the room is; only the clock's hour rail stands in
+ * the gutter left of it (.times-wrap, which reaches back to the window). It
+ * replaced four per-presentation offsets — the clock's leftovers, the other
+ * rooms on a clock day, a by-time list on a clock day, and everything else
+ * at the shell's edge — under which a room head was never over its cards
+ * and the cards jumped a rail's width right wherever a clock began. The
+ * List is one centred reading column with no gutter: its own edge already
+ * is the one edge. */
+#wall-root:not([data-view="list"]) { padding-inline-start: var(--wall-edge); }
+
 /* THE room head: `.name` (the weekday, a space, the room) · `.sub` · `.line`.
  * One component at one size — a head is the day's landmark now, so it takes the
  * old day rule's weight (--fs-day, the display tracking); a day's first head is
@@ -807,10 +822,15 @@ button:not([aria-haspopup]) > .menu-glyph { display: none; }
 @media (min-width: 720px) {
   .times-wrap {
     width: 100vw;
-    margin-inline: calc(50% - 50vw);
+    /* Out to the window's edges from inside the wall, which is padded on
+     * its left by --wall-edge (below): half of 100% less half the window
+     * reaches the window's edge from a centred box, and the wall's box is
+     * off centre by half its edge. */
+    margin-inline: calc(50% - 50vw - var(--wall-edge) / 2);
     /* Asymmetric on purpose (audit 3.2): the LEFT edge aligns with the shell
-     * (reading rhythm holds), the RIGHT runs to the window minus a gutter —
-     * "as many columns as fit the window" (F5), not re-capped at shell-max. */
+     * — the rail stands in the gutter there, so the columns start ON the
+     * wall's edge — and the RIGHT runs to the window minus a gutter — "as
+     * many columns as fit the window" (F5), not re-capped at shell-max. */
     padding-inline: max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2)) var(--sp-gutter);
     box-sizing: border-box;
   }
@@ -895,7 +915,7 @@ button:not([aria-haspopup]) > .menu-glyph { display: none; }
   animation: strip-follow linear both !important;
   animation-timeline: var(--strip-tl) !important;
 }
-.hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
+.hour-label { text-align: right; padding-right: 10px; font-size: 9.5px; white-space: nowrap;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 /* ---- wall grid + undo toast ---------------------------------------------------- */
 /* Density scales with the window (DT-3): as many ~176px columns as fit, so a
@@ -1324,22 +1344,6 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 @media (min-width: 720px) {
   .venue-grid { row-gap: 12px; }
 }
-/* Stacks under a clock line up with it (Kevin at Portola, 2026-09-25: "times
- * on the left, and the items that don't have them don't line up"). A day's
- * timetable starts its columns past the hour rail; its stacks started at the
- * shell's edge, so Skepta's cancelled card sat a rail's width left of the
- * Crane Stage column above it. A stack on a clock day steps in by the rail and
- * takes the clock's track gap, so column n sits under column n all the way
- * down. The gutter is space, not a sticky rail: it scrolls with the page.
- * `data-clock` comes from wall.js (venueGroups): 'room' is the clock's own
- * room, 'day' another room on that day. The clock's own room steps in at
- * every width; another room from 720 up here, and on a phone by the
- * sideways row below. A day with no clock (Portola's Thursday) never carries
- * the attribute. */
-.venue-grid[data-clock="room"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
-@media (min-width: 720px) {
-  .venue-grid[data-clock="day"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
-}
 /* On a phone, a clocked row keeps its two columns at full --col-w and scrolls
  * sideways instead (v91, Kevin at Portola: "a little bit of extra padding
  * that obviously scrolls away if you left scroll"). Stepped in by the rail
@@ -1355,7 +1359,8 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * mirrors the timetable's position may grab it. Its block padding, taken
  * back by a margin, is room for a NOW card's glow at the row's bottom edge,
  * which a scroller would otherwise clip. From 720 up the row is an ordinary
- * box and the rules above do the lining up. */
+ * box and the wall's edge does the lining up. `data-clock` (wall.js
+ * venueGroups) marks a row on a day that drew a clock. */
 @media (max-width: 719.98px) {
   .stack-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
                   padding-block: 8px; margin-block: -8px; }
@@ -1384,6 +1389,16 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
                    background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 .band-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
              justify-content: start; gap: var(--col-gap); }
+/* From 720 up every card column on the wall is ONE track: --col-w wide,
+ * --clock-gap apart — the clock's, the stacks' and a by-time band's — so
+ * column n sits under column n all the way down (Kevin at Portola,
+ * 2026-09-25: "I'd like them to line up vertically all the way down"), on a
+ * day with a clock or without one. They all start on the wall's edge
+ * (#wall-root), so nothing here steps in. After both grids' own rules on
+ * purpose: their `gap` shorthands would reset it. */
+@media (min-width: 720px) {
+  .venue-grid, .band-grid { column-gap: var(--clock-gap); }
+}
 /* A by-time card's WHERE (wall.js renderCard `place`): phrases, the venue and
  * then the area, and a phrase never breaks inside itself (Kevin, 2026-09-25:
  * "Mayes Oyster House · Polk / Gulch" split the neighbourhood). One line with a
@@ -1402,14 +1417,6 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .card .place.stacked .pdot { display: none; }
 .card .place.stacked .phrase.lead { white-space: normal; }
 
-/* Under a day's timetable, from 720 up: step in by the hour rail and take the
- * clock's track gap, so column n sits under the clock's column n, as the
- * stacks do (.venue-grid[data-clock="day"]). The phone keeps the shell's two
- * columns (wall.js timeGroups says why). */
-@media (min-width: 720px) {
-  .time-list[data-clock] { padding-inline-start: var(--hour-rail-w); }
-  .time-list[data-clock] .band-grid { column-gap: var(--clock-gap); }
-}
 
 /* ---- THE LIST (Phase 1, 2026-09-26) --------------------------------------------
  * The show menu's Board · List row: in the List every room is a time list of
@@ -1496,6 +1503,18 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
              background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 @media (hover: hover) { .past-line:hover { color: var(--text-body); } }
 .past-line:active { opacity: .6; }
+/* From 720 up the words sit centred in their rule (Kevin, 2026-09-26: "if you
+ * want to center the 'earlier' text in the line to make it not stack other
+ * text on desktop I'm open"). On the wall's one edge, "EARLIER · THU · FRI"
+ * stood flush over SAT PORTOLA and read as a second room head — two labels
+ * stacked on one x, and in the List three (the head, EARLIER · 7 SETS, 2 PM).
+ * Centred, it is a fold in the wall, not a heading on it; its rule still
+ * starts on the edge. A phone's line is short and its words nearly fill it,
+ * so there it stays as Kevin approved it. The whole row is still the button. */
+@media (min-width: 720px) {
+  .past-line::before { content: ''; flex: 1 1 0; min-width: 0; height: 1px; margin-right: 3px;
+                       background: linear-gradient(to left, transparent, var(--hairline) 12px); }
+}
 /* (Out-ranks the first band's tuck under the room head: that -8px pulled the
  * band up over the line's bottom edge, and a tap there hit the band head.) */
 .room > .time-list.rows.has-past > .time-band:first-of-type { margin-top: 0; }

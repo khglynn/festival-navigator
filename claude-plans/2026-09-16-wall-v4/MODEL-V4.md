@@ -162,6 +162,12 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    var(--col-w))`, `justify-content: start`). The grid no longer stretches to
    fill a wide window; a Portola set card and an afters card are the same
    width on every screen. Lane-split cells still divide their column.
+   *Since 2026-09-26 (Kevin: "alignment straight down the left with the
+   cards and titles"): from 720 up the whole Board also has ONE left edge,
+   `--wall-edge` (the gutter's width, `--hour-rail-w`), and one track gap
+   (`--clock-gap`): every room head, venue head, card column and band head
+   starts there, and only the clock's hour marks stand left of it. On a
+   phone the edge is the shell's. `ALIGN-BUILD.md`, 2026-09-26 unified build.*
 2. **No header fold.** Section headers are not buttons and carry no chevron;
    the fold state (`fn_fold_v1_<fid>`) is driven only by the show menu on the
    fest name (§3.1), which stays. Delete the header's fold wiring, the
@@ -482,9 +488,12 @@ our seasonal view". Build log:
   (`tools.js`).
 - **Geometry.** The one track, `--col-w`, wraps: two across on a phone, as
   many as fit from 720 up. Row and column gaps are both `--col-gap`, and
-  cards in a row share a height. Under a day's timetable from 720 up
-  (`data-clock="day"`) the list steps in by the hour rail and takes the
-  clock's gap, so its columns sit under the clock's. **On a phone it does not
+  cards in a row share a height. From 720 up (since 2026-09-26) the list
+  starts on the wall's one left edge like every room, and takes the clock's
+  gap across, so its columns sit under the clock's on any day
+  (`ALIGN-BUILD.md` in `claude-plans/2026-09-26-unified-build`; before it,
+  only a list under a day's timetable stepped in, `data-clock="day"`).
+  **On a phone it does not
   step in or scroll sideways** the way a clocked stack row does (v91). A
   stack is read down, one room at a time; a time list is read across, the
   9:30 party beside the 9 PM one. The sideways row parks the right-hand card
