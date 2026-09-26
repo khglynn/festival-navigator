@@ -40,7 +40,7 @@ test('a guest’s finger tap on a card takes the welcome down and opens the card
   await settle(20);
   assert.equal(document.getElementById('welcome-card'), null, 'its words have done their job');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'read, on this phone');
-  assert.ok(document.querySelector('#zoom-layer .zoom-card .f-pick'), 'the card is open, Pick shows inside');
+  assert.ok(document.querySelector('#zoom-layer .zoom-card .f-step-row'), 'the card is open, its − · note · + along the floor');
   assert.equal(document.querySelector('.join-shelf'), null, 'nothing asked: a tap looks');
   assert.deepEqual(writes, []);
 });

@@ -132,9 +132,11 @@ const ctx = {
   onNotesChange: () => onNotesChange(),
   // A guest's door in from a notes sheet (v92): the join shelf, no pick waiting.
   onJoin: () => joinFromLayer(),
-  // "Pick shows" in a guest's zoom (v92, the guest shelf round): the shelf,
-  // naming the artist.
-  onGuestPick: (artist) => askToJoin(artist),
+  // The zoom's door row (v92 — Kevin, 2026-09-25: "− · note · +" for
+  // everyone). A member steps their level; a guest's doors ask who they are
+  // on the shelf, naming the artist — and only + carries a pick through.
+  onStep: (artist, dir) => stepPick(artist, dir),
+  onGuestAsk: (artist, intent) => askToJoin(artist, { intent }),
   // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
   // wall.js hands every card here; card-facts.js owns the timing and the grow.
   wireZoom: (el, artist, occ) => {
@@ -407,10 +409,10 @@ function handleTap(artistName, el = null, occ = null) {
   if (!ctx.meName) {
     // A guest's FINGER tap on a resting card opens it (v92, the guest shelf
     // round — Kevin: "people will try to zoom rather than pick"): the card's
-    // zoom, the same view a member gets by holding, with "+ note" and "Pick
-    // shows" inside. Touching the wall is engaging, so the welcome goes. A
-    // mouse click, the keyboard, or a tap on the zoom's own Pick shows asks
-    // who they are on the shelf. It used to do nothing at all.
+    // zoom, the same view a member gets by holding, with the same − · note · +
+    // along its floor. Touching the wall is engaging, so the welcome goes. A
+    // mouse click, the keyboard, or any of the zoom's doors asks who they are
+    // on the shelf. It used to do nothing at all.
     if (el && el.isConnected && zoomedCard() !== el && tapOpensZoom()) {
       if (welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
       zoomCard(el, artistName, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'tap', occ });
@@ -433,6 +435,26 @@ function handleTap(artistName, el = null, occ = null) {
   // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
   // removing a must. it's not that destructive"): tapping again starts the
   // cycle over from the first bar.
+}
+
+// − / + in the zoom's door row (v92, Kevin 2026-09-25): one level down or up
+// and never a wraparound — 0 not picked, 1–3 picked, 4 must. The tap on a
+// resting card still cycles (handleTap, as in v91); this is the zoom's
+// precise control, through the same pick path.
+function stepPick(artistName, dir) {
+  if (!ctx.meName) { askToJoin(artistName, { intent: dir > 0 ? 'pick' : 'less' }); return; }
+  if (ctx.migrationPending) {
+    showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
+    return;
+  }
+  const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
+  const next = Math.max(0, Math.min(4, current + (dir > 0 ? 1 : -1)));
+  if (next === current) return;
+  state.recordSelection(artistName, ctx.meName, next);
+  applyLocalPick(artistName, ctx.meName, next);
+  refreshCtx();
+  refreshArtistCards(artistName);
+  sync.scheduleSync();
 }
 
 // ---- a guest joins (v92, first open, wall first) ------------------------------------
@@ -477,7 +499,10 @@ function restorePlace(place) {
   window.scrollTo({ top: place.y, behavior: 'auto' });
 }
 
-function askToJoin(artist = null) {
+// `intent` is what the guest's tap meant: 'pick' (a card, or the zoom's +)
+// carries the artist through the join as their first pick; 'less' and 'note'
+// (the zoom's other doors) name the artist on the shelf and just join.
+function askToJoin(artist = null, { intent = 'pick' } = {}) {
   const token = state.getCrewToken();
   if (!token || ctx.meName) return;
   // The question comes up over the wall, which never moves: a zoom shrinks
@@ -486,15 +511,15 @@ function askToJoin(artist = null) {
   closeShowMenu({ instant: true });
   rememberWelcomeSeen();
   dismissWelcome({ ctx });
-  pendingJoin = { token, fid: ctx.fid, artist, place: wallPlace() };
-  openJoinShelf(token, artist);
+  pendingJoin = { token, fid: ctx.fid, artist: intent === 'pick' ? artist : null, place: wallPlace() };
+  openJoinShelf(token, artist, intent);
 }
 
 // The join shelf (v92, the guest shelf round): the production bottom sheet
 // over the wall, asking the same question with the same answers as the join
 // screen (joinAnswers). A history entry of its own, so the system Back closes
 // it rather than leaving the app; the shelf's own ways out pop that entry.
-function openJoinShelf(token, artist) {
+function openJoinShelf(token, artist, intent = 'pick') {
   const doc = state.crewDoc || {};
   const people = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed))
     .map(([name, p]) => { const ci = colorIndexOf(name, p); return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, false) }; });
@@ -508,7 +533,7 @@ function openJoinShelf(token, artist) {
     entered: () => { if (shelf) shelf.close(); dropShelfEntry(); },
   });
   shelf = showJoinShelf({
-    artist, people, offline, ctx,
+    artist, intent, people, offline, ctx,
     onLook: () => { pendingJoin = null; popShelfEntry(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
@@ -2585,7 +2610,7 @@ function bringPicksHere(key) {
 }
 
 // The answers to "who are you?" (v92) — ONE set, for both places a guest is
-// asked: the join shelf over the wall (a guest's Pick shows) and the full join
+// asked: the join shelf over the wall (a guest's tap or zoom door) and the full join
 // screen (a personal link, the ambiguous-person case, "Not me"). Moved out of
 // renderJoin, not rewritten: one answer at a time (review round 2), the
 // waiting question bound to the answer that takes it and given back if the

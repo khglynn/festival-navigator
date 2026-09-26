@@ -17,11 +17,17 @@
 // one tap to claim is how friends ended up picking as somebody else.
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 
+// `line` names the artist the guest touched and what the tap meant: + (or a
+// card) is a pick, and the pick lands after the join; − and the notes door
+// only join, so their line promises nothing more (Kevin, 2026-09-25).
 export const SHELF_WORDS = {
-  line: (artist) => (artist ? ['Pick ', artist, ' as…'] : ['Pick shows as…']),
+  line: (artist, intent = 'pick') => (!artist ? ['Pick shows as…']
+    : intent === 'pick' ? ['Pick ', artist, ' as…']
+      : ['Join the plan for ', artist, ' as…']),
+  label: (artist, intent = 'pick') => SHELF_WORDS.line(artist, intent).join('').replace(/…$/, ''),
   sub: 'Tap your name, or add yourself.',
   subOffline: 'You’re offline — join anyway, it sends when you’re back.',
-  field: 'New here? Your name',
+  field: 'Add your name',
   look: 'Look around',
   join: 'Join',
   joinAs: (name) => `Join as ${name}`,
@@ -47,7 +53,7 @@ export function joinShelf() {
 // people: [{ name, bg, stroke }] in the crew's order. Returns the shelf's
 // handle: setBusy(on) holds every door while an answer settles, say(text or
 // node) writes the status line, close({ instant }) takes it down.
-export function showJoinShelf({ artist = null, people = [], offline = false, ctx = null, onLook, onClaim, onAnswer } = {}) {
+export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, onLook, onClaim, onAnswer } = {}) {
   document.getElementById(SHEET_ID)?.remove();
   document.getElementById(BACK_ID)?.remove();
   const back = node('div', 'sheet-backdrop join-backdrop');
@@ -56,13 +62,13 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   sheet.id = SHEET_ID;
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-modal', 'true');
-  sheet.setAttribute('aria-label', artist ? `Pick ${artist} as` : 'Pick shows as');
+  sheet.setAttribute('aria-label', SHELF_WORDS.label(artist, intent));
   sheet.tabIndex = -1;
   const grab = node('div', 'grabber');
 
   const head = node('div', 'js-head');
   const line = node('div', 'js-line');
-  const parts = SHELF_WORDS.line(artist);
+  const parts = SHELF_WORDS.line(artist, intent);
   if (artist) line.append(parts[0], node('b', null, parts[1]), parts[2]);
   else line.textContent = parts[0];
   const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
@@ -96,10 +102,12 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   const status = node('div', 'js-status');
   status.setAttribute('aria-live', 'polite');
 
+  // The answer first, on the left — "Join as Sam" — and the quiet way out on
+  // the right: the welcome card's order (Kevin, 2026-09-25).
   const actions = node('div', 'js-actions');
   const look = node('button', 'btn-ghost js-look', SHELF_WORDS.look);
   const go = node('button', 'btn-tonal js-go', SHELF_WORDS.join);
-  actions.append(look, go);
+  actions.append(go, look);
 
   sheet.append(grab, head, namesWrap, field, status, actions);
   document.body.append(back, sheet);

@@ -210,11 +210,12 @@ html { touch-action: manipulation; }
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
 /* The card's choice is two doors of one width (the guest shelf round,
- * 2026-09-25 — Kevin: the three-button row did not line up): Look around (the
- * quiet way, outlined) on the left, Pick shows (filled) on the right, the same
- * two halves at 320 and 390. A member who has just joined has the one door,
- * full width. "More info" is the explanation's last words — a real button
- * drawn as a link, its 44px reach borrowed around it. */
+ * 2026-09-25 — Kevin: the three-button row did not line up): Pick shows
+ * (filled, the main action) on the left, Look around (the quiet way,
+ * outlined) on the right, the same two halves at 320 and 390. A member who
+ * has just joined has the one door, full width. "More info" is the
+ * explanation's last words — a real button drawn as a link, its 44px reach
+ * borrowed around it. */
 .welcome-card .bring-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
 .welcome-card .bring-actions .btn-tonal,
 .welcome-card .bring-actions .btn-ghost { font-size: 13px; padding: 11px 12px; white-space: nowrap; }
@@ -1351,6 +1352,8 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .join-shelf .js-field:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line */
 .join-shelf .js-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
 .join-shelf .js-status:empty { display: none; }
+/* Its two answers, two equal halves: the answer first, on the left ("Join as
+ * Sam"), the quiet way out on the right — the welcome card's order. */
 .join-shelf .js-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .join-shelf .js-actions .btn-tonal,
 .join-shelf .js-actions .btn-ghost { font-size: 13.5px; padding: 12px 12px; min-height: 46px;
@@ -1367,11 +1370,48 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 @media (pointer: coarse) { .join-shelf .js-name::after { inset: -4px -4px; } }
 /* ≥720 the sheet is a centred dialog already (.sheet above). */
 
-/* A guest's zoom (the guest shelf round): the notes door and "Pick shows" side
- * by side — the way to join where a member's tap would pick. White, so it
- * reads on any colour wash. */
-.zoom-card .f-chips.f-guest-row { gap: 10px; align-items: center; }
-.zoom-card .f-guest-row .f-chip.notes { align-self: center; height: 34px; padding: 0 14px; font-size: 12px; }
-.f-pick { height: 40px; min-height: 40px; padding: 0 20px; border-radius: var(--r-pill); border: 0; cursor: pointer;
-          background: #fff; color: #120E1E; font: 800 13px var(--font-ui); position: relative; }
-.f-pick::after { content: ''; position: absolute; inset: -8px -6px; }
+/* The zoom's door row (v92 — Kevin, 2026-09-25): a bare − at the far left, a
+ * bare + at the far right, and between them the notes chip exactly as the
+ * zoom has always drawn it. No shape, no container (Kevin, after the button
+ * study: "I like the left and right just − + no button shape"). The same row
+ * for a member and a guest, under a finger, a mouse or a key.
+ *   The glyphs stand on the zoom's own content edges — the left and right
+ *   edges the who-row and the doors share — never inset toward the middle.
+ *   Their targets are invisible and forgiving: − owns everything left of the
+ *   chip, out to the card's left edge and down to its bottom; + everything
+ *   right of it; the chip is its own target (its 30px plus a vertical reach).
+ *   44px tall, so nothing between them falls through to the card behind.
+ *   A soft shadow keeps a white glyph legible on a pale wash. At a limit (−
+ *   at nothing picked, + at must) the glyph dims and keeps its place;
+ *   pressed, it dims a little — nothing moves under the finger.
+ * It is the card's floor: the name and the facts stay centred in the room
+ * above it (two auto margins share whatever height a tall cell leaves). */
+.zoom-card .f-name.over-doors { margin-top: auto; }
+/* A step must never move the doors under the hand (card-facts.js sizeSlot):
+ * the who-row is the one row a pick changes, so beside the doors it wraps
+ * inside the width the rest of the card sets instead of setting it. */
+.zoom-card.doors .f-grown { align-self: stretch; }
+.zoom-card.doors .f-who { contain: inline-size; align-self: stretch; }
+.zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                                 align-items: center; gap: 0; align-self: stretch; margin-top: auto; }
+.zoom-card .f-chips.f-step-row > .f-step {
+  -webkit-appearance: none; appearance: none; position: relative; box-sizing: border-box;
+  height: 44px; min-height: 44px; min-width: 0; margin: 0; padding: 0;
+  display: flex; align-items: center; background: none; border: 0; border-radius: var(--r-card);
+  color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; }
+.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; }
+.zoom-card .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
+.zoom-card .f-step:disabled { cursor: default; }
+.zoom-card .f-step:disabled .f-step-dot { opacity: .3; }
+.zoom-card .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
+.zoom-card .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
+/* The reach: out to the card's edges (the zoom's padding is 12px 14px). */
+.zoom-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -12px -14px; }
+.zoom-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
+/* The chip keeps its own look; its reach is vertical only — to the row's
+ * 44px whatever the chip's own height — so it never covers the − or + that
+ * meet it on either side. */
+.zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
+.zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }
