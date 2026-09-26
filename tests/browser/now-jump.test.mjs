@@ -124,8 +124,7 @@ const pull = (page) => page.evaluate(() => import('/js/sync.js').then((s) => s.p
 // because an artist can play twice (Soulwax is Thursday's afters AND
 // Saturday's grid).
 const view = (page, artist, where = null) => page.evaluate(([a, w]) => {
-  const dock = document.getElementById('dock');
-  const dockTop = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
+  const dockTop = Math.min(innerHeight, ...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight)); // the dock, or Our plan's peek on it
   const rail = document.getElementById('day-rail');
   const railBottom = rail && getComputedStyle(rail).display !== 'none' ? rail.getBoundingClientRect().bottom : 0;
   const line = document.querySelector('#wall-root .now-line');
@@ -444,8 +443,7 @@ const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
   if (pulse === 'none') await sleep(900);
   else for (let t = 0; t < 15 && !(await page.evaluate(() => window.__pulses.length)); t++) await sleep(100);
   return page.evaluate(() => {
-    const dock = document.getElementById('dock');
-    const bottom = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
+    const bottom = Math.min(innerHeight, ...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight)); // the dock, or Our plan's peek on it
     const line = document.querySelector('#wall-root .now-line');
     const lr = line && line.getBoundingClientRect();
     // A show is its artist and its occurrence: one show billed to two rooms
@@ -1075,8 +1073,7 @@ const rowView = (page) => page.evaluate((sel) => {
   const row = document.querySelector(sel);
   const card = [...row.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Milli Meng');
   const r = row.getBoundingClientRect(), c = card.getBoundingClientRect();
-  const dock = document.getElementById('dock');
-  const dockTop = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
+  const dockTop = Math.min(innerHeight, ...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight)); // the dock, or Our plan's peek on it
   return {
     row: { left: r.left, right: r.right, scrollLeft: row.scrollLeft, max: row.scrollWidth - row.clientWidth },
     card: { left: c.left, right: c.right, top: c.top, bottom: c.bottom }, innerWidth, dockTop,

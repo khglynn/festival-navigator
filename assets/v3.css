@@ -167,14 +167,17 @@ html { touch-action: manipulation; }
   to { opacity: .85; transform: translateX(100%) scaleX(.35); }
 }
 /* Wall-side scan pill: the library read keeps going when you leave the drill —
- * this says so. Above the dock, never interactive. */
+ * this says so. Above the dock, never interactive. It stands above whatever
+ * is down there: the dock and Our plan's peek (--foot-h), Our plan's corner
+ * card on a laptop (--plan-corner-h), or the welcome / bring-picks card that
+ * waits in their place (--offer-top) — all foot.js / plan-shelf.js. */
 .spot-pill {
-  position: fixed; right: 12px; bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  position: fixed; right: 12px; bottom: max(calc(var(--foot-h) + 25px), calc(var(--offer-top, 0px) + 10px));
   z-index: 35; padding: 7px 12px; border-radius: var(--r-pill);
   background: rgba(10, 8, 18, .92); border: 1px solid var(--spotify-stroke);
   color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
 }
-@media (min-width: 720px) { .spot-pill { bottom: 16px; } }
+@media (min-width: 720px) { .spot-pill { bottom: calc(max(var(--plan-corner-h, 0px), var(--offer-top, 0px)) + 16px); } }
 
 /* ---- crew entry: the bring-your-picks offer (2026-09-23) ----------------------
  * One decision, asked once per crew × fest, so it waits above the dock where
@@ -187,7 +190,7 @@ html { touch-action: manipulation; }
  * --fest: the offer is about a person's picks, not the festival. */
 .bring-offer {
   position: fixed; left: 12px; right: 12px; z-index: 38;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--foot-h) + 19px); /* the dock's top + 19 (foot.js; Our plan's peek waits for these cards) */
   display: flex; justify-content: center; pointer-events: none;
   transition: transform .24s cubic-bezier(.2, 1.15, .35, 1);
 }
@@ -196,6 +199,16 @@ html { touch-action: manipulation; }
   display: flex; flex-direction: column; gap: 10px; padding: 12px 14px;
   background: var(--dock); border: 1px solid var(--border-emphasis);
   border-radius: var(--r-row); box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+}
+/* On a laptop the card waits where Our plan's corner card sits (Kevin,
+ * 2026-09-26: "lower right justified in the same spot as our now" — centred
+ * over the wall it floated nowhere in particular): the corner's box, 380px
+ * wide, 20px in from the window's right and bottom (plan-shelf.js GAP). The
+ * plan waits under it and rises in the same place when it goes; on a phone
+ * the two already share the strip above the dock. */
+@media (min-width: 720px) {
+  .bring-offer { left: auto; right: 20px; bottom: 20px; width: 380px; }
+  .bring-card { max-width: none; }
 }
 .bring-line { color: var(--text-body); font-size: 13px; font-weight: 700; line-height: 1.4; }
 .bring-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
@@ -389,6 +402,7 @@ html { touch-action: manipulation; }
 .hl-pop .mark.on { background: var(--c); }
 .hl-pop .mark.on .tick { opacity: 1; }
 .hl-pop .check.plus { color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+.hl-pop .hl-act.plan { color: var(--tonal-text); } /* the way into Our plan: the first action, in the brand's tonal text (people-shelf design) */
 /* While its menu is open the avatar wears the brand ring — a door that is
  * open (the fest name's three lines turn brand the same way). */
 .you-avatar { transition: box-shadow .12s ease; }
@@ -779,6 +793,7 @@ button.room-head { cursor: pointer; }
   .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
+  .plan-grab,   /* Our plan's grabber: the whole peek is its target (plan-shelf.js) */
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
                  * whole row is the tap target anyway */
   .card button {
@@ -1049,7 +1064,7 @@ button:not([aria-haspopup]) > .menu-glyph { display: none; }
 @media (min-width: 1100px) { .wall-grid { gap: 9px; } }
 .undo-toast {
   position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 50;
+  bottom: calc(var(--foot-h) + 19px); z-index: 50; /* above the dock and Our plan's peek (foot.js) */
   background: var(--dock); border: 1px solid var(--border-emphasis);
   border-radius: var(--r-row); padding: 10px 14px;
   display: flex; align-items: center; gap: 12px;
@@ -1918,3 +1933,180 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .import-sheet .imp-go:disabled { opacity: .45; cursor: default; }
 .import-sheet .imp-status { color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
 .import-sheet .imp-status:empty { display: none; }
+
+/* ---- OUR PLAN (2026-09-26 — Kevin's call #5; round three's design) -----------
+ * Where most of us will be, as a route of stops (js/v3/plan.js), drawn as one
+ * row everywhere (js/v3/plan-rows.js): the node on the path · what and where ·
+ * when · how many picked it. On the phone it is ONE element (#plan, plan-shelf.js)
+ * laid out at its open height and shown through a window: the peek is the
+ * grabber and the tagged row above the dock; dragging it up opens the day.
+ * Brand only — the accent's four homes do not include this. */
+.plan-list { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* Rows keep their height: a full list scrolls, it never squeezes. (A stop row
+ * is a button, and the touch floor's min-height replaces the flex item's
+ * content minimum — a pinned window squeezed the NOW row from 61px to 44 and
+ * its text spilled over the card under it, 2026-09-26.) */
+.plan-list > * { flex: none; }
+.plan-row { --plan-nm: 17px; /* the name's size: its line is the NOW / NEXT tag's line too */
+            position: relative; display: grid; min-width: 0; align-items: baseline;
+            grid-template-columns: var(--plan-nw) minmax(0, 1fr) var(--plan-ww) var(--plan-cw);
+            column-gap: var(--plan-gap); padding: 8px 0; text-align: left; }
+button.plan-row { width: 100%; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
+/* A keyboard's ring sits inside the list's clip. The peek's row is a window
+ * onto a row, not a control: the grab hand is the shelf's there. */
+.plan-row:focus-visible { outline-offset: -2px; border-radius: 8px; }
+.plan-shelf[data-state="peek"] button.plan-row { cursor: inherit; }
+/* The path: one rail through every node, from the first row to the last. */
+.plan-row::before, .plan-grow::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; border-radius: 1px;
+                                         left: calc(var(--plan-nw) / 2 - 1px); background: rgba(var(--brand), .26); }
+.plan-row.first::before { top: 18px; }
+.plan-row.last::before { bottom: auto; height: 18px; }
+.plan-row.first.last::before, .plan-row.last + .plan-grow::before { display: none; }
+.plan-row.scattered::before { background: repeating-linear-gradient(to bottom, rgba(var(--brand), .38) 0 3px, transparent 3px 7px); }
+
+/* 1 · the node: the stop's aura (the card's own), a ring for a smaller group */
+.plan-node { position: relative; z-index: 1; justify-self: center; align-self: start; margin-top: 3px;
+             width: 16px; height: 16px; border-radius: var(--r-pill); overflow: hidden;
+             box-shadow: 0 0 0 1px rgba(255, 255, 255, .38), 0 0 0 4px var(--plan-bg, var(--dock)); }
+.plan-node.animated { background-size: 180% 180% !important; animation: gradShift 12s ease-in-out infinite; }
+.plan-row.some .plan-node { width: 10px; height: 10px; margin-top: 5px; background: var(--plan-bg, var(--dock)) !important;
+                            box-shadow: 0 0 0 1.5px rgba(var(--brand), .7), 0 0 0 4px var(--plan-bg, var(--dock)); }
+.plan-row.or .plan-node, .plan-row.earlier .plan-node { width: 7px; height: 7px; margin-top: 5px; background: var(--plan-bg, var(--dock));
+                            box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--plan-bg, var(--dock)); }
+.plan-row.scattered .plan-node { visibility: hidden; }
+.plan-row.live .plan-node { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 0 0 4px var(--plan-bg, var(--dock)), 0 0 12px rgba(var(--brand), .85); }
+
+/* 2 · what and where: the artist leads; the place is the one second line */
+.plan-what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.plan-what .nm { color: var(--text-primary); font-size: var(--plan-nm); font-weight: 800; line-height: 1.18; letter-spacing: -.005em;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-what .pl { color: var(--text-secondary); font: var(--plan-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-what .pl .also { color: var(--text-tertiary); }
+.plan-what .pl .also::before { content: ' · '; }
+.plan-row.some { --plan-nm: 14.5px; }
+.plan-row.some .plan-what .nm { font-weight: 700; color: var(--text-body); }
+.plan-row.or { --plan-nm: 13px; padding-top: 0; }
+.plan-row.or .plan-what .nm { font-weight: 600; color: var(--text-body); }
+.plan-row.or .plan-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
+.plan-row.or .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
+.plan-row.earlier .plan-what .nm, .plan-row.scattered .plan-what .nm { font: var(--plan-line); color: var(--text-tertiary); }
+.plan-row.earlier .plan-what .nm { text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; font-weight: 700; }
+.plan-row.earlier .plan-what .nm b { color: var(--text-secondary); font-weight: 700; }
+.plan-row.scattered .plan-what .nm { font-style: italic; }
+.plan-who { display: flex; margin-top: 5px; }
+.plan-who .avatar { width: 15px; height: 15px; font-size: 7.5px; box-shadow: 0 0 0 1.5px var(--plan-bg, var(--dock)); }
+.plan-who .avatar + .avatar { margin-left: -4px; }
+/* The tagged row's faces start where the peek's window ends (its row padding
+ * below), so the peek is the name, the place and the time, and the faces slide
+ * in from behind the dock as it opens (plan-shelf.js measure). */
+.plan-row.tagged .plan-who { margin-top: 9px; }
+
+/* 3 · when: quiet; NOW / NEXT sits on the name's line, its time under it on
+ * the place's line. The tag rides a line box the name's size (.tl): a strut
+ * of the name's type gives it the name's baseline, which is what the row
+ * aligns, and the pill centres in it; the column's gap is the what column's,
+ * so the time and the place share a line. Aligned on the pill's own 9px
+ * text instead, the pill hung below the name and pushed the time below the
+ * place (Kevin, 2026-09-26: "not slid down a bit like they are now"). */
+.plan-when { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.plan-when .tl { display: flex; align-items: center; height: calc(var(--plan-nm) * 1.18); }
+.plan-when .tl::before { content: '\200b'; font-size: var(--plan-nm); line-height: 1.18; }
+.plan-when .t { font: var(--plan-line); color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plan-when .t.soft { color: var(--text-tertiary); }
+.plan-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; letter-spacing: .1em;
+            padding: 3px 7px; border-radius: var(--r-pill); line-height: 1; white-space: nowrap; }
+.plan-tag.now { background: rgb(var(--brand)); color: var(--page); }
+.plan-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
+.plan-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
+.plan-row.past { opacity: .42; }
+/* A highlight (the people menu's "just Ross") dims the stops and forks none
+ * of them is in — the wall card's .dim, on the row's CONTENT: the row's own
+ * opacity belongs to the peek's window and to .past, and the path through the
+ * nodes stays unbroken. plan-shelf.js fades it in place (--plan-dim). */
+.plan-row.dim > .plan-node, .plan-row.dim > .plan-what, .plan-row.dim > .plan-when, .plan-row.dim > .plan-n,
+.plan-grow.dim > .sheet-card { opacity: var(--plan-dim); }
+
+/* 4 · how many picked it ("5 picked") */
+.plan-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
+.plan-n b { font-family: var(--font-display); letter-spacing: var(--track-display); font-weight: 400; font-size: 17px;
+            color: var(--text-primary); margin-right: 3px; }
+.plan-row.some .plan-n b, .plan-row.or .plan-n b { font-size: 14px; color: var(--text-body); }
+.plan-row .chev { justify-self: end; align-self: center; width: 6px; height: 6px; margin-right: 4px;
+                  border: solid var(--text-tertiary); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translateY(-2px); }
+.plan-row.earlier[aria-expanded="true"] .chev { transform: rotate(225deg) translateY(-2px); }
+
+/* A grown stop: its real card (the notes sheet's header card) under its row,
+ * left edge on the names' line, right edge on the counts'. */
+.plan-grow { position: relative; display: grid; grid-template-columns: var(--plan-nw) minmax(0, 1fr);
+             column-gap: var(--plan-gap); padding: 0 0 8px; }
+.plan-grow > * { grid-column: 2; min-width: 0; }
+.plan-grow .sheet-card { padding: 13px 12px 14px; }
+.plan-grow .sheet-card .f-name { font-size: 17px; }
+/* A big name means "most of us will be there" and nothing else (Kevin,
+ * 2026-09-26): NOW has its own signals, so a SOME stop's grown card takes the
+ * SOME row's name size, NOW or not. */
+.plan-grow.some .sheet-card .f-name { font-size: 14.5px; }
+
+/* ---- the phone: the shelf that is the peek and the day ---------------------- */
+.plan-shelf { --plan-bg: var(--dock); --plan-dim: .28; position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
+              display: flex; flex-direction: column; max-height: calc(100dvh - var(--dock-h) - 56px);
+              background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
+              box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }
+.plan-shelf[hidden] { display: none; }
+/* The frame is the laptop's (below); on a phone it is no box at all. */
+.plan-frame { display: contents; }
+/* The grabber rides the window's top edge and the rows slide under it. */
+.plan-grab { position: relative; z-index: 2; flex: none; display: block; width: 100%; padding: 6px 0 4px;
+             background: var(--dock); border: 0; cursor: grab; }
+.plan-grab .grabber { display: block; width: 30px; height: 3px; border-radius: var(--r-pill); background: var(--border-card); margin: 0 auto; }
+.plan-grab .pc-line, .plan-grab .pc-head, .plan-grab .pc-pill { display: none; }
+.plan-body { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; padding: 0 var(--sp-gutter); }
+.plan-head { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 0 6px; flex: none; }
+.plan-head .room-head { flex: 1 1 auto; }
+/* The list clips (the window's rows slide under the grabber), so it reaches
+ * 8px past the body's padding on each side: a node's ring and the live glow
+ * are drawn outside the node column and must not be cut. */
+.plan-shelf .plan-list { overflow: hidden; margin: 0 -8px; padding: 0 8px 14px; }
+.plan-shelf .plan-list.scrolls { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+/* Searching: the wall has no clock, so neither does the plan (app.js hides the
+ * peek on a query; this covers the moment the field has focus before one). */
+#screen-app.searching .plan-shelf { display: none; }
+/* The peek shows its row alone: no path above or below it until it opens. */
+.plan-shelf[data-state="peek"]:not(.opening) .plan-row.tagged::before { display: none; }
+
+/* ---- the laptop: the corner card that grows into the side panel -------------
+ * One element, laid out at the panel's size (under the day rail — its top is
+ * written by plan-shelf.js — 400px, to the bottom) and shown through a clip:
+ * the card's box in the corner, 20px in from the right and bottom edges. The
+ * frame around it carries the edge and the shadow as filters, because a
+ * filter on the parent follows the child's clip where a border or a
+ * box-shadow on the child would be cut by it. No backdrop: the wall stays
+ * usable beside the panel. The approved frames: ours-r2 R3 DT-*. */
+@media (min-width: 720px) {
+  .plan-frame { --plan-edge: var(--border-card); display: block; position: fixed; inset: 0; z-index: 29; pointer-events: none;
+                filter: drop-shadow(0 0 .7px var(--plan-edge)) drop-shadow(0 14px 36px rgba(0, 0, 0, .55));
+                transition: filter .15s ease; }
+  .plan-shelf { left: auto; right: 0; top: 0; bottom: 0; width: 400px; max-height: none; pointer-events: auto;
+                border: 0; border-radius: 0; box-shadow: none; touch-action: auto; transition: translate .15s ease; }
+  /* Hover lifts the card 2px with a brand edge (translate composes with the
+   * window's transform; the panel does not lift). */
+  .plan-frame[data-state="peek"]:hover { --plan-edge: rgba(var(--brand), .6); }
+  .plan-frame[data-state="peek"]:hover > .plan-shelf { translate: 0 -2px; }
+  .plan-frame[data-state="peek"] > .plan-shelf { cursor: pointer; } /* the card is one button (plan-shelf.js onClickPeek) */
+  .plan-grab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px;
+               min-height: 42px; padding: 8px 24px 7px; border-bottom: 1px solid var(--hairline); cursor: pointer;
+               text-align: left; font: inherit; color: inherit; }
+  .plan-grab .grabber { display: none; }
+  .plan-grab .pc-line, .plan-grab .pc-head { display: flex; grid-area: 1 / 1; min-width: 0; align-items: baseline; }
+  .plan-grab .pc-line { gap: 6px; white-space: nowrap; overflow: hidden; }
+  .plan-grab .pc-line .k { color: rgb(var(--brand)); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); }
+  .plan-grab .pc-line .c { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; }
+  .plan-grab .pc-head .line { display: none; }
+  .plan-grab .pc-pill { display: grid; grid-area: 1 / 2; }
+  .plan-grab .pc-pill > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+                               height: 26px; padding: 0 10px 0 11px; border-radius: var(--r-pill); border: 1px solid var(--border-input);
+                               color: var(--text-body); font: 700 11.5px var(--font-ui); white-space: nowrap; }
+  .plan-frame[data-state="peek"]:hover .pc-open { border-color: rgba(var(--brand), .7); color: var(--tonal-text); background: rgba(var(--brand), .12); }
+  .plan-body { padding: 0 24px; } /* the card's 14px inside its clip (plan-shelf.js SIDE) */
+  .plan-head { display: none; }
+}

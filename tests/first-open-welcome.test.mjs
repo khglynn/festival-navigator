@@ -132,7 +132,7 @@ test('the words: one table, a clear choice for a guest, and the crews a friend c
   assert.deepEqual([guest.yes, guest.more, guest.join], [WORDS.look, WORDS.how, WORDS.join]);
   assert.equal(guest.more, 'More info', 'the explanation’s last words (Kevin, the guest shelf round)');
   assert.deepEqual([guest.yes, guest.join], ['Look around', 'Pick shows']);
-  assert.equal(guest.sub, 'Every friend has a color — the more color on a card, the more of us want to go.', 'the buttons say the choice');
+  assert.equal(guest.sub, 'Every friend has a color — the more color on a card, the more of us picked it.', 'the buttons say the choice');
   const member = welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: false });
   assert.deepEqual([member.yes, member.join], ['Got it', null]);
   assert.deepEqual(
@@ -140,10 +140,10 @@ test('the words: one table, a clear choice for a guest, and the crews a friend c
     ['Nobody’s in this crew yet.', 'Tap any artist, then + to be first — you’ll pick a name as you do.'],
   );
   assert.equal(welcomeCopy({ ...base, people: [], guest: true }).join, 'Pick shows', 'an empty crew too: someone has to be first');
-  assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).line, 'Kevin started this plan for Portola. Nobody’s picked yet.');
-  assert.equal(welcomeCopy({ ...base, people: ['Kevin', 'Maya'], picked: false }).line, 'This is the crew’s plan for Portola. Nobody’s picked yet.');
+  assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).line, 'Kevin started this crew for Portola. Nobody’s picked yet.');
+  assert.equal(welcomeCopy({ ...base, people: ['Kevin', 'Maya'], picked: false }).line, 'This crew is here for Portola. Nobody’s picked yet.');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false, guest: false, meName: 'Kevin' }).line,
-    'Your plan for Portola is ready. Nobody’s picked yet.', 'never told about yourself in the third person');
+    'Your crew for Portola is ready. Nobody’s picked yet.', 'never told about yourself in the third person');
   assert.equal(guest.label, 'Portola 26');
   assert.doesNotMatch(JSON.stringify(guest), /going\b|must see/i, 'a pick is interest, not a ticket');
 });

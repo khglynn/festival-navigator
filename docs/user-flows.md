@@ -238,9 +238,10 @@ legible (D3); empty state may hint at the hold but never as the only path.
 
 ## F9 · Day navigation
 
-1. Mobile: bottom dock — your avatar (the people menu: Highlight, Pick as
-   someone else, + Invite someone; a guest's dashed + ends in Join the crew;
-   with a highlight on it is the pill — faces and a ✕), day tabs
+1. Mobile: bottom dock — your avatar (the people menu: Highlight, then Our
+   plan › while there is a plan (F18), Pick as someone else, + Invite
+   someone; a guest's dashed + ends in Join the crew; with a highlight on it
+   is the pill — faces and a ✕), day tabs
    (scrollspy-active), fest name (the show menu, or Settings on a one-room
    fest — F5.7). Jump to top retired (2026-09-26).
 2. Desktop: sticky day rail under the toolbar with the same avatar (its menu
@@ -358,6 +359,44 @@ not a broken page. /api/ never served from cache.
 **Expected:** identity plumbing never blocks entering a crew — every failure
 is silent-and-retried on the next open. The person token appears nowhere but
 the me link and the device's own storage.
+
+## F18 · Our picks — the night's route through everyone's picks (Kevin's call #5, 2026-09-26)
+
+People read it as **Our picks**, and a count as **5 picked** — the app's own
+word. It was drawn as "Our plan" and "5 of us" until a friend said "my picks
+are what I was interested in, not necessarily what I'm planning to go to"
+(Kevin, 2026-09-26). The code still calls it the plan (`js/v3/plan.js`, `#plan`).
+
+1. From everyone's picks, a route of stops through the night: at each moment
+   the place with the most of us, if at least max(3, ⌈pickers / 4⌉) of us are
+   there. More than half is MOST, fewer is SOME; a second place over the bar is
+   an "or" line; a stretch where nowhere is over it is scattered. An artist who
+   plays twice counts at both places. Hidden rooms stay hidden, but everyone
+   is placed on the whole festival first, so hiding a room never moves the bar.
+2. Mobile: a peek on the dock — the plan's own NOW (or NEXT) row seen through a
+   window, with the grabber above it. A tap on the peek or the grabber, or a
+   drag up, opens the day plan over the wall (past a third of the way on a slow
+   release, else by a flick's direction). The dock's NOW tab steps aside while
+   the peek says NOW (one NOW).
+3. Desktop: the same row as a card 20px in from the bottom-right corner; a click
+   grows it into a 400px panel from under the rail to the bottom, the wall still
+   usable beside it (a zoom keeps left of it). A keyboard meets the card right
+   after the rail.
+4. The people menu's Our picks › (F9) opens it too: the menu gives way and the
+   plan rises from its peek; from a keyboard the focus goes to the grabber.
+5. In the open plan a tap on a stop grows its card under it (the NOW stop's is
+   grown already) and the row stays where the finger was; Enter does the same
+   and keeps the focus on the row. Earlier stops fold into one "Earlier" line.
+6. Closing: the grabber, the head, ✕, Escape, a drag down, or any menu opening.
+   None of it takes a history entry — Back does what it does from the wall.
+7. It stays away while the search field is in use and while the welcome card
+   or the bring-your-picks offer is up, and rises when they go. Before a
+   festival: the day before shows tomorrow's first stop with its weekday;
+   earlier than that, nothing.
+**Expected:** the times it says are the times the wall's cards glow; a pick
+counts at once; no "Tell a friend". Spec:
+`claude-plans/2026-09-26-unified-build/our-plan/SPEC-ui.md`; model:
+`js/v3/plan.js`.
 
 ---
 

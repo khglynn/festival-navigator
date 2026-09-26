@@ -46,6 +46,9 @@ offline/
 *.png
 *.jpg
 *.jpeg
+# A screen recording is pictures too (the Our plan clips, 2026-09-26).
+*.mp4
+*.webm
 !favicon.png
 !icon-192.png
 !icon-512.png
