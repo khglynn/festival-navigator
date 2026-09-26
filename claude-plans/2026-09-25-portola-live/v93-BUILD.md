@@ -253,3 +253,30 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   "does nothing else", stale since the tap replay); the dead-entry rule.
 - **Not done: the merge of main (3b2640a) into live/v93** — the command was refused by the
   session's permission classifier ("Modify Shared Resources"); left for the coordinator.
+- **One history principle, not shapes** (48a2274, Sol 6's re-review of c8230b1 — its BLOCKER: a
+  guest's join left a second wall entry for one address, so after a 404 with the menu up Back
+  did nothing; and the URL-only skip). `js/v3/nav.js`: every entry the app writes carries
+  `{ idx, id, kind }` (idx only grows in the tab — sessionStorage in a try, seeded from the
+  current entry), so every popstate knows its direction for certain. `onPopState`: an
+  arrival that would change nothing on screen (same address, same layers, no shelf up) is
+  passed with `history.go` the same way, only while arrivals change nothing; a menu layer
+  opens only when that menu is alive; the app's own traversals are marked and applied as
+  they are. Duplicates are not made: the join takes the shelf's entry back; "Add yourself"
+  from Settings or a notes sheet takes the layers back first; a boot in place with the menu
+  up takes its entry back first. The old deadHere / hashchange stepping is gone. Unstamped
+  entries (an older build's) have no direction and behave as before. Proof: `tests/nav.test.mjs`,
+  and `tests/browser/show-menu-history.test.mjs` (WebKit + Chromium, address and screen after
+  every press, seven shapes including Sol's two; the guest-join shape and back-and-forth fail
+  on c8230b1). My reading of Sol's second shape ("a boot on a dead menu entry skipped a REAL
+  same-URL wall entry"): an entry is passed only when arriving there changes nothing; one
+  with a layer, or on the other side of the fest list, is a real step and is where the press
+  lands — the contract pins the fest-list case.
+- **The next intent wins over a tick's fade** (cbe99e4, Sol's IMPORTANT): NOW, a day tab, the
+  next tick and "Show all" finish a pending fold first (`settleFold`); a page that moved during
+  the fade has its place read again where it now is (not a bare cancel — that would let the
+  wall jump by the removed rooms' height under a moving hand); `keepWallPlace` shifts
+  `nowCycle.y` by what it scrolled. Proof: `tests/browser/fold-intent.test.mjs` (WebKit +
+  Chromium; both cases fail on c8230b1).
+- Verified on cbe99e4: `npm test` 1057 pass, the stamp the only failure; `npm run test:browser`
+  235/235 (an earlier full run had two WebKit tests time out together at 32 s under load —
+  each passes alone twice, and the next full run was clean).
