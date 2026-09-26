@@ -1,0 +1,155 @@
+/* OURS — design prototype styles (2026-09-25). Tokens only: nothing here
+ * invents a colour. "Ours" is --brand by the letter of CLAUDE.md ("anything
+ * else that wants to look selected or 'ours' uses --brand"); --fest stays in
+ * its four homes. Cards are the real renderCard output at --col-w. */
+
+/* ---- the door: OURS after the day tabs (O1, O3) ----------------------------
+ * The day tabs' own type. The three dots are the crew's own hues — the three
+ * people at today's biggest stop — overlapping like the avatar cluster, so the
+ * word reads "us" before it is read at all. Idle it is a tab (tertiary);
+ * open, it is brand with the tab's underline (never --fest: not a day). */
+.ours-tab { display: inline-flex; align-items: center; gap: 5px; flex: none; position: relative;
+            background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer;
+            padding: 0 0 3px; font-family: var(--font-ui); font-weight: 800; font-size: 12px;
+            color: var(--text-secondary); }
+.ours-tab .crowd { display: inline-flex; }
+.ours-tab .crowd i { width: 6px; height: 6px; border-radius: var(--r-pill); display: block;
+                     box-shadow: 0 0 0 1.5px var(--dock); }
+.ours-tab .crowd i + i { margin-left: -2px; }
+.ours-tab.on { color: rgb(var(--brand)); border-bottom-color: rgb(var(--brand)); }
+
+/* ---- shared: how many of us ------------------------------------------------ */
+.o-crowd { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.o-crowd .n { font-family: var(--font-display); letter-spacing: var(--track-display);
+              font-size: 15px; color: var(--text-primary); line-height: 1; }
+.o-crowd .of { color: var(--text-tertiary); font-size: 10px; font-weight: 700; white-space: nowrap; }
+.o-crowd .avatar-cluster .avatar { box-shadow: 0 0 0 1.5px var(--page); }
+
+/* ---- O1: the route (a block after the last day, one room per night) -------- */
+.o-route { display: flex; flex-direction: column; }
+.o-row { position: relative; display: grid; grid-template-columns: var(--col-w) var(--col-w);
+         column-gap: var(--col-gap); align-items: start; padding-bottom: 14px; }
+/* The path: the group's line down the left edge, one segment per row so it
+ * is continuous; the first row starts at its node, the last ends at it. */
+.o-row::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px;
+                 background: rgba(var(--brand), .32); border-radius: 1px; }
+.o-row.first::before { top: 12px; }
+.o-row.last::before { bottom: auto; height: 12px; }
+.o-row.gap::before { background: repeating-linear-gradient(to bottom, rgba(var(--brand), .38) 0 3px, transparent 3px 8px); }
+.o-node { position: absolute; left: 1px; top: 7px; width: 12px; height: 12px; border-radius: var(--r-pill);
+          background: rgb(var(--brand)); box-shadow: 0 0 0 3px var(--page); z-index: 1; }
+.o-row.some .o-node { left: 3px; top: 8px; width: 8px; height: 8px; background: var(--page);
+                      box-shadow: 0 0 0 2px rgba(var(--brand), .7), 0 0 0 5px var(--page); }
+.o-when { padding-left: 22px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.o-when .t { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 22px;
+             color: var(--text-header); line-height: 1; white-space: nowrap; }
+.o-when .t .ap { font-size: 12px; color: var(--text-secondary); margin-left: 3px; }
+.o-when .where { color: var(--text-secondary); font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+                 text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-when .then { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.35; }
+.o-when .then b { color: var(--text-body); font-weight: 700; }
+/* SOME: one quiet line, no card. The name is a name, not a card — it takes
+ * the full width to the right of the path. */
+.o-row.some { grid-template-columns: 1fr; padding-bottom: 12px; }
+.o-row.some .o-line { padding-left: 22px; display: flex; align-items: center; gap: 8px; min-width: 0; padding-top: 1px; }
+.o-row.some .o-line .txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.o-row.some .o-line .t { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 13px;
+                         color: var(--text-secondary); white-space: nowrap; flex: none; width: 58px; }
+.o-row.some .o-line .nm { color: var(--text-body); font-size: 12.5px; font-weight: 700; white-space: nowrap;
+                          overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.o-row.some .o-line .pl { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; white-space: nowrap;
+                          overflow: hidden; text-overflow: ellipsis; min-width: 0; letter-spacing: .02em; }
+.o-row.some .o-line .o-crowd { margin-left: auto; flex: none; }
+.o-row.some .o-line .o-crowd .n { font-size: 12px; color: var(--text-body); }
+/* A fork: a branch off the path, "or 3 at Kettama". */
+.o-fork { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 7px; min-width: 0;
+          padding: 8px 0 0 30px; color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.o-fork svg { position: absolute; left: 7px; top: -2px; overflow: visible; }
+.o-fork .or { color: var(--text-tertiary); }
+.o-fork b { color: var(--text-body); font-weight: 700; white-space: nowrap; }
+.o-fork .pl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* A split: two places with the same crowd — two cards side by side on the
+ * one column track, each saying its own count. */
+.o-row.split { grid-template-columns: var(--col-w) var(--col-w); row-gap: 8px; }
+.o-row.split .o-when { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 10px; }
+.o-row.split .o-when .where { color: rgb(var(--brand)); }
+.o-split-cap { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; align-items: center; }
+.o-split-cap .pl { color: var(--text-tertiary); font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.o-gapnote { padding: 2px 0 2px 22px; color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; font-style: italic; }
+.o-empty { padding: 2px 0 6px; color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }
+.o-empty b { color: var(--text-header); font-weight: 700; }
+/* NOW on the route: what is over steps back; the stop you are in wears the
+ * wall's own now mark (.card.now) and the now line's pill. */
+.o-row.past { opacity: .42; }
+.o-row.now .o-node { box-shadow: 0 0 0 3px var(--page), 0 0 10px rgba(var(--brand), .9); }
+.o-nowpill { align-self: flex-start; background: rgb(var(--brand)); color: var(--page); font-size: 8px; font-weight: 800;
+             letter-spacing: .08em; padding: 2px 6px; border-radius: var(--r-pill); white-space: nowrap; }
+
+/* ---- O2: the crew's highlight, in place -------------------------------------
+ * The door is a chip at the head of the people row, wearing everyone's colour
+ * at once (the aura engine, every picker at one bar). Lit cards carry their
+ * crowd in the top-right corner — the corner the NOW tag left empty. */
+.person-chip.ours { position: relative; overflow: hidden; font-weight: 700; }
+.person-chip.ours .card-grain { border-radius: inherit; }
+.person-chip.ours > span:not(.card-grain) { position: relative; }
+.o-badge { position: absolute; top: 5px; left: 5px; height: 15px; padding: 0 6px; border-radius: var(--r-pill);
+           display: inline-flex; align-items: center; gap: 3px; z-index: 2;
+           background: rgba(10, 8, 18, .62); border: 1px solid rgba(var(--brand), .85);
+           color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+.o-badge .n { font-family: var(--font-display); font-size: 10px; letter-spacing: .04em; }
+.card.cell .o-badge { top: 4px; left: 4px; }
+.o-badge.some { border-color: rgba(255, 255, 255, .28); color: rgba(255, 255, 255, .85); }
+.o-edge { position: absolute; right: 0; z-index: 4; width: 26px; height: 44px; padding: 0; display: inline-flex; flex-direction: column;
+          align-items: center; justify-content: center; gap: 0; cursor: pointer; font: inherit;
+          border-radius: 13px 0 0 13px; background: rgba(var(--brand), .2); border: 1px solid rgba(var(--brand), .55); border-right: 0;
+          color: var(--tonal-text); font-size: 10px; font-weight: 800; white-space: nowrap;
+          -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); box-shadow: -4px 0 14px rgba(0, 0, 0, .45); }
+.o-edge .n { font-family: var(--font-display); font-size: 12px; color: #fff; letter-spacing: .04em; }
+.o-edge .chev { font-size: 14px; line-height: 1; margin-top: -1px; }
+
+/* ---- O3: find us, a sheet from the door ------------------------------------
+ * The notes sheet's own surface, with the shell's gutter so two cards on the
+ * one column track fit side by side when we are split. */
+.sheet.o-sheet { padding: 12px var(--sp-gutter) 18px; gap: 11px; max-height: 84vh; }
+.o-sheet .o-top { display: flex; align-items: center; gap: 8px; }
+.o-sheet .o-live { width: 6px; height: 6px; border-radius: var(--r-pill); background: rgb(var(--brand));
+                   box-shadow: 0 0 6px rgba(var(--brand), .85); flex: none; }
+.o-sheet .o-kicker { color: rgb(var(--brand)); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.o-sheet .o-clock { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.o-sheet .o-top .sheet-close { margin-left: auto; }
+.o-sheet .o-answer { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 26px; line-height: 1.02;
+                     color: var(--text-header); margin-top: -2px; }
+.o-sheet .o-answer .n { color: #fff; }
+.o-sheet .o-answer .soft { color: var(--text-secondary); }
+.o-sheet .o-answer-sm { font-size: 20px; margin-top: 0; }
+.o-sheet .o-sub { color: var(--text-secondary); font-size: 12px; font-weight: 600; margin-top: -5px; }
+.o-sheet .sheet-card { margin-top: 2px; }
+.o-sheet .o-fork { padding: 0 2px; font-size: 11px; }
+.o-sheet .o-fork svg { display: none; }
+.o-sheet .micro-label { margin-top: 4px; }
+.o-next { display: flex; flex-direction: column; }
+.o-next-row { position: relative; display: grid; grid-template-columns: 14px 62px 1fr auto; align-items: center; column-gap: 10px;
+              padding: 7px 0; min-width: 0; }
+.o-next-row > .t { order: 2; } .o-next-row > .txt { order: 3; } .o-next-row > .o-crowd { order: 4; }
+.o-next-row > .sw { order: 1; }
+.o-next-row .o-rail { position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(var(--brand), .32); }
+.o-next-row:first-child .o-rail { top: 50%; }
+.o-next-row:last-child .o-rail { bottom: 50%; }
+.o-next-row .t { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 15px; color: var(--text-header); white-space: nowrap; }
+.o-next-row .t .ap { font-size: 10px; color: var(--text-secondary); margin-left: 2px; }
+.o-next-row .sw { width: 14px; height: 14px; border-radius: var(--r-pill); position: relative; z-index: 1; overflow: hidden;
+                  box-shadow: 0 0 0 1px rgba(255, 255, 255, .35), 0 0 0 4px var(--dock); }
+.o-next-row.some .sw { width: 10px; height: 10px; margin-left: 2px; opacity: .8; }
+.o-next-row .sw.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+.o-next-row .txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.o-next-row .nm { color: var(--text-primary); font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-next-row .pl { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-next-row.some .nm { color: var(--text-body); font-weight: 600; }
+.o-next-row.some .t { color: var(--text-secondary); }
+.o-next-row .o-crowd .n { font-size: 14px; }
+.o-send { display: flex; flex-direction: column; gap: 6px; align-items: stretch; margin-top: 4px; }
+.o-send .btn-tonal { height: 44px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.o-send .hint { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; text-align: center; }
+.o-split { display: grid; grid-template-columns: var(--col-w) var(--col-w); column-gap: var(--col-gap); row-gap: 6px; }
+.o-quiet { color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }

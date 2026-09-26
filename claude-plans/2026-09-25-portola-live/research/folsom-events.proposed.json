@@ -1,0 +1,73 @@
+{
+  "_note": "PROPOSED ONLY — not applied to data/festivals/portola-2026.json. This is a fragment to merge in by hand. See folsom-events.md for sourcing, confidence and open questions on every field. All three are NEW artists[] entries in the Folsom section (day: \"Folsom\"). Two events Kevin listed (\"pervert\", \"real bad\") already exist in the file as PERVERT XXL and Real Bad 37 — nothing to add for those.",
+
+  "artists_additions": [
+    {
+      "_source_note": "Kevin's 'mull' — MÜLL, Fri Sep 25. Venue is genuinely unannounced (RA still shows 'TBA - San Francisco' as of research time, day-of). See open question 1 in folsom-events.md before merging — do not invent an address.",
+      "name": "MÜLL",
+      "day": "Folsom",
+      "stage": "Fri · TBA (SF)",
+      "night": "Fri",
+      "venue": "TBA (SF)",
+      "time": "11 PM",
+      "page": { "url": "https://ra.co/events/2479736", "at": "Resident Advisor" },
+      "tickets": { "url": "https://ra.co/events/2479736", "at": "Resident Advisor" }
+    },
+    {
+      "_source_note": "Kevin's 'big muscle (from Wolf)' — this year's official DNA Lounge title is 'Bare Chest Calendar: Charity Event' (produced by Big Muscle + Big Muscle Bears). See open question 2 in folsom-events.md on the name. GA is sold out with no door sales per DNA Lounge's own page, so `tickets` is correctly omitted per docs/add-a-festival.md's 'leave tickets off ... a sold-out one with no resale link' rule.",
+      "name": "Bare Chest Calendar: Charity Event",
+      "day": "Folsom",
+      "stage": "Sat · DNA Lounge",
+      "night": "Sat",
+      "venue": "DNA Lounge",
+      "time": "1 PM - 7 PM",
+      "page": { "url": "https://www.dnalounge.com/calendar/2026/09-26a.html", "at": "DNA Lounge" }
+    },
+    {
+      "_source_note": "Kevin's 'aftershock' — AFTERSHOCK, 30th anniversary, Ky Martinez Events. Officially dated Sun Sep 27 (starts 3 AM, i.e. the small hours after Saturday night, same convention this file already uses for PERVERT XXL/Real Bad running past midnight under the night they START). Close (10 AM) is only sourced from a secondary aggregator, not the promoter's own site, hence closeApprox + closeSource rather than folding it into a plain time range.",
+      "name": "Aftershock",
+      "day": "Folsom",
+      "stage": "Sun · City Nights SF",
+      "night": "Sun",
+      "venue": "City Nights SF",
+      "time": "3 AM",
+      "close": "10 AM",
+      "closeApprox": true,
+      "closeSource": "https://www.gaytravel4u.com/event/folsom-aftershock/",
+      "page": { "url": "https://www.kymartinezevents.com/", "at": "Ky Martinez Events" },
+      "tickets": { "url": "https://www.eventim.us/event/AFTERSHOCK-30-Year-Anniversary-Limited-Tickets/677997", "at": "Eventim" }
+    }
+  ],
+
+  "venues_additions_local": {
+    "_note": "portola-2026.json's own top-level `venues{}` map (Google Maps links, keyed by venue name — the part of `stage` after ' · '). MÜLL's venue is TBA, so nothing to add for it yet; adding it now with a guessed address would be worse than the warning-only gap the validator already tolerates.",
+    "City Nights SF": "https://maps.google.com/?q=City+Nights+SF,+715+Harrison+St,+San+Francisco"
+  },
+
+  "venues_registry_additions_optional": {
+    "_note": "data/venues/index.json (the routine-close registry scripts/guess-run-times.mjs reads). Not required for this drop — Aftershock and Bare Chest Calendar are both single-act cards with their own printed/secondary-sourced times, not multi-act runs needing a guess. Included only as a starting stub in case the crew adds more City Nights SF or DNA Lounge Big Muscle events later; the 'close.default' below is City Nights SF's ROUTINE Fri/Sat close, not Aftershock's (that one-night close is already captured in the artist entry's closeSource above, per the docs' rule that a registry URL should never be copied onto an event and vice versa).",
+    "City Nights SF": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://sfclubs.com/",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://sfclubs.com/",
+            "quote": "10PM – 2AM / Fri, September 25 · 10PM–2AM / Sat, September 26 · 10PM–2AM"
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [],
+      "notes": "2 AM is the venue's own routine Fri/Sat close. Special ticketed circuit nights run later — Aftershock 2026's 3 AM-10 AM is recorded on that event, not here, per the guess-run-times.mjs rule against mistaking one night's print for the room's routine."
+    }
+  },
+
+  "pick_key_freeze_reminder": "After merging any of the above, run: node scripts/freeze-pick-keys.mjs portola-2026 — the validator will otherwise fail with 'not frozen yet' for every new name."
+}
