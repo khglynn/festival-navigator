@@ -26,7 +26,7 @@ let webkit = null;
 try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that engine skips */ }
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
-const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 of us
+const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 picked
 
 async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 0, guest = false } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // made up, never a real link
@@ -167,7 +167,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(Math.abs(g.rowBottom - g.dockTop) <= 0.5, `the row ends at the dock's top edge: ${JSON.stringify(g)}`);
       assert.ok(g.rowTop >= g.grabBottom - 0.5, `and starts under the grabber: ${JSON.stringify(g)}`);
       assert.ok(g.hitInRow, 'a finger on the row touches the row (nothing paints over it)');
-      assert.equal(await page.locator('#plan .plan-row.tagged').getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');
+      assert.equal(await page.locator('#plan .plan-row.tagged').getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked');
       // The wall's end clears the peek: scrolled to the bottom, the last room
       // ends above the peek's top.
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -376,10 +376,10 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  // The people menu is the other way in: "Our plan ›" first below its line.
+  // The people menu is the other way in: "Our picks ›" first below its line.
   // A finger on the avatar, a finger on the row — the menu gives way and the
   // plan rises from its peek; no history entry, and the busy mark is given back.
-  test(`${name}: the people menu’s Our plan row — a finger opens the menu, a finger on the row raises the plan`, { skip }, async () => {
+  test(`${name}: the people menu’s Our picks row — a finger opens the menu, a finger on the row raises the plan`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get());
     try {
       const before = await page.evaluate(() => ({ len: history.length, hash: location.hash }));
@@ -394,7 +394,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       });
       let m = await menu();
       assert.ok(m.open && m.shown, `the menu is up: ${JSON.stringify(m)}`);
-      assert.deepEqual(m.acts.slice(0, 2), ['plan', 'pick-as'], 'Our plan first, above Pick as someone else');
+      assert.deepEqual(m.acts.slice(0, 2), ['plan', 'pick-as'], 'Our picks first, above Pick as someone else');
       const row = await page.locator('#dock-you-wrap .hl-pop [data-act="plan"]').boundingBox();
       assert.ok(row && row.height >= 44, `a real row, on the touch floor: ${JSON.stringify(row)}`);
       await page.touchscreen.tap(row.x + row.width * 0.3, row.y + row.height / 2);
@@ -657,11 +657,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   });
 
   // From the rail's people menu, by keyboard: Enter on the avatar opens it,
-  // Enter on "Our plan" grows the corner card into the panel and the focus
+  // Enter on "Our picks" grows the corner card into the panel and the focus
   // comes along to its grabber (a mouse click there leaves the focus alone).
   // The focus is put on each control by script — Safari's Tab skips buttons
   // — and every activation is a real key.
-  test(`${name} 1280: Enter on the avatar, Enter on Our plan — the panel opens and the focus is on its grabber`, { skip }, async () => {
+  test(`${name} 1280: Enter on the avatar, Enter on Our picks — the panel opens and the focus is on its grabber`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { desk: true });
     try {
       await page.evaluate(() => document.getElementById('rail-you').focus());

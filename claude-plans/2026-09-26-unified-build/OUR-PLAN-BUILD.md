@@ -390,3 +390,32 @@ the people menu and the wall's left-edge fix. Built from the brief above:
    g. The laptop: a zoom beside the panel stays left of it (872 against 880); Escape
       closes the zoom, a second Escape the panel.
    No page errors in any run.
+8. **The second walk** (the same walker's round two, finished after the gate): 27 pass /
+   0 fail on the brief's twelve steps, Chromium and WebKit on the phone, Chromium at 1280.
+   Its four near-misses were its own script (the pill standing in for the avatar, two
+   Escapes for two layers, `offsetParent` under a fixed parent, a tap aimed at a row still
+   arriving) — the same traps as round one, now written into its log.
+
+## Kevin names it "Our picks" (2026-09-26, ~12:30 PM)
+
+A friend of Kevin's, on the plan: "My picks are what I was interested in, not necessarily
+what I'm planning to go to." Kevin weighed whether "Our plan" and "N of us" over-promise,
+then decided: "our picks and # picked is good ya". Done before the release, as its own
+small round, on live/plan after merging `origin/live/people` 117c833 (clean):
+
+1. **Words people read:** the head is `SAT OUR PICKS` over `Sep 26 · 9 picking`; the
+   laptop's card line `OUR PICKS · SAT · 9 PICKING`; the people menu's row "Our picks ›";
+   every count, the "or" lines' included, "5 picked"; the screen reader's row sentence
+   ("…, till 10:15 PM, 8 picked"), the section's name, and the grabber and ✕ ("Open our
+   picks" / "Close our picks"). `PLAN_NAME` in `js/v3/plan-rows.js` is the one source for
+   the name; the people menu's word points at it. Code names stay (plan.js, `#plan`,
+   `.plan-*`), and comments that quoted the old words now quote the new.
+2. **The count column grew 4px** (`--plan-cw` 48 → 52, 44 → 50 under 360px): "10 picked"
+   measures 51.5px in Chromium, 7px wider than "10 of us", and at 48 it came within 6.5px
+   of NOW's time at 390 and 0.5px at 320. Measured again after: 10.5px and 6.5px.
+3. **Docs:** F18 in `docs/user-flows.md` says the new words and why; `SPEC-ui.md` carries a
+   dated note that its quotes are the words as drawn. The build logs keep the old words
+   (they are history).
+4. **Not renamed, flagged instead:** the welcome card's line "the more color on a card, the
+   more of us want to go" (`js/v3/welcome.js`) makes the promise the friend objected to,
+   but it is the welcome's words, not the plan's — the coordinator's call.

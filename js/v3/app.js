@@ -1335,8 +1335,8 @@ function planAnswer(date) {
     plan, peek, route: peek.night, gen: planGen, highlight,
     nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
     weekday: String(entry.wd || '').toUpperCase(),
-    sub: [when, `${plan.us.length} of us picking`].filter(Boolean).join(' · '),
-    // The Share's first line: `Our plan · Portola · Sat Sep 26` (planText).
+    sub: [when, `${plan.us.length} picking`].filter(Boolean).join(' · '),
+    // The Share's first line (planText).
     fest: fest.name || '',
     day: [entry.wd, when].filter(Boolean).join(' '),
     dayWord: peek.today ? '' : (entry.wd || ''),
@@ -2260,8 +2260,8 @@ const YOU_SLOTS = [['dock-you-wrap', 'dock-you', 'dock-days'], ['rail-you-wrap',
 const hlPop = (wrap) => (wrap ? wrap.querySelector(':scope > .hl-pop') : null);
 const highlightOpenIn = (wrap) => !!(openMenu && openMenu.wrap === wrap);
 
-// Our plan's row, above Pick as someone else / Join the crew (the design:
-// "Our plan ›", the other way into where we'll be). The menu gives way and
+// Our plan's row, above Pick as someone else / Join the crew (the design's
+// "Our plan ›", read as "Our picks ›" since 2026-09-26 — the other way in). The menu gives way and
 // the plan rises from where it already is — the peek over the dock, the
 // laptop's corner card. It is offered only while there is a plan on screen
 // (peopleMenuData); opening a menu closes an open plan to its peek, so the

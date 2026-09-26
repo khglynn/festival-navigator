@@ -1,5 +1,11 @@
 # Our plan — the UI spec (phone peek + day plan, laptop corner + panel)
 
+> **Words, 2026-09-26 (Kevin):** people read this as **Our picks** (`SAT OUR PICKS`, the people
+> menu's "Our picks ›", `OUR PICKS · SAT · 9 PICKING` on the laptop's card) and every count as
+> **"5 picked"**, never "5 of us" — a friend's picks are what they were interested in, not a
+> promise to go. Quotes below that say "Our plan" or "N of us" are the words as drawn; the code
+> keeps its plan names. `js/v3/plan-rows.js` `PLAN_NAME` is the one source.
+
 Written 2026-09-26 ~6:10 AM PT on live/plan (List merged, ba7c4c7). The model is `js/v3/plan.js`
 (brief: `BRIEF-plan-model.md`); this is everything drawn on top of it. Approved look: round three
 (`claude-plans/2026-09-25-portola-live/design/ours-r2/`, frames `Q-*` and `DT-*`, grid and styles

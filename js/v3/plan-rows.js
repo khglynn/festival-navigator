@@ -13,7 +13,7 @@
 //                            start. The place and this line are ONE style
 //                            (Kevin, round three: "same size for place and
 //                            time") — a row has two text sizes.
-//   4 how many of us         the only number that is not a time
+//   4 how many picked it     the only number that is not a time
 //
 // Brand only, never --fest (the accent's four homes). Every fact comes from
 // the model (plan.js); this file only draws. The peek is not a copy of a row:
@@ -24,7 +24,11 @@ import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
 import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, hasAny } from './plan.js';
 
-export const PLAN_NAME = 'Our plan';
+// What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
+// was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
+// and a count is "5 picked" — the app's own word, promising no one's evening.
+// The code keeps its plan names (plan.js, #plan, .plan-*).
+export const PLAN_NAME = 'Our picks';
 
 const mk = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -114,7 +118,7 @@ function whenEl({ tag = null, text = '', soft = false }) {
 
 function countEl(n) {
   const c = mk('span', 'plan-n');
-  c.append(mk('b', null, String(n)), 'of us');
+  c.append(mk('b', null, String(n)), 'picked');
   return c;
 }
 
@@ -170,7 +174,7 @@ function rowWords(stop, { ctx, tag, count, text }) {
   const act = actFor(stop, ctx.picks);
   const what = room ? whereOf(stop) : (act ? `${act.name}, ${whereOf(stop)}` : whereOf(stop));
   const lead = tag === 'now' ? 'Now: ' : tag === 'next' ? 'Next: ' : '';
-  return `${lead}${what}, ${text}, ${count} of us`;
+  return `${lead}${what}, ${text}, ${count} picked`;
 }
 
 export function forkRow(f, stop, { ctx }) {
@@ -186,7 +190,7 @@ export function forkRow(f, stop, { ctx }) {
   w.appendChild(nm);
   const later = f.from >= stop.from + 30;
   r.append(nodeEl(null, ctx), w, whenEl({ text: later ? quietClock(f.from) : '', soft: true }), countEl(f.count));
-  r.setAttribute('aria-label', `or ${name}${where ? `, ${where}` : ''}, ${f.count} of us`);
+  r.setAttribute('aria-label', `or ${name}${where ? `, ${where}` : ''}, ${f.count} picked`);
   return r;
 }
 
@@ -310,7 +314,7 @@ export function planText(route, { ctx, plan, fest = '', day = '' } = {}) {
   return lines.join('\n');
 }
 
-// The open plan's head, in the wall's head grammar: `SAT OUR PLAN`, then its
+// The open plan's head, in the wall's head grammar: `SAT OUR PICKS`, then its
 // sub. (The wall's roomHead is private to wall.js and is a door to notes;
 // this one opens nothing, so it is the div form of the same look.)
 export function planHead({ weekday, sub }) {

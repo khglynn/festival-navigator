@@ -1,6 +1,7 @@
 // Our plan on the phone: the peek on the dock's top edge that drags up into
 // the whole day (2026-09-26 — Kevin's call #5; the spec is
-// claude-plans/2026-09-26-unified-build/our-plan/SPEC-ui.md).
+// claude-plans/2026-09-26-unified-build/our-plan/SPEC-ui.md). People read it
+// as "Our picks" (plan-rows.js PLAN_NAME); "plan" is the code's name for it.
 //
 // ONE element, `#plan`: [grabber] [head + the day's rows]. It is always laid
 // out at its open height; the peek is a WINDOW onto it — the element pushed
@@ -16,7 +17,7 @@
 // shown through a clip — the card's box in the bottom-right corner, the rows
 // shifted so the tagged row sits under the card's head line — and opening
 // grows the clip out to the panel (SPEC-ui §6). The grabber is that head line
-// there: `OUR PLAN · SAT · 9 OF US` and an Open pill, which cross-fade into
+// there: `OUR PICKS · SAT · 9 PICKING` and an Open pill, which cross-fade into
 // the panel's head in the wall's grammar and a Close pill. No drag on a
 // laptop; a click anywhere on the card opens it. No backdrop: the wall stays
 // usable beside the panel, and a zoom keeps left of it (foot.js sideLeft).
@@ -48,6 +49,8 @@ const RADIUS = 16;           // its corners (the panel's are square)
 // it. The padding (v3.css, 24px) leaves the card its 14px inside that box.
 const SIDE = GAP / 2;
 const isDesk = () => !!(window.matchMedia && window.matchMedia('(min-width: 720px)').matches);
+const OPEN_WORDS = `Open ${PLAN_NAME.toLowerCase()}`;   // "Open our picks"
+const CLOSE_WORDS = `Close ${PLAN_NAME.toLowerCase()}`;
 
 let frame = null;    // the laptop's shadow and edge follow the clip from here (v3.css .plan-frame)
 let el = null;       // #plan
@@ -89,7 +92,7 @@ let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 export const planShelf = () => el;
 export const planIsOpen = () => mode === 'open';
 // Whether there is a plan on screen to open: the peek or the open plan, not
-// one on its way out (the people menu's "Our plan" row asks, app.js).
+// one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
@@ -252,12 +255,12 @@ function draw() {
   const x = mk('button', 'sheet-close');
   x.type = 'button';
   x.textContent = '✕';
-  x.setAttribute('aria-label', 'Close the plan');
+  x.setAttribute('aria-label', CLOSE_WORDS);
   x.addEventListener('click', () => closePlan());
   headEl.append(head, x);
   // The laptop's head line: the corner's words, and the panel's head (the
   // same room-head the phone's open plan shows), cross-faded by the window.
-  corner.c.textContent = `· ${a.weekday} · ${a.plan.us.length} of us`.toUpperCase();
+  corner.c.textContent = `· ${a.weekday} · ${a.plan.us.length} picking`.toUpperCase();
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
   // The NOW row's card is grown in the day plan until a person folds it (the
@@ -288,7 +291,7 @@ function draw() {
   }
   watchBoxes();
   el.dataset.tag = a.peek.tag;
-  grab.setAttribute('aria-label', mode === 'open' ? 'Close the plan' : `Open the day's plan`);
+  grab.setAttribute('aria-label', mode === 'open' ? CLOSE_WORDS : OPEN_WORDS);
   grab.setAttribute('aria-expanded', mode === 'open' ? 'true' : 'false');
 }
 
@@ -391,7 +394,7 @@ function settleState() {
   if (peek) listEl.scrollTop = 0;
   // A focused ✕ or row that the peek just hid hands its focus to the grabber.
   if (peek && f && f !== grab && el.contains(f)) grab.focus({ preventScroll: true });
-  grab.setAttribute('aria-label', peek ? `Open the day's plan` : 'Close the plan');
+  grab.setAttribute('aria-label', peek ? OPEN_WORDS : CLOSE_WORDS);
   grab.setAttribute('aria-expanded', peek ? 'false' : 'true');
   measureFoot();
 }
