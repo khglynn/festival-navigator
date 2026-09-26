@@ -10,6 +10,10 @@ This file is the record if the build dies: read "Where it stands" first.
 ## Where it stands
 
 1. Step 0 (this log, the storyboard, the plan) — done, before any code.
+2. Step 1 — the menu, the pill, the guest's route, the phone top, jump-to-top retired, Pick as
+   someone else, and the one Invite sheet: built and working in Chromium at 390 (first look, the
+   rig). Unit suite green except the SW stamp test, which stays red on purpose until the release
+   stamps (the brief: never stamp here). Next: the motion walk in slow motion, 320 / 1280, tests.
 
 ## The plan (one commit per working step, each pushed)
 
@@ -77,11 +81,46 @@ C if a highlight is on — under the sheet's backdrop) and the shelf or sheet ri
 
 ## Product calls (with reasons) — the design did not cover these
 
-(filled in as they are made)
+1. **The pill is the avatar's height (26px), not the frames' ~30px.** The dock must not change
+   height when a highlight turns on: NOW's landing band, the welcome card's lift and the menu's
+   own line are all measured from the dock's top. The faces are 20px, overlapping 6px.
+2. **More than three highlighted: two faces and a +n** (the welcome card's solid +n — dashed means
+   "add"), so the pill is never wider than three faces. The design said "up to three".
+3. **The faces are in the crew's order** — the menu's row order, top to bottom → left to right —
+   not the order they were tapped, so the pill reads the same however you got there.
+4. **The laptop's rail gets the pill too.** One component, two positions (note 1.1); a laptop deep
+   in the wall clears a highlight in one click without scrolling up to the people row.
+5. **A crew of one has no "Pick as someone else"** — there is nobody to be. Invite someone stays.
+6. **The member's Pick-as shelf has no name field.** The frame kept the guest's "Add your name"
+   field, but a member already has a name, so it asks the wrong question; someone new comes in
+   through **+ Invite someone**, the next row down, and two doors for adding people would drift.
+   Your chip says "· you" and choosing it chooses nobody (you are already you); the filled button
+   reads **Switch** (disabled) until a name is tapped, then **I'm Ben**; the way out is **Stay Ana**;
+   no offline line (switching is this phone's own choice, nothing is sent).
+7. **The wall dims in place, not by a repaint**, so the cards step back live behind the open menu
+   (a repaint is a cut). Same rule wall.js renders with (`passesPeople`); a standing zoom takes
+   the repaint path, which already knows how to keep it.
+8. **A long crew scrolls inside the menu**, capped to the room above the dock (below the rail on a
+   laptop); **a long name wraps inside its row** (the row grows) and the menu never runs past the
+   screen's gutters.
+9. **The Invite sheet is the one sheet everywhere**, including right after a crew is made (the
+   brief asked me to decide): after create it keeps the moment's title, "ONE LINK MAKES IT A CREW",
+   and its "Later"; from + Invite someone it says "INVITE SOMEONE" and "Done". The name field is
+   NOT focused on open (the old add-someone sheet did): a phone's keyboard would cover the crew
+   link, which is first. A guest (Settings can open the link) sees the link only — no name to add,
+   no invite-festival stamp. Kevin's short copy is kept word for word ("Pick for them until they
+   open their link."; `tests/share-copy.test.mjs` holds it).
+10. **Switching who you pick as grows the new letter in** (the + becoming you already did).
+11. **How it works keeps Kevin's words** ("Tap their name. Switch who you pick as in Settings." —
+    both still true: the names are in the menu, and Settings → You still switches). Suggested,
+    not made: "Tap your avatar, then their name." (`tests/docs-truth.test.mjs` holds his rows.)
+12. **The laptop's people row drives the same highlight**, and its chips now dim the wall in place
+    too; the rail's pill appears with the faces growing in the slot.
 
 ## Disagreements with the brief
 
-(filled in as they come up)
+1. The member's shelf without the field (call 6) departs from the approved frame; flagged here so
+   Kevin can put it back if he meant the field to add-and-switch in one go.
 
 ## Log
 

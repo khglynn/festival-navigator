@@ -57,9 +57,12 @@ const { window } = shell.dom;
 const shelf = () => document.querySelector('.join-shelf');
 const escape = () => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 const you = () => document.getElementById('dock-you');
+// The + opens the people menu (2026-09-26); its Join the crew row asks.
 async function openFromYou() {
   you().focus();
   you().click();
+  await settle(10);
+  document.querySelector('#dock-you-wrap .hl-pop [data-act="join"]').click();
   await settle(20);
   assert.ok(shelf(), 'the shelf is up');
   assert.equal(history.state && history.state.joinShelf, true, 'with its own history entry');
