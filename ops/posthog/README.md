@@ -9,9 +9,21 @@ nothing to say. It replaces Eachie's old template, whose messages always
 rendered as an empty `>>` (the audit is in
 `claude-plans/2026-09-24-analytics/eachie-posthog-audit.md`).
 
-**Status, 2026-09-25:** written and reviewed against PostHog's own sources,
-**not yet installed or run**. Slack (the "Trimm" workspace) is connected to
-the Festival Navigator project (integration 269583); no function uses it yet.
+**Status, 2026-09-25 ~11 PM PT: the two Fest functions are installed and
+enabled** in project 627900, posting to #eachie-feedback (`C0A2CDKCZP1`)
+through the Slack integration 269583: "Fest → New error (Slack)"
+`01a0dc4b-3d7f-0000-61fd-e4e3772ff5fd` and "Fest → Came back (Slack)"
+`01a0dc4b-3f7d-0000-2c11-33da43f78cc6`. Both passed a real test invocation
+(`mock_async_functions: false` — the default `true` only simulates the Slack
+post) on the real SyntaxError issue. The Eachie function is not installed.
+
+The error events' details live under `props.exception_props.*` (only name,
+description, first_seen, severity, fingerprint, exception_timestamp and
+status are top-level), so the script reads `exception_props.X` first and
+falls back to `props.X` — Eachie's survey path, which has no
+`exception_props`, is unchanged. Rollback: PATCH each function
+`{"enabled": false}` at `/api/environments/627900/hog_functions/<id>/` with
+the write key (`POSTHOG_API_KEY_FESTNAV` in ~/.env).
 
 ## Why it lives here, for now
 
