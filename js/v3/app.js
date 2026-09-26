@@ -1340,7 +1340,7 @@ function planAnswer(date) {
     nightLabelOf,
     // The Share's words (plan-rows.js planText): "for Sat Portola", the night
     // called what tells it apart, and the link that opens on the plan.
-    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink,
+    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink, opens: opensLine(),
   };
 }
 const isoAfter = (iso) => {

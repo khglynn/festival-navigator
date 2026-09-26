@@ -2092,7 +2092,11 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 /* The open plan's last line: its Share (plan-shelf.js sharePlan). Under the
  * rows, never in the head: the laptop's head is a button of its own. It fades
  * with the head and is out of the peek's window, so the peek never shows it. */
-.plan-foot { flex: none; display: flex; justify-content: flex-end; padding: 9px 0 12px; border-top: 1px solid var(--hairline); }
+.plan-foot { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 9px 0 12px; border-top: 1px solid var(--hairline); }
+/* What the link opens on, when it is not everything as a board (app.js
+ * opensLine): the rows' quiet grey, on the left, wrapping before the button moves. */
+.plan-foot .opens { flex: 1 1 auto; min-width: 0; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.35; }
+.plan-foot .opens:empty { display: none; }
 .plan-share { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; font-size: 13px; padding: 0 16px 0 14px; } /* 44 on a finger (the floor) */
 .plan-share svg { width: 13px; height: 13px; flex: none; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the

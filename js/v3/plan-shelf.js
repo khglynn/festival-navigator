@@ -60,6 +60,7 @@ let body = null;     // head + list, the part the window shifts
 let headEl = null;
 let listEl = null;
 let footEl = null;   // the open plan's last line: its Share
+let footOpens = null; // what the Share's link opens on, beside it
 let shareWords = null;
 let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
@@ -158,13 +159,14 @@ function build(host) {
   headEl = mk('div', 'plan-head');
   listEl = mk('div', 'plan-list');
   footEl = mk('div', 'plan-foot');
+  footOpens = spanOf('opens');
   const share = mk('button', 'plan-share btn-tonal');
   share.type = 'button';
   shareWords = spanOf('w', shareLabel());
   shareWords.setAttribute('aria-live', 'polite');
   share.append(glyph(canShare() ? SHARE_MARK : COPY_MARK), shareWords);
   share.addEventListener('click', sharePlan);
-  footEl.appendChild(share);
+  footEl.append(footOpens, share);
   body.append(headEl, listEl, footEl);
   el.append(grab, body);
   frame.appendChild(el);
@@ -215,7 +217,7 @@ function railBottom() {
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
 //   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
-//     fest, day, linkOf }   (the last three are the Share's: planText)
+//     fest, day, linkOf, opens }   (the Share's: planText, and what its link opens on)
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -227,6 +229,11 @@ export function paintPlanShelf(host, ctx, answer) {
   const next = signature(answer);
   const arriving = mode === 'gone' || !!leaving;
   data = answer;
+  // The link carries the rooms and the view this phone shows, and the foot
+  // says so beside the button (the v92 rule: every place that hands out a
+  // link says what it opens on). Not part of the rows' signature: a List
+  // switch changes the words and nothing else.
+  if (footOpens.textContent !== (answer.opens || '')) footOpens.textContent = answer.opens || '';
   if (!arriving && next === sig) return;
   // A hand on the window: a repaint would put the window back where the
   // last settle left it, out from under the finger, and the release would
