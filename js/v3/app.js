@@ -168,10 +168,29 @@ document.addEventListener('pointerdown', (e) => {
   // open the next card's zoom. A drag that turns into a scroll sends no
   // click, so the swallow expires on its own. Members are untouched: their
   // tap picks, as it always has.
+  //   The swallow belongs to THIS gesture and eats only a click that lands on
+  // a card (the code map, 2026-09-26: it used to eat the first click
+  // anywhere for 700 ms, so a flick that began on a card and a quick tap on a
+  // day tab lost the tap). It is gone at the gesture's cancel (the flick
+  // became a scroll), at the next press, at the first click whatever it hit,
+  // or after 700 ms.
   if (finger && !ctx.meName && e.target.closest && e.target.closest('#wall-root .card[data-artist]')) {
-    const eat = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-    document.addEventListener('click', eat, { capture: true, once: true });
-    setTimeout(() => document.removeEventListener('click', eat, true), 700);
+    let timer = null;
+    const disarm = () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', eat, true);
+      document.removeEventListener('pointercancel', disarm, true);
+      document.removeEventListener('pointerdown', disarm, true);
+    };
+    const eat = (ev) => {
+      disarm();
+      if (ev.target && ev.target.closest && ev.target.closest('#wall-root .card[data-artist]')) { ev.stopPropagation(); ev.preventDefault(); }
+    };
+    document.addEventListener('click', eat, true);
+    document.addEventListener('pointercancel', disarm, true);
+    // Added during this press's own dispatch, so it hears only the NEXT press.
+    document.addEventListener('pointerdown', disarm, true);
+    timer = setTimeout(disarm, 700);
   }
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
@@ -1299,10 +1318,10 @@ let openMenu = null;
 
 function closeShowMenu({ instant = false } = {}) {
   if (!openMenu) return;
-  const { pop, link } = openMenu;
+  const { pop, link, bar } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
-  const hide = () => { pop.style.display = 'none'; };
+  const hide = () => { pop.style.display = 'none'; if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up'); };
   // The way out is quick and plain.
   if (instant || !canAnimate(pop, ctx)) { hide(); return; }
   const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
@@ -1313,7 +1332,15 @@ function closeShowMenu({ instant = false } = {}) {
 
 function openShowMenu(wrap, link, pop) {
   closeShowMenu({ instant: true });
-  openMenu = { wrap, link, pop };
+  // The bar the menu lives in (the dock, the day rail) is a stacking context:
+  // its menu paints at the bar's own level, which put the dock's upward menu
+  // UNDER the welcome card and the bring-picks offer (z38) — a guest tapping
+  // the fest name with the welcome up got a menu they could not use (the
+  // code map, 2026-09-26). While the menu is up the bar stands above them
+  // (v3.css .menu-up); it steps back once the menu has gone.
+  const bar = wrap.closest('.dock, .day-rail');
+  if (bar) bar.classList.add('menu-up');
+  openMenu = { wrap, link, pop, bar };
   pop.style.display = '';
   link.setAttribute('aria-expanded', 'true');
   // The way in has the beat.

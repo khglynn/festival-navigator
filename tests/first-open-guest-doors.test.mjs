@@ -108,6 +108,31 @@ test('a notes door with notes opens them to read, with the sheet’s own door in
   assert.deepEqual(writes, []);
 });
 
+test('a close-tap swallows only a click on a card — a quick tap elsewhere still lands', async () => {
+  await openCard('Robyn');
+  press(cardOf('Dog Blood'), 'touch'); // the press that closes the zoom
+  assert.equal(zoomCard(), null, 'closed');
+  const tab = document.querySelector('#dock .day-tab');
+  // jsdom lays nothing out and has no scrollIntoView; the tab's own jump asks for one.
+  if (!shell.dom.window.HTMLElement.prototype.scrollIntoView) shell.dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  let heard = 0;
+  tab.addEventListener('click', () => { heard += 1; }, { once: true });
+  tab.click(); // the next click lands on a day tab, not a card
+  assert.equal(heard, 1, 'the day tab heard its tap');
+});
+
+test('a flick that began on a card (its cancel) disarms the swallow: the next tap on a card is a tap', async () => {
+  await openCard('Robyn');
+  const other = cardOf('Dog Blood');
+  press(other, 'touch');
+  other.dispatchEvent(new shell.dom.window.PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' })); // it became a scroll
+  fingerTap(cardOf('Robyn'));
+  await settle(10);
+  assert.ok(zoomCard(), 'the next tap opened its card — nothing was left armed to eat it');
+  document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await settle(20);
+});
+
 test('joining from − joins, and picks nothing', async () => {
   await openCard('Robyn');
   door('.f-step.minus').click();

@@ -783,7 +783,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await hold(ctx, page, '#wall-root .card[data-artist="Femme Jatale b2b erika"]');
     const g = await zoomGeometry(page);
     note(`crowded ${W}: ${JSON.stringify(g)}`);
-    note(`  clear of the dock: ${g.dockTop === null || g.card.b <= g.dockTop} (zoom bottom ${g.card.b}, dock top ${g.dockTop}); clear of the chrome: ${g.chromeBottom === null || g.card.t >= g.chromeBottom} (zoom top ${g.card.t}, chrome ${g.chromeBottom}); overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors all reachable ${g.doors.every((d) => d[1])}; row ≥44 ${g.doors.slice(-3).every((d) => d[2] >= 44)}`);
+    note(`  clear of the dock: ${g.dockTop === null || g.card.b <= g.dockTop} (zoom bottom ${g.card.b}, dock top ${g.dockTop}); clear of the chrome: ${g.chromeBottom === null || g.card.t >= g.chromeBottom} (zoom top ${g.card.t}, chrome ${g.chromeBottom}); overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors all reachable ${g.doors.every((d) => d[1])}; − and + 44px tall ${[g.doors[g.doors.length - 3], g.doors[g.doors.length - 1]].every((d) => d[2] >= 44)} (the chip draws 30px and its target is the row's 44 — pinned in tests/browser/zoom-door-row.test.mjs)`);
     await shot(page, `${tag}-35-crowded-real-card.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();

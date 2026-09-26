@@ -533,3 +533,31 @@ empty note chip.
 Verified: `npm test` 988/990 in UTC, Tokyo and on the night clock (the stamp
 the only failure, one skip); browser suite 197/197; the full walk, 31
 scenarios, no failures, no page errors.
+
+**Three from the code map (run on abe7205), folded in.**
+1. **The dock's Show menu opened UNDER the welcome card.** The dock is a
+   stacking context (fixed, z30), so its upward menu painted at 30, below the
+   welcome card and the bring-picks offer (z38): with the welcome up, a finger
+   in the overlap touched the card. While its menu is open the bar (dock or
+   day rail) now stands at z39 — above those cards and a zoom (36), below
+   sheets and toasts — and steps back once the menu has gone. The join shelf:
+   opening it puts an open menu away, and with it up the fest name is behind
+   its dimmed wall. `tests/browser/show-menu-stacking.test.mjs`, Chromium and
+   WebKit; without the fix both engines hit the card ("Every friend has a c…").
+2. **The close-tap's swallow ate the first click anywhere for 700 ms**, so a
+   flick that began on a card and a quick tap on a day tab lost the tap. It
+   now belongs to its own gesture: it eats only a click that lands on a card,
+   and is gone at the gesture's cancel (a flick), at the next press, at the
+   first click, or at 700 ms. jsdom tests in
+   `tests/first-open-guest-doors.test.mjs` and the real-engine walk below;
+   the old code fails both.
+3. **The guest tap route in a real engine.** Playwright's WebKit with an
+   iPhone profile sends a tap as TOUCH pointerdown/pointerup and a MOUSE
+   click — a real iPhone's shape (checked 2026-09-26) — so
+   `tests/browser/guest-tap-route.test.mjs` runs there, and in Chromium with
+   touch for CI: a tap opens the card and picks nothing, + asks on the shelf
+   ("Pick Tove Lo as…"), Look around takes it down, a tap on another card
+   only closes, a flick then a quick tap on the dock still lands, nothing is
+   written. (A trap on the way, not a bug: while the dock's day row is still
+   gliding to centre its active day, WebKit takes a tap on it as the finger
+   stopping that scroll, as an iPhone does; 2 s later the same tap lands.)

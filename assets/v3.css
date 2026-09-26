@@ -317,6 +317,11 @@ html { touch-action: manipulation; }
  * arrival already rises (translateY(4px) → 0), so it reads as growing out of
  * the fest name either way. */
 .dock .sort-pop { top: auto; bottom: calc(100% + 8px); }
+/* A bar with its menu open stands above the companion cards (the welcome, the
+ * bring-picks offer: z38) and a zoom (36), below sheets (40–41) and toasts
+ * (50) — its menu paints at the bar's level, the bar being a stacking context
+ * (app.js openShowMenu). */
+.dock.menu-up, .day-rail.menu-up { z-index: 39; }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
