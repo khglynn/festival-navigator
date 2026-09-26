@@ -1653,6 +1653,10 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-who { display: flex; margin-top: 5px; }
 .plan-who .avatar { width: 15px; height: 15px; font-size: 7.5px; box-shadow: 0 0 0 1.5px var(--plan-bg, var(--dock)); }
 .plan-who .avatar + .avatar { margin-left: -4px; }
+/* The tagged row's faces start where the peek's window ends (its row padding
+ * below), so the peek is the name, the place and the time, and the faces slide
+ * in from behind the dock as it opens (plan-shelf.js measure). */
+.plan-row.tagged .plan-who { margin-top: 9px; }
 
 /* 3 · when: quiet; NOW / NEXT sits on the name's line, its time under it */
 .plan-when { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }

@@ -1022,9 +1022,9 @@ function planAnswer(date) {
   if (!plan || !plan.available) return null;
   const peek = peekOf(plan, fest, date);
   if (!peek) return null;
-  const clock = festivalClock(date, fest.timezone || null);
-  if (!peek.today && peek.night.iso !== isoAfter(clock.iso)) return null;
-  const at = peek.today ? planAt(plan, fest, date) : null;
+  const at = planAt(plan, fest, date);
+  const tonight = at ? at.night.iso : festivalClock(date, fest.timezone || null).iso;
+  if (!peek.today && peek.night.iso !== isoAfter(tonight)) return null;
   const entry = plan.nights.find((n) => n.id === peek.night.id) || {};
   const when = entry.iso ? shortDate(entry.iso) : '';
   // "also Thu" on Portola, "also Oct 9" where two nights share a weekday
@@ -1038,7 +1038,7 @@ function planAnswer(date) {
   };
   return {
     plan, peek, route: peek.night, gen: planGen,
-    nowMin: at && at.night.id === peek.night.id ? at.minutes : null,
+    nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: [when, `${plan.us.length} of us picking`].filter(Boolean).join(' · '),
     dayWord: peek.today ? '' : (entry.wd || ''),

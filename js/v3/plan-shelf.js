@@ -156,13 +156,17 @@ function taggedRow() {
 
 // The window's numbers: the plan's open height, the peek's height (grabber +
 // the tagged row), and how far the rows shift up so that row sits under the
-// grabber.
+// grabber. A NEXT row's faces sit just under the window, behind the dock —
+// the peek is the name, the place and the time (the approved peek, which
+// drew no faces) — and slide into view as it opens.
 function measure() {
   const row = taggedRow();
   const H = el.offsetHeight;
   const grabH = grab.offsetHeight;
   const rowTop = row ? row.offsetTop - listEl.scrollTop : 0;
-  const rowH = row ? row.offsetHeight : 0;
+  const who = row ? row.querySelector('.plan-who') : null;
+  const pad = row ? parseFloat(getComputedStyle(row).paddingBottom) || 0 : 0;
+  const rowH = !row ? 0 : who ? Math.min(who.offsetTop - 1, who.offsetTop - (parseFloat(getComputedStyle(who).marginTop) || 0) + pad) : row.offsetHeight;
   geo = { H, peekH: Math.min(H, grabH + rowH), shift: headEl.offsetHeight + rowTop };
   el.dataset.peekH = String(geo.peekH);
 }
