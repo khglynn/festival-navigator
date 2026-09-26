@@ -232,6 +232,29 @@ test('a tap outside on a day tab closes the menu, and the tab still does its job
   }
 });
 
+// Two ways out before the first one's popstate lands (a double tap outside,
+// a tap then Escape) take ONE entry back — a second history.back() would
+// leave the wall. jsdom queues both backs against the same entry, so this
+// case cannot fail here; the browser contract is its teeth
+// (tests/browser/shell-contract.test.mjs). It holds the menu's own state:
+// closed once, on the entry it found.
+test('a double tap outside (then Escape too) takes one entry back, not two', async () => {
+  const h = dom.window.history;
+  // An entry the wall's could be mistaken for, one step behind it — where a
+  // second history.back() would land.
+  h.pushState({ before: true }, '');
+  h.pushState(null, '');
+  const found = JSON.stringify(h.state);
+  click($('dock-fest-link'));
+  click($('wall-root'));
+  click($('wall-root'));
+  escape();
+  await settle(60);
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false');
+  assert.equal(JSON.stringify(h.state), found, 'on the entry the menu found — not one before it');
+  assert.equal($('screen-app').style.display, '', 'still on the wall');
+});
+
 // Settings from the menu's last row opens once the menu's entry is gone, so
 // Back from Settings lands on the wall — not on a menu that closed.
 test('Settings from the menu: one entry for Settings where the menu\'s was, and Back lands on the wall', async () => {

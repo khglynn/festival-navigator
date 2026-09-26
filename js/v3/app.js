@@ -1295,6 +1295,7 @@ let openMenu = null;
 // keeps the page's place while it is up, and holds it when it goes.
 let menuY = null;
 let afterMenu = null; // what a way out does once the menu's entry is gone
+let menuLeaving = null; // a way out under way: its fallback timer
 const trackMenuY = () => { menuY = window.scrollY; };
 
 function closeShowMenu({ instant = false } = {}) {
@@ -1333,10 +1334,17 @@ function openShowMenu(wrap, link, pop) {
 // A way out that is not Back: take the menu's history entry back, and do
 // `then` once it is gone (menuGone, from the popstate). Without the entry —
 // a desynced stack — it goes at once.
+//   One way out at a time: a second tap (a double tap, a tap then Escape)
+// before the first one's popstate lands would take a SECOND entry back —
+// past the wall. It is absorbed. And a pop that never comes (never seen; a
+// browser that drops it) cannot leave the menu stuck: it goes on its own.
 function leaveShowMenu(then = null) {
-  if (!openMenu) return;
+  if (!openMenu || menuLeaving) return;
   afterMenu = then;
-  if (router.top() === MENU_LAYER && router.requestClose()) return;
+  if (router.top() === MENU_LAYER && router.requestClose()) {
+    menuLeaving = setTimeout(() => { if (menuLeaving) menuGone(); }, 1000);
+    return;
+  }
   menuGone();
 }
 // The menu's layer is gone: Back, a way out that took the entry back, or a
@@ -1345,6 +1353,8 @@ function leaveShowMenu(then = null) {
 // the scroll late — and only then does the way out do its own thing, so a
 // day tab's glide is never cut short by the hold.
 function menuGone() {
+  clearTimeout(menuLeaving);
+  menuLeaving = null;
   closeShowMenu();
   window.removeEventListener('scroll', trackMenuY);
   const y = menuY;

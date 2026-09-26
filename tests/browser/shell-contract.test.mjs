@@ -201,6 +201,47 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
   }
 });
 
+// The show menu's ways out take its history entry back (v93), and only one
+// at a time: two before the first popstate lands (a double tap outside, a
+// tap then Escape) called history.back() twice, and Chromium left the app —
+// past the wall, past the page before it, to about:blank (probe, 2026-09-25).
+// jsdom queues both backs against the same entry, so only a real engine can
+// hold this.
+test('the show menu: a double tap outside and then Escape take ONE entry back — the app stays on the wall', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'menudoublebackcontract_012'; // a made-up crew
+  const FID = 'portola-2026';
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_welcome_v1', '1');
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await page.goto(`${server.origin}/404.html`); // a page behind the app's, where a second back would land
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
+    await page.click('#dock-fest-link');
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
+    await page.evaluate(() => {
+      const wall = document.getElementById('wall-root');
+      wall.click();
+      wall.click();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    });
+    await page.waitForTimeout(1200);
+    assert.match(page.url(), /#g=/, `still on the app: ${page.url()}`);
+    assert.ok(await page.isVisible('#screen-app'), 'on the wall');
+    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false', 'with the menu away');
+  } finally {
+    await ctx.close();
+  }
+});
+
 // The sort chip's popover (DT-7) — the same touch-floor miss the show menu's
 // rows just fixed (a click-only <li role="option"> at 32px), fixed the same
 // way: native <button role="option">. A search wall hides the control
