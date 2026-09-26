@@ -2023,7 +2023,8 @@
         "checked": "2026-09-26"
       },
       "time": "9 PM",
-      "close": "2 AM"
+      "close": "2 AM",
+      "approx": true
     },
     {
       "name": "Jess Williamson",

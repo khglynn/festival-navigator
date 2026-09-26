@@ -615,3 +615,51 @@ makes 0 changes. Test: a date's close beats the weekday's and names the rule,
 another Thursday reads the weekday, and an old URL-labelled close is
 rewritten to the rule and re-runs byte-stable. Docs line on where closes
 come from updated.
+
+## Issue 3 — Yukimatsu, and the one-act rule (data + test)
+
+**Yousuke Yukimatsu is now a guess.** The Concourse page's "Show: 9:00PM" for
+a 9 PM – 2 AM night is the room opening, the same minute as doors, not a set
+time; a lone headliner at a five-hour club night need not play from the
+opening. Same 9 PM, now with its tilde; the printed 2 AM close stands.
+
+**The one-act rule, decided with the safety principle:** a lone billed act
+is guessed at its FIRST-ACT time, in either shape: doors + the venue's gap,
+or earlier if a known curfew leaves no full set after it. It is never
+guessed as close − headliner set. As a guess Yukimatsu would have read
+midnight, the late kind. The tool already did this (`n === 1` takes the
+first act's start in both branches), but nothing pinned it, so a new test
+does: a lone act at a 9 PM – 2 AM club with a 2-hour headliner → 9 PM, not 12
+AM; an outdoor lone act → doors + gap, or curfew − set when that is sooner;
+and the Yukimatsu entry re-lays to itself.
+
+**Where the rule matters, room by room (17 one-act rooms):**
+- Guesses, all at their first-act time already: Ryan Beatty ~6 PM, Claire
+  Rosinkranz ~9 PM, Sunday (1994) ~9 PM (each also has an unbilled opener,
+  so the act itself is later — the safe side), Yukimatsu ~9 PM. Also The War
+  on Drugs ~7 PM: the only printed time is the 6 PM event start, labelled
+  doors, so doors + gap is its first-act time. This is the one judgment
+  call; 6 PM would be the "plays from the moment the room opens" reading.
+- Kept posted, and why the line is drawn here: each of these pages prints a
+  Show time DISTINCT from doors (30 minutes to 1 hour 45 later) for a show
+  that bills that act alone. That is a performance start, not a room
+  opening: Montclair 10:30, Grocery Bag 11, Almost Heaven 11:30, Annie DiRusso
+  10:30 (Stubb's Indoors), Villanelle 9 (3TEN), Night Tapes 10 (Antone's), Suki
+  Waterhouse 10 and Rodrigo y Gabriela 10 (Emo's), LP 8 (Brushy), Noga Erez
+  8:30 (Scoot Inn), Fcukers 11:45 (Devil May Care, "Doors 10 | Show 11:45 |
+  Ends 2"), Jess Williamson 10 – 11:30 (Continental Club, "album release!
+  @10pm"). If an unannounced opener appears, the act goes on later, which
+  is the safe side.
+- If the coordinator wants these as guesses too, it needs a `show` field on
+  the event, so the tool can lay a lone act at its printed show time.
+  Without it, the tool would re-lay Almost Heaven at doors + 60 = 12 AM and
+  Annie DiRusso at 11 PM, both LATER than their printed 11:30 and 10:30.
+  That is a schema change (the validator does not know the field), so I
+  have not made it.
+
+**Rooms moved: none.** Yukimatsu gains a tilde at the same 9 PM; no other time
+or close changes. Multi-act rooms keep their posted openers (as asked:
+everything else as is). The same "Show = the first act" reading applies
+there, and at the Concourse the posted openers' 9 PM is also the room
+opening. For a multi-act club night, though, the first billed DJ is the one
+playing when doors open.

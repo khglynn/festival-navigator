@@ -352,3 +352,25 @@ test('a close for one date is the registry\'s most specific rule, and the event 
   assert.ok(f.artists.every((a) => !/^https:/.test(a.closeSource)), 'never the URL');
   assert.equal(applyPlans(planFestival(f, reg)), 0);
 });
+
+test('a lone billed act is guessed at its first-act time, in either shape — never close minus a headliner set', () => {
+  // Yousuke Yukimatsu, The Concourse Project, Oct 8: "Show: 9:00PM" for a
+  // 9 PM – 2 AM night — the room opening, not a set time, so a guess. A lone
+  // act in a long window may play from the start; laid back from the close
+  // as a headliner it would read midnight, the late kind (review of 09d0bbe).
+  const concourse = { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: 0, headlinerSetMin: 120, supportSetMin: null };
+  const lone = planRun({ night: 'Thu', doors: '9 PM', close: '2 AM', members: [{ name: '¥ØU$UK€ ¥UK1MAT$U', seq: 1, time: '9 PM' }], profile: concourse });
+  assert.equal(lone.times[0].time, '9 PM');
+  assert.deepEqual([lone.close, lone.closeApprox], ['2 AM', false], 'the printed close stands');
+  // A concert with a known curfew: the lone act at doors + gap, or earlier if
+  // the curfew leaves no full set after it — never later.
+  const early = planRun({ night: 'Sun', doors: '5 PM', members: [{ name: 'Ryan Beatty', seq: 1 }], profile: { ...hall(), kind: 'outdoor', close: { byWeekday: { Sun: '10:30 PM' } } } });
+  assert.equal(early.times[0].time, '6 PM');
+  const tight = planRun({ night: 'Sun', doors: '7 PM', members: [{ name: 'x', seq: 1 }], profile: { ...hall(), kind: 'outdoor', close: { byWeekday: { Sun: '9 PM' } } } });
+  assert.equal(tight.times[0].time, '7:30 PM', 'curfew minus a full set, not doors + gap');
+  // Through the file: marked a guess, re-laid at 9 PM, printed close untouched.
+  const f = lateFest(dated('¥ØU$UK€ ¥UK1MAT$U', '2026-10-08', 'The Concourse Project', { time: '9 PM', approx: true, close: '2 AM' }));
+  const reg = { venues: { 'The Concourse Project': concourse } };
+  assert.equal(applyPlans(planFestival(f, reg)), 0);
+  assert.deepEqual([f.artists[0].time, f.artists[0].approx, f.artists[0].close, f.artists[0].closeApprox], ['9 PM', true, '2 AM', undefined]);
+});
