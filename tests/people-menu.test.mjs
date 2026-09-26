@@ -695,11 +695,15 @@ test('an add answered, another phone removes him, an ordered poll brings that: a
   SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Gus: { removed: true } } }); // another phone removes him
   await sync.pollSync(); // a poll that left after the add: the server's word on Gus
   assert.equal(state.people().Gus.removed, true, 'Gus is out, here');
-  const before = postsNow();
+  // Count the adds for Gus, not every crew POST: a sync push of this phone's
+  // own pending edits can land in the same window (CI run 36263820686 saw
+  // 18 vs 17 — a push, not a second add).
+  const gusAdds = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew') && w.body && w.body.data && w.body.data.people && w.body.data.people.Gus);
+  const before = gusAdds().length;
   await addNamed('Gus');
   await answered('Gus');
-  assert.equal(postsNow(), before + 1, 'the re-add goes to the server, as production’s does');
-  const post = writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).at(-1);
+  assert.equal(gusAdds().length, before + 1, 'the re-add goes to the server, as production’s does');
+  const post = gusAdds().at(-1);
   assert.equal(post.body.data.people.Gus.removed, false, 'bringing him back');
   await until(() => state.people().Gus && !state.people().Gus.removed, 'Gus back, brought by the ordered poll');
   await doneWithSheet();
