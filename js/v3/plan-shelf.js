@@ -246,7 +246,9 @@ function draw() {
   // A new list element starts at the top: an open list someone had scrolled
   // keeps its place across a tick, a pick or a tap. A row with the focus
   // hands it to the same stop's new row — a keyboard growing a card, or
-  // resting on a row through the minute's repaint, keeps its place.
+  // resting on a row through the minute's repaint, keeps its place. A stop
+  // the minute has folded into Earlier hands it to that line (else the NOW
+  // row, else the grabber): a focus is never dropped on the page.
   const keep = mode === 'open' ? listEl.scrollTop : 0;
   const f = document.activeElement;
   const focused = f && f !== listEl && listEl.contains(f) && f.dataset.stop ? f.dataset.stop : null;
@@ -255,8 +257,9 @@ function draw() {
   if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
   if (focused) {
-    const again = [...list.children].find((r) => r.dataset.stop === focused);
-    if (again) again.focus({ preventScroll: true });
+    const again = [...list.children].find((r) => r.dataset.stop === focused)
+      || list.querySelector('.plan-row.earlier') || list.querySelector('.plan-row[data-tag]') || grab;
+    again.focus({ preventScroll: true });
   }
   watchBoxes();
   el.dataset.tag = a.peek.tag;
@@ -350,6 +353,12 @@ function settleState() {
     // Keyboard Access on, like every other button in the app.
     if (r.tagName !== 'BUTTON') continue;
     if (peek) r.tabIndex = -1; else r.removeAttribute('tabindex');
+    // Whether its card is out is the open plan's fact: the peek shows no
+    // card, and its row opens the plan (a screen reader heard "expanded").
+    if (r.classList.contains('earlier')) continue;
+    const next = r.nextElementSibling;
+    if (peek) r.removeAttribute('aria-expanded');
+    else r.setAttribute('aria-expanded', next && next.classList.contains('plan-grow') ? 'true' : 'false');
   }
   listEl.classList.toggle('scrolls', !peek);
   if (peek) listEl.scrollTop = 0;

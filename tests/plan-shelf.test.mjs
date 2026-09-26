@@ -259,6 +259,28 @@ test('a keyboard: stop rows are buttons in the open plan and not in the peek; En
   assert.equal(document.activeElement, plan().querySelector('.plan-grab'), 'a focus the peek hides goes to the grabber');
 });
 
+test('a keyboard on a stop the minute folds into Earlier: the focus goes to the Earlier line, never the page', async () => {
+  await repaint();
+  plan().querySelector('.plan-grab').click();
+  assert.equal(tagged().getAttribute('aria-expanded'), 'true', 'open: the NOW card is out');
+  const dog = tagged();
+  assert.equal(dog.dataset.stop, 'Pier Stage|1260');
+  dog.focus();
+  setClock('2026-09-27T05:20:00Z'); // 10:20 PM: Dog Blood is over
+  const card = $('wall-root').querySelector('.card[data-artist="Dog Blood"]');
+  card.click(); // a pick repaints the plan on the new clock (the minute tick's path)
+  await settle(20);
+  assert.equal(plan().dataset.state, 'open');
+  assert.equal(plan().querySelector('.plan-row[data-stop="Pier Stage|1260"]'), null, 'Dog Blood has folded into Earlier');
+  assert.ok(document.activeElement && document.activeElement.classList.contains('earlier'), `the focus is on the Earlier line: ${document.activeElement && document.activeElement.className}`);
+  card.click(); card.click(); card.click(); card.click(); // round the levels back to none
+  setClock(SAT_940);
+  document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await repaint();
+  assert.equal(plan().dataset.state, 'peek');
+  assert.equal(tagged().hasAttribute('aria-expanded'), false, 'the peek shows no card, so its row says nothing about one');
+});
+
 test('a click with no hand behind it opens the peek (a screen reader’s activation), and the plan’s own taps are not doubled', async () => {
   await repaint();
   tagged().click();
