@@ -53,7 +53,10 @@ export function measureFoot() {
   // which is where every reader was before this file existed — so a toast on a
   // laptop still sits where it always sat.
   if (!shown(dock)) { root.removeProperty('--dock-h'); root.removeProperty('--foot-h'); return; }
-  const dockH = Math.round(dock.getBoundingClientRect().height);
+  // Exact, not rounded: the plan stands on this, and a rounded 44 under a
+  // 44.6px dock hid part of the peek's row behind the dock (or a rounded-up
+  // one left a sliver of the wall between them).
+  const dockH = Math.round(dock.getBoundingClientRect().height * 100) / 100;
   // The plan says how tall its peek is (plan-shelf.js writes data-peek-h on
   // every paint); an open plan still counts as its peek here.
   const peekH = shown(plan) ? Number(plan.dataset.peekH) || 0 : 0;

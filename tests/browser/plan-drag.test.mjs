@@ -106,7 +106,10 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       const g = await geometry(page);
       assert.equal(g.state, 'peek');
-      assert.ok(Math.abs(g.rowBottom - g.dockTop) <= 1, `the row ends at the dock's top edge: ${JSON.stringify(g)}`);
+      // Half a pixel, not one: a 1px allowance once hid the shelf's hairline border
+      // pushing the row's last pixel under the dock (and failed only when float
+      // error tipped it past 1.0).
+      assert.ok(Math.abs(g.rowBottom - g.dockTop) <= 0.5, `the row ends at the dock's top edge: ${JSON.stringify(g)}`);
       assert.ok(g.rowTop >= g.grabBottom - 0.5, `and starts under the grabber: ${JSON.stringify(g)}`);
       assert.ok(g.hitInRow, 'a finger on the row touches the row (nothing paints over it)');
       assert.equal(await page.locator('#plan .plan-row.tagged').getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');

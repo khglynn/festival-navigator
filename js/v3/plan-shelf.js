@@ -263,8 +263,11 @@ function measure() {
   // so these differences hold whatever the window's state.
   const row = taggedRow();
   const box = (n) => n.getBoundingClientRect();
-  const H = box(el).height;
-  const grabH = box(grab).height;
+  const eb = box(el);
+  const H = eb.height;
+  // To the grabber's bottom from the window's top edge: the shelf's hairline
+  // border included, or the row's last pixel sat under the dock (2026-09-26).
+  const grabH = box(grab).bottom - eb.top;
   const rb = row ? box(row) : null;
   const rowTop = rb ? rb.top - box(body).top : 0;
   const who = row ? row.querySelector('.plan-who') : null;

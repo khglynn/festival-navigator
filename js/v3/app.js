@@ -4160,6 +4160,14 @@ export function init() {
   if (document.fonts && typeof document.fonts.addEventListener === 'function') {
     document.fonts.addEventListener('loadingdone', () => { NOW_DOORS.forEach(([, row]) => restDayRow($(row))); refitPlanShelf(); });
   }
+  // The dock's height moves on its own — a late font, the NOW tab stepping
+  // aside for the peek, whatever the dock comes to hold — and the plan stands
+  // on it and the page's padding follows it. Watch the box itself rather than
+  // each cause (a browser run once caught the peek 1px under a dock that had
+  // grown after the last measure).
+  if (typeof window.ResizeObserver === 'function') {
+    new window.ResizeObserver(() => { measureFoot(); refitPlanShelf(); }).observe($('dock'));
+  }
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
