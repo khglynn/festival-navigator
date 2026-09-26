@@ -196,6 +196,17 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(g.rowTop >= g.grabBottom - 0.5, `and starts under the grabber: ${JSON.stringify(g)}`);
       assert.ok(g.hitInRow, 'a finger on the row touches the row (nothing paints over it)');
       assert.equal(await page.locator('#plan .plan-row.tagged').getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked');
+      // NOW sits level with the name and its time on the place's line — the
+      // pill had hung below the name and pushed the time down (Kevin,
+      // 2026-09-26, "not slid down a bit like they are now").
+      const lines = await page.evaluate(() => {
+        const row = document.querySelector('#plan .plan-row.tagged');
+        const box = (sel) => row.querySelector(sel).getBoundingClientRect();
+        const [nm, pl, tag, t] = ['.nm', '.pl', '.plan-tag', '.plan-when .t'].map(box);
+        return { tagMid: (tag.top + tag.bottom) / 2, nmMid: (nm.top + nm.bottom) / 2, tTop: t.top, plTop: pl.top, tBottom: t.bottom, plBottom: pl.bottom };
+      });
+      assert.ok(Math.abs(lines.tagMid - lines.nmMid) <= 1, `NOW is centred on the name's line: ${JSON.stringify(lines)}`);
+      assert.ok(Math.abs(lines.tTop - lines.plTop) <= 1 && Math.abs(lines.tBottom - lines.plBottom) <= 1, `the time shares the place's line: ${JSON.stringify(lines)}`);
       // The wall's end clears the peek: scrolled to the bottom, the last room
       // ends above the peek's top.
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -394,6 +405,46 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const g2 = await geometry(page);
       assert.equal(g2.state, 'open', 'the second tap opens it');
       assert.ok(Math.abs(g2.planTop - halfTop) <= 1, `and its settle starts where the window was: ${JSON.stringify({ halfTop, startTop: g2.planTop })}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The same catch with a tap's pinned height in play: a row tap pins the
+  // open window (storyboard 8) and the pin outlives the close, so a hand
+  // that takes the window on its way down lets the pin go — and a window
+  // anchored at the bottom moves its top edge by the height it gained. The
+  // catch reads the top on screen before that happens.
+  test(`${name}: a window grown by a row tap, caught on its way down, stays under the finger`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      let g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await settled(page);
+      const row = await page.evaluate(() => {
+        const r = [...document.querySelectorAll('#plan .plan-list > button.plan-row:not(.tagged):not(.earlier)')][0].getBoundingClientRect();
+        return { x: r.left + r.width * 0.4, y: r.top + 14 };
+      });
+      await page.mouse.click(row.x, row.y);
+      await settled(page);
+      const pinned = await page.evaluate(() => parseFloat(document.getElementById('plan').style.height) || 0);
+      assert.ok(pinned > 0, 'the row tap pinned the window');
+      await holdSettles(page, 0.5);
+      g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await unholdSettles(page);
+      const mid = await geometry(page);
+      assert.equal(mid.state, 'peek', 'the grabber closes it (held on its way)');
+      const h = await grabAt(page);
+      await page.mouse.move(h.x, h.y);
+      await page.mouse.down();
+      for (let k = 1; k <= 8; k++) { await page.mouse.move(h.x, h.y - 40 * (k / 8)); await sleep(16); }
+      await sleep(120);
+      const caught = await page.evaluate(() => { const el = document.getElementById('plan'); const r = el.getBoundingClientRect(); return { top: r.top, height: r.height, pin: el.style.height }; });
+      await page.mouse.up();
+      assert.equal(caught.pin, '', 'the hand let the pin go');
+      assert.ok(Math.abs(caught.height - pinned) > 4, `and the window's height changed with it (the case under test): ${JSON.stringify({ pinned, caught })}`);
+      assert.ok(Math.abs(caught.top - (mid.planTop - 40)) <= 2, `the window stayed under the finger: ${JSON.stringify({ mid: mid.planTop, caught })}`);
+      await settled(page);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

@@ -1947,7 +1947,8 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * content minimum — a pinned window squeezed the NOW row from 61px to 44 and
  * its text spilled over the card under it, 2026-09-26.) */
 .plan-list > * { flex: none; }
-.plan-row { position: relative; display: grid; min-width: 0; align-items: baseline;
+.plan-row { --plan-nm: 17px; /* the name's size: its line is the NOW / NEXT tag's line too */
+            position: relative; display: grid; min-width: 0; align-items: baseline;
             grid-template-columns: var(--plan-nw) minmax(0, 1fr) var(--plan-ww) var(--plan-cw);
             column-gap: var(--plan-gap); padding: 8px 0; text-align: left; }
 button.plan-row { width: 100%; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
@@ -1977,14 +1978,15 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 
 /* 2 · what and where: the artist leads; the place is the one second line */
 .plan-what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.plan-what .nm { color: var(--text-primary); font-size: 17px; font-weight: 800; line-height: 1.18; letter-spacing: -.005em;
+.plan-what .nm { color: var(--text-primary); font-size: var(--plan-nm); font-weight: 800; line-height: 1.18; letter-spacing: -.005em;
                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plan-what .pl { color: var(--text-secondary); font: var(--plan-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plan-what .pl .also { color: var(--text-tertiary); }
 .plan-what .pl .also::before { content: ' · '; }
-.plan-row.some .plan-what .nm { font-size: 14.5px; font-weight: 700; color: var(--text-body); }
-.plan-row.or { padding-top: 0; }
-.plan-row.or .plan-what .nm { font-size: 13px; font-weight: 600; color: var(--text-body); }
+.plan-row.some { --plan-nm: 14.5px; }
+.plan-row.some .plan-what .nm { font-weight: 700; color: var(--text-body); }
+.plan-row.or { --plan-nm: 13px; padding-top: 0; }
+.plan-row.or .plan-what .nm { font-weight: 600; color: var(--text-body); }
 .plan-row.or .plan-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
 .plan-row.or .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
 .plan-row.earlier .plan-what .nm, .plan-row.scattered .plan-what .nm { font: var(--plan-line); color: var(--text-tertiary); }
@@ -1999,8 +2001,16 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
  * in from behind the dock as it opens (plan-shelf.js measure). */
 .plan-row.tagged .plan-who { margin-top: 9px; }
 
-/* 3 · when: quiet; NOW / NEXT sits on the name's line, its time under it */
-.plan-when { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
+/* 3 · when: quiet; NOW / NEXT sits on the name's line, its time under it on
+ * the place's line. The tag rides a line box the name's size (.tl): a strut
+ * of the name's type gives it the name's baseline, which is what the row
+ * aligns, and the pill centres in it; the column's gap is the what column's,
+ * so the time and the place share a line. Aligned on the pill's own 9px
+ * text instead, the pill hung below the name and pushed the time below the
+ * place (Kevin, 2026-09-26: "not slid down a bit like they are now"). */
+.plan-when { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.plan-when .tl { display: flex; align-items: center; height: calc(var(--plan-nm) * 1.18); }
+.plan-when .tl::before { content: '\200b'; font-size: var(--plan-nm); line-height: 1.18; }
 .plan-when .t { font: var(--plan-line); color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .plan-when .t.soft { color: var(--text-tertiary); }
 .plan-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; letter-spacing: .1em;

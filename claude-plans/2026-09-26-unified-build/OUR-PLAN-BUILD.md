@@ -419,3 +419,45 @@ small round, on live/plan after merging `origin/live/people` 117c833 (clean):
 4. **Not renamed, flagged instead:** the welcome card's line "the more color on a card, the
    more of us want to go" (`js/v3/welcome.js`) makes the promise the friend objected to,
    but it is the welcome's words, not the plan's — the coordinator's call.
+
+## Linux WebKit reds on PR #60, and Kevin's peek note (2026-09-26, afternoon)
+
+The v101 PR's browser job failed on Linux WebKit, run after run (36266741642,
+36266745098). My live/plan pushes had been red on the same tests since 06f0eb9, and I
+had read the red as the service-worker stamp alone. Every failing check gets read by name
+from now on.
+
+1. **Cause:** a loaded runner starts Web Animations late and holds their first frame for
+   700 ms or more. Tests that measured after a fixed sleep read the panel at the corner
+   card's start, aimed a drag at a window still settling back, and read the people menu
+   "open" while its fade had not yet run. `lateStarts` in `tests/helpers/browser.mjs`
+   reproduces this on a Mac: `LATE_ANIMATIONS_MS=700 node --test tests/browser/plan-drag.test.mjs`.
+   A CI step that runs this way is banked by the coordinator for after Portola.
+2. **A real flaw it exposed:** a grab or a tap during a settle read the inline styles,
+   which hold the settle's end, so the window popped. On a phone the jump was 54 px, or
+   about 130 px when a row tap had pinned the window's height. On a laptop it was 425 px
+   when someone clicked while Escape's settle was under way. `seenTop`/`caughtAt` in
+   `js/v3/plan-shelf.js` now read the window's top edge on screen before anything resizes
+   it, and the drag or the next settle starts from there. The window's own motions no
+   longer include CSS transitions: cancelling the laptop card's hover lift had nudged
+   the catch by 2 px. There are three browser cases (phone drag and tap, pinned phone,
+   laptop click), and each holds a settle part-way on purpose. Each fails on the code it
+   fixes.
+3. **Tests wait for states instead of beats:** `motionDone` on `#plan`, plus the shelf's
+   400 ms quiet time (a click inside it counts as the same hand's and is swallowed).
+   People menu: wait for the menu to be gone, and for the dock to stop moving, its
+   smooth-scrolled row included.
+4. **Kevin, on frame 3c:** "Now and till are weirdly not in line with the other stuff and
+   they should be. Not slid down a bit like they are now." The row aligned baselines on
+   the NOW pill's own 9 px text, so the pill hung about 4 px below the name and pushed
+   the time the same distance below the place. The tag now rides a line box the size of
+   the name (`.plan-when .tl`, with a strut of the name's type, `--plan-nm`), and the
+   column's gap is the what column's. The peek test measures both lines to within 1 px.
+5. **Sol's review of the first version** found the pinned-height jump and the hover-lift
+   cancel, both fixed above. It also found two older snaps the catch does not yet cover.
+   A touch during the peek's 240 ms arrival snaps it up to the peek. A grab during a
+   redraw's slide turns a small position change into a slightly opened window. Neither
+   is new: the old code snapped in both cases, at the first move. **Banked for the Share
+   build:** give the window a pixel lift apart from its progress. A catch during a settle
+   then takes progress, and a catch during an arrival or a redraw takes the lift. The
+   arrival case gets a test through the guest's Look around.

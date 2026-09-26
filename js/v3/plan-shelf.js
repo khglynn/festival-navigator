@@ -522,9 +522,10 @@ export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
 // state at once and the animation plays from where it was — so an animation
 // that never finishes still leaves the right state behind.
 function settleTo(target, { instant = false } = {}) {
+  const seen = seenTop();
   if (target === 1 && mode !== 'open') unpin();
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
-  apply(caught());
+  apply(caughtAt(seen, p));
   const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
   apply(target);
@@ -561,9 +562,10 @@ function onDown(e) {
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
   if (e.target.closest('.sheet-close')) return;
+  const seen = seenTop();
   if (mode !== 'open') unpin();
   measure();
-  apply(caught(mode === 'open' ? 1 : 0));
+  apply(caughtAt(seen, mode === 'open' ? 1 : 0));
   const onGrab = grab.contains(e.target) || (mode === 'open' && headEl.contains(e.target));
   drag = { id: e.pointerId, y0: e.clientY, p0: p, wasOpen: mode === 'open', moved: false, onGrab, last: [{ y: e.clientY, t: e.timeStamp }] };
   try { el.setPointerCapture(e.pointerId); } catch { /* an old engine: the move still arrives while the finger is on the shelf */ }
@@ -645,36 +647,39 @@ function flushHeld() {
 // (the old way) put a regrabbed window at its target and then under the
 // finger, a pop. A loaded phone starts a settle late, and CI's Linux WebKit
 // held a 130ms settle-back on its first frame for over half a second (runs
-// 36266741642 and 36266745098, 2026-09-26). `rest`: where the window is when
-// nothing is playing. A paused motion counts: it is on screen all the same.
-function caught(rest = p) {
-  if (!el || typeof el.getAnimations !== 'function') return rest;
-  const css = typeof window.CSSAnimation === 'function' ? window.CSSAnimation : null;
-  const showing = (a) => a.pending || a.playState === 'running' || a.playState === 'paused';
-  if (!el.getAnimations().some((a) => !(css && a instanceof css) && showing(a))) return rest;
-  const at = shownP(rest);
-  motions().forEach((a) => a.cancel());
-  return at;
+// 36266741642 and 36266745098, 2026-09-26).
+// seenTop: where the window's top edge is on screen while a motion of its
+// own is showing (a paused one too), or null when none is — read before
+// anything resizes the window: a tap's pinned height let go moves a
+// bottom-anchored window's top by the difference.
+function seenTop() {
+  if (!el || typeof el.getAnimations !== 'function') return null;
+  const showing = (a) => !cssDriven(a) && (a.pending || a.playState === 'running' || a.playState === 'paused');
+  return el.getAnimations().some(showing) ? el.getBoundingClientRect().top : null;
 }
-// The p the window's transform shows right now (its animation included): the
-// vertical translate against its full reach — the phone's H − peekH, the
-// laptop's drop from the panel to the corner card.
-function shownP(rest) {
-  const m = /matrix(3d)?\(([^)]*)\)/.exec(window.getComputedStyle(el).transform || '');
-  if (!m || !geo) return rest;
-  const v = m[2].split(',').map(Number);
-  const ty = m[1] ? v[13] : v[5];
+// caughtAt: the p that puts the top edge back at `top` on the window's
+// numbers as they are now (after measure). The motion is stopped, the window
+// placed at `rest` and read, and p moves by the difference over its reach —
+// the phone's H − peekH, the laptop's drop from the panel to the corner card.
+// `rest`: where the window is when nothing was playing.
+function caughtAt(top, rest) {
+  if (top == null) return rest;
+  motions().forEach((a) => a.cancel());
+  apply(rest);
   const reach = geo.desk ? geo.H - geo.cardH - GAP : geo.H - geo.peekH;
-  if (!(reach > 0) || !Number.isFinite(ty)) return rest;
-  return Math.max(0, Math.min(1, 1 - ty / reach));
+  if (!(reach > 0)) return rest;
+  return Math.max(0, Math.min(1, rest - (top - el.getBoundingClientRect().top) / reach));
 }
 
-// The window's own motion (Web Animations) — not the nodes' endless aura
-// drift, which is CSS and never ends.
+// The window's own motion (Web Animations) — not what CSS drives: the nodes'
+// endless aura drift, and the laptop card's 2px hover lift (a transition,
+// v3.css). Cancelling that lift snapped it to its end mid-catch, and the
+// panel grew from 2px off where it was.
+const cssDriven = (a) => (typeof window.CSSAnimation === 'function' && a instanceof window.CSSAnimation)
+  || (typeof window.CSSTransition === 'function' && a instanceof window.CSSTransition);
 function motions() {
   if (!el || typeof el.getAnimations !== 'function') return [];
-  const css = typeof window.CSSAnimation === 'function' ? window.CSSAnimation : null;
-  return el.getAnimations({ subtree: true }).filter((a) => !(css && a instanceof css));
+  return el.getAnimations({ subtree: true }).filter((a) => !cssDriven(a));
 }
 
 // Nothing under the peek's window is a control of its own: a tap there opens
