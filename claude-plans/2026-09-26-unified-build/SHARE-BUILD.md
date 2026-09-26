@@ -46,11 +46,11 @@ PR and merges; this branch is never stamped here.
       state (morning, NOW, tomorrow, a highlight, nothing left)
 - [x] S2 the link: `crewLink(…, { plan: true })` → `&plan=open` last; `planFromHash`
 - [x] S3 the plan's foot: Share / Copy, the words on the button, laptop and phone
-- [ ] S4 `&plan=open` at boot, member and newcomer paths
-- [ ] S5 the welcome ✕
-- [ ] S6 the Show menu row
-- [ ] S7 the lift: arrival and slide catches, the font retarget
-- [ ] S8 browser tests for each; jsdom tests; docs (README/CLAUDE where they describe it)
+- [x] S4 `&plan=open` at boot, member and newcomer paths
+- [x] S5 the welcome ✕
+- [x] S6 the Show menu row
+- [x] S7 the lift: arrival and slide catches, the font retarget
+- [x] S8 browser tests for each; jsdom tests; docs (README/CLAUDE where they describe it)
 - [ ] Gate: npm test, browser suite at 0 and 700 ms late, a Sonnet walker on the real
       app, Sol, CI both jobs; the SHA to the coordinator
 
@@ -68,3 +68,27 @@ PR and merges; this branch is never stamped here.
    the panel's bottom, so it reads as the plan's last line. The share marks
    the page busy while the sheet is up (a new build waits). Walked in Chromium
    at 390 and 1280 with the made-up nine: the text matched the 9:40 golden.
+4. **S4** (28fdd68): a member's `&plan=open` lands on the plan open (the peek's arrival,
+   then `openPlan`, which the lift turns into one motion). A newcomer's waits while the
+   welcome card is due and opens when it goes. The flag belongs to the crew it came with
+   (`planOpenFor` holds that token), is dropped on a day with no plan, and never reaches
+   the crew doc or the address bar.
+5. **S5** (eb7e10f): the welcome card's ✕ is Look around by another name (`gotIt`).
+6. **S6** (02d284c, 65fa0fc): "Share the crew link" in the Show menu above Settings: the
+   share sheet with the invite text and the link to what is being shown, or Copy and
+   "Copied ✓" with the menu left up. Both the row and the plan's foot say what their link
+   opens on (the v92 rule: every place that hands out a link says so), and sharing stamps
+   the invite's festival the way the Invite sheet does.
+7. **S7** (393d025): the lift. A finger on the peek mid-arrival, or a grab mid-slide,
+   keeps the window where it is; a font landing mid-arrival re-aims the arrival from where
+   it stands (`reaim`), and a first observer answer with nothing changed is ignored. Each
+   new test fails on the old shelf, except WebKit's font case, which the old shelf passed
+   in its held form (noted in the test).
+8. **S8** (fc86005): `tests/browser/plan-share.test.mjs`, ten cases in both engines, and
+   the README's Our picks bullet.
+9. **The gate so far** (3:40 PM PT). Local: the browser suite 361 of 363 at 0 and at 700 ms
+   late, each run with one different timing failure in a file this branch does not touch
+   (`fold-intent`, `tap-shelf-contract`) while other sessions loaded the machine; both
+   files pass alone at 0 and 700. Node 1254 of 1257, the SW stamp the only red (the
+   coordinator stamps). CI on fc86005: the browser job green on Linux, WebKit included;
+   checks red only on the stamp. Sol and a Sonnet walker are running.
