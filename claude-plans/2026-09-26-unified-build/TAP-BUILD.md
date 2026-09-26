@@ -124,6 +124,12 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    rows reveal actions. For the List's owner when that phase opens; it will have to live beside the
    row's own sideways scroll (the stack rows) and the tap that opens the shelf.
 
+8. **The join shelf's grabber** (the evening round, 2026-09-26): every sheet `sheetChrome` builds lost its
+   grabber and drag on Kevin's word, but the join shelf (join-shelf.js) builds its own head and keeps its
+   grabber and its drag-to-close — so a guest's + raises a sheet with a grabber over a shelf without one.
+   Kevin's call: drop it the same way (its Look around, Escape, Back and the dimmed wall already close
+   it), or keep it. Not touched in this round, whose scope was `sheetChrome`.
+
 ## Steps (commit + push after each)
 
 1. [x] This log (e700c10).
@@ -326,3 +332,56 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   the menu to be open and its transitions to run out before reading. Not the hand: the menu door's click
   never asks clickHand, and the change there only writes data-hand-by on the page.
 
+- **Evening — Kevin's round, from his iPhone at Portola** (on ab9f635, v98). His notes, verbatim: (1) "Remove
+  the drag tag grabber - doesn't work and isn't necessary"; (2) "Remove the middle of the card 2nd copy of
+  the level of interest bars - and then the cards can be less tall. Don't need that repeated"; (3) "the
+  swipe in the list view to add ratings and add notes (left reveals ratings, right reveals notes) - mobile
+  only. Future phase"; (4) on Invite someone, "Can get rid of the drag tag on invite someone too."
+  1. **No grabber on any sheet `sheetChrome` builds** (efa861c), drag-to-close and all: the artist's shelf
+     (its head is the card: `grabberOnly` is gone), All notes, a date's notes (a section's on a date too),
+     the festival's notes, Invite someone and its "… IS IN", the share moment ("ONE LINK MAKES IT A
+     CREW") and the import sheet ("FROM THE … APP"). The ✕, Escape, Back and a tap on the dimmed wall
+     still close each one; the way out no longer reads a drag's inline transform. Not touched: the join
+     shelf (join-shelf.js builds its own head and keeps its grabber — **a call for Kevin**: a guest's +
+     raises it right over a shelf that no longer has one), and the plan's own drag handle on another
+     branch. Tests: `tests/sheet-chrome.test.mjs` (new: no grabber anywhere, the head or card leads, each
+     of the four ways to close — 6/6 fail on the old notes.js), the share moment in
+     bring-picks-after-share, the import sheet in the browser's import-flow. The 10:40 entry's iPhone
+     check "the grabber drag down to close" no longer applies.
+  2. **The meter goes; − and + stand in the card's bottom corners** (dce9c0b). With nothing between them
+     the row was a whole line for two glyphs at its edges (the ALT frame), so taking the meter out alone
+     would have saved almost nothing. They stand instead in the card's two bottom corners, level with its
+     last line — the place, your chip, the Tix · Info doors — and cost the card no line of its own; the
+     facts stand in a centred column that clears them (the zoom's `--zoom-col` idea), so a corner never
+     covers a fact or a door, and a long name clears the ✕. Each is a real button, 50 × 52, its box out to
+     the card's side and bottom edges; the glyph sits where the row's always did (26px in). Out of the
+     flow and anchored to the floor, they never move under the finger; a first + that brings the who-row
+     still grows the card upward. Your level is your own chip in the who-row. At 390 (WebKit, the rig):
+     Robyn's card 214 → 163px, an unpicked card ~158 → 106px (135 after its first +), and the whole
+     unpicked sheet 80px shorter with the grabber gone. The other reading — the bare row kept as its own
+     line, tightened — is framed beside it for the decision (`contact-*-alt.png`; Robyn 200px, Oskar
+     172px after +). The zoom's row is untouched. Tests: every assertion on the shelf's meter reads your
+     own chip now (tap-shelf, first-open-guest(-doors), the tap contract, guest-tap-route); a new
+     real-engine law in the tap contract (WebKit + Chromium, 390 and 320: unpicked, after +, must, Boys
+     Noize's doors, Robyn's crowd; and the 820 dialog): 44px+ boxes on the floor, out to the sides, over
+     no fact or door, the glyph level with the last line, no line of their own. It fails with the column
+     constraint removed (a crowd chip under the − corner); zoom-chips' 320 crowd case also holds no chip
+     under a corner. Docs: README, CLAUDE.md, MODEL-V4 §3a.4, the gallery.
+  3. **The List-row swipe** is follow-up 7 (7a6a440), nothing built.
+  4. **Frames** (7efe82b, the rig reads your chip and the card's height; images gitignored):
+     `tap-design/frames/contact-webkit-phone.png`, `contact-webkit-desktop.png`, `contact-webkit-alt.png`,
+     the same three for Chromium, and `contact-chromium-motion.png`. Both engines: no page errors, − and +
+     moved 0px through every step (the sheet's top rose 29px on a first +), the rise leaves no gap, the
+     SE keyboard cases hold. At 320 a first + that adds a who-row line to a capped sheet scrolls it by the
+     same amount, so the card's top edge tucks under the sheet's top — the floor rule, as designed.
+  5. **A night-clock flake, fixed in the rig** (161f373): one full-suite run in three at the night clock
+     failed two tap-shelf cases (Robyn 1 → 0 mid-case; never alone, 4/4). The unit rig's server answered
+     every push with the untouched doc, so a sync timer firing inside a loaded case wiped Kevin's pick.
+     It merges what it is sent now, as crew.js does (the browser mock already did). No app file.
+  6. **Gate, then stamp** (50dfb70, `--keep` on a clean tree at 161f373: v98 still unreleased, main is v97;
+     ASSET_STAMP 7550c3f1 → 7d8a600f). Before the stamp, `npm test` at UTC and Asia/Tokyo: 1165/1167
+     (1 skip; the unstamped SW stamp the only red); at the night clock the same 1165 in both full runs
+     after the rig fix (the run before it is item 5). After the stamp, UTC 1166/1167 (1 skip).
+     validate-festivals: 0 errors.
+     `test:browser` 283/283 (Chromium + WebKit, no skips). CI on the head that carries this entry is the
+     coordinator's report.
