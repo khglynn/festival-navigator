@@ -59,23 +59,26 @@ export function rememberJoinedWelcomeSeen() {
 // page, 2026-09-25): the buttons say the choice — "Pick shows" (left, the
 // join, filled) or "Look around" (right, the quiet way, same as dismissing;
 // flipped the same day from the round-3 frames) — so a
-// guest's body is the one line about colour. The crew's name rides the label beside its faces, so the line can
-// say "the crew's plan" and stay one line. "Want to go", never "going": a
-// pick is interest, not a ticket. A member who has just joined already has a
+// guest's body is the one line about colour. The crew's name rides the label
+// beside its faces, so the line can say "the crew's picks" and stay one line.
+// "Picked", never "plan", "want to go" or "going" (Kevin, 2026-09-26, after a
+// friend's "my picks are what I was interested in, not what I'm planning to go
+// to"): a pick is interest, not a ticket. A member who has just joined already has a
 // colour — their card has no join, "Got it" its one button, and a line on how to pick.
 export const WORDS = {
   look: 'Look around',           // a guest's right-hand button, the quiet one (and the join screen's way back)
   gotIt: 'Got it',               // a fresh member's one button
   how: 'More info',              // the explanation's last words, drawn as a link (Kevin, the guest shelf round)
   join: 'Pick shows',            // a guest's left button, filled: the join
-  line: (fest) => `This is the crew’s plan for ${fest}.`,
-  colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
+  line: (fest) => `These are the crew’s picks for ${fest}.`,
+  crewFor: (fest) => `This crew is here for ${fest}.`, // a crew nobody has picked in yet ("picks" would read as a contradiction)
+  colors: 'Every friend has a color — the more color on a card, the more of us picked it.',
   memberNext: 'Tap any artist, then + to add yours.',
   empty: 'Nobody’s in this crew yet.',
   emptySub: 'Tap any artist, then + to be first — you’ll pick a name as you do.',
   nobodyPicked: 'Nobody’s picked yet.',
-  startedBy: (name, fest) => `${name} started this plan for ${fest}.`,
-  yours: (fest) => `Your plan for ${fest} is ready.`,
+  startedBy: (name, fest) => `${name} started this crew for ${fest}.`,
+  yours: (fest) => `Your crew for ${fest} is ready.`,
   firstSub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist, then + to be first.',
 };
 
@@ -87,11 +90,11 @@ export function welcomeCopy({ crewName = '', festName = '', people = [], picked 
     : { yes: WORDS.gotIt, more: WORDS.how, join: null };
   if (!people.length) return { label, line: WORDS.empty, sub: WORDS.emptySub, ...buttons };
   if (!picked) {
-    // The only person here is the one reading it: their plan, in the second person.
+    // The only person here is the one reading it: their crew, in the second person.
     const mine = people.length === 1 && !guest && meName && people[0] === meName;
     const who = mine ? WORDS.yours(fest)
       : people.length === 1 ? WORDS.startedBy(people[0], fest)
-        : WORDS.line(fest);
+        : WORDS.crewFor(fest);
     return { label, line: `${who} ${WORDS.nobodyPicked}`, sub: WORDS.firstSub, ...buttons };
   }
   return { label, line: WORDS.line(fest), sub: guest ? WORDS.colors : `${WORDS.colors} ${WORDS.memberNext}`, ...buttons };

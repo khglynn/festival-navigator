@@ -25,7 +25,7 @@ import { rideKeys } from './notes.js';
 export const SHELF_WORDS = {
   line: (artist, intent = 'pick') => (!artist ? ['Pick shows as…']
     : intent === 'pick' ? ['Pick ', artist, ' as…']
-      : ['Join the plan for ', artist, ' as…']),
+      : ['Join the crew for ', artist, ' as…']), // − and the notes door join only: no pick promised, no "plan" (Kevin, 2026-09-26: picks are interest)
   label: (artist, intent = 'pick') => SHELF_WORDS.line(artist, intent).join('').replace(/…$/, ''),
   sub: 'Tap your name, or add yourself.',
   subOffline: 'You’re offline — join anyway, it sends when you’re back.',

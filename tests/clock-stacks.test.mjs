@@ -1,18 +1,20 @@
 // Stacks under a clock line up with it (v90, Kevin at Portola, 2026-09-25):
 // "Sometimes on the timelines we have times on the left, and the items that
 // don't have them don't line up. I'd like them to line up vertically all the
-// way down." A day's timetable starts its columns past the hour rail; the
-// card stacks on that day (Skepta's cancelled card under Saturday's grid, SAT
-// AFTERS) started at the shell's edge. wall.js tags every stack on a day that
+// way down." Since 2026-09-26 the wall has ONE left edge from 720 up (Kevin:
+// "remove most special logic and just always have the left justify in a
+// bit"): the Board is padded by --wall-edge, the gutter's width, and every
+// room starts there — a clock's columns, its leftovers (Skepta's cancelled
+// card), the afters, a by-time list, a day with no clock — with one track
+// gap, so nothing steps in on its own. On a phone the edge is the shell's
+// (two columns fill it), and wall.js still tags every stack on a day that
 // drew a clock — 'room' for the clock's own room, 'day' for the day's other
-// rooms — and v3.css steps them in by the rail with the clock's track gap:
-// the clock's own room at every width, the other rooms from 720 up. On a
-// phone (v91, 2026-09-25) a clocked row sits in its own sideways scroller,
-// `.stack-scroll`, with the rail's 40px as lead space inside it: stepped in
-// within the shell, two columns would only fit as one, so instead they keep
-// their width, start at the clock's first column, and the lead scrolls away
-// under a swipe (Kevin: "a little bit of extra padding that obviously scrolls
-// away if you left scroll"). A day with no clock never carries the tag.
+// rooms — because there (v91, 2026-09-25) a clocked row sits in its own
+// sideways scroller, `.stack-scroll`, with the rail's 40px as lead space
+// inside it: the columns keep their width, start at the clock's first
+// column, and the lead scrolls away under a swipe (Kevin: "a little bit of
+// extra padding that obviously scrolls away if you left scroll"). A day with
+// no clock never carries the tag, and a time list never does.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -68,9 +70,11 @@ const render = (fid, over = {}) => {
   });
   return root;
 };
-// Every stack on the wall — and every time list (v94: a section the file
-// declares by time, as Folsom may be) — which room, on which day, its tag.
-const stacks = (root) => [...root.querySelectorAll('.venue-grid, .time-list')].map((g) => ({
+// Every stack on the wall: which room, on which day, its tag. A time list
+// (v94: a section the file declares by time, as Folsom may be) is never
+// tagged — it never scrolls sideways, and from 720 up the wall's edge places
+// it (checked below).
+const stacks = (root) => [...root.querySelectorAll('.venue-grid')].map((g) => ({
   day: g.closest('.day-block').dataset.day,
   room: g.closest('.room').dataset.room,
   clock: g.dataset.clock || null,
@@ -83,8 +87,9 @@ test('Portola: Saturday\'s cancelled Skepta lines up with the clock it belongs t
   assert.deepEqual(on('Saturday', ':fest'), ['room'], 'the clock\'s own room');
   assert.ok(document.querySelector('.venue-grid[data-clock="room"] .card[data-artist="Skepta"]'), 'Skepta is the stack that moves');
   assert.deepEqual(on('Saturday', 'Afters'), ['day']);
-  assert.deepEqual(on('Saturday', 'Folsom'), ['day']);
+  if (sectionLayoutOf(portola, 'Folsom') !== BY_TIME) assert.deepEqual(on('Saturday', 'Folsom'), ['day']);
   assert.deepEqual(on('Sunday', 'Afters'), ['day']);
+  assert.equal(document.querySelectorAll('.time-list[data-clock]').length, 0, 'a time list is never tagged');
   // Sunday has everything on its grid: no stack in its festival room at all.
   assert.deepEqual(on('Sunday', ':fest'), []);
   // No clock on Thursday or Friday (other people's warehouses): as they were.
@@ -95,14 +100,14 @@ test('Portola: Saturday\'s cancelled Skepta lines up with the clock it belongs t
   }
 });
 
-test('hiding the festival hides its clock, and the day\'s stacks go back to the shell\'s edge', () => {
+test('hiding the festival hides its clock, and the day\'s stacks lose their tag', () => {
   const all = stacks(render('portola-2026', { folded: [':fest'] }));
   const sat = all.filter((s) => s.day === 'Saturday');
   assert.ok(sat.length && sat.every((s) => s.room !== ':fest'), 'the festival room is gone');
   assert.ok(sat.every((s) => s.clock === null), 'nothing above them to line up with');
 });
 
-test('a grid day with no set times draws no clock, so its billed names are not stepped in', () => {
+test('a grid day with no set times draws no clock, so its billed names are not tagged', () => {
   const root = render('unset-fest');
   assert.equal(root.querySelectorAll('.times-rail').length, 0, 'no clock');
   const all = stacks(root);
@@ -110,26 +115,36 @@ test('a grid day with no set times draws no clock, so its billed names are not s
   assert.equal(all[0].clock, null);
 });
 
-test('the CSS: one rail width and one track gap for the clock and every stack under it; another room steps in by padding from 720 up only', () => {
+test('the CSS: one left edge for the Board, one gutter, one track — and no room steps in on its own', () => {
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
   const tokens = readFileSync(join(ROOT, 'assets/v3-tokens.css'), 'utf8');
   assert.match(tokens, /--hour-rail-w:\s*40px;/);
   assert.match(tokens, /--clock-gap:\s*4px;/);
-  // The clock itself reads the tokens, so the stacks can never drift from it.
+  // The edge: the shell's on a phone, the gutter's width from 720 up — each
+  // token defined once.
+  assert.equal((tokens.match(/--wall-edge:/g) || []).length, 2, 'one phone value, one from 720 up');
+  assert.match(tokens, /:root \{[^}]*--wall-edge: 0px;/);
+  assert.match(tokens, /@media \(min-width: 720px\) \{\s*:root \{[^}]*--wall-edge: var\(--hour-rail-w\);/);
+  // The clock itself reads the tokens, so nothing can drift from it.
   assert.match(css, /\.times-rail \{[^}]*width: var\(--hour-rail-w\)[^}]*row-gap: var\(--clock-gap\)/);
   assert.match(css, /\.times-grid \{[^}]*gap: var\(--clock-gap\)/);
   assert.match(css, /\.strip-rail \{[^}]*width: var\(--hour-rail-w\)/);
-  // The clock's own room: every width, outside any media block.
-  const room = /(^|\n)\.venue-grid\[data-clock="room"\] \{([^}]*)\}/.exec(css);
-  assert.ok(room, 'the room rule is at the top level');
-  assert.match(room[2], /padding-inline-start: var\(--hour-rail-w\)/);
-  assert.match(room[2], /column-gap: var\(--clock-gap\)/);
-  // Another room: only inside a min-width 720 block.
-  const day = /@media \(min-width: 720px\) \{\s*\.venue-grid\[data-clock="day"\] \{([^}]*)\}/.exec(css);
-  assert.ok(day, 'the day rule lives under 720 and up');
-  assert.match(day[1], /padding-inline-start: var\(--hour-rail-w\)/);
-  assert.match(day[1], /column-gap: var\(--clock-gap\)/);
-  assert.doesNotMatch(css.replace(day[0], ''), /data-clock="day"\]\s*\{/, 'and nowhere else');
+  // The Board is padded by the edge, once, at the top level; the List (its
+  // own centred column) is not.
+  assert.match(css, /(^|\n)#wall-root:not\(\[data-view="list"\]\) \{ padding-inline-start: var\(--wall-edge\); \}/);
+  assert.equal((css.match(/var\(--wall-edge\)/g) || []).length, 2, 'the padding, and the clock reaching back past it to the window');
+  // No presentation sets its own offset any more: the rail's width steps in
+  // only the phone's sideways row (its lead space, v91).
+  assert.doesNotMatch(css, /data-clock="(room|day)"\]/, 'no per-room clock rules');
+  assert.doesNotMatch(css, /\.time-list\[data-clock\]/, 'no by-time clock rule');
+  const leads = [...css.matchAll(/padding-inline-start: var\(--hour-rail-w\)/g)];
+  assert.equal(leads.length, 1, 'one lead space');
+  assert.match(css, /\.stack-scroll > \.venue-grid\[data-clock\] \{[^}]*padding-inline-start: var\(--hour-rail-w\)/);
+  // One track from 720 up: the stacks and the bands take the clock's gap —
+  // AFTER both grids' own rules, whose `gap` shorthands would reset it.
+  const track = /@media \(min-width: 720px\) \{\s*\.venue-grid, \.band-grid \{ column-gap: var\(--clock-gap\); \}\s*\}/.exec(css);
+  assert.ok(track, 'the one-track rule');
+  assert.ok(track.index > css.indexOf('.band-grid { display: grid') && track.index > css.indexOf('.venue-grid { display: grid'), 'after both grids');
 });
 
 // ---- the phone's sideways row (v91) ------------------------------------------------
