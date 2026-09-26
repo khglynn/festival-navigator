@@ -2574,9 +2574,25 @@ function dayRowGeometry(c) {
 export function markDayRow(c) {
   const max = rowMax(c);
   const over = max > 1;
-  c.classList.toggle('overflowing', over);
-  c.classList.toggle('more-left', over && c.scrollLeft > 1);
-  c.classList.toggle('more-right', over && c.scrollLeft < max - 1);
+  const held = heldEdges.get(c) || [];
+  c.classList.toggle('overflowing', over || held.includes('overflowing'));
+  c.classList.toggle('more-left', (over && c.scrollLeft > 1) || held.includes('more-left'));
+  c.classList.toggle('more-right', (over && c.scrollLeft < max - 1) || held.includes('more-right'));
+}
+// While tabs slide (app.js slideTabs), the row keeps the edge fades it had
+// before the change as well as the ones it has now, so a tab sliding in from
+// past an edge (THU, when NOW leaves at 390) comes out of a fade instead of a
+// hard cut. `settled` resolves when the tabs land; the fades are read afresh
+// then. The row's own scroll events re-mark it meanwhile, which is why the
+// hold lives here and not in the classes.
+const heldEdges = new WeakMap();
+export function holdDayRowEdges(c, edges, settled) {
+  heldEdges.set(c, edges);
+  markDayRow(c);
+  settled.then(() => {
+    if (heldEdges.get(c) === edges) heldEdges.delete(c);
+    markDayRow(c);
+  });
 }
 
 // A row that nearly fits, fits: before it scrolls, the air between its tabs

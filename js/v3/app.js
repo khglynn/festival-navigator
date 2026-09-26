@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -758,20 +758,23 @@ function parkNowTab(tab, row) {
 // by its margins and the row that scrolls re-rests, so each tab moves its own
 // distance — the pair gliding to the middle, the days after NOW making room.
 const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
-function slideTabs(before, { out = false } = {}) {
-  const moved = new Map();
+const EDGES = ['overflowing', 'more-left', 'more-right'];
+// `edges`: the row's edge fades before the change, held through the slide
+// (wall.js holdDayRowEdges).
+function slideTabs(row, before, edges, { out = false } = {}) {
+  const slides = [];
   for (const [t, left] of before) {
     if (!t.isConnected || t.hidden) continue;
     const dx = left - t.getBoundingClientRect().left;
-    moved.set(t, dx);
     if (Math.abs(dx) < 1 || !canAnimate(t, ctx)) continue;
     // The way in has the arrival's touch of overshoot; the room closing up
     // after NOW has gone is the way out, crisp and plain.
-    t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }],
-      { duration: CASCADE_MS, easing: out ? EASE_SURFACE : EASE_ARRIVE });
+    slides.push(t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }],
+      { duration: CASCADE_MS, easing: out ? EASE_SURFACE : EASE_ARRIVE }));
   }
-  return moved;
+  if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => a.finished.catch(() => {}))));
 }
+const edgesOf = (row) => EDGES.filter((k) => row.classList.contains(k));
 // `day`: the live day's key (NOW belongs after its tab), '' (live, but on no
 // day the row lists: the row's start), or null (nothing live).
 function showNowTab(tab, row, day) {
@@ -793,16 +796,18 @@ function showNowTab(tab, row, day) {
       if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
     }
     const before = tabLefts(row);
+    const edges = edgesOf(row);
     if (arriving) before.delete(tab); // it arrives by its own motion, below
     placeNowTab(tab, row, after);
     tab.hidden = false;
     restDayRow(row);
-    const moved = slideTabs(before);
+    slideTabs(row, before, edges);
     if (arriving && canAnimate(tab, ctx)) {
-      // It fades in from 6px left, riding with the day it follows — so the
-      // pair travels to the middle as one while the days after it make room.
-      const ride = after && moved.has(after) ? moved.get(after) : 0;
-      tab.animate([{ opacity: 0, transform: `translateX(${ride - 6}px)` }, { opacity: 1, transform: 'none' }],
+      // It fades in from 6px left, in its own place, a beat after the tabs
+      // start to move — the day it follows slides out of that place on the
+      // way to the middle (filmed at a tenth of the speed: a NOW that rode
+      // with its day started out on top of SUN).
+      tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
         { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
     }
     return;
@@ -814,12 +819,13 @@ function showNowTab(tab, row, day) {
     if (!tab.dataset.leaving) return; // it came back while leaving
     delete tab.dataset.leaving;
     const before = tabLefts(row);
+    const edges = edgesOf(row);
     before.delete(tab);
     tab.hidden = true;
     row.before(tab);
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     restDayRow(row);
-    slideTabs(before, { out: true });
+    slideTabs(row, before, edges, { out: true });
   };
   if (!canAnimate(tab, ctx)) { gone(); return; }
   const a = tab.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-6px)' }],
