@@ -360,13 +360,7 @@ export function clearCachedPending(token) { removeLS(LS.pending(token)); }
 
 // Rebuild local doc from remote + our pending overlay. Returns true if the
 // visible slice actually changed (so callers repaint only when needed).
-// Every remote doc this phone has applied, counted (2026-09-26): an answer
-// that left before a newer doc landed can tell it is older, and take only
-// what it added (app.js addPerson) instead of replacing the crew doc.
-let remoteGen = 0;
-export const remoteGeneration = () => remoteGen;
 export function applyRemoteDoc(remote) {
-  remoteGen += 1;
   // The "visible slice" must cover everything the wall renders — notes and
   // meta included, or a note-only remote change never repaints (CORE-6).
   // Order-insensitive on purpose. Postgres returns jsonb keys in ITS order

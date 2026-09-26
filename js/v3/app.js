@@ -2929,15 +2929,17 @@ function openInvite({ moment = false } = {}) {
     const problem = nameProblem(name);
     if (problem) { status.textContent = problem; return; }
     const people = state.people();
+    const answered = addedNotYetHere(token); // in the crew, not yet on this phone
     const activeMatch = Object.entries(people)
-      .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && state.isActivePerson(p));
+      .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && state.isActivePerson(p))
+      || answered.map((a) => [a.name]).find(([n]) => n.toLowerCase() === name.toLowerCase());
     if (activeMatch) { status.textContent = `${activeMatch[0]} is already in this crew.`; return; }
     // A removed member returning keeps their old key — resurrecting brings
     // their history back, same as the join screen's reclaim path.
     const removedMatch = Object.entries(people)
       .find(([n]) => n.toLowerCase() === name.toLowerCase());
     const canonical = removedMatch ? removedMatch[0] : name;
-    const taken = Object.values(people).map((p) => p.colorIndex).filter(Number.isInteger);
+    const taken = [...Object.values(people), ...answered.map((a) => a.person)].map((p) => p.colorIndex).filter(Number.isInteger);
     follow(addPerson(token, canonical, { colorIndex: nextColorIndex(taken), removed: false }));
   };
   const pending = addInFlight.get(token);
@@ -2946,61 +2948,80 @@ function openInvite({ moment = false } = {}) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
 }
 
-// ---- adding someone by name: one at a time per crew (Sol's reviews of b78b274, 1b678c0) --
-// The add lives here, not in the sheet that started it: a sheet closed and
-// opened again used to start a second POST alongside the first, and when
-// the older answer landed last it replaced the crew doc and the newer person
-// vanished from this phone. Now a crew has at most one add on its way, a
-// fresh Invite sheet reads it ("Adding Ben…", every way in waiting) and
-// takes its answer; and an answer is applied WHOLE only if nothing newer has
-// reached this phone since it left (state.remoteGeneration — a poll, a push,
-// another add); otherwise only the person it added is written in, so an
-// answer that arrives late can never take anyone or anything away.
+// ---- adding someone by name (the Invite sheet; Sol's reviews of b78b274 → bcaacb3) ----
+// Server-first, and the server's answer is NOT written into this phone's crew
+// doc — cut, not patched, after three review rounds on exactly that (a sheet
+// guard reset by reopening; an older answer landing last; a late answer
+// replacing a newer removal, colour or pid). The add path wrote server docs
+// into local state beside the sync engine since July, with none of its
+// ordering. Now: the POST is what answers "the crew is full" and "name taken";
+// on success the sheet takes only the name it sent (the personal link is built
+// from it); and the doc itself comes the one ordered way every doc comes —
+// sync.afterServerWrite: any poll already out is stale and discarded, and a
+// fresh one runs now (or right after a push that is out). The menu and the
+// people row repaint when it lands, like any other remote change.
+//
+// One add per crew at a time, for the page (a reopened sheet reads it:
+// "Adding Mo…", every way in waiting), and never for longer than the join's
+// deadline: a request that hangs is let go with a plain word, and the entries
+// are live again. Offline is as it always was: a local pending edit, pushed by
+// sync when the phone is back.
+const ADD_DEADLINE_MS = JOIN_DEADLINE_MS;
 const addInFlight = new Map(); // crew token → { canonical, waiters: Set<(outcome) => void> }
+// Answered, not yet in this phone's doc (the ordered poll has not landed):
+// the sheet counts them as here — "Mo is already in this crew", and the next
+// person does not take Mo's colour. Memory only; the doc stays sync's.
+const addedHere = new Map(); // crew token → Map(lower-case name → { name, person })
+function addedNotYetHere(token) {
+  const mine = addedHere.get(token);
+  if (!mine) return [];
+  const here = new Set(Object.keys(state.people()).map((n) => n.toLowerCase()));
+  for (const k of [...mine.keys()]) if (here.has(k)) mine.delete(k);
+  return [...mine.values()];
+}
 function addPerson(token, canonical, person) {
   const add = { canonical, waiters: new Set() };
   addInFlight.set(token, add);
-  const genAtStart = state.remoteGeneration();
   const finish = (outcome) => {
     if (addInFlight.get(token) === add) addInFlight.delete(token);
-    if (outcome.ok) { refreshCtx(); renderPersonChips(); repaintWall(); }
     for (const w of add.waiters) {
       try { w(outcome); } catch (e) { record('invite:add', e); }
     }
   };
+  const deadline = timeoutSignal(ADD_DEADLINE_MS);
   (async () => {
     try {
       const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { people: { [canonical]: person } }, sv: 4 }),
+        signal: deadline,
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        // Never apply one crew's add to another crew's state (sync.js's own
-        // convention): a crew switched mid-flight abandons the result.
+        // A crew switched mid-flight abandons the result (sync.js's own convention).
         if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
         finish({ ok: false, message: errorText(body, 'The crew service hiccuped — give it a second and try again.') });
         return;
       }
-      const merged = await res.json();
-      // The switch check comes AFTER the last await, or a crew change during
-      // the json() parse still slips the old crew's doc into the new crew's
-      // state (TOCTOU — commit security review, 2026-07-12).
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
-      if (state.remoteGeneration() === genAtStart) state.applyRemoteDoc(merged);
-      else {
-        state.crewDoc.people[canonical] = (merged.people || {})[canonical] || person;
-        state.persist();
-      }
+      const mine = addedHere.get(token) || new Map();
+      mine.set(canonical.toLowerCase(), { name: canonical, person });
+      addedHere.set(token, mine);
       finish({ ok: true, canonical });
+      sync.afterServerWrite(); // the doc, the ordered way
     } catch {
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+      if (deadline && deadline.aborted) {
+        finish({ ok: false, message: 'Didn’t reach the crew — try again.' });
+        return;
+      }
       // Offline: local-first add, sync catches up — same as every pick.
       state.recordPerson(canonical, person);
       state.crewDoc.people[canonical] = person;
       state.persist();
       sync.scheduleSync();
+      refreshCtx(); renderPersonChips(); repaintWall();
       finish({ ok: true, canonical });
     }
   })();

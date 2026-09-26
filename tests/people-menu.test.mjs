@@ -52,6 +52,14 @@ const writes = []; // every non-GET request
 // A crew POST can be held until the test lets it answer (two quick adds).
 let holdPosts = false;
 const heldPosts = [];
+// And the next N GETs (a poll that left before something else happened).
+let holdGets = 0;
+const heldGets = [];
+// A held request that is given up on (its deadline) fails like a real fetch.
+const held = (list, opts) => new Promise((resolve, reject) => {
+  list.push(resolve);
+  if (opts.signal) opts.signal.addEventListener('abort', () => reject(new window.DOMException('The operation was aborted.', 'AbortError')));
+});
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 async function network(url, opts = {}) {
   const u = String(url);
@@ -67,7 +75,8 @@ async function network(url, opts = {}) {
     // transit — so it carries the crew as it was when the write landed.
     if (method !== 'GET') SERVER[t] = deepMerge(SERVER[t], JSON.parse(opts.body).data || {});
     const answer = JSON.parse(JSON.stringify(SERVER[t]));
-    if (method !== 'GET' && holdPosts) await new Promise((r) => heldPosts.push(r));
+    if (method !== 'GET' && holdPosts) await held(heldPosts, opts);
+    if (method === 'GET' && holdGets > 0) { holdGets -= 1; await held(heldGets, opts); }
     return json(answer);
   }
   return json({ error: 'not in this test' }, 503);
@@ -93,6 +102,7 @@ await settle(200);
 const state = await import('../js/state.js'); // the SAME instances app.js holds
 const crew = await import('../js/crew.js');
 const filters = await import('../js/v3/filters.js');
+const sync = await import('../js/sync.js');
 
 const pop = () => document.querySelector('#dock-you-wrap .hl-pop');
 const isOpen = () => !!pop() && pop().style.display !== 'none';
@@ -363,7 +373,8 @@ test('Add by name is server-first and ends on their own link; a name already her
   const done = document.querySelector('#artist-sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
-  assert.ok(state.people().Zed, 'and Zed is in the crew here');
+  // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
+  await until(() => state.people().Zed, 'Zed, brought by the poll');
   done.querySelector('.inv-done').click();
   await sheetClosed();
 });
@@ -395,7 +406,7 @@ test('one add at a time: a chip, then Enter, then another chip while the first i
   sheet = document.querySelector('#artist-sheet');
   assert.equal(sheet.querySelector('.sheet-title').textContent, 'DREW IS IN');
   assert.match(sheet.querySelector('.inv-link input').value, /me=Drew/, 'Drew’s own link');
-  assert.ok(state.people().Drew, 'Drew is in the crew');
+  await until(() => state.people().Drew, 'Drew, brought by the poll');
   assert.equal(state.people().Kat, undefined, 'and Kat, never sent, is not');
   sheet.querySelector('.inv-done').click();
   await sheetClosed();
@@ -467,7 +478,7 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   await until(() => /MO IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Mo’s answer on the reopened sheet');
   sheet = document.querySelector('#artist-sheet');
   assert.match(sheet.querySelector('.inv-link input').value, /me=Mo/, 'Mo’s own link, on the sheet that was open when it landed');
-  assert.ok(state.people().Mo, 'Mo is in');
+  await until(() => state.people().Mo, 'Mo, brought by the poll');
   sheet.querySelector('.inv-done').click();
   await sheetClosed();
   // Now Nia, on her own.
@@ -481,50 +492,87 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   await until(() => /NIA IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Nia’s answer');
   assert.match(document.querySelector('#artist-sheet .inv-link input').value, /me=Nia/);
   assert.equal(posts().length, before + 2, 'two adds, two POSTs, one after the other');
-  assert.ok(state.people().Mo && state.people().Nia, 'both in, on this phone');
+  await until(() => state.people().Mo && state.people().Nia, 'both, on this phone');
   document.querySelector('#artist-sheet .inv-done').click();
   await sheetClosed();
 });
 
-test('an add’s answer that is older than what this phone has since heard never takes anyone away — in either order', async () => {
-  const addHeld = async (name) => {
-    await openMenu();
-    action('invite').click();
-    await settle(20);
+// Cut, not patched (Sol's third round on the add answer, bcaacb3): the add
+// no longer writes its answer into this phone's doc, and asks sync for the
+// doc the ordered way. So the two orders that lost or resurrected people
+// simply cannot happen.
+const addNamed = async (name, { holdAnswer = false } = {}) => {
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  if (holdAnswer) holdPosts = true;
+  sheet.querySelector('.inv-name input').value = name;
+  sheet.querySelector('.inv-add').click();
+  await settle(5);
+};
+const answered = (name) => until(() => new RegExp(`${name.toUpperCase()} IS IN`).test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), `${name}’s answer`);
+const doneWithSheet = async () => { document.querySelector('#artist-sheet .inv-done').click(); await sheetClosed(); };
+
+test('a poll that left before the add and answers after it cannot take the new person away', async () => {
+  holdGets = 1;
+  const old = sync.pollSync(); // out before the add: its snapshot has no Pat
+  await settle(5);
+  await addNamed('Pat');
+  await answered('Pat');
+  assert.match(document.querySelector('#artist-sheet .inv-link input').value, /me=Pat/, 'Pat’s link, at once, from the name alone');
+  await until(() => state.people().Pat, 'Pat, brought by the fresh poll');
+  heldGets.splice(0).forEach((r) => r()); // the old poll answers now, last
+  await old;
+  await settle(20);
+  assert.ok(state.people().Pat, 'Pat is still here: the older snapshot was set aside');
+  await doneWithSheet();
+});
+
+test('another phone’s removal and recolour, arriving while an add’s answer is in transit, are never undone by it', async () => {
+  await addNamed('Ria', { holdAnswer: true }); // the server has Ria; her answer is slow
+  const benWas = state.people().Ben.colorIndex;
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Mo: { removed: true }, Ben: { colorIndex: 17 } } }); // another phone
+  await sync.pollSync(); // …and a poll brings it
+  assert.equal(state.people().Mo.removed, true, 'Mo is out, here');
+  assert.equal(state.people().Ben.colorIndex, 17);
+  holdPosts = false;
+  holdGets = 1; // hold the fresh poll too, so the answer's own effect can be seen alone
+  heldPosts.splice(0).forEach((r) => r()); // Ria's answer — Mo active, Ben's old colour — lands last
+  await answered('Ria');
+  await settle(20);
+  assert.equal(state.people().Mo.removed, true, 'Mo stays out: the answer writes nothing into this phone’s doc');
+  assert.equal(state.people().Ben.colorIndex, 17, 'and Ben keeps his new colour');
+  heldGets.splice(0).forEach((r) => r());
+  await until(() => state.people().Ria, 'Ria, brought by the fresh poll');
+  assert.equal(state.people().Mo.removed, true);
+  assert.equal(state.people().Ben.colorIndex, 17);
+  assert.notEqual(benWas, 17);
+  await doneWithSheet();
+});
+
+test('a request that hangs is let go at its deadline: a plain word, and the entries live again', async () => {
+  const real = AbortSignal.timeout;
+  let asked = null;
+  AbortSignal.timeout = (ms) => { asked = ms; const c = new AbortController(); setTimeout(() => c.abort(), 60); return c.signal; };
+  try {
+    await addNamed('Uma', { holdAnswer: true }); // never answered
     const sheet = document.querySelector('#artist-sheet.invite-sheet');
-    holdPosts = true;
-    sheet.querySelector('.inv-name input').value = name;
-    sheet.querySelector('.inv-add').click();
-    await settle(5);
-  };
-  const release = async (name) => {
+    assert.equal(asked, 12000, 'the join flow’s deadline');
+    assert.equal(sheet.querySelector('.inv-add').disabled, true, 'waiting');
+    await until(() => !sheet.querySelector('.inv-add').disabled, 'the entries to come back');
+    assert.equal(sheet.querySelector('.inv-status').textContent, 'Didn’t reach the crew — try again.');
+    assert.equal(sheet.querySelector('.inv-name input').readOnly, false);
+  } finally {
+    AbortSignal.timeout = real;
     holdPosts = false;
-    heldPosts.splice(0).forEach((r) => r());
-    await until(() => new RegExp(`${name.toUpperCase()} IS IN`).test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), `${name}’s answer`);
-    assert.match(document.querySelector('#artist-sheet .inv-link input').value, new RegExp(`me=${name}`), `${name}’s own link`);
-  };
-  // Another phone adds Quin after Pat's add reached the server, and a poll
-  // brings the crew with Quin while Pat's answer — which never saw him — is
-  // still in transit; it lands last.
-  const anotherPhoneAdds = (name, colorIndex) => {
-    SERVER[CREW] = deepMerge(SERVER[CREW], { people: { [name]: { colorIndex } } });
-    state.applyRemoteDoc(JSON.parse(JSON.stringify(SERVER[CREW]))); // the poll
-  };
-  await addHeld('Pat');
-  anotherPhoneAdds('Quin', 11);
-  await release('Pat');
-  assert.ok(state.people().Pat, 'Pat is in');
-  assert.ok(state.people().Quin, 'and Quin, who the late answer never saw, is still here');
-  document.querySelector('#artist-sheet .inv-done').click();
-  await sheetClosed();
-  // The other order: Ria's answer lands first (whole — nothing newer yet),
-  // then the newer doc with Sol.
-  await addHeld('Ria');
-  await release('Ria');
-  anotherPhoneAdds('Sol', 12);
-  assert.ok(state.people().Ria && state.people().Sol && state.people().Pat && state.people().Quin, 'everyone, either way');
-  document.querySelector('#artist-sheet .inv-done').click();
-  await sheetClosed();
+    heldPosts.splice(0);
+  }
+  // Let go for the page, not just this sheet: a reopened sheet is free, and the try again goes out.
+  await doneWithSheet();
+  await addNamed('Uma');
+  await answered('Uma');
+  await doneWithSheet();
 });
 
 test('the menu gained Zed in place, and a crew-mate who left is gone from it and from the highlight', async () => {
