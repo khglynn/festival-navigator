@@ -349,3 +349,53 @@ test('Diagnostics names the motion settings and the strip route; Reduce Motion s
     }
   }
 });
+
+// The notes button beside search (v90, Kevin at Portola, 2026-09-25: "the
+// notes thing to the right of it — the little tag with the outline — should
+// be the same height, so it's just a little notes button"). One height with
+// the field on a phone (the 44px floor both wear, as REAL height) and on a
+// desktop (the field's own height on their shared line); the bubble keeps its
+// outline and its sharp lower-left corner.
+test('the notes button is the search field\'s height beside it, on a phone and on a desktop', { skip }, async () => {
+  const TOKEN = 'notesheight_0123456789ab'; // a made-up crew
+  const FID = 'portola-2026';
+  // Six people, like the crew at Portola: the chips take the first line, and
+  // the field and the notes button share the next.
+  const people = Object.fromEntries(['Kevin', 'Nhu', 'Kat', 'Ross', 'Drew', 'Ava'].map((n, i) => [n, { colorIndex: i }]));
+  for (const [label, opts] of [['phone', { viewport: { width: 390, height: 844 }, hasTouch: true }], ['desktop', { viewport: { width: 1280, height: 900 } }]]) {
+    const ctx = await browser.newContext({ ...opts, serviceWorkers: 'block' });
+    try {
+      await ctx.addInitScript(([t, f]) => {
+        navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+        localStorage.setItem('fn_coach_v1', '1');
+      }, [TOKEN, FID]);
+      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      const page = await ctx.newPage();
+      page.on('pageerror', (e) => { throw e; });
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
+      await page.waitForFunction(() => document.querySelectorAll('#person-chips .person-chip').length >= 6, null, { timeout: 10000 });
+      const [field, notes, shape] = await page.evaluate(() => {
+        const box = (el) => { const r = el.getBoundingClientRect(); return { top: r.top, height: r.height, bottom: r.bottom }; };
+        const n = document.getElementById('notes-chip');
+        const cs = getComputedStyle(n);
+        return [box(document.querySelector('.toolbar .search-pill')), box(n), { radius: cs.borderRadius, border: cs.borderTopWidth, style: cs.borderTopStyle }];
+      });
+      assert.ok(Math.abs(notes.height - field.height) < 0.5, `${label}: the notes button is ${notes.height}px, the field ${field.height}px`);
+      assert.ok(Math.abs(notes.top - field.top) < 0.5, `${label}: and they sit on one line (tops ${notes.top} / ${field.top})`);
+      if (label === 'phone') assert.ok(notes.height >= 44, `the phone's floor, as real height (${notes.height})`);
+      assert.equal(shape.radius, '8px 8px 8px 2px', `${label}: the same bubble shape`);
+      // The outline is 1.5px in the stylesheet; Chrome draws it at whole
+      // device pixels, so only its presence is asserted.
+      assert.ok(parseFloat(shape.border) >= 1 && shape.style === 'solid', `${label}: the same outline`);
+    } finally {
+      await ctx.close();
+    }
+  }
+});

@@ -297,6 +297,14 @@ html { touch-action: manipulation; }
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
   font-weight: 700; font-size: 11.5px; padding: 6px 12px; border-radius: var(--r-bubble); cursor: pointer;
 }
+/* Beside the search field it is the field's height, so the two read as one
+ * row of controls (Kevin at Portola, 2026-09-25: "the same height, so it's
+ * just a little notes button. Same kind of shape, just taller"). The outline
+ * and the bubble corner stay; only the height changes. On a phone that height
+ * is the touch floor both of them wear (the notes chip left the borrowed-space
+ * list below: it takes 44px of REAL height now, like the field beside it); on
+ * a desktop it stretches to the field's own height on their shared line. */
+.toolbar .notes-chip { align-self: stretch; box-sizing: border-box; }
 .notes-chip .count { background: rgba(139, 123, 255, .25); border-radius: var(--r-pill);
                      padding: 0 6px; font-size: 10px; }
 .toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
@@ -542,7 +550,7 @@ button.room-head { cursor: pointer; }
   .list-row { min-height: 44px; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
@@ -551,7 +559,7 @@ button.room-head { cursor: pointer; }
   .card button {
     min-height: 0;
   }
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
@@ -561,7 +569,7 @@ button.room-head { cursor: pointer; }
    * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
-  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
+  .person-chip::after, .note-action::after, .f-chip::after,
   .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
@@ -690,7 +698,7 @@ button.room-head { cursor: pointer; }
  * scroll-snap was removed with the per-day header rows: snapping any one
  * scroller would fight the mirrored position. */
 .times-wrap { display: flex; align-items: flex-start; }
-.times-rail { display: grid; width: 40px; flex: none; row-gap: 4px; }
+.times-rail { display: grid; width: var(--hour-rail-w); flex: none; row-gap: var(--clock-gap); }
 .times-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch;
                 flex: 1; min-width: 0; }
 /* The timetable wall goes full-viewport ≥720 (DT-5, the run's one aesthetic
@@ -709,7 +717,7 @@ button.room-head { cursor: pointer; }
     box-sizing: border-box;
   }
 }
-.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
+.times-grid { display: grid; gap: var(--clock-gap); min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
 /* A day's grid is as wide as its columns, not as its scroller (2026-09-24).
  * Its tracks are fixed lengths that overflow the scroller on a phone, and the
  * box stayed the scroller's width while they did — so the now line, which is
@@ -761,7 +769,7 @@ button.room-head { cursor: pointer; }
 @media (max-width: 719.98px) {
   .stage-strip { margin-inline: calc(-1 * var(--sp-gutter)); padding-inline: var(--sp-gutter); }
 }
-.stage-strip .strip-rail { width: 40px; flex: none; } /* aligns with .times-rail */
+.stage-strip .strip-rail { width: var(--hour-rail-w); flex: none; } /* aligns with .times-rail */
 .stage-strip .times-scroll { scrollbar-width: none; }
 .stage-strip .times-scroll::-webkit-scrollbar { display: none; }
 /* The strip FOLLOWS its grid (wall.js followStrip, 2026-09-02): it is not a
@@ -1217,6 +1225,23 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .venue-group .stack { display: flex; flex-direction: column; gap: 5px; }
 @media (min-width: 720px) {
   .venue-grid { row-gap: 12px; }
+}
+/* Stacks under a clock line up with it (Kevin at Portola, 2026-09-25: "times
+ * on the left, and the items that don't have them don't line up"). A day's
+ * timetable starts its columns past the hour rail; its stacks started at the
+ * shell's edge, so Skepta's cancelled card sat a rail's width left of the
+ * Crane Stage column above it. A stack on a clock day steps in by the rail and
+ * takes the clock's track gap, so column n sits under column n all the way
+ * down. The gutter is space, not a sticky rail: it scrolls with the page.
+ * `data-clock` comes from wall.js (venueGroups): 'room' is the clock's own
+ * room, 'day' another room on that day. The clock's own room steps in at
+ * every width. Another room steps in only from 720 up: on a phone its two
+ * columns fill the shell exactly (--col-w), so the rail's 40px would drop SAT
+ * AFTERS to one column — twice the scroll for a straight edge. A day with no
+ * clock (Portola's Thursday) never carries the attribute. */
+.venue-grid[data-clock="room"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
+@media (min-width: 720px) {
+  .venue-grid[data-clock="day"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
 }
 
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one

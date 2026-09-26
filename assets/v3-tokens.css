@@ -98,6 +98,13 @@
    * shell's own padding is this same arithmetic (see `.times-wrap`). */
   --col-gap: 6px;
   --col-w: calc((100vw - 2 * var(--sp-gutter) - var(--col-gap)) / 2);
+  /* The CLOCK's geometry (a festival day's timetable): the hour rail at its
+   * left and the gap between its tracks. Named because a card stack under a
+   * clock borrows both to line its columns up with the clock's (v3.css
+   * `.venue-grid[data-clock]`, Kevin at Portola, 2026-09-25) — the rail, the
+   * stage strip's spacer and the stacks read one number each. */
+  --hour-rail-w: 40px;
+  --clock-gap: 4px;
 }
 
 /* From 720 the wall is not two-across any more, so the column stops being a
