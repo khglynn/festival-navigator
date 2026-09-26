@@ -64,7 +64,14 @@ const stopOf = (plan, id, name) => stops(plan, id).find((s) => s.acts.some((a) =
 // 9, event 10 PM on Saturday). Thursday's Soulwax 10:30 → 9:30 PM starts that
 // stop an hour sooner; Friday's Jyoty 9:15 → 8:45 PM ends the Regency stop
 // there; Saturday's Parcels 10:45 → 10 PM pulls Cy off Soulwax at 10:15, so
-// that stop is some-4, not most-5.
+// that stop is some-4, not most-5. One line moved with the MODEL since: rule
+// 3's trip (Kevin, 2026-09-26, "move only for something better, never back")
+// keeps Cy at Parcels to its end, 10:55, where she used to leave at 10:30 for
+// Public Works, which she wants no more (Horse Meat Disco and Fcukers at 3,
+// Parcels at 3) — so Soulwax holds the route until 10:55 and Public Works
+// starts there; and on Sunday Eli stays at Public Works through Overmono
+// (both 3) instead of leaving at 1:30 AM for SG Lewis (3), so the Great
+// Northern stop is three of us, not four.
 const THU = ['most 9:30 PM–12 AM 5 Regency Ballroom'];
 const FRI = ['some 8 PM–8:45 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
 const SAT = [
@@ -77,8 +84,8 @@ const SAT = [
   'some 8:10 PM–8:30 PM 3 Warehouse (Kettama)',
   'some 8:30 PM–9 PM 3 Crane Stage (Fatboy Slim)',
   'most 9 PM–10:15 PM 8 Pier Stage (Dog Blood)',
-  'some 10:15 PM–10:30 PM 4 Crane Stage (Soulwax)', // Cy is at Parcels (Regency, 10 PM since #56)
-  'most 10:30 PM–1:30 AM 6 Public Works',
+  'some 10:15 PM–10:55 PM 4 Crane Stage (Soulwax)', // Cy is at Parcels (Regency, 10 PM since #56), and stays to its end (the trip)
+  'most 10:55 PM–1:30 AM 6 Public Works',
   'some 1:30 AM–3 AM 4 The Great Northern',
 ];
 const SUN_TAIL = [
@@ -92,7 +99,7 @@ const SUN_TAIL = [
   'some 11:15 PM–12 AM 3 Public Works',
   '··· 12 AM–12:30 AM',
   'some 12:30 AM–1:30 AM 4 The Midway',
-  'some 1:30 AM–2 AM 4 The Great Northern',
+  'some 1:30 AM–2 AM 3 The Great Northern', // Eli stays for Overmono (the trip)
 ];
 const SUN = ['some 11 AM–6 PM 4 Folsom St, 8th-13th (Folsom Street Fair)', 'most 6 PM–6:35 PM 5 Pier Stage (Mochakk)', ...SUN_TAIL.slice(1)];
 const SUN_FOLDED = [
@@ -358,11 +365,15 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
   assert.deepEqual(byId['2026-10-11'].extraKeys, []);
   // Stops per night. Since #56 the Late nights have times, so a picked show is
   // a stop on its date: Sep 29 Mohawk (Fcukers), Oct 1 Stubb's (Brandon
-  // Flowers), Oct 8 Brushy Street (Arcy Drive), and three on Sun Oct 4 — Ryan
-  // Beatty's Scoot Inn show (a tool guess: 6 PM, from doors at 5) runs while
-  // W1 still plays, so the route leaves it for Fcukers and The xx and comes
-  // back (flagged 2026-09-26: open question 7 in the model log).
-  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 6, 3, 5, 0, 0, 1, 5, 4, 2]);
+  // Flowers), Oct 8 Brushy Street (Arcy Drive). Sun Oct 4 read Scoot Inn,
+  // Tito's, Scoot Inn, T-Mobile, Scoot Inn — across town and back twice —
+  // until rule 3's trip (2026-09-26): Ada goes to Ryan Beatty's Scoot Inn show
+  // at 6 PM and leaves it for The xx, which she wants more, never to return;
+  // Bo stays at the Scoot Inn through Fcukers (both 3); Cal waits at Zilker for
+  // The xx and goes after it. Two of them at the Scoot Inn at any moment is
+  // under the bar, so the night is Tito's and T-Mobile.
+  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 6, 3, 2, 0, 0, 1, 5, 4, 2]);
+  assert.deepEqual(rows(plan, '2026-10-04'), ['some 6:30 PM–7:30 PM 3 Tito\'s (Fcukers)', '··· 7:30 PM–8:30 PM', 'some 8:30 PM–9:45 PM 4 T-Mobile (The xx)']);
 });
 
 test('ACL: no two grid places of one weekend overlap on one stage (the prototype had 41)', () => {
@@ -411,17 +422,12 @@ test('ACL: hiding weekend:W1 takes W1\'s stops, keeps its bodies and its Late ni
     assert.ok(stops(w1, id).every((s) => s.placeKind === 'room'), `${id}: W1's grid stops are gone`);
     assert.deepEqual(w1.nights.find((n) => n.id === id).days, [], `${id}: the hidden weekend day is not listed`);
   }
-  // Sun Oct 4 keeps its Late night (Ryan Beatty at the Scoot Inn, 6 PM since
-  // #56). Ada, Bo and Cal are seated on W1's hidden sets first (rule 8), so
-  // where a hidden set held more of us the stop leaves a gap — it never
-  // re-seats that crowd at the Scoot Inn.
-  assert.deepEqual(rows(w1, '2026-10-04'), [
-    'some 6 PM–6:30 PM 3 Historic Scoot Inn',
-    '··· 6:30 PM–7:30 PM',
-    'some 7:30 PM–8:30 PM 3 Historic Scoot Inn',
-    '··· 8:30 PM–9:45 PM',
-    'some 9:45 PM–10:30 PM 3 Historic Scoot Inn',
-  ]);
+  // Sun Oct 4 keeps its Late-nights date (Ryan Beatty at the Scoot Inn, 6 PM
+  // since #56), and has no stop: Ada, Bo and Cal are seated on W1's hidden
+  // sets first (rule 8), and the trip (rule 3) never puts all three at the
+  // Scoot Inn at once — hiding the weekend never re-seats its crowd there.
+  assert.deepEqual(w1.nights.find((n) => n.id === '2026-10-04').extraKeys, ['Late nights']);
+  assert.deepEqual(rows(w1, '2026-10-04'), []);
   for (const id of ['2026-10-09', '2026-10-10', '2026-10-11']) assert.deepEqual(rows(w1, id), rows(all, id), `${id}: W2 untouched`);
   assert.equal(w1.bar, all.bar);
   const hidden = w1.places.filter((p) => p.nightId === '2026-10-02' && p.kind === 'set');
@@ -460,7 +466,7 @@ test('ACL: rule 5 — the same stage on the same weekday on the other weekend is
   assert.deepEqual(sun.alsoAt.map((o) => [o.nightId, o.place]), [['2026-09-29', 'Mohawk Austin'], ['2026-10-10', 'Devil May Care']], 'never the same set on the other weekend');
   // How many stops carry an "also" on this crew (the log records it).
   const all = plan.nights.flatMap((n) => stops(plan, n.id));
-  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [28, 16], 'was [22, 7] before #56');
+  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [25, 13], 'was [22, 7] before #56, [28, 16] before the trip took Sun Oct 4\'s three Scoot Inn stops');
 });
 
 test('ACL: an unprinted closer\'s NOW row runs to the wall\'s end for it', () => {
@@ -526,6 +532,33 @@ test('placement: with nowhere to stay, the later start (the set that just began)
   const fest = synth({ sat: [set('Zed', 'Z', '7:00 PM - 9:00 PM'), set('Xa', 'X', '7:00 PM - 10:00 PM'), set('Ya', 'Y', '9:00 PM - 10:00 PM')] });
   const plan = planFor(fest, { Zed: lv(3, 'Ana', 'Ben', 'Cy'), Xa: lv(2, 'Ana', 'Ben', 'Cy'), Ya: lv(2, 'Ana', 'Ben', 'Cy') });
   assert.deepEqual(rows(plan, SATD), ['most 7 PM–9 PM 3 Z (Zed)', 'most 9 PM–10 PM 3 Y (Ya)']);
+});
+
+// Rule 3's trip (Kevin, 2026-09-26): a body changes site — the grounds, or one
+// venue — only for a pick it wants more than anything still to come where it
+// is, or once nothing of its own is left there; and never goes back.
+test('the trip: nobody leaves the grounds for a room they want no more than a set still to come', () => {
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '8 PM', close: '1 AM' });
+  const fest = synth({ sat: [set('Early', 'X', '6:00 PM - 7:00 PM'), set('Late', 'X', '10:00 PM - 11:00 PM')], artists: [room('Clubber', '8:00 PM')] });
+  // Level 2 at the Club, level 2 still to come at the grounds: they wait for Late.
+  const stay = planFor(fest, { Early: lv(2, 'Ana', 'Ben', 'Cy'), Clubber: lv(2, 'Ana', 'Ben', 'Cy'), Late: lv(2, 'Ana', 'Ben', 'Cy') });
+  // Once Late is over nothing of theirs is left at the grounds, and they go.
+  assert.deepEqual(rows(stay, SATD), ['most 6 PM–7 PM 3 X (Early)', '··· 7 PM–10 PM', 'most 10 PM–11 PM 3 X (Late)', 'most 11 PM–1 AM 3 Club']);
+  // The Club wanted more (3 over 2): they go at 8 and never come back for Late.
+  const go = planFor(fest, { Early: lv(2, 'Ana', 'Ben', 'Cy'), Clubber: lv(3, 'Ana', 'Ben', 'Cy'), Late: lv(2, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(go, SATD), ['most 6 PM–7 PM 3 X (Early)', '··· 7 PM–8 PM', 'most 8 PM–1 AM 3 Club']);
+  // Nothing of theirs left at the grounds: a tie is enough to go.
+  const done = planFor(fest, { Early: lv(2, 'Ana', 'Ben', 'Cy'), Clubber: lv(2, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(done, SATD), ['most 6 PM–7 PM 3 X (Early)', '··· 7 PM–8 PM', 'most 8 PM–1 AM 3 Club']);
+});
+
+test('the trip: a site left tonight is never gone back to, even for a must', () => {
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '6 PM', close: '8 PM' });
+  const fest = synth({ sat: [set('Main', 'X', '7:00 PM - 8:00 PM'), set('Closer', 'X', '9:00 PM - 10:00 PM')], artists: [room('Opener', '6:00 PM')] });
+  // Opener pulls them off the grounds at 6 (nothing of theirs is live there);
+  // Main at 7 is wanted more (4), so they leave the Club; the Club is gone.
+  const plan = planFor(fest, { Opener: lv(2, 'Ana', 'Ben', 'Cy'), Main: lv(4, 'Ana', 'Ben', 'Cy'), Closer: lv(3, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(plan, SATD), ['most 6 PM–7 PM 3 Club', 'most 7 PM–8 PM 3 X (Main)', '··· 8 PM–9 PM', 'most 9 PM–10 PM 3 X (Closer)']);
 });
 
 test('route: a stop under 15 minutes folds into the stop before it; a blip with nothing before it is nothing', () => {

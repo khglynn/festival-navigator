@@ -21,7 +21,12 @@
 //   2. THE BAR = max(3, ceil(US / 4)) people at one place at one time.
 //   3. ONE BODY, ONE PLACE. Every 5 minutes each person is at one place: their
 //      highest-level live pick; a tie goes where more of the crew is, then
-//      where they already were, then to the set that just began.
+//      where they already were, then to the set that just began. A body
+//      crosses town at most once per site (Kevin, 2026-09-26, "move only for
+//      something better, never back"): a person changes SITE — the grounds,
+//      or one venue — only for a pick they want more than anything still to
+//      come where they are, or once nothing of theirs is left there, and never
+//      goes back to a site they left that night.
 //   4. A PLACE is a grid set (one stage, one set), a ROOM (a venue on a night,
 //      where you arrive for your first pick and stay through your last), or a
 //      PARTY (one show in a section that reads by time — Folsom — which is its
@@ -277,6 +282,10 @@ function stretchFor(place, person, picks, doubled) {
   return { from, to, level: Math.max(...mine.map((a) => lv(a.name))), sure };
 }
 
+// A SITE is where a body is: the festival's grounds (every grid set and every
+// stray of the festival's own), or one venue (its room or its parties).
+const siteOf = (place) => (place.kind === 'set' ? ':grounds' : `venue:${place.place}`);
+
 const cmp = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
 
 // One night's slices: everyone seated on every place of the night (hidden
@@ -294,18 +303,42 @@ function slicesOf(here, us, picks, doubled, bar) {
   const t1 = Math.max(...here.map((p) => p.end));
   const slices = [];
   const was = new Map();
+  // Rule 3's trip: the site each person is at, and the sites they have left
+  // tonight. What a person would give up by leaving is the most they want
+  // anything still to come at their site (a room's stretch runs to its last
+  // pick, so it counts until then).
+  const siteNow = new Map();
+  const left = new Map(us.map((person) => [person, new Set()]));
+  const aheadAt = (person, site, t) => {
+    let most = 0;
+    here.forEach((p, i) => {
+      if (siteOf(p) !== site) return;
+      for (const s of stretches[i]) if (s.person === person && s.to > t && s.level > most) most = s.level;
+    });
+    return most;
+  };
   for (let t = t0; t < t1; t += STEP) {
     const live = stretches.map((list) => list.filter((s) => s.from <= t && t < s.to));
     const at = new Map(); // person -> best
     for (const person of us) {
+      const cur = siteNow.get(person) ?? null;
+      const gone = left.get(person);
+      const ahead = cur == null ? 0 : aheadAt(person, cur, t);
       let best = null;
       here.forEach((p, i) => {
         const s = live[i].find((x) => x.person === person);
         if (!s) return;
+        const site = siteOf(p);
+        if (gone.has(site)) return; // never back to a site left tonight
+        if (cur != null && site !== cur && s.level <= ahead) return; // moves only for a pick wanted more
         const key = [s.level, live[i].length, was.get(person) === p.id ? 1 : 0, p.start];
         if (!best || cmp(key, best.key) > 0) best = { p, key, level: s.level, sure: s.sure };
       });
-      if (best) at.set(person, best);
+      if (!best) continue;
+      at.set(person, best);
+      const site = siteOf(best.p);
+      if (cur != null && site !== cur) gone.add(cur);
+      siteNow.set(person, site);
     }
     for (const [person, b] of at) was.set(person, b.p.id);
     const count = new Map();
