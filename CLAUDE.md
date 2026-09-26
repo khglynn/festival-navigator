@@ -260,7 +260,13 @@ Non-inferable facts only (the code answers everything else — read it).
   renders inside that day) or `date` (ISO — its section takes a tab of its
   own; ACL's Late nights runs Sep 29 to Oct 10, so a weekday would mean two
   nights), always with `venue`. The validator errors on both, on neither,
-  and on one section whose entries disagree.
+  and on one section whose entries disagree. **A third presentation is
+  DECLARED, never inferred** (v94, MODEL-V4 §3e): a section whose `dayMeta`
+  entry says `"layout": "by-time"` (Folsom weekend, 68 one-party rooms)
+  shows each night's cards in start order under fixed time bands, each card
+  saying its own place; the same card, the same now window except that a
+  party's printed end wins, the same doors. On a phone it keeps the shell's
+  two columns and never scrolls sideways (a time list is read across).
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
   time** (the model doc is
   `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is

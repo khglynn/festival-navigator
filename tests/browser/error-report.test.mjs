@@ -38,7 +38,7 @@ test('a thrown error in the real page sends exactly one scrubbed request to /fn-
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Report' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1');
+      localStorage.setItem('fn_welcome_v1', '1');
       localStorage.setItem('fn_person_v1', JSON.stringify({ token: p, id: pid, name: 'Kevin', crews: { [t]: { name: 'Kevin', crewName: 'Report' } } }));
       window.__synced = 0;
       window.addEventListener('fn:synced', () => { window.__synced += 1; });

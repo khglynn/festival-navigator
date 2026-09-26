@@ -1,0 +1,50 @@
+
+== 390 a welcome
+buttons [label,left,top,right,h]: [["More info",159,695,215,18],["Look around",27,723,191,44],["Pick shows",199,723,363,44]]
+card: [12,608,378,780]  dock: [0,799,390,844]
+errors []
+
+== 390 b tap→zoom, c shelf, d returning, e keyboard
+welcome gone: true; zoom up: 1
+zoom row: [["+ note",49,115,34],["Pick shows",125,238,40]]
+scrollY: before tap 2820, after tap 2820, with shelf 2820
+zoom gone: true; shelf: [0,533,390,844]
+shelf buttons: [["Look around",false,175,46],["Join",true,175,46]]
+after Maya: I’m Maya
+typed: Join as Sam; field [16,388,374,434]; shelf [0,243,390,508]
+writes []; errors []
+
+== 320 a welcome
+buttons [label,left,top,right,h]: [["More info",223,419,279,18],["Look around",27,447,156,44],["Pick shows",164,447,293,44]]
+card: [12,332,308,504]  dock: [0,523,320,568]
+errors []
+
+== 320 b tap→zoom, c shelf, d returning, e keyboard
+welcome gone: true; zoom up: 1
+zoom row: [["+ note",31,97,34],["Pick shows",107,220,40]]
+scrollY: before tap 2937, after tap 2865, with shelf 2865
+zoom gone: true; shelf: [0,213,320,568]
+shelf buttons: [["Look around",false,140,46],["Join",true,140,46]]
+writes []; errors []
+
+== 390 h member stepper
+level 0 row [["−",true,26,111,570,56],["+ note",false,111,176,581,34],["+",false,176,261,570,56]]; who "MUSTMayaPriyaRosa"
+level 1 row [["−",false,8,123,570,56],["+ note",false,123,188,581,34],["+",false,188,303,570,56]]; who "MUSTMayaPriyaRosaYou"; zoom up 1
+level 4 row [["−",false,10,111,570,56],["+ note",false,111,176,581,34],["+",true,176,277,570,56]]; who "MUSTYou·MayaPriyaRosa"
+closed: true; no other zoom: true
+writes ["POST /api/person {\"name\":\"Kevin\"}","POST /api/crew {\"data\":{\"festivals\":{\"portola-2026\":{\"selections\":{\"Tove Lo\":{\"Kevin\":4}}}}},\"sv\":4}","fn-i $exception [{\"type\":\"zoom-close-after-click\",\"value\":\"press outside the zoom\",\"mechanism\":{\"handled\":true,\"synthetic\":true,\"type\":\"generic\"}}]"]; errors []
+
+== 320 h member stepper
+level 0 row [["−",true,8,93,459,56],["+ note",false,93,158,470,34],["+",false,158,243,459,56]]; who "MUSTMayaPriyaRosa"
+level 1 row [["−",false,8,123,459,56],["+ note",false,123,188,470,34],["+",false,188,303,459,56]]; who "MUSTMayaPriyaRosaYou"; zoom up 1
+level 4 row [["−",false,8,109,459,56],["+ note",false,109,174,470,34],["+",true,174,275,459,56]]; who "MUSTYou·MayaPriyaRosa"
+closed: true; no other zoom: true
+writes ["POST /api/person {\"name\":\"Kevin\"}","POST /api/crew {\"data\":{\"festivals\":{\"portola-2026\":{\"selections\":{\"Tove Lo\":{\"Kevin\":4}}}}},\"sv\":4}","fn-i $exception [{\"type\":\"zoom-close-after-click\",\"value\":\"press outside the zoom\",\"mechanism\":{\"handled\":true,\"synthetic\":true,\"type\":\"generic\"}}]"]; errors []
+
+== 320 f crew of 12 + long name
+shelf [0,161,320,568]; names [12,274,308,436]
+kb: field [16,188,304,234]; shelf [0,21,320,308]
+writes []; errors []
+
+== 390 g offline via Pick shows
+writes []; errors []

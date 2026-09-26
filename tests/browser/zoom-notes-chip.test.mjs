@@ -32,7 +32,7 @@ test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes,
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Chip' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1');
+      localStorage.setItem('fn_welcome_v1', '1');
     }, [CREW, FID]);
     const doc = { v: 4, meta: { name: 'Chip', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
@@ -70,7 +70,12 @@ test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes,
     await sleep(600);
     const journal = await page.evaluate(() => import('/js/errlog.js').then((m) => m.recent()));
     assert.deepEqual(journal.filter((e) => /focus left/.test(e.msg || '')).map((e) => e.msg), [], 'no close on the way to the chip');
-    assert.ok(journal.some((e) => /notes sheet opened/.test(e.msg || '')) || await page.evaluate(() => !!document.querySelector('.sheet.open, .sheet[open], dialog[open]')),
-      'the notes opened on the first click');
+    // The notes sheet itself, by the id every sheet path owns — not a journal
+    // line: a close that was meant (the chip opening its sheet) records
+    // nothing since v92, which only reports a close nobody asked for.
+    assert.equal(await page.evaluate(() => {
+      const s = document.getElementById('artist-sheet');
+      return !!s && !s.classList.contains('join-shelf');
+    }), true, 'the notes opened on the first click');
   } finally { await ctx.close(); }
 });

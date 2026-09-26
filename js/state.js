@@ -46,6 +46,18 @@ let editSeq = 0; // bumped on every local edit; guards the push/clear race
 const dayCache = {}; // `${fid}|${day}` -> computed artists
 
 export function getCrewToken() { return crewToken; }
+
+// Who may write into the active crew from this phone (v92, first open). A
+// guest — the crew's link, no name in it here — reads the crew and never
+// writes to it: nothing queued for it (a festival row), nothing sent
+// (sync.js asks before every send). app.js sets the rule; the default lets
+// everyone write, which is what every caller before v92 assumed. A rule that
+// throws answers no.
+let writePolicy = () => true;
+export function setWritePolicy(fn) { writePolicy = typeof fn === 'function' ? fn : () => true; }
+export function mayWrite() {
+  try { return !!writePolicy(); } catch { return false; }
+}
 export function getEditSeq() { return editSeq; }
 export function setCurrentDay(d) { currentDay = d; }
 export function setSelectedPerson(p) { selectedPerson = p; }
@@ -135,6 +147,9 @@ export function activePeople() { return Object.entries(people()).filter(([, p]) 
 export function ensureFestivalState(fid) {
   if (!crewDoc.festivals[fid]) {
     crewDoc.festivals[fid] = { selections: {} };
+    // A guest renders the row and records nothing (v92): the membership is a
+    // write, and theirs waits until they have a name here.
+    if (!mayWrite()) return;
     // Sync the membership, not just the local render: this write is what
     // makes "the crew has this festival" true for OTHER devices. Without it,
     // every added festival was a ghost only this device could see — The

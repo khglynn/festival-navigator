@@ -38,7 +38,6 @@ const shell = await bootShell({
     fn_crews_v3: JSON.stringify([{ token: ROSS, name: '' }]),
     [`fn_me_v3_${ROSS}`]: 'Kev',
     [`fn_crew_doc_v3_${ROSS}`]: JSON.stringify(ROSS_DOC),
-    fn_coach_v1: '1',
   },
   fetch: network,
 });

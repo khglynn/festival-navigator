@@ -52,6 +52,12 @@ export function venueOf(entry) {
   }
   return null;
 }
+// The part of town a show is in ("SoMa", "Castro"), when the file says. A
+// by-time card has no room head above it, so it says its own place: the
+// venue, and this after it (v94).
+export function areaOf(entry) {
+  return entry && typeof entry.area === 'string' && entry.area.trim() ? entry.area.trim() : null;
+}
 // The occurrence a card for this entry represents — what the zoom, the
 // notes sheet and the route key carry, and what tells one card from another
 // (wall.js writes it into `data-occ`).
@@ -294,6 +300,109 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
     return b.members.length - a.members.length || a.gi - b.gi;
   });
   return groups;
+}
+
+// ---- the list BY TIME (v94, 2026-09-25) --------------------------------------------
+// A third presentation, and the data declares it — never a threshold. A
+// section says how it wants to be read in ONE place, its own dayMeta entry:
+//
+//   "dayMeta": { "Folsom": { "date": "Sep 25-27", "layout": "by-time" } }
+//
+// `by-venue` (the default, and what a section without the field gets) is the
+// stack of cards under each room (MODEL-V4 §1.2): right where a night is a
+// handful of rooms, each with a run of acts. `by-time` is for a night that is
+// many one-party rooms — Folsom weekend is 68 parties in 39 venues, and on a
+// night only two or three rooms host more than one — where stacks would be
+// twenty one-card columns and a clock would pile ten 9 PM starts on a phone.
+// There the question is "what's on around ten?", so the cards run in start
+// order under quiet time bands and wrap, each card saying where it is.
+//
+// One declaration per section, so a section cannot disagree with itself about
+// how it reads (a field on every entry could); the validator rejects a
+// declaration that names no section (festival-rules.mjs checkLayouts).
+export const BY_VENUE = 'by-venue';
+export const BY_TIME = 'by-time';
+export const LAYOUTS = [BY_VENUE, BY_TIME];
+export function sectionLayoutOf(fest, key) {
+  const meta = fest && fest.dayMeta && typeof key === 'string' ? fest.dayMeta[key] : null;
+  return meta && meta.layout === BY_TIME ? BY_TIME : BY_VENUE;
+}
+
+// Where every room an entry sits in reads by time, each party there is ITS
+// OWN SHOW (v94): its own start, its own page and ticket link, never a run.
+// So the rules that make a ROOM one show — a timed room needs a running order,
+// one venue-night is one bill with one page and one ticket link — do not reach
+// it. The validator (festival-rules.mjs) and the file's own tests ask this one
+// question, so they cannot drift apart. A combined label ("Afters & Folsom")
+// still has a room in Afters, and the room's rules still hold it there.
+const DAY_PARTS = /\s*[&+/]\s*|\s+and\s+/i;
+export function showsOnItsOwn(fest, entry) {
+  const parts = String((entry && entry.day) || '').split(DAY_PARTS).map((s) => s.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((p) => sectionLayoutOf(fest, p) === BY_TIME);
+}
+
+// The bands, on the festival-day clock (9 AM starts the day; activityMinutes).
+// Fixed boundaries, never fitted to the data, so a night with two parties
+// reads the same way as a night with twenty-six: a band with nothing in it is
+// simply not drawn. The words are the ones a night out uses — the happy hours
+// and the fair are DAYTIME and EVENING, the doors most parties open are 9 PM
+// and 10 PM, LATE runs to bar close (2 AM in San Francisco), and anything
+// that starts after it is AFTER-HOURS. A party with no clock at all is TIME
+// TBA, last: nothing is hidden, and nothing pretends to know when.
+const H = 60;
+export const TIME_BANDS = [
+  { key: 'day', label: 'Daytime', from: 9 * H, to: 17 * H },
+  { key: 'evening', label: 'Evening', from: 17 * H, to: 21 * H },
+  { key: '9pm', label: '9 PM', from: 21 * H, to: 22 * H },
+  { key: '10pm', label: '10 PM', from: 22 * H, to: 23 * H },
+  { key: 'late', label: 'Late', from: 23 * H, to: 26 * H },
+  { key: 'after', label: 'After-hours', from: 26 * H, to: 33 * H },
+];
+export const TIME_TBA = { key: 'tba', label: 'Time TBA', from: null, to: null };
+export const bandOf = (startMin) => (startMin == null ? TIME_TBA
+  : TIME_BANDS.find((b) => startMin >= b.from && startMin < b.to) || TIME_TBA);
+
+// The night in start order, cut into bands. Built ON the stacks' own model
+// (venueGroupsOf), so everything a stack card knows — its now window, a
+// cancelled party's place, the tilde on a guessed time — a by-time card knows
+// the same way. Only the arrangement differs: every member leaves its room
+// and lines up by when it starts (a set's time, else the room's doors), a
+// cancelled party last in its band, file order settling a tie.
+//
+// One difference in the now window, and it is the point of the layout: a
+// stack is a RUN, where an act plays until the next act starts; a by-time
+// room holds separate parties, so a party's PRINTED end wins — the 3–8 PM tea
+// dance at The Stud is over at 8, not when Friday's 9 PM party opens the same
+// door. Without a printed end the stack's rule stands (the next party in the
+// room, else the room's close, else an hour); a longer guess is data's to
+// make (`close`, closeApprox), never the renderer's.
+export function timeBandsOf(entries, opts = {}) {
+  const list = entries || [];
+  const at = new Map(list.map((e, i) => [e, i]));
+  const members = [];
+  for (const g of venueGroupsOf(list, opts)) {
+    for (const m of g.members) {
+      const t = parseEventTime(m.e.time) || parseEventTime(m.e.doors);
+      const set = parseEventTime(m.e.time);
+      const nowTo = m.nowFrom != null && set && set.endMin != null ? set.endMin : m.nowTo;
+      members.push({ ...m, nowTo, venue: g.venue, tba: g.tba, startMin: t ? t.startMin : null, i: at.get(m.e) ?? 0 });
+    }
+  }
+  const byBand = new Map();
+  for (const m of members) {
+    const b = bandOf(m.startMin);
+    if (!byBand.has(b.key)) byBand.set(b.key, { ...b, members: [] });
+    byBand.get(b.key).members.push(m);
+  }
+  const order = [...TIME_BANDS, TIME_TBA].map((b) => b.key);
+  return [...byBand.values()]
+    .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    .map((b) => ({
+      ...b,
+      members: b.members.sort((x, y) => (x.cancelled - y.cancelled)
+        || ((x.startMin ?? Infinity) - (y.startMin ?? Infinity))
+        || x.i - y.i),
+    }));
 }
 
 // ---- the model ----------------------------------------------------------------------

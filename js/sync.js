@@ -96,6 +96,10 @@ function applyRemote(remote) {
 
 export async function pushSync() {
   if (!state.getCrewToken()) return;
+  // A guest reads and never sends (v92): whatever is queued on this phone —
+  // an earlier owner's edits, say — stays queued, untouched, for its owner.
+  // Not a fault and not "syncing": the dot says what the radio says.
+  if (!state.mayWrite()) { setSyncStatus(stayOffline || !navigator.onLine ? 'offline' : 'online'); return; }
   if (stayOffline) { setSyncStatus('offline'); return; }
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) { syncQueued = true; return; }
@@ -190,6 +194,7 @@ export async function pushSync() {
 // Sending twice is free; not sending once loses somebody's pick.
 export function flushOnHide() {
   if (stayOffline || !navigator.onLine) return false;
+  if (!state.mayWrite()) return false; // a guest sends nothing (v92)
   const token = state.getCrewToken();
   if (!token || !state.hasPending()) return false;
   if (isRefused(state.pendingChanges, token)) return false; // the server already said no
@@ -210,6 +215,7 @@ export function flushOnHide() {
 export async function requestMigration() {
   const token = state.getCrewToken();
   if (!token || !navigator.onLine) return false;
+  if (!state.mayWrite()) return false; // the migration is a write; a guest sends nothing (v92)
   try {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}&op=migrate`, {
       method: 'POST',
@@ -236,7 +242,9 @@ export async function pollSync() {
   // warm wall with unsynced picks said "online" while its first poll hung
   // (Codex round 4). Work the server already refused stays blocked: no
   // blocked → syncing → blocked flicker (gate find, 2026-08-23).
-  if (state.hasPending() && !isRefused(state.pendingChanges, tokenAtStart)) setSyncStatus('syncing');
+  // A guest's queue is not being sent (v92), so it is never "syncing".
+  const sending = state.mayWrite();
+  if (sending && state.hasPending() && !isRefused(state.pendingChanges, tokenAtStart)) setSyncStatus('syncing');
   try {
     const remote = await fetchRemote();
     if (state.getCrewToken() !== tokenAtStart) return;
@@ -262,7 +270,7 @@ export async function pollSync() {
     // it brought is applied above, but the dot keeps saying offline and no
     // push is scheduled.
     if (stayOffline) { setSyncStatus('offline'); return; }
-    if (state.hasPending()) {
+    if (state.hasPending() && sending) {
       // An unchanged remote plus unchanged refused bytes is still BLOCKED.
       // Reporting 'syncing' here and re-arming the push made the dot flip
       // blocked -> syncing -> blocked every 25s — the UI claiming progress

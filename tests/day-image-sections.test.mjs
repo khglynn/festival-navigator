@@ -45,7 +45,7 @@ test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the r
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
   const sat = dayArtistsFor('Saturday');
-  assert.equal(sat.length, 31 + 1 + 15 + 15, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom (Big Muscle, Magnitude, PERVERT XXL and Aftershock, plus the eleven Saturday parties added 2026-09-25 — the GearedUp Alley Party\'s Saturday is one of them)');
+  assert.equal(sat.length, 31 + 1 + 15 + 24, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom (Big Muscle, Magnitude, PERVERT XXL and Aftershock, plus the eleven Saturday parties added 2026-09-25 — the GearedUp Alley Party\'s Saturday is one of them — and the nine that share a venue that night, v94)');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
   // Saturday's afters open with whoever plays FIRST — every room is a run, so
   // the export leads with the earliest set, not the biggest name. Derived from
@@ -114,7 +114,7 @@ test('a share image is the wall you see: a hidden room is not in a day\'s image,
     filters.saveFolded('portola-2026', []);
   }
   assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
-  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 15);
+  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 24);
 });
 
 test('a lineup-only fest still exports by billing group', () => {

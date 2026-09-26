@@ -40,6 +40,7 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall } = await import('../js/v3/wall.js');
+const { sectionLayoutOf, BY_TIME } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -67,8 +68,9 @@ const render = (fid, over = {}) => {
   });
   return root;
 };
-// Every stack on the wall: which room, on which day, and its tag.
-const stacks = (root) => [...root.querySelectorAll('.venue-grid')].map((g) => ({
+// Every stack on the wall — and every time list (v94: a section the file
+// declares by time, as Folsom may be) — which room, on which day, its tag.
+const stacks = (root) => [...root.querySelectorAll('.venue-grid, .time-list')].map((g) => ({
   day: g.closest('.day-block').dataset.day,
   room: g.closest('.room').dataset.room,
   clock: g.dataset.clock || null,
@@ -135,7 +137,14 @@ test('the CSS: one rail width and one track gap for the clock and every stack un
 test('a clocked row sits in its own .stack-scroll, says how many venues it has, and is never a timetable scroller', () => {
   const root = render('portola-2026');
   const clocked = [...root.querySelectorAll('.venue-grid[data-clock]')];
-  assert.ok(clocked.length >= 5, 'Saturday\'s leftovers, afters and Folsom, and Sunday\'s afters and Folsom');
+  // Saturday's leftovers, then each stacked section on Saturday and Sunday —
+  // Afters and, unless the file reads it by time (v94), Folsom.
+  const stackedSections = ['Afters', 'Folsom'].filter((k) => sectionLayoutOf(portola, k) !== BY_TIME).length;
+  assert.ok(clocked.length >= 1 + 2 * stackedSections, 'Saturday\'s leftovers, and each stacked section on Saturday and Sunday');
+  // A by-time list on a clock day is told so, and is never a sideways row.
+  for (const list of root.querySelectorAll('.time-list')) {
+    assert.ok(!list.closest('.stack-scroll'), 'a time list never scrolls sideways');
+  }
   for (const g of clocked) {
     const row = g.parentElement;
     const where = `${g.closest('.day-block').dataset.day} ${g.closest('.room').dataset.room}`;
@@ -166,7 +175,8 @@ test('a repaint keeps each row where it was swiped, and nothing else moves it: n
   // A crew-mate's pick arrives: the whole wall is replaced.
   root = render('portola-2026');
   assert.equal(rowOf(root, 'Saturday', 'Afters').scrollLeft, 38, 'SAT AFTERS is still swiped');
-  assert.equal(rowOf(root, 'Saturday', 'Folsom').scrollLeft, 0, 'SAT FOLSOM never was');
+  // (A by-time SAT FOLSOM, v94, has no row to swipe at all.)
+  assert.equal((rowOf(root, 'Saturday', 'Folsom') || { scrollLeft: 0 }).scrollLeft, 0, 'SAT FOLSOM never was');
   assert.equal(rowOf(root, 'Sunday', 'Afters').scrollLeft, 0, 'nor SUN AFTERS');
   assert.equal(rowOf(root, 'Saturday', ':fest').scrollLeft, 0, 'nor the clock\'s own leftovers');
   assert.equal(gridOf(root, 'Saturday').scrollLeft, 120, 'the timetable keeps its own position, as before');

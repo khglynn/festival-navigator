@@ -130,3 +130,80 @@ export function applyFoldToggle(fid, current, key) {
   saveFolded(fid, next);
   return { next, folding: !cleanKeys(current).includes(key) };
 }
+
+// ---- a starting view in a share link (v92, 2026-09-25) -----------------------------
+// A share link can say which rooms it opens on — `&show=fest,afters` in the
+// hash beside `g=` (crew.js). The list is POSITIVE (Kevin's ask was "just
+// Portola", "just Folsom"), and it names rooms by a slug a person could read
+// in a chat: `fest` for the festival's own room, any other room its label,
+// lowercased, accents off, anything else a dash. A slug is matched against
+// the rooms the RECEIVING phone's festival file offers, so a room one build
+// knows and another does not is simply ignored.
+//
+// It is a view, so it follows the fold's law: it seeds THIS phone's fold,
+// once, and is never written to the crew doc. The rules for when (a phone
+// that has never shown this festival, a fold of its own untouched) live in
+// app.js; the words for what a link opens on live here beside the slugs.
+export function roomSlug(room) {
+  if (!room) return '';
+  if (room.key === FEST_ROOM) return 'fest';
+  return String(room.label || '').normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+
+// What a link sent from here should say: the slugs of the rooms this phone is
+// SHOWING, or null when it shows them all (a link with no `show` opens on
+// everything, which is also what an old build does with any link). A room
+// whose label leaves no slug cannot be named; if one of those is showing,
+// the link says nothing rather than hide it on the other end.
+export function showOf(rooms, folded) {
+  const hidden = new Set(cleanKeys(folded));
+  const list = rooms || [];
+  const showing = list.filter((r) => !hidden.has(r.key));
+  if (!showing.length || showing.length === list.length) return null;
+  const slugs = showing.map(roomSlug);
+  if (slugs.some((s) => !s)) return null;
+  return [...new Set(slugs)];
+}
+
+// The other end: which rooms to fold for a link's `show`. Null when the link
+// names no room this festival has (a typo, another build's room) or would
+// leave nothing to hide — and never a list that hides every room: a link
+// must not open onto an empty week.
+export function foldFromShow(rooms, slugs) {
+  const wanted = new Set(Array.isArray(slugs) ? slugs : []);
+  const list = rooms || [];
+  if (!wanted.size || list.length < 2) return null;
+  const showing = list.filter((r) => wanted.has(roomSlug(r)));
+  if (!showing.length || showing.length === list.length) return null;
+  return list.filter((r) => !showing.includes(r)).map((r) => r.key);
+}
+
+// "Portola + Afters": the rooms a view shows, by the names the show menu uses.
+export function showLabel(rooms, folded) {
+  const hidden = new Set(cleanKeys(folded));
+  return (rooms || []).filter((r) => !hidden.has(r.key)).map((r) => r.label).join(' + ');
+}
+
+// Has this phone made a choice about this festival's rooms? A stored fold is
+// one; so is a fold set this page that storage refused. Showing everything by
+// choice removes the stored key, which is indistinguishable from never having
+// chosen — app.js also asks whether the phone has shown the festival before.
+export function foldIsSet(fid) {
+  return getLS(LS_FOLD(fid)) != null || (memoryWins.has(fid) && (foldMemory.get(fid) || []).length > 0);
+}
+
+// Seeded once per festival per phone: a second link with a different `show`
+// never re-folds a wall the first one already set up. Memory backs a store
+// that refuses the write, so one visit is never seeded twice. The marker is a
+// raw guarded write, not saveLS: a refused marker is not a lost pick, and
+// must not raise the "storage is full" toast that exists for those.
+const LS_SEEDED = (fid) => `fn_fold_seeded_v1_${fid}`;
+const seededHere = new Set();
+export function showSeeded(fid) {
+  return seededHere.has(fid) || getLS(LS_SEEDED(fid)) != null;
+}
+export function rememberShowSeeded(fid) {
+  seededHere.add(fid);
+  try { localStorage.setItem(LS_SEEDED(fid), '1'); } catch { /* memory holds it for this visit */ }
+}

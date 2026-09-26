@@ -76,7 +76,7 @@ async function openWall({ width = 390, height = 844, target = TARGETS[0], touch 
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Chips' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-    localStorage.setItem('fn_coach_v1', '1');
+    localStorage.setItem('fn_welcome_v1', '1');
   }, [TOKEN, target.fid]);
   const body = JSON.stringify(doc(target));
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.

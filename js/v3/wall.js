@@ -15,6 +15,7 @@ import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
+import { BY_TIME, sectionLayoutOf, timeBandsOf, areaOf } from './events.js'; // the list by time (v94) — its own line, like isCancelled's
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
@@ -55,7 +56,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   const facts = factsFor(artistName, ctx, opts.occ || null);
   const people = facts.people;
   const el = document.createElement('div');
-  el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
+  el.className = 'card' + (opts.cell ? ' cell' : '') + ((opts.time || opts.place) && !opts.cell ? ' timed' : '');
   // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
   // and carries the crew's marks — worn quieter and struck through (v3.css
   // .card.cancelled). The caller says "Cancelled" where the time goes.
@@ -91,6 +92,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
+  if (opts.place) el.dataset.place = JSON.stringify(opts.place);
   if (opts.occ) el.dataset.occ = JSON.stringify(opts.occ);
   if (opts.tag) {
     el.dataset.tag = opts.tag;
@@ -117,6 +119,30 @@ export function renderCard(artistName, ctx, opts = {}) {
     t.style.color = facts.subColor;
     t.textContent = opts.time;
     el.appendChild(t);
+  }
+  // Where, as PHRASES (v94, a by-time card: [venue, area]). A phrase never
+  // breaks inside itself (Kevin, 2026-09-25 — "Mayes Oyster House · Polk /
+  // Gulch" split the neighbourhood): the phrases share one line, a dot
+  // between them, only when every one fits whole; otherwise each takes its
+  // own line and the dot goes (fitPlace, below, decides from the drawn widths).
+  if (opts.place && opts.place.length) {
+    const p = document.createElement('span');
+    p.className = 'place';
+    p.style.color = facts.subColor;
+    opts.place.forEach((phrase, i) => {
+      if (i) {
+        const sep = document.createElement('span');
+        sep.className = 'pdot';
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '·';
+        p.appendChild(sep);
+      }
+      const seg = document.createElement('span');
+      seg.className = i ? 'phrase' : 'phrase lead';
+      seg.textContent = phrase;
+      p.appendChild(seg);
+    });
+    el.appendChild(p);
   }
   if (opts.tall) {
     el.classList.add('tall');
@@ -187,7 +213,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     // means pick. (The 2026-08-29 version excluded a whole grown block here,
     // which is how a zoomed card stopped taking picks.)
     if (e.target !== el && e.target.closest && e.target.closest('button')) return;
-    ctx.onTap(artistName, el);
+    ctx.onTap(artistName, el, opts.occ || null);
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   watchFit(el);
@@ -414,6 +440,28 @@ function bandText(card) {
   return middle || name ? { middle, name, mid, nm: nmX } : null;
 }
 
+// A place line's phrases (renderCard `place`) share one line only when all of
+// them fit whole, the dot between them included; otherwise they stack, one
+// phrase a line, no dot. Decided from what was DRAWN — each phrase's own
+// width (a nowrap inline box, the same in either mode) against the line's —
+// so the answer does not depend on which mode the card is in, and a card
+// never flips back and forth. All reads, then all writes. The observer that
+// calls this runs after layout and before paint, so no frame shows a phrase
+// cut; a stack makes the card taller, the observer fires once more, and the
+// same answer comes back. SEP_W is v3.css's `.card .place .pdot` width.
+const SEP_W = 11;
+function fitPlaces(cards) {
+  const answers = [];
+  for (const el of cards) {
+    const p = el.isConnected ? el.querySelector(':scope > .place') : null;
+    const segs = p ? p.querySelectorAll(':scope > .phrase') : [];
+    if (segs.length < 2 || !p.clientWidth) continue;
+    const need = [...segs].reduce((w, s) => w + s.scrollWidth, 0) + SEP_W * (segs.length - 1);
+    answers.push([p, need > p.clientWidth + 0.5]);
+  }
+  for (const [p, stacked] of answers) p.classList.toggle('stacked', stacked);
+}
+
 // A card learns its width only once it is laid out — and again on a rotation
 // or a lane split — so the fit rides a ResizeObserver, whose callback runs
 // after layout and before paint: no frame ever shows the two corners
@@ -432,6 +480,7 @@ const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entr
     todo.push([target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2, bandText(target)]);
   }
   fitAll(todo);
+  fitPlaces(todo.map(([el]) => el));
 }) : null;
 // A late font changes every width without resizing a single card, so no
 // observer fires: refit every watched card when the fonts land — once when
@@ -444,6 +493,7 @@ function refitAll() {
     if (width > 0) todo.push([el, width - 2, bandText(el)]);
   }
   fitAll(todo);
+  fitPlaces(todo.map(([el]) => el));
 }
 try {
   if (fitWatch && typeof document !== 'undefined' && document.fonts) {
@@ -474,6 +524,7 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
+    place: el.dataset.place ? JSON.parse(el.dataset.place) : undefined,
     tag: el.dataset.tag || undefined,
     tall: el.dataset.tall === '1',
     until: el.dataset.until || null,
@@ -1573,6 +1624,83 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
   return shown;
 }
 
+// THE LIST BY TIME (v94 — events.js timeBandsOf; a section declares it with
+// `dayMeta[<section>].layout: "by-time"`). The night's cards in start order
+// under quiet time bands — DAYTIME · EVENING · 9 PM · 10 PM · LATE ·
+// AFTER-HOURS — wrapping on the one card track (`--col-w`): two across on a
+// phone, as many as fit on a computer. No room heads, so each card says its
+// own place under its time ("9 PM – 3 AM / Public Works · Mission"); the zoom
+// still tells the rest (the map door, Tix and Info).
+//
+//   .time-list[data-iso][data-tz]      the night — the now marks' home, as a
+//     .time-band[data-band]             .venue-grid is a stack's
+//       .band-head > .label · .line      "9 PM ———"
+//       .band-grid > .card …             renderCard, the one card
+//
+// The same card as a stack's, with the same now window and the same time
+// label (venueGroupsOf built both), so a pick, the zoom, notes, the crew's
+// marks and NOW all behave exactly as they do one room over.
+//
+// `clock` as for venueGroups: under a day's timetable the list steps in by
+// the hour rail from 720 up, so its columns sit under the clock's (v3.css).
+// On a phone it does NOT scroll sideways the way a clocked stack row does: a
+// stack is read one room at a time, top to bottom, but a time list is read
+// ACROSS — the 9:30 beside the 9 — and a row that parks its right-hand card
+// 38px off the screen hides half of every pair. So the phone keeps the
+// shell's two columns, edge to edge with the room head above it.
+// The time line says what the file says: the printed range; else the start
+// (its tilde if guessed) running to the room's close when the file has one —
+// "9:30 PM – ~2 AM", the stacks' sub line said on the card, since no venue
+// head sits above it; else the doors; else nothing. The place is its own
+// line of phrases (renderCard `place`): the venue, then the area.
+const byTimeWhen = (m) => {
+  const e = m.e;
+  const close = typeof e.close === 'string' && e.close ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
+  const when = m.cancelled ? 'Cancelled'
+    : m.endStr ? timeRange(e.time)
+      : m.startStr ? [approxMark(e, m.startStr), close].filter(Boolean).join(' – ')
+        : e.doors ? [`Doors ${e.doors}`, close].filter(Boolean).join(' · ') : '';
+  return when || undefined;
+};
+const byTimePlace = (m) => [m.venue, areaOf(m.e)].filter(Boolean);
+export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
+  const list = mk('div', 'time-list');
+  if (day && day.iso) list.dataset.iso = day.iso;
+  if (fest && fest.timezone) list.dataset.tz = fest.timezone;
+  if (clock) list.dataset.clock = clock;
+  let shown = 0;
+  for (const band of timeBandsOf(entries, { fallbackVenue })) {
+    const b = mk('div', 'time-band');
+    b.dataset.band = band.key;
+    const head = mk('div', 'band-head');
+    head.append(mk('span', 'label', band.label), mk('span', 'line'));
+    const grid = mk('div', 'band-grid');
+    grid.setAttribute('role', 'group');
+    grid.setAttribute('aria-label', band.label);
+    for (const m of band.members) {
+      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: byTimePlace(m), occ: occOf(m.e) });
+      if (m.nowFrom != null && m.nowTo != null) {
+        card.dataset.nowFrom = String(m.nowFrom);
+        card.dataset.nowTo = String(m.nowTo);
+      }
+      grid.appendChild(card);
+      shown += 1;
+    }
+    b.append(head, grid);
+    list.appendChild(b);
+  }
+  if (!shown) return 0;
+  root.appendChild(list);
+  return shown;
+}
+// Where a section's cards go: its declared layout, else the stacks.
+function sectionBody(fest, key) {
+  return sectionLayoutOf(fest, key) === BY_TIME ? timeGroups : venueGroups;
+}
+// Where the now mark lives: a stack's grid or a time list, each carrying its
+// date (and the festival's zone) for the ticker.
+const NOW_HOSTS = '.venue-grid[data-iso], .time-list[data-iso]';
+
 // The now mark on a stack (MODEL-V4 §1.2) — the now line's twin, same violet,
 // same one-minute ticker, no repaint. A card is "now" when the festival's
 // clock is inside the window venueGroupsOf gave it. The mark is the ring and
@@ -1582,15 +1710,31 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 // means from the auto-scroll"). A screen reader still hears it — the card's
 // own name ends "playing now" while it is.
 export const PLAYING_NOW = ', playing now';
+// Where the clock stands on a host's OWN night, in that night's minutes — or
+// null when it is not that night or the one after. The festival clock rolls
+// to the next calendar day at 5 AM (now.js), but a night does not end on the
+// clock's say-so: an after-hours party filed under Saturday runs until ITS
+// printed end, and Aftershock prints 3 to 10 AM Sunday. Asking only "is this
+// host today?" put its ring out at 5:00 AM on the dot, five hours early, and
+// took the NOW tab and its stop with it (Sol's review of v94, 2026-09-26 —
+// MÜLL and PERVERT XXL lost theirs an hour before their 6 AM ends). So at
+// 5:00 AM Sunday a Saturday card reads Saturday's 29:00, and its own window
+// decides; a stack under any section obeys the same rule (Afters, a dated
+// Late night), because the rule lives here and nowhere else.
+export function nightMinutes(iso, clock) {
+  if (!iso || !clock) return null;
+  const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
+  return days === 0 || days === 1 ? clock.minutes + days * 24 * 60 : null;
+}
 export function positionNowMarks(root, date = new Date()) {
-  const here = root.matches && root.matches('.venue-grid[data-iso]') ? [root] : [];
-  for (const grid of [...here, ...root.querySelectorAll('.venue-grid[data-iso]')]) {
+  const here = root.matches && root.matches(NOW_HOSTS) ? [root] : [];
+  for (const grid of [...here, ...root.querySelectorAll(NOW_HOSTS)]) {
     const clock = festivalClock(date, grid.dataset.tz || null);
-    const today = grid.dataset.iso === clock.iso;
+    const at = nightMinutes(grid.dataset.iso, clock);
     for (const card of grid.querySelectorAll('.card[data-now-from]')) {
       const from = Number(card.dataset.nowFrom);
       const to = Number(card.dataset.nowTo);
-      const on = today && clock.minutes >= from && clock.minutes < to;
+      const on = at != null && at >= from && at < to;
       card.classList.toggle('now', on);
       const name = card.getAttribute('aria-label') || '';
       if (on && !name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name + PLAYING_NOW);
@@ -1637,7 +1781,7 @@ function liveOnWall(root, ctx, date) {
       && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
     return { line, grid, minutes, onGrid };
   });
-  const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now, .time-list[data-iso] .card.now')];
   const people = ctx.filterPeople || [];
   let picks = [];
   if (people.length) {
@@ -2141,7 +2285,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
-      venueGroups(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
+      sectionBody(fest, sec.key)(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
       block.appendChild(room);
     }
     root.appendChild(block);
@@ -2199,7 +2343,7 @@ function renderExtra(root, ctx, fest, extra) {
   if (!extra.byDate) {
     const room = roomBlock(extra.key);
     room.appendChild(roomHead({ label: extra.label, sub: ownSub }));
-    venueGroups(room, extra.entries || [], ctx, { fest });
+    sectionBody(fest, extra.key)(room, extra.entries || [], ctx, { fest });
     block.appendChild(room);
   } else {
     for (const [iso, list] of extra.byDate) {
@@ -2209,7 +2353,7 @@ function renderExtra(root, ctx, fest, extra) {
       const wd = weekdayOfIso(iso);
       room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
       if (door) dayNoteWhisper(room, iso, door.aria, ctx);
-      venueGroups(room, list, ctx, { day: { iso }, fest });
+      sectionBody(fest, extra.key)(room, list, ctx, { day: { iso }, fest });
       block.appendChild(room);
     }
   }

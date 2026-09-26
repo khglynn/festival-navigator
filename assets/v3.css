@@ -198,6 +198,31 @@ html { touch-action: manipulation; }
 .bring-actions { display: flex; gap: 8px; }
 .bring-actions .btn-tonal { font-size: 12.5px; padding: 9px 16px; }
 .bring-actions .btn-ghost { font-size: 12px; padding: 9px 14px; }
+/* The welcome card (v92, first open — design frame F2a): the offer's anatomy
+ * with the crew on top, in their colours, beside the crew's name. Its line is
+ * a size up and its explanation is body-secondary rather than a whisper —
+ * this card IS the explanation, read once, often outdoors. */
+.welcome-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.welcome-head .micro-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.welcome-head .avatar { width: 20px; height: 20px; font-size: 8.5px; }
+.welcome-head .avatar-cluster .avatar + .avatar { margin-left: -5px; }
+.welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
+.welcome-card .bring-line { font-size: 14px; }
+.welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
+/* The card's choice is two doors of one width (the guest shelf round,
+ * 2026-09-25 — Kevin: the three-button row did not line up): Pick shows
+ * (filled, the main action) on the left, Look around (the quiet way,
+ * outlined) on the right, the same two halves at 320 and 390. A member who
+ * has just joined has the one door, full width. "More info" is the
+ * explanation's last words — a real button drawn as a link, its 44px reach
+ * borrowed around it. */
+.welcome-card .bring-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.welcome-card .bring-actions .btn-tonal,
+.welcome-card .bring-actions .btn-ghost { font-size: 13px; padding: 11px 12px; white-space: nowrap; }
+.welcome-more { display: inline; background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+                font: inherit; font-weight: 700; color: var(--tonal-text); white-space: nowrap;
+                position: relative; min-height: 0; }
+.welcome-more::after { content: ''; position: absolute; inset: -14px -8px; }
 /* A toast's one action never breaks across lines: the toast shrinks to half
  * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
  * as "Not / me" on a 390px phone (walk, 2026-09-23). */
@@ -292,6 +317,11 @@ html { touch-action: manipulation; }
  * arrival already rises (translateY(4px) → 0), so it reads as growing out of
  * the fest name either way. */
 .dock .sort-pop { top: auto; bottom: calc(100% + 8px); }
+/* A bar with its menu open stands above the companion cards (the welcome, the
+ * bring-picks offer: z38) and a zoom (36), below sheets (40–41) and toasts
+ * (50) — its menu paints at the bar's level, the bar being a stacking context
+ * (app.js openShowMenu). */
+.dock.menu-up, .day-rail.menu-up { z-index: 39; }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
@@ -637,6 +667,11 @@ button.room-head { cursor: pointer; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
 .you-avatar { border: 1.5px solid #fff; background: none; cursor: pointer; padding: 0; }
+/* A guest's "you" (v92): the avatar's place, empty and asking — a dashed
+ * ring and a +, in brand (it is about a person, never the festival). It is
+ * the standing door to join the crew. */
+.you-avatar.guest { border: 1.5px dashed rgba(var(--brand), .85); color: rgb(var(--brand));
+                    font-size: 15px; font-weight: 700; line-height: 1; }
 .dock.hidden { display: none; }
 @media (min-width: 720px) { .dock { display: none; } } /* desktop has no dock */
 
@@ -1268,16 +1303,182 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .stack-scroll > .venue-grid[data-clock][data-venues="1"] { grid-template-columns: var(--col-w); }
 }
 
-/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
- * piece — the venue's window, then the order as a door to the poster. */
+/* THE LIST BY TIME (v94 — wall.js timeGroups; a section that declares
+ * `layout: "by-time"`). Bands down, cards across: each band a quiet line —
+ * smaller and paler than the room head above it, never the fest accent (a band
+ * is not a stage) — then its cards on the one card track, `--col-w`, wrapping.
+ * Every gap is the wall's own: the card gap across and down (so a band reads as
+ * one block of cards, not rows of pairs), the room's 9px to the first band and
+ * a little more between bands than inside one. Cards in a row share a height
+ * (the grid's stretch), so a two-line name beside a one-line one is still one
+ * row with one bottom edge; the card centres its text as it does everywhere. */
+.time-list { display: flex; flex-direction: column; gap: 14px; }
+.time-band { display: flex; flex-direction: column; gap: 7px; }
+.band-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.band-head .label { flex: none; color: var(--text-secondary); font-size: 10px; font-weight: 800;
+                    letter-spacing: .09em; text-transform: uppercase; line-height: 1; }
+.band-head .line { flex: 1 1 0; min-width: 0; height: 1px;
+                   background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+.band-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
+             justify-content: start; gap: var(--col-gap); }
+/* A by-time card's WHERE (wall.js renderCard `place`): phrases, the venue and
+ * then the area, and a phrase never breaks inside itself (Kevin, 2026-09-25:
+ * "Mayes Oyster House · Polk / Gulch" split the neighbourhood). One line with a
+ * dot between while every phrase fits whole; otherwise `.stacked` (wall.js
+ * fitPlaces, from the drawn widths, before paint): a phrase a line, no dot. A
+ * venue too long for a line on its own wraps between its words, as a name
+ * does. The time above it never wraps. `.pdot` is a fixed 11px (fitPlaces
+ * counts on it). */
+.band-grid .card .time { white-space: nowrap; }
+.card .place { position: relative; align-self: stretch; display: block; text-align: center;
+               font-size: 9px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.card .place .phrase { display: inline-block; max-width: 100%; vertical-align: top; white-space: nowrap;
+                    overflow: hidden; text-overflow: ellipsis; }
+.card .place .pdot { display: inline-block; width: 11px; text-align: center; vertical-align: top; }
+.card .place.stacked { display: flex; flex-direction: column; align-items: center; white-space: normal; }
+.card .place.stacked .pdot { display: none; }
+.card .place.stacked .phrase.lead { white-space: normal; }
+
+/* Under a day's timetable, from 720 up: step in by the hour rail and take the
+ * clock's track gap, so column n sits under the clock's column n, as the
+ * stacks do (.venue-grid[data-clock="day"]). The phone keeps the shell's two
+ * columns (wall.js timeGroups says why). */
+@media (min-width: 720px) {
+  .time-list[data-clock] { padding-inline-start: var(--hour-rail-w); }
+  .time-list[data-clock] .band-grid { column-gap: var(--clock-gap); }
+}
+
+/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
+ * one piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
+/* A PAIR (the window · the order; the place · the doors out): stacked, and on
+ * ONE line wherever it fits the column (card-facts.js fitPairs) — never broken
+ * inside a statement, never a separator left at a line's end (Kevin,
+ * 2026-09-26: "never line-break inside a statement"). */
+.f-pair { display: flex; flex-direction: column; align-items: center; gap: 3px; max-width: 100%; }
+.f-pair > * { white-space: nowrap; }
+.f-pair > .f-sep { display: none; color: rgba(255, 255, 255, .45); font-size: 11.5px; font-weight: 600; }
+.f-pair.inline { flex-direction: row; gap: 0; }
+.f-pair.inline > .f-sep { display: inline; margin: 0 7px; }
+.f-sub > .f-when, a.f-order, .f-where { white-space: nowrap; }
 a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
-/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): one
- * row under WHERE, in WHERE's voice, each door underlined like the order and
- * the map. A long pair widens the zoom up to its max width, then wraps. */
-.f-links { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 7px;
+/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): in
+ * WHERE's voice, each door underlined like the order and the map, and the two
+ * of them ONE unit that never breaks (171px; the narrowest zoom's column is
+ * 188) — beside WHERE on one line where the column allows (.f-pair). */
+.f-links { display: inline-flex; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: center; gap: 2px 7px;
            color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 600; }
 .f-links .f-dot { color: rgba(255, 255, 255, .45); }
 a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+
+/* ---- the join shelf (v92, the guest shelf round, 2026-09-25) ------------------
+ * The production sheet (grabber, --r-sheet, dock ground, .45 backdrop) sized to
+ * its content. One column, one gutter: the line, the crew's names, the field,
+ * then the same two halves the welcome card ends on — Look around (quiet) on
+ * the left, the answer (filled) on the right. Brand, never --fest. */
+.sheet.join-shelf { gap: 14px; padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+                    max-height: 88vh; overflow: visible; animation: none; }
+.join-shelf .js-line { color: var(--text-body); font-size: 17px; font-weight: 700; line-height: 1.3;
+                       text-wrap: balance; overflow-wrap: anywhere; }
+.join-shelf .js-line b { color: #fff; font-weight: 800; }
+.join-shelf .js-sub { color: var(--text-secondary); font-size: 12.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
+.join-shelf .js-sub.offline { color: var(--text-tertiary); }
+.join-shelf .js-sub.offline::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px;
+                                      border-radius: var(--r-pill); background: var(--sync-offline); vertical-align: 1px; }
+/* The names: the wall's own person chips, a size up, wrapping; three rows and
+ * a half at most, then they scroll inside (a crew of 12 on a 320 phone). */
+.join-shelf .js-names-wrap { position: relative; }
+.join-shelf .js-names { display: flex; flex-wrap: wrap; gap: 8px; max-height: calc(3.5 * 36px + 3 * 8px + 4px);
+                        padding: 4px; margin: -4px;
+                        overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.join-shelf .js-names::-webkit-scrollbar { display: none; }
+.join-shelf .js-names-wrap.more::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
+                                         background: linear-gradient(to bottom, transparent, var(--dock)); pointer-events: none; }
+.join-shelf .js-name { display: inline-flex; align-items: center; gap: 7px; height: 36px; min-height: 36px;
+                       padding: 0 14px 0 5px; font-size: 13.5px; font-weight: 700; white-space: nowrap;
+                       transition: opacity .18s ease, box-shadow .18s ease; }
+.join-shelf .js-initial { width: 26px; height: 26px; border-radius: var(--r-pill); display: inline-flex;
+                          align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+                          background: rgba(0, 0, 0, .28); }
+.join-shelf .js-name.on { box-shadow: 0 0 0 2px var(--dock), 0 0 0 4px #fff; }
+.join-shelf .js-name.off { opacity: .4; }
+/* The field wears the text fields' shape (8px corners, the input border); 16px
+ * type so iOS never zooms the page to read it. */
+.join-shelf .js-field { width: 100%; box-sizing: border-box; height: 46px; padding: 0 14px;
+                        background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card);
+                        color: var(--text-primary); font: 600 16px var(--font-ui); outline: none; }
+.join-shelf .js-field::placeholder { color: var(--text-tertiary); font-weight: 500; }
+.join-shelf .js-field:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line */
+.join-shelf .js-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.join-shelf .js-status:empty { display: none; }
+/* Its two answers, two equal halves: the answer first, on the left ("Join as
+ * Sam"), the quiet way out on the right — the welcome card's order. */
+.join-shelf .js-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.join-shelf .js-actions .btn-tonal,
+.join-shelf .js-actions .btn-ghost { font-size: 13.5px; padding: 12px 12px; min-height: 46px;
+                                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.join-shelf .js-go:disabled { opacity: .55; cursor: default; }
+/* Typing: the names give way to the field — one sideways line, the same
+ * height for 6 people or 12, so the field and both answers stay above the keys. */
+.join-shelf.typing .js-names { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; max-height: none;
+                               -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+                               mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
+.join-shelf.typing .js-name { flex: none; }
+/* The shelf's name chips are 36px and 8px apart: the wall chips' borrowed 14px
+ * reach would land on the next row's name. Their own box (and 4px) is the target. */
+@media (pointer: coarse) { .join-shelf .js-name::after { inset: -4px -4px; } }
+/* ≥720 the sheet is a centred dialog already (.sheet above). */
+
+/* The zoom's door row (v92 — Kevin, 2026-09-25): a bare − at the far left, a
+ * bare + at the far right, and between them the notes chip exactly as the
+ * zoom has always drawn it. No shape, no container (Kevin, after the button
+ * study: "I like the left and right just − + no button shape"). The same row
+ * for a member and a guest, under a finger, a mouse or a key.
+ *   The glyphs stand a smidge (10px) inside the zoom's own content edges —
+ *   the left and right edges the who-row and the doors share — the same on
+ *   every card and width (Kevin: "bring the buttons in a smidge from the
+ *   edges"); never pulled toward the middle beyond that.
+ *   Their targets are invisible and forgiving: − owns everything left of the
+ *   chip, out to the card's left edge and down to its bottom; + everything
+ *   right of it; the chip is its own target (its 30px plus a vertical reach).
+ *   44px tall, so nothing between them falls through to the card behind.
+ *   A soft shadow keeps a white glyph legible on a pale wash. At a limit (−
+ *   at nothing picked, + at must) the glyph dims and keeps its place;
+ *   pressed, it dims a little — nothing moves under the finger.
+ * It is the card's floor: the name and the facts stay centred in the room
+ * above it (two auto margins share whatever height a tall cell leaves). */
+.zoom-card .f-name.over-doors { margin-top: auto; }
+/* A step must never move the doors under the hand (card-facts.js sizeSlot):
+ * the who-row is the one row a pick changes, so beside the doors it wraps
+ * inside the width the rest of the card sets instead of setting it. The
+ * middle — name, facts, doors out, who-row — stands in a centred column
+ * (--zoom-col); only the − and + reach the zoom's edges. */
+.zoom-card.doors .f-grown { align-self: stretch; }
+.zoom-card.doors .f-name,
+.zoom-card.doors .f-grown > * { max-width: min(100%, var(--zoom-col)); }
+.zoom-card.doors .f-who { contain: inline-size; align-self: center; width: 100%; }
+.zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                                 align-items: center; gap: 0; align-self: stretch; margin-top: auto; }
+.zoom-card .f-chips.f-step-row > .f-step {
+  -webkit-appearance: none; appearance: none; position: relative; box-sizing: border-box;
+  height: 44px; min-height: 44px; min-width: 0; margin: 0; padding: 0;
+  display: flex; align-items: center; background: none; border: 0; border-radius: var(--r-card);
+  color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
+.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
+.zoom-card .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
+.zoom-card .f-step:disabled { cursor: default; }
+.zoom-card .f-step:disabled .f-step-dot { opacity: .3; }
+.zoom-card .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
+.zoom-card .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
+/* The reach: out to the card's edges (the zoom's padding is 12px 14px). */
+.zoom-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -12px -14px; }
+.zoom-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
+/* The chip keeps its own look; its reach is vertical only — to the row's
+ * 44px whatever the chip's own height — so it never covers the − or + that
+ * meet it on either side. */
+.zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
+.zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }

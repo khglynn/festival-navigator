@@ -38,7 +38,7 @@ async function openPhone(fid, { fest = null, now = null, folded = null } = {}) {
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-    localStorage.setItem('fn_coach_v1', '1');
+    localStorage.setItem('fn_welcome_v1', '1');
     if (fold) localStorage.setItem(`fn_fold_v1_${f}`, JSON.stringify(fold));
   }, [TOKEN, fid, folded]);
   const doc = { v: 4, meta: { name: 'Contract', inviteFestId: fid }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [fid]: { selections: {} } } };
@@ -246,7 +246,7 @@ test('every room hidden from the show menu: a quiet notice that names the door, 
         localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
         localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
         localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
-        localStorage.setItem('fn_coach_v1', '1');
+        localStorage.setItem('fn_welcome_v1', '1');
       }, [TOKEN]);
       const doc = { v: 4, meta: { name: 'Contract', inviteFestId: 'portola-2026' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'portola-2026': { selections: {} } } };
       await ctx.route('**/api/**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));

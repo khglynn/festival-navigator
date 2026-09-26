@@ -1,0 +1,209 @@
+/* OURS round two — design prototype styles (2026-09-25). Tokens only: nothing
+ * here invents a colour. "Ours" is --brand (CLAUDE.md: anything that wants to
+ * look selected or "ours" uses --brand); --fest stays in its four homes.
+ *
+ * THE GRID. Every row of the plan, in every direction, is the same four
+ * columns, so times, nodes, names and counts each sit on one vertical line:
+ *   1 time (right-aligned, so "5:40" and "10:15" end together)
+ *   2 the node on the path (the path is one continuous 2px rail)
+ *   3 what and where (a grown card spans 3-4, its left edge on this line)
+ *   4 how many of us (right-aligned; the only number on the row)
+ * Round one broke this: counts sat under the time, at the right edge and
+ * centred under cards, and cards floated in a second column. */
+:root { --p-tw: 66px; --p-nw: 16px; --p-cw: 50px; --p-gap: 10px; --p-tmost: 19px; }
+@media (max-width: 359px) { :root { --p-tw: 60px; --p-cw: 46px; --p-gap: 8px; --p-tmost: 17px; } }
+
+.p-plan { display: flex; flex-direction: column; min-width: 0; }
+.p-row { position: relative; display: grid; min-width: 0;
+         grid-template-columns: var(--p-tw) var(--p-nw) minmax(0, 1fr) var(--p-cw);
+         column-gap: var(--p-gap); align-items: baseline; padding: 7px 0; }
+/* The path: one rail down column 2, drawn per row so it is continuous; it
+ * starts at the first node and ends at the last. */
+.p-row::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; border-radius: 1px;
+                 left: calc(var(--p-tw) + var(--p-gap) + var(--p-nw) / 2 - 1px);
+                 background: rgba(var(--brand), .28); }
+.p-row.first::before { top: 16px; }
+.p-row.last::before { bottom: auto; height: 16px; }
+.p-row.first.last::before { display: none; }
+.p-row.scattered::before { background: repeating-linear-gradient(to bottom, rgba(var(--brand), .38) 0 3px, transparent 3px 7px); }
+
+/* 1 · time */
+.p-t { justify-self: end; white-space: nowrap; font-family: var(--font-display); letter-spacing: var(--track-display);
+       font-size: 17px; line-height: 1; color: var(--text-header); }
+.p-t .tl { font-family: var(--font-ui); font-weight: 700; font-size: .7em; margin-right: 1px; color: var(--text-secondary); }
+.p-t .ap { font-family: var(--font-ui); font-size: 9px; font-weight: 800; letter-spacing: .04em;
+           color: var(--text-secondary); margin-left: 2px; }
+.p-t.or { font-family: var(--font-ui); font-size: 11px; font-weight: 600; font-style: italic; letter-spacing: 0;
+          color: var(--text-tertiary); }
+/* 2 · node: the stop's own aura (the card's colours), ringed off the rail */
+.p-node { position: relative; z-index: 1; justify-self: center; align-self: start; margin-top: 2px;
+          width: 14px; height: 14px; border-radius: var(--r-pill); overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(255, 255, 255, .38), 0 0 0 4px var(--p-bg, var(--dock)); }
+.p-node.animated { background-size: 180% 180% !important; animation: gradShift 12s ease-in-out infinite; }
+.p-row.some .p-node { width: 9px; height: 9px; margin-top: 4px; background: var(--p-bg, var(--dock)) !important;
+                      box-shadow: 0 0 0 1.5px rgba(var(--brand), .7), 0 0 0 4px var(--p-bg, var(--dock)); }
+.p-row.or .p-node { width: 7px; height: 7px; margin-top: 4px; background: var(--p-bg, var(--dock)) !important;
+                    box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--p-bg, var(--dock)); }
+.p-row.scattered .p-node { visibility: hidden; }
+/* 3 · what and where */
+.p-what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.p-what .nm { color: var(--text-primary); font-size: 14.5px; font-weight: 700; line-height: 1.15;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-what .pl { color: var(--text-secondary); font-size: 11px; font-weight: 600; line-height: 1.3;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-what .pl .also { color: var(--text-tertiary); font-weight: 600; }
+.p-what .pl .also::before { content: ' · '; }
+/* 4 · how many of us */
+.p-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
+.p-n b { font-family: var(--font-display); letter-spacing: var(--track-display); font-weight: 400;
+         font-size: 17px; color: var(--text-primary); margin-right: 3px; }
+
+/* MOST: the spine of the day. Bigger, the stop's aura on its node, and every
+ * face that will be there on a third line — all of them, never "+n", starting
+ * on the names' line (column 3), so people line up with names and cards. */
+.p-row.most { padding: 11px 0 10px; }
+.p-row.most .p-t { font-size: var(--p-tmost); }
+.p-row.most .p-node { width: 16px; height: 16px; margin-top: 3px; }
+.p-row.most .p-what .nm { font-size: 16px; font-weight: 800; }
+.p-row.most .p-what .pl { font-size: 11.5px; }
+.p-row.most .p-n b { font-size: var(--p-tmost); }
+.p-who { display: flex; margin-top: 5px; }
+.p-who .avatar { width: 15px; height: 15px; font-size: 7.5px; box-shadow: 0 0 0 1.5px var(--p-bg, var(--dock)); }
+.p-who .avatar + .avatar { margin-left: -4px; }
+/* SOME: the same four columns, one line, one step quieter. */
+.p-row.some { padding: 5px 0; }
+.p-row.some .p-what { flex-direction: row; align-items: baseline; gap: 0; }
+.p-row.some .p-what .nm { font-size: 13px; font-weight: 600; color: var(--text-body); flex: none; max-width: 100%; }
+.p-row.some .p-what .pl { font-size: 11px; color: var(--text-tertiary); flex: 0 100 auto; min-width: 0; }
+.p-row.some .p-what .pl::before { content: ' · '; white-space: pre; }
+.p-row.some .p-t { font-size: 14px; color: var(--text-secondary); }
+.p-row.some .p-n b { font-size: 14px; color: var(--text-body); }
+/* A fork: "or" in the time column, one line, its own count in column 4. A
+ * true split (as many of us, most of the time) wears its main row's weight. */
+.p-row.or { padding-top: 0; }
+.p-row.or .p-what .nm { font-size: 12.5px; font-weight: 600; color: var(--text-body); }
+.p-row.or .p-what .nm .pl-inline { color: var(--text-tertiary); font-weight: 600; font-size: 11px; }
+.p-row.or .p-n b { font-size: 14px; color: var(--text-body); }
+.p-row.or.even .p-what .nm { font-size: 13px; }
+.p-row.scattered .p-what .nm { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; font-style: italic; }
+/* Past stops step back; the live one carries the NOW pill in its time slot. */
+.p-row.past { opacity: .42; }
+.p-now { justify-self: end; align-self: start; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.p-now .pill { display: inline-flex; align-items: center; gap: 4px; background: rgb(var(--brand)); color: var(--page);
+               font-size: 9px; font-weight: 800; letter-spacing: .1em; padding: 3px 7px; border-radius: var(--r-pill); }
+.p-now .pill i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
+.p-now .at { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 12px; color: var(--text-secondary); }
+.p-row.live .p-node { box-shadow: 0 0 0 1px rgba(255, 255, 255, .55), 0 0 0 4px var(--p-bg, var(--dock)), 0 0 12px rgba(var(--brand), .85); }
+.p-row.live .p-what .nm { font-size: 17px; }
+/* A grown row: the real sheetCard spans columns 3-4 — its left edge on the
+ * names' line, its right edge on the counts' line. */
+.p-grow { grid-column: 3 / 5; margin-top: 8px; min-width: 0; }
+.p-grow .sheet-card { padding: 13px 12px 14px; }
+.p-grow .sheet-card .f-name { font-size: 17px; }
+/* "Earlier": the stops already over, folded to one line (a sentence, never +n). */
+.p-row.earlier .p-what .nm { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
+.p-row.earlier .p-what .nm b { color: var(--text-secondary); font-weight: 700; }
+.p-row.earlier .p-node { width: 7px; height: 7px; margin-top: 4px; background: var(--text-tertiary) !important;
+                         box-shadow: 0 0 0 4px var(--p-bg, var(--dock)); }
+.p-row.earlier .chev { color: var(--text-tertiary); font-size: 11px; justify-self: end; }
+.p-empty { color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; padding: 2px 0; }
+.p-empty b { color: var(--text-header); font-weight: 700; }
+
+/* ---- the shelf (all three directions end here) ------------------------------- */
+.sheet.p-sheet { --p-bg: var(--dock); padding: 10px var(--sp-gutter) 16px; gap: 10px; max-height: 86vh; }
+.p-sheet .p-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.p-sheet .p-head .room-head { flex: 1 1 auto; }
+.p-sheet .p-kick { display: flex; align-items: center; gap: 7px; }
+.p-sheet .p-kick .live { width: 6px; height: 6px; border-radius: var(--r-pill); background: rgb(var(--brand));
+                         box-shadow: 0 0 6px rgba(var(--brand), .85); }
+.p-sheet .p-kick .k { color: rgb(var(--brand)); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.p-sheet .p-kick .c { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.p-sheet .p-answer { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 26px; line-height: 1.02;
+                     color: var(--text-header); }
+.p-sheet .p-answer .n { color: #fff; }
+.p-sheet .p-answer .soft { color: var(--text-secondary); }
+.p-sheet .p-rule { height: 1px; background: var(--hairline); margin: 2px 0 0; }
+.p-send { display: flex; flex-direction: column; gap: 7px; align-items: stretch; margin-top: 4px;
+          position: sticky; bottom: -16px; padding: 14px 0 16px; margin-bottom: -16px; z-index: 3;
+          background: linear-gradient(to bottom, transparent, var(--dock) 16px); }
+.p-send .btn-tonal { font-size: 14px; padding: 13px 18px; }
+.p-send .hint { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; text-align: center; }
+
+/* ---- R1: the people line, pinned ------------------------------------------
+ * The people chips as ONE line that stays at the top of the screen and scrolls
+ * sideways (the day row's own fade says there is more). OURS leads it. */
+.p-people { position: fixed; top: 0; left: 0; right: 0; z-index: 26; height: 44px; box-sizing: border-box;
+            display: flex; align-items: center; gap: 6px; padding: 0 var(--sp-gutter);
+            background: rgba(12, 10, 20, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--hairline); overflow: hidden;
+            -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent); }
+.p-people .person-chip { flex: none; white-space: nowrap; }
+.person-chip.ours { font-weight: 800; letter-spacing: .02em; display: inline-flex; align-items: center; gap: 5px;
+                    padding-right: 10px; background: rgba(var(--brand), .16) !important; color: var(--tonal-text);
+                    border: 1px solid rgba(var(--brand), .55) !important; }
+.person-chip.ours .chev { font-weight: 700; opacity: .8; font-size: 11px; }
+.person-chip.ours.on { background: rgb(var(--brand)) !important; color: var(--page); border-color: rgb(var(--brand)) !important; }
+.p-people .sep { flex: none; width: 1px; height: 18px; background: var(--hairline); margin: 0 2px; }
+/* The in-toolbar version (the row as it is today, wrapping), for the width test. */
+#person-chips .person-chip.ours { order: -1; }
+
+/* ---- R2: the plan is the day's first room ---------------------------------- */
+.room.p-room { --p-bg: var(--page); }
+.room.p-room .p-plan { margin-top: 6px; }
+.p-room .p-more { display: grid; grid-template-columns: var(--p-tw) var(--p-nw) minmax(0, 1fr) var(--p-cw);
+                  column-gap: var(--p-gap); padding: 4px 0 2px; }
+.p-room .p-more .lnk { grid-column: 3 / 5; color: rgb(var(--brand)); font-size: 11.5px; font-weight: 700;
+                       background: none; border: 0; padding: 0; text-align: left; font-family: var(--font-ui); }
+
+/* ---- R3: the plan bar, on the dock's top edge --------------------------------
+ * The shelf, peeking: the stop you are in or the next one, on the same grid. */
+.p-bar { position: fixed; left: 0; right: 0; z-index: 31; --p-bg: var(--dock);
+         background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
+         box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); padding: 6px var(--sp-gutter) 7px; }
+.p-bar .grabber { width: 30px; height: 3px; border-radius: var(--r-pill); background: var(--border-card); margin: 0 auto 3px; }
+.p-bar .p-row { padding: 3px 0; }
+.p-bar .p-row::before { display: none; }
+.p-now .pill.next { background: none; color: var(--text-secondary); box-shadow: inset 0 0 0 1px var(--border-emphasis); }
+.p-bar .p-now .at { font-size: 13px; color: var(--text-header); }
+.p-bar .p-kickt { justify-self: end; color: rgb(var(--brand)); font-size: 9px; font-weight: 800; letter-spacing: .1em;
+                  display: inline-flex; align-items: center; gap: 4px; align-self: center; }
+.p-bar .p-kickt i { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand)); box-shadow: 0 0 5px rgba(var(--brand), .8); }
+.p-bar .p-kickt.next { color: var(--text-secondary); }
+.p-bar .p-what .nm { font-size: 13.5px; }
+
+/* ---- the dock options -------------------------------------------------------- */
+/* D1: NOW is a tab in the scrolling day row, right after the day that is live. */
+.dock .days .now-tab.in-row { order: 0; }
+/* D2: NOW leaves the dock and floats just above it, centred, while live. */
+.p-nowfloat { position: fixed; left: 50%; transform: translateX(-50%); z-index: 31;
+              display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px;
+              border-radius: var(--r-pill); background: rgba(10, 8, 18, .92); border: 1px solid rgba(var(--brand), .55);
+              -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(0, 0, 0, .5);
+              color: rgb(var(--brand)); font-family: var(--font-ui); font-weight: 800; font-size: 12px; letter-spacing: .02em; }
+.p-nowfloat .live { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand)); box-shadow: 0 0 5px rgba(var(--brand), .8); }
+.p-nowfloat .t { color: var(--text-secondary); font-weight: 700; }
+
+/* ---- the plus rule ----------------------------------------------------------
+ * Dashed means "add", and only an add wears it: the crew corner's "+n" is a
+ * count of other people, so it gets the solid scrim every other mark has. */
+.p-plusfix .mark.ghost { border-style: solid; border-color: rgba(255, 255, 255, .35); }
+
+/* ---- frame labels (design only; never shipped) ----------------------------- */
+.p-label { position: fixed; top: 6px; right: 8px; z-index: 60; color: var(--text-tertiary); font-size: 9px; font-weight: 800;
+           letter-spacing: .12em; text-transform: uppercase; background: rgba(12, 10, 20, .8); padding: 2px 6px; border-radius: 4px; }
+
+/* ---- naming board (design only) ------------------------------------------- */
+.p-names { position: fixed; inset: 0; z-index: 70; background: var(--page); overflow: hidden;
+           padding: 14px var(--sp-gutter); display: flex; flex-direction: column; gap: 9px; }
+.p-name { display: flex; flex-direction: column; gap: 7px; padding: 8px 10px 9px; border-radius: 12px;
+          border: 1px solid var(--hairline); background: var(--card); }
+.p-name.pick { border-color: rgba(var(--brand), .6); box-shadow: 0 0 0 1px rgba(var(--brand), .25); }
+.p-name .cap { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.p-name .cap b { color: var(--text-header); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.p-name .cap span { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.35; }
+.p-name .line { display: flex; align-items: center; gap: 6px; overflow: hidden;
+                -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+                mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent); }
+.p-name .line .person-chip { flex: none; white-space: nowrap; }
+.p-name .line .sep { flex: none; width: 1px; height: 18px; background: var(--hairline); }

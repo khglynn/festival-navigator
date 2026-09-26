@@ -36,7 +36,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { factsFor, sheetCard } = await import('../js/v3/card-facts.js');
-const { linksOf } = await import('../js/v3/events.js');
+const { linksOf, showsOnItsOwn } = await import('../js/v3/events.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -147,9 +147,13 @@ for (const id of ['portola-2026', 'acl-2026']) {
     // nights openers pointed at the venue or the festival instead, the review
     // of #29). Two doors times in one room are two shows (an early and a late
     // show) and may differ. A brand-new room with no known page yet is fine.
+    //
+    // A party in a section read by time (v94, Folsom) is its own show with its
+    // own links (events.js showsOnItsOwn): The Stud hosts four separate
+    // parties on Folsom Friday and Saturday, each with its own page. Not a bill.
     const shows = new Map();
     for (const a of off) {
-      if (a.cancelled) continue;
+      if (a.cancelled || showsOnItsOwn(fest, a)) continue;
       const k = `${a.day}|${a.night || a.date}|${a.venue}|${a.doors || ''}`;
       if (!shows.has(k)) shows.set(k, []);
       shows.get(k).push(a);

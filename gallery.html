@@ -104,6 +104,9 @@
     <div class="g-label" style="margin-top: 20px;">19 · the who-chips in motion — press a case: its card resets, grows, and you tap once (Slow motion ×4 above; claude-plans/2026-09-23-zoom-chips-motion.md)</div>
     <div class="zoom-controls" id="zoom-chip-cases"></div>
     <div class="zoom-row" id="zoom-row-chips"></div>
+
+    <div class="g-label" style="margin-top: 20px;">20 · the most crowded zoom — a real Portola afters (Femme Jatale b2b erika's own entry: doors, the order door, Tix and Info), a crowd at every level, notes, Spotify, and the − · note · + row along its floor; then its second set, under a bill long enough for two lines. Hold (touch) or hover to grow either; − and + step your level, the note door is the notes chip</div>
+    <div class="zoom-row" id="zoom-row-crowded"></div>
   </div>
 </section>
 
@@ -118,13 +121,13 @@
     <span class="zoom-controls" style="margin: 0;"><button type="button" id="events-by-strip">Zoom a card tucked under the strip</button></span>
   </div>
   <ul class="events-states">
-    <li><b>FRI AFTERS</b> — the day's first head, so it carries the date. Venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
-    <li><b>FRI FOLSOM</b> — one group, one show; a later head on the day, so no date.</li>
+    <li><b>FRI AFTERS</b> — the day's first head, so it carries the date. Venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order. And a real Portola show, <b>Great American Music Hall</b>: doors, guessed times, the unconfirmed order and both doors out (the zoom gallery's 20 grows it crowded).</li>
+    <li><b>FRI FOLSOM</b> — <b>by time</b> (v94: <code>dayMeta.Folsom.layout: "by-time"</code>): EVENING, 9 PM, 10 PM, LATE, each card in start order saying its place under its time. The Stud hosts two parties, and each is its own card in its own band. A later head on the day, so no date.</li>
     <li><b>SAT GALLERY FEST</b> — the day's date door, with its whisper under it. The grid, its own sticky strip (five stages, so it scrolls on a phone), inside the day, spanning the whole festival day so the now line has a home. <b>All Night Long</b> runs four and a half hours: a tall cell.</li>
     <li><b>SAT AFTERS</b> — its own door and whisper. A <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
-    <li><b>SAT FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
+    <li><b>SAT FOLSOM</b> — by time under the clock: DAYTIME to AFTER-HOURS (a 3 AM start is Saturday night's), a guessed close on the card (<code>9:30 PM – ~2 AM</code>), the now ring on whoever is open at 11:30 PM, and DEVIANTS with no clock at all under TIME TBA. From 720 up its columns sit under the clock's; on a phone it keeps the shell's two columns.</li>
     <li><b>SUN GALLERY FEST</b> — a <b>second grid day</b>: the shape every real scheduled fest has. Each day's strip follows <b>its own</b> columns, while the two days still mirror one scroll position between them — scroll either grid and both sets of stage names travel with their cards.</li>
-    <li><b>SUN FOLSOM</b> — an 11 AM street fair opens the day.</li>
+    <li><b>SUN FOLSOM</b> — by time: an 11 AM street fair opens DAYTIME.</li>
     <li><b>TUE LATE NIGHTS · THU LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, one head per date (each the door to that date), venue groups under each.</li>
     <li><b>THE FOLD</b> — the checkboxes stand in for the show menu: a hidden room renders nothing, and a day it empties goes whole.</li>
     <li><b>BY THE STICKY STRIP</b> — the button scrolls SAT GALLERY FEST until its strip is pinned and a card's top is tucked under it, then grows that card (the keyboard route, so it stands): the zoom clears the stage names by 8px and still grows from the card's own centre (card-facts.js <code>place</code>, 2026-09-24). Scroll on with it open: it holds under the strip, and closes once its card is gone under it.</li>
@@ -507,6 +510,12 @@ const SELECTIONS = {
   'Only Others': { Drew: 4, Kat: 1, Nhu: 1 },
   'Seven Of Seven': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
   Sevens: { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
+  // 20 · you at one bar, so − and + are both live; someone at every level.
+  'Femme Jatale b2b erika': { Kevin: 1, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
+  'Femme Jatale b2b erika b2b sfcowboy': { Kevin: 1, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
+  // 20c · three levels by others and nothing of yours: your first + brings a
+  // fourth chip, which is what used to widen the zoom under the finger.
+  'Room To Grow': { Drew: 4, Nhu: 3, Pegah: 2 },
 };
 
 // A fixed token, wiped on every load so the gallery renders the SAME states
@@ -538,6 +547,10 @@ state.activateCrew(TOKEN, {
   ['Seven Of Seven', 'Drew', 'Front left.'],
   ['Seven Of Seven', 'Kat', 'Meet at the rail.'],
   ['Sevens', 'Drew', 'Front left.'],
+  ['Femme Jatale b2b erika', 'Kat', 'Doors at 8, Femme is on first.'],
+  ['Femme Jatale b2b erika', 'Nhu', 'Coat check is cash only.'],
+  ['Femme Jatale b2b erika b2b sfcowboy', 'Kat', 'Doors at 8, Femme is on first.'],
+  ['Femme Jatale b2b erika b2b sfcowboy', 'Nhu', 'Coat check is cash only.'],
 ].forEach(([artist, author, text], i) => {
   const ts = new Date(Date.UTC(2026, 8, 26, 20, i * 7)).toISOString();
   state.recordNote(GFID, 'artist', artist, model.makeNoteId(author, ts, `n${i}`), { author, ts, text });
@@ -549,6 +562,8 @@ state.recordAffinity('Kevin', {
   'Everything At Once': { songs: 8, followed: true },
   'Seven Of Seven': { songs: 41, followed: true },
   Sevens: { songs: 41, followed: true },
+  'Femme Jatale b2b erika': { songs: 7, followed: true },
+  'Femme Jatale b2b erika b2b sfcowboy': { songs: 7, followed: true },
 });
 
 const ctx = {
@@ -559,6 +574,8 @@ const ctx = {
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: handleTap,
+  // The zoom's door row, − · note · + (app.js ctx.onStep, v92).
+  onStep: (artist, dir) => stepPick(artist, dir),
   // The exact shape ctx.wireZoom takes in app.js: card-facts.js owns the
   // timing and the grow, wall.js just hands every card here.
   wireZoom: (el, artist, occ) => {
@@ -591,7 +608,15 @@ function zoomStatus(msg) {
 // gallery, 2026-08-30 — a click never moved the pill until this landed).
 function handleTap(artistName) {
   const cur = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  const next = model.nextTapLevel(cur);
+  setLevel(artistName, model.nextTapLevel(cur));
+}
+// The zoom's − / + (app.js stepPick): one level, never a wraparound.
+function stepPick(artistName, dir) {
+  const cur = (ctx.picks[artistName] || {})[ctx.meName] || 0;
+  const next = Math.max(0, Math.min(4, cur + (dir > 0 ? 1 : -1)));
+  if (next !== cur) setLevel(artistName, next);
+}
+function setLevel(artistName, next) {
   state.recordSelection(artistName, ctx.meName, next);
   const sels = state.crewDoc.festivals[GFID].selections;
   (sels[artistName] = sels[artistName] || {})[ctx.meName] = next;
@@ -758,6 +783,20 @@ const cellAt = (time) => ({ day: 'Saturday', stage: 'Pier Stage', time, weekend:
   crowdRow.appendChild(wrap);
 });
 
+// 20 · the most crowded zoom (v92): every row the zoom can hold, at once —
+// the order door under WHEN, the venue's map door, Tix and Info, a who-row
+// at every level, Spotify, and the − · note · + row along the floor. The
+// browser contract (tests/browser/zoom-door-row.test.mjs) grows these at
+// 390, 320 and 1280 and measures that nothing clips, nothing overlaps, and
+// every door is still the thing under its own centre.
+const crowdedRow = document.getElementById('zoom-row-crowded');
+// The entries live in the EVENTS fest below (the page's active fest once it
+// paints, which is where every zoom here reads its facts from).
+const afters = (time) => ({ day: 'Afters', stage: 'Fri · Great American Music Hall', time, weekend: null, date: null, venue: 'Great American Music Hall' });
+crowdedRow.appendChild(stateCard('20a · the real afters, crowded', 'Femme Jatale b2b erika', { time: 'Fri · ~9 PM', occ: afters('9 PM') }));
+crowdedRow.appendChild(stateCard('20b · its second set, a name on two lines', 'Femme Jatale b2b erika b2b sfcowboy', { time: 'Fri · ~10:30 PM', occ: afters('10:30 PM') }));
+crowdedRow.appendChild(stateCard('20c · a step never moves the doors — tap + twice without moving: your chip arrives, the doors stay put', 'Room To Grow', { occ: day }));
+
 // 19 · the who-chips in motion (claude-plans/2026-09-23-zoom-chips-motion.md).
 // Each button puts its card's picks back to the "before" state, grows the
 // card (a keyboard-route zoom, so it stands without a hover), waits for the
@@ -831,10 +870,13 @@ FESTIVALS[EFID] = {
   subtitle: 'The Pier · Doors 1 PM', timezone: 'America/Los_Angeles',
   dayMeta: {
     Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' }, Sunday: { wd: 'Sun', date: 'Sep 27', iso: '2026-09-27' },
-    Afters: { date: 'Sep 25-27' }, Folsom: { date: 'Sep 25-27' },
+    // Folsom reads BY TIME (v94): each night's cards in start order under
+    // fixed bands, each card saying its place.
+    Afters: { date: 'Sep 25-27' }, Folsom: { date: 'Sep 25-27', layout: 'by-time' },
     'Late nights': { date: 'Sep 29 – Oct 1', sub: 'around the city' },
   },
-  venues: { 'The Ballroom': 'https://maps.google.com/?q=The+Ballroom', 'The Basement': 'https://maps.google.com/?q=The+Basement', 'The Room': 'https://maps.google.com/?q=The+Room', 'The Street': 'https://maps.google.com/?q=The+Street' },
+  venues: { 'The Ballroom': 'https://maps.google.com/?q=The+Ballroom', 'The Basement': 'https://maps.google.com/?q=The+Basement', 'The Room': 'https://maps.google.com/?q=The+Room', 'The Street': 'https://maps.google.com/?q=The+Street',
+    'Great American Music Hall': "https://maps.google.com/?q=Great+American+Music+Hall,+859+O'Farrell+St,+San+Francisco" },
   days: {
     // Five stages so the grid overflows a phone — the sticky strip and its
     // follow only have anything to say when the columns scroll.
@@ -876,20 +918,38 @@ FESTIVALS[EFID] = {
     { name: 'Despacio', ...room('Fri', 'The Pier (loyalty invite)', { time: '5 PM - 11 PM' }) },
     { name: 'Airwolf Paradise', ...room('Fri', 'The Basement') },
     { name: 'Neil Frances', ...room('Fri', 'The Garage', { doors: '10 PM', close: '2 AM', closeApprox: true }) },
+    // A real Portola afters (v92), field for field from data/festivals/portola-2026.json:
+    // doors, a guessed time, the unconfirmed order, a close, Info and Tix — the
+    // most a zoom can carry (the zoom gallery's 20 grows it crowded). Its second
+    // set is the same shape under a bill long enough to take two lines.
+    { name: 'Femme Jatale b2b erika', ...room('Fri', 'Great American Music Hall', { doors: '8 PM', order: { seq: 1, of: 3, source: 'https://www.eventim.us/event/six-sex/702210', confirmed: false }, time: '9 PM', approx: true, close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)', page: { url: 'https://dothebay.com/events/2026/9/25/six-sex-tickets', at: 'DoTheBay' }, tickets: { url: 'https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff', at: 'AXS' } }) },
+    { name: 'Femme Jatale b2b erika b2b sfcowboy', ...room('Fri', 'Great American Music Hall', { doors: '8 PM', order: { seq: 2, of: 3, source: 'https://www.eventim.us/event/six-sex/702210', confirmed: false }, time: '10:30 PM', approx: true, close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)', page: { url: 'https://dothebay.com/events/2026/9/25/six-sex-tickets', at: 'DoTheBay' }, tickets: { url: 'https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff', at: 'AXS' } }) },
     // Saturday afters: a back-to-back run (guessed times, unconfirmed order) and one plain set.
     // Before tickets exist: the page is the one door (and the order keeps its own).
     { name: 'MGNA Crrrta', ...room('Sat', 'The Room', { time: '10 PM', approx: true, ...run, order: { seq: 1, of: 3, source: POSTER, confirmed: false }, page: { url: 'https://example.test/the-room-saturday', at: 'DoTheBay' } }) },
     { name: 'VTSS', ...room('Sat', 'The Room', { time: '11 PM', approx: true, ...run, order: { seq: 2, of: 3, source: POSTER, confirmed: false } }) },
     { name: 'horsegiirL', ...room('Sat', 'The Room', { time: '12 AM', approx: true, ...run, order: { seq: 3, of: 3, source: POSTER, confirmed: false } }) },
     { name: 'Fatboy Slim', ...room('Sat', 'The Basement', { time: '10 PM' }) },
-    // Folsom: tiles all week.
-    { name: 'BRUT SF', ...folsom('Fri', 'The Basement', { time: '10 PM - 4 AM' }) },
-    { name: 'Magnitude', ...folsom('Sat', 'The Ballroom', { time: '9 PM - 5 AM' }) },
-    { name: 'PERVERT XXL', ...folsom('Sat', 'The Room', { time: '10 PM - 6 AM' }) },
+    // Folsom, by time (v94): a band per start — DAYTIME, EVENING, 9 PM, 10 PM,
+    // LATE, AFTER-HOURS, TIME TBA — each card saying its place, the area after
+    // the venue when the file has one.
+    { name: 'BRUT SF', ...folsom('Fri', 'The Basement', { time: '10 PM - 4 AM', area: 'SoMa' }) },
+    { name: 'Bark Before Dark', ...folsom('Fri', 'The Stud', { time: '5 PM - 9 PM', area: 'SoMa' }) },
+    { name: 'Dirty Boots', ...folsom('Fri', 'The Stud', { time: '10 PM', area: 'SoMa' }) },
+    { name: 'CORAZON SF – Folsom Wknd (w/ RPDR\'s Eva Blunt)', ...folsom('Fri', 'Beaux', { time: '9 PM - 3 AM', area: 'Castro' }) },
+    { name: 'MÜLL', ...folsom('Fri', 'TBA (SF)', { time: '11 PM - 6 AM' }) },
+    { name: 'Folsom Weekend Drag Brunch', ...folsom('Sat', 'Mayes Oyster House', { time: '11 AM', area: 'Polk Gulch' }) },
+    // A venue longer than a narrow card on its own: it wraps between its words, as a name does; the area keeps its own line.
+    { name: 'Perverts Put Out Does Folsom Street Fair!', ...folsom('Fri', 'Folsom Street Community Center', { time: '7 PM - 9:30 PM', area: 'SoMa' }) },
+    { name: 'Big Muscle: Bare Chest Calendar', ...folsom('Sat', 'The Ballroom', { time: '1 PM - 7 PM', area: 'SoMa' }) },
+    { name: 'Magnitude', ...folsom('Sat', 'The Ballroom', { time: '9 PM - 5 AM', area: 'Van Ness' }) },
+    { name: 'FOLSOM Princess w/ Crystal Methyd', ...folsom('Sat', 'Oasis', { time: '9:30 PM', close: '2 AM', closeApprox: true, area: 'SoMa' }) },
+    { name: 'PERVERT XXL', ...folsom('Sat', 'The Room', { time: '10 PM - 6 AM', area: 'Dogpatch' }) },
+    { name: 'Aftershock', ...folsom('Sat', 'City Nights', { time: '3 AM - 10 AM', area: 'SoMa' }) },
     // The page IS the ticket page: one door.
     { name: 'DEVIANTS', ...folsom('Sat', 'The Street', { page: { url: 'https://example.test/deviants', at: 'Eventbrite' }, tickets: { url: 'https://example.test/deviants', at: 'Eventbrite' } }) },
     { name: 'Folsom Street Fair', ...folsom('Sun', 'The Street', { time: '11 AM - 6 PM', page: { url: 'https://example.test/folsom-street-fair', at: 'Folsom Street' } }) },
-    { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM' }) },
+    { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM', area: 'SoMa' }) },
     // Late nights: dated, not nightly — its own tab, a head per date.
     { name: 'Overmono', ...late('2026-09-29', 'The Room', { doors: '9 PM', page: { url: 'https://example.test/overmono', at: 'Do512' }, tickets: { url: 'https://example.test/buy/overmono', at: 'Ticketmaster' } }) },
     { name: 'Anz', ...late('2026-09-29', 'The Ballroom', { doors: '10 PM', time: '11 PM', approx: true }) },

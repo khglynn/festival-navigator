@@ -7,7 +7,8 @@ promoter's own calendar, and the sold-out check below was done then, once. There
 no rolling checker.
 
 **Result:** 35 parties added (36 cards, because the GearedUp Alley Party runs two days).
-18 more are verified and ready but held back (see "Held"). 4 skipped. 11 were already in
+18 more were verified and held back until v94 made each by-time party its own show, then
+spliced in on live/v94, 2026-09-26 (see "Held"). 4 skipped. 11 were already in
 the file, and all 11 got the sold-out check.
 
 ## How the fields were chosen
@@ -89,7 +90,14 @@ the file, and all 11 got the sold-out check.
 | Real Bad 37 | none (unchanged) | **sold out**, realbad.org says no tickets at the door |
 | Disco Daddy | none | door night |
 
-## Held: verified, ready, not in the file yet
+## Held, then applied (v94, 2026-09-26)
+
+**Applied on live/v94** (commit "data: the 18 Folsom parties that share a venue on a night"):
+v94 reads Folsom by time and treats each party there as its own show (`events.js`
+`showsOnItsOwn`: the room rules below no longer reach a by-time section), so the 18 went in
+per the splice file's readme, their names were frozen, and the validator reads 0 errors and
+0 warnings. The splice file is retired (it is in git history, at this branch's commit
+6fdde31). What follows is the record of why they waited.
 
 These 18 share a venue on the same night with another party. Today's model treats a
 shared venue-night as one bill: one doors time, one page and one ticket link. The
@@ -156,7 +164,7 @@ splice gives 0 errors and exactly the 9 shared-room warnings.
 7. All-caps names (HUNGER, OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW, RATED X,
    NOCTURNAL EXTREME, …) are printed that way. Aftershock, already in the file, was title-cased
    by an earlier pass, so the Ky Martinez trio doesn't match in style.
-8. Held, not frozen: the SF Eagle page prints "Folsom Friday Warm-Up **:** Boot Camp" (space before
+8. (Frozen with the splice, v94.) The SF Eagle page prints "Folsom Friday Warm-Up **:** Boot Camp" (space before
    the colon). The fragment normalises it. The Stud's pages print "BARK BEFORE DARK" and "LE FEMMES",
    while their organisers' Eventbrite titles are "Bark Before Dark: Folsom" and "Le Femmes Folsom Edition".
 

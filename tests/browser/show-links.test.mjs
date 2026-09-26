@@ -139,7 +139,7 @@ test('in the app, a door tapped just after a pick picks and the zoom stays open'
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Doors' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1');
+      localStorage.setItem('fn_welcome_v1', '1');
     }, [CREW, FID]);
     const doc = { v: 4, meta: { name: 'Doors', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));

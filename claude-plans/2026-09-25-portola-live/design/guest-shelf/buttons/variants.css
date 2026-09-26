@@ -1,0 +1,145 @@
+/* Button study (2026-09-25, late) — the zoom's control row, four ways, plus the
+ * one button family applied across tonight's surfaces. Injected by rig.mjs on
+ * top of the production stylesheet; the variant is html[data-btn], the family
+ * is html[data-family]. Values come from assets/v3-tokens.css where a token
+ * exists: the scrim is --page (#0C0A14 = 12,10,20) at an alpha, the same scrim
+ * the wall's .mark.ghost already uses; the hairline is white at an alpha, the
+ * same hairline family as .mark.ghost's rgba(255,255,255,.55). */
+
+/* ---- shared by every variant: the row is the zoom's full inner width ------- */
+html[data-btn] .zoom-card .f-grown:has(.f-step-row),
+html[data-btn] .zoom-card .f-grown:has(.f-guest-row) { align-self: stretch; }
+html[data-btn] .zoom-card .f-chips.f-step-row,
+html[data-btn] .zoom-card .f-chips.f-guest-row {
+  --wash-scrim: rgba(12, 10, 20, .34);
+  --wash-line: rgba(255, 255, 255, .34);
+  --wash-divider: rgba(255, 255, 255, .22);
+  --wash-press: rgba(255, 255, 255, .16);
+  align-self: stretch; margin: 4px 0 0; gap: 0;
+}
+html[data-btn] .zoom-card .f-chips.f-step-row > button,
+html[data-btn] .zoom-card .f-chips.f-guest-row > button {
+  box-sizing: border-box; min-height: 0; margin: 0; padding: 0; position: relative;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  color: #fff; font: 700 13px/1 var(--font-ui); letter-spacing: 0; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background-color 80ms ease;
+}
+html[data-btn] .zoom-card .f-chips.f-step-row .f-step-dot,
+html[data-btn] .zoom-card .f-chips.f-step-row .f-step.plus .f-step-dot {
+  width: auto; height: auto; background: none; border: 0; color: inherit;
+  font-size: 22px; font-weight: 500; line-height: 1; transform: none;
+}
+html[data-btn] .zoom-card .f-step:disabled { cursor: default; }
+html[data-btn] .zoom-card .f-step:disabled .f-step-dot { opacity: .32; }
+/* The notes door is plain words in the row ("+ note", "2 notes"). A bubble
+ * mark was tried in the study and read as a stray dot beside the "+". */
+html[data-btn] .zoom-card .f-chips.f-step-row .f-chip.notes::before,
+html[data-btn] .zoom-card .f-chips.f-guest-row .f-chip.notes::before { content: none; }
+/* Reach: − and + run out to the card's edges and down to its bottom (the zoom
+ * card's padding is 12px 14px), so the whole row is three doors, no gaps. */
+html[data-btn] .zoom-card .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -12px -14px; }
+html[data-btn] .zoom-card .f-step.plus::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
+html[data-btn] .zoom-card .f-chips.f-step-row .f-chip.notes::after,
+html[data-btn] .zoom-card .f-chips.f-guest-row .f-chip.notes::after { content: ''; position: absolute; inset: -6px 0 -12px; }
+/* Focus: a WHITE ring inside the control. The app's ring is --brand violet,
+ * which disappears on a violet wash; inside the zoom the wash is the ground. */
+html[data-btn] .zoom-card .f-chips.f-step-row > button:focus-visible,
+html[data-btn] .zoom-card .f-chips.f-guest-row > button:focus-visible,
+html[data-btn] .zoom-card .f-chips.f-step-row > button.sim-focus,
+html[data-btn] .zoom-card .f-chips.f-guest-row > button.sim-focus { outline: 2px solid #fff !important; outline-offset: -4px; }
+
+/* ---- A · one segmented stepper [ − | note | + ] ------------------------------ */
+html[data-btn="A"] .zoom-card .f-chips.f-step-row,
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; height: 44px; box-sizing: border-box;
+  background: var(--wash-scrim); border: 1px solid var(--wash-line); border-radius: var(--r-pill);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+html[data-btn="A"] .zoom-card .f-chips.f-step-row > button,
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row > button { height: 100%; background: none; border: 0; border-radius: 0; }
+html[data-btn="A"] .zoom-card .f-chips.f-step-row > .f-step.minus { border-radius: var(--r-pill) 0 0 var(--r-pill); }
+html[data-btn="A"] .zoom-card .f-chips.f-step-row > .f-step.plus { border-radius: 0 var(--r-pill) var(--r-pill) 0; }
+html[data-btn="A"] .zoom-card .f-chips.f-step-row .f-chip.notes { border-left: 1px solid var(--wash-divider); border-right: 1px solid var(--wash-divider); }
+html[data-btn="A"] .zoom-card .f-chips.f-step-row > button:active:not(:disabled),
+html[data-btn="A"] .zoom-card .f-chips.f-step-row > button.sim-press { background: var(--wash-press); }
+/* A guest's row: the same pill, notes a third, Pick shows two thirds and lit. */
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row { grid-template-columns: 1fr 2fr; }
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row > .f-chip.notes { border-radius: var(--r-pill) 0 0 var(--r-pill); border-right: 1px solid var(--wash-divider); }
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row > .f-pick { height: 100%; border-radius: 0 var(--r-pill) var(--r-pill) 0;
+                                                    background: rgba(255, 255, 255, .92); color: #120E1E; font-weight: 800; }
+html[data-btn="A"] .zoom-card .f-chips.f-guest-row .f-pick::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
+
+/* ---- B · three equal ghost pills of one height ------------------------------ */
+html[data-btn="B"] .zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; height: 44px; }
+html[data-btn="B"] .zoom-card .f-chips.f-step-row > button {
+  height: 44px; background: var(--wash-scrim); border: 1px solid var(--wash-line); border-radius: var(--r-pill);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+html[data-btn="B"] .zoom-card .f-step.minus::after { inset: -6px -3px -12px -14px; }
+html[data-btn="B"] .zoom-card .f-step.plus::after { inset: -6px -14px -12px -3px; }
+html[data-btn="B"] .zoom-card .f-chips.f-step-row .f-chip.notes::after { inset: -6px -3px -12px; }
+html[data-btn="B"] .zoom-card .f-chips.f-step-row > button:active:not(:disabled),
+html[data-btn="B"] .zoom-card .f-chips.f-step-row > button.sim-press { background: rgba(12, 10, 20, .5); border-color: rgba(255, 255, 255, .6); }
+
+/* ---- C · bare − and +, only the note is a pill ------------------------------ */
+html[data-btn="C"] .zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: 1fr auto 1fr; height: 44px; }
+html[data-btn="C"] .zoom-card .f-chips.f-step-row > .f-step { height: 44px; background: none; border: 0; }
+html[data-btn="C"] .zoom-card .f-step.minus { justify-content: flex-end; padding-right: 22px; }
+html[data-btn="C"] .zoom-card .f-step.plus { justify-content: flex-start; padding-left: 22px; }
+html[data-btn="C"] .zoom-card .f-chips.f-step-row .f-step-dot { font-size: 30px; font-weight: 400; text-shadow: 0 1px 3px rgba(12, 10, 20, .55); }
+html[data-btn="C"] .zoom-card .f-chips.f-step-row .f-chip.notes {
+  height: 36px; padding: 0 16px; border-radius: var(--r-pill); background: var(--wash-scrim);
+  border: 1px solid var(--wash-line); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+html[data-btn="C"] .zoom-card .f-step:active:not(:disabled) .f-step-dot,
+html[data-btn="C"] .zoom-card .f-step.sim-press .f-step-dot { transform: scale(.86); opacity: .8; }
+
+/* ---- D · A with words: the + says what the next tap does ------------------- */
+html[data-btn="D"] .zoom-card .f-chips.f-step-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; height: 44px; box-sizing: border-box;
+  background: var(--wash-scrim); border: 1px solid var(--wash-line); border-radius: var(--r-pill);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+html[data-btn="D"] .zoom-card .f-chips.f-step-row > button { height: 100%; background: none; border: 0; border-radius: 0; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row > .f-step.minus { border-radius: var(--r-pill) 0 0 var(--r-pill); }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row > .f-step.plus { border-radius: 0 var(--r-pill) var(--r-pill) 0; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row .f-chip.notes { border-left: 1px solid var(--wash-divider); border-right: 1px solid var(--wash-divider); }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row .f-step-dot { font-size: 18px; display: inline-flex; align-items: center; gap: 5px; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row .f-step-dot::after { font: 700 13px/1 var(--font-ui); }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="0"] .f-step.minus .f-step-dot::after,
+html[data-btn="D"] .zoom-card .f-chips.f-step-row .f-step.minus .f-step-dot::after { content: 'Less'; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="1"] .f-step.minus .f-step-dot::after { content: 'Unpick'; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="0"] .f-step.plus .f-step-dot::after { content: 'Pick'; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="1"] .f-step.plus .f-step-dot::after,
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="2"] .f-step.plus .f-step-dot::after { content: 'More'; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="3"] .f-step.plus .f-step-dot::after,
+html[data-btn="D"] .zoom-card .f-chips.f-step-row[data-level="4"] .f-step.plus .f-step-dot::after { content: 'Must'; }
+html[data-btn="D"] .zoom-card .f-chips.f-step-row > button:active:not(:disabled),
+html[data-btn="D"] .zoom-card .f-chips.f-step-row > button.sim-press { background: var(--wash-press); }
+
+/* ---- the family, applied across tonight's surfaces (html[data-family]) ------
+ * One button: a pill (--r-pill), 44px tall, a 1px line, Inter 700 13.5px.
+ * Three fills, by the ground it sits on:
+ *   on the dark app ground, primary = tonal (--tonal-fill, --tonal-text, a
+ *   brand line at .35); secondary = clear (--border-input line, --text-secondary);
+ *   on a card's wash = the scrim (page at .34, white line at .34, white type). */
+html[data-family] .welcome-card .bring-actions .btn-tonal,
+html[data-family] .welcome-card .bring-actions .btn-ghost,
+html[data-family] .join-shelf .js-actions .btn-tonal,
+html[data-family] .join-shelf .js-actions .btn-ghost {
+  box-sizing: border-box; height: 44px; min-height: 44px; padding: 0 16px; border-radius: var(--r-pill);
+  font: 700 13.5px/1 var(--font-ui); letter-spacing: 0; transition: background-color 80ms ease;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+html[data-family] .welcome-card .bring-actions .btn-tonal,
+html[data-family] .join-shelf .js-actions .btn-tonal { border: 1px solid rgba(var(--brand), .35); }
+html[data-family] .welcome-card .bring-actions .btn-ghost,
+html[data-family] .join-shelf .js-actions .btn-ghost { border: 1px solid var(--border-input); color: var(--text-secondary); }
+html[data-family] .welcome-card .bring-actions .btn-tonal:active,
+html[data-family] .join-shelf .js-actions .btn-tonal:not(:disabled):active,
+html[data-family] .btn-tonal.sim-press { background: rgba(var(--brand), .24); }
+html[data-family] .welcome-card .bring-actions .btn-ghost:active,
+html[data-family] .join-shelf .js-actions .btn-ghost:active,
+html[data-family] .btn-ghost.sim-press { background: rgba(255, 255, 255, .06); color: var(--text-body); }
+html[data-family] .join-shelf .js-field { height: 44px; }
+html[data-family] .join-shelf .js-go:disabled { opacity: .5; }
