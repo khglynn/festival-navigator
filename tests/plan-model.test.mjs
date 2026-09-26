@@ -191,6 +191,17 @@ test('the port\'s fixes on Portola: Folsom is parties, a two-section show is one
   assert.ok(plan.places.every((p) => ids.has(p.nightId)));
 });
 
+test('rule 8 reaches "also": a play in a hidden room is never mentioned, though the stop still leans on it', () => {
+  const all = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+  const fatboy = stopOf(all, '2026-09-26', 'Fatboy Slim');
+  assert.deepEqual(fatboy.alsoAt.map((o) => [o.nightId, o.place]), [['2026-09-27', '888 Garage']]);
+  const noAfters = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members, folded: ['Afters'] });
+  const hidden = stopOf(noAfters, '2026-09-26', 'Fatboy Slim');
+  assert.deepEqual([hidden.from, hidden.count, hidden.leansOnDoubles, hidden.alsoAt], [fatboy.from, fatboy.count, true, []]);
+  assert.deepEqual(P.alsoOf(hidden, noAfters), []);
+  assert.ok(noAfters.playsAt.get('Fatboy Slim').some((o) => !o.shown), 'playsAt still knows the hidden play (and says so)');
+});
+
 test('lazy nights: a route is computed once, on first ask', () => {
   const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
   const a = plan.night('2026-09-26');
