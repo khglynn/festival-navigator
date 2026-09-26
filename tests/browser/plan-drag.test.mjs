@@ -83,13 +83,17 @@ const grabAt = (page) => page.evaluate(() => {
   const el = document.getElementById('plan');
   return { x: g.left + g.width / 2, y: g.top + g.height / 2, range: el.offsetHeight - Number(el.dataset.peekH) };
 });
-// A mouse drag: down, a slow walk of `steps`, an optional hold, up.
+// A mouse drag: down, a slow walk of `steps`, an optional hold, up. A held
+// drag reports where the window got to before the hand lets go; a flick
+// (no hold) lets go at once — a page round trip between the last move and
+// the release reads as a hand that stopped, which is no flick at all (a
+// loaded machine once made that gap longer than the flick's 80ms).
 async function drag(page, from, dy, { steps = 12, stepMs = 16, holdMs = 250 } = {}) {
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  for (let k = 1; k <= steps; k++) { await page.mouse.move(from.x, from.y + dy * (k / steps)); await sleep(stepMs); }
+  for (let k = 1; k <= steps; k++) { await page.mouse.move(from.x, from.y + dy * (k / steps)); if (k < steps || holdMs) await sleep(stepMs); }
   if (holdMs) await sleep(holdMs);
-  const mid = await geometry(page);
+  const mid = holdMs ? await geometry(page) : null;
   await page.mouse.up();
   return mid;
 }
@@ -156,11 +160,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     const { ctx, page, errors } = await openPhone(get());
     try {
       let from = await grabAt(page);
-      await drag(page, from, -60, { steps: 3, stepMs: 8, holdMs: 0 }); // short and fast
+      await drag(page, from, -90, { steps: 3, stepMs: 0, holdMs: 0 }); // short (under a third) and fast: decisive enough to stay a flick on a machine 4x slower
       await sleep(600);
       assert.equal((await geometry(page)).state, 'open', 'a flick up opens it, short as it was');
       from = await grabAt(page);
-      await drag(page, from, 60, { steps: 3, stepMs: 8, holdMs: 0 });
+      await drag(page, from, 90, { steps: 3, stepMs: 0, holdMs: 0 });
       await sleep(500);
       assert.equal((await geometry(page)).state, 'peek', 'a flick down closes it');
       // A tap on the peek's row: the plan opens; the wall behind hears nothing.
