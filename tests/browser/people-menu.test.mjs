@@ -14,15 +14,14 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 import { pillWidth } from '../../js/v3/people-menu.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
-let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that engine skips */ }
+const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 
 const FID = 'portola-2026';
@@ -42,6 +41,7 @@ const docFor = () => ({
 async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT } = {}) {
   const touch = width < 720;
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' });
+  await lateStarts(ctx);
   const doc = docFor();
   if (fid !== FID) doc.festivals[fid] = { selections: { Turnstile: { Ben: 2, Cy: 3 } } };
   const posts = [];
@@ -126,6 +126,24 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
 }
 
 const wrapSel = (bar) => `#${bar}-you-wrap`;
+// A menu is gone when its fade has run out (app.js hides it then), which a
+// loaded runner starts late: wait for that, never a beat (runs 36266741642
+// and 36266745098, 2026-09-26). A menu that never goes fails the assertion
+// that follows, with its state.
+const menusGone = (page) => page.waitForFunction(() => ![...document.querySelectorAll('.hl-pop, .sort-pop')].some((p) => getComputedStyle(p).display !== 'none'), null, { timeout: 4000 }).catch(() => {});
+// The dock's row and pill at rest before they are read: a refit moves them,
+// and a day change glides the row (a smooth scroll, which is no animation:
+// the row is at rest when its scroll has held still for four reads).
+const dockStill = async (page) => {
+  await motionDone(page, { within: '#dock' });
+  await page.evaluate(() => { window.__rowRest = { left: NaN, same: 0 }; });
+  await page.waitForFunction(() => {
+    const r = document.getElementById('dock-days');
+    const w = window.__rowRest;
+    if (r.scrollLeft !== w.left) { w.left = r.scrollLeft; w.same = 0; return false; }
+    return ++w.same >= 4;
+  }, null, { timeout: 4000, polling: 50 });
+};
 const menuState = (page, bar) => page.evaluate((b) => {
   const pop = document.querySelector(`#${b}-you-wrap .hl-pop`);
   const wrap = document.getElementById(`${b}-you-wrap`);
@@ -262,10 +280,13 @@ for (const [name, get, width, wide = null] of ENGINES) {
       await page.waitForFunction((b) => { const p = document.querySelector(`#${b}-you-wrap .hl-pop`); return !p || getComputedStyle(p).display === 'none'; }, bar, { timeout: 4000 }).catch(() => {});
       s = await menuState(page, bar);
       assert.deepEqual([s.open, s.slot], [false, 'pill'], 'the avatar again put it away');
-      // Escape too.
+      // Escape too — once the faces have opened it (a state, not a beat: CI's
+      // Linux WebKit read the menu still open 400 ms after Escape, runs
+      // 36266741642 and 36266745098).
       await press(`${w} .hl-faces`);
+      assert.equal((await menuState(page, bar)).open, true, 'the faces opened it again');
       await page.keyboard.press('Escape');
-      await sleep(400);
+      await menusGone(page);
       assert.equal((await menuState(page, bar)).open, false, 'Escape');
       // The ✕: one tap, from anywhere — or, where the pill has folded to the
       // avatar's size for want of room (Linux's glyphs at 320), Everyone in
@@ -398,7 +419,8 @@ for (const wide of [null, '0.7px']) {
       await press('#dock-you');
       for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
       await outside();
-      await sleep(600); // the row comes to rest
+      await sleep(600);
+      await dockStill(page); // the row comes to rest
       const r = await pillRead(page);
       assert.ok(r.now, 'NOW is live');
       assertPillPromise(r, four, `320${wide ? ' wide' : ''}`);
@@ -468,7 +490,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         }, spot);
         assert.ok(at, 'an empty spot to tap');
         await page.touchscreen.tap(at.x, at.y);
-        await sleep(450);
+        await menusGone(page);
         assert.equal(await page.locator(`${wrap} .sort-pop`).isVisible(), false, `${door}: a tap on ${at.el} put it away`);
         assert.equal(await page.evaluate(() => document.getElementById('screen-app').classList.contains('menu-open')), false, 'and the wall stopped listening');
       }
@@ -489,7 +511,7 @@ test('Chromium 390: a tap on a row while its menu fades out does nothing — Hig
     const you = await page.locator('#dock-you').boundingBox();
     await page.touchscreen.tap(you.x + you.width / 2, you.y + you.height / 2);
     await page.touchscreen.tap(ben.x + ben.width / 2, ben.y + ben.height / 2);
-    await sleep(500);
+    await menusGone(page);
     const hl = await menuState(page, 'dock');
     assert.deepEqual([hl.open, hl.stored, hl.dim], [false, [], 0], `nothing highlighted by the fading menu: ${JSON.stringify(hl)}`);
     // Show: the same with a room row.
@@ -499,7 +521,7 @@ test('Chromium 390: a tap on a row while its menu fades out does nothing — Hig
     const fest = await page.locator('#dock-fest-link').boundingBox();
     await page.touchscreen.tap(fest.x + fest.width / 2, fest.y + fest.height / 2);
     await page.touchscreen.tap(row.x + row.width / 2, row.y + row.height / 2);
-    await sleep(500);
+    await menusGone(page);
     const folded = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('fn_fold_v1_portola-2026') || '[]'); } catch { return 'blocked'; } });
     assert.deepEqual(folded, [], `no room folded by the fading Show menu (${room})`);
     // And a reopened menu takes taps again.
@@ -524,6 +546,7 @@ for (const wide of [null, '0.7px']) {
       for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
       await outside();
       await sleep(500);
+      await dockStill(page);
       const live = await pillRead(page);
       assert.ok(live.now, 'NOW is live');
       assertPillPromise(live, four, label('NOW live'));
@@ -532,6 +555,7 @@ for (const wide of [null, '0.7px']) {
       await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
       await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
       await sleep(600);
+      await dockStill(page);
       const gone = await pillRead(page);
       assert.equal(gone.now, null, 'NOW has left the row');
       assertPillPromise(gone, four, label('NOW gone'));
@@ -558,11 +582,13 @@ for (const [fest, fid, now] of [['Portola', FID, SAT], ['ACL', 'acl-2026', new D
         for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
         await outside();
         await sleep(500);
+        await dockStill(page);
         let last = 0;
         const seen = [];
         for (const width of [320, 340, 360, 375, 390, 412, 430]) {
           await page.setViewportSize({ width, height: 844 });
-          await sleep(700); // the resize refit (160 ms) and the row at rest
+          await sleep(700); // the resize refit (160 ms)
+          await dockStill(page); // and the row at rest
           const r = await pillRead(page);
           seen.push(`${width}:${r.compact ? 'folded' : r.discs}`);
           assert.ok(Math.abs(r.pill - pillWidth(r.compact ? 0 : r.discs)) < 1, `${width}: pillWidth matches the drawn pill (${r.pill})`);
