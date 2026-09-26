@@ -586,7 +586,9 @@ test('390, Sat 7 PM, the line the only stop: a repeat tap that moves nothing pul
 // while the line had walked four hours down the grid, under the dock. The
 // repeat tap stays only while its landing still shows the stop.
 test('320x568, the festival’s room only: a tap at 3 PM, the clock to 7 PM, a tap — the line comes back into view', { skip }, async () => {
-  const { ctx, page, door } = await openApp({ width: 320, height: 568, now: new Date('2026-09-26T15:00:00-07:00'), fold: ['Afters'] });
+  // The festival's room only: Folsom folds too, since Big Muscle (Sat 1-7 PM,
+  // added 2026-09-25) is a live Folsom card at 3 PM.
+  const { ctx, page, door } = await openApp({ width: 320, height: 568, now: new Date('2026-09-26T15:00:00-07:00'), fold: ['Afters', 'Folsom'] });
   try {
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);

@@ -45,7 +45,7 @@ test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the r
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
   const sat = dayArtistsFor('Saturday');
-  assert.equal(sat.length, 31 + 1 + 15 + 2, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom');
+  assert.equal(sat.length, 31 + 1 + 15 + 4, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom (Big Muscle by day, Magnitude, PERVERT XXL, Aftershock)');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
   // Saturday's afters open with whoever plays FIRST — every room is a run, so
   // the export leads with the earliest set, not the biggest name. Derived from
@@ -55,7 +55,14 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
     .reduce((best, a) => (best && timeToMinutes(best.time) <= timeToMinutes(a.time) ? best : a), null);
   assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ${satFirst.approx ? '~' : ''}${satFirst.time}` },
     'the first afters show after the grid, time-sorted, wearing a tilde only when its time is a guess (Velvet Trip\'s 9:15 PM is posted)');
-  assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
+  // Aftershock opens at 3 AM in the small hours of Sunday Sep 27 and is filed
+  // under Saturday night on purpose (an event time before 9 AM is after
+  // midnight of the night it is filed under), so it closes Saturday's image,
+  // after PERVERT XXL — never Sunday's, where it would read as Monday 3 AM.
+  assert.deepEqual(sat.slice(-2), [
+    { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' },
+    { name: 'Aftershock', time: 'Folsom · City Nights SF · 3 AM - 10 AM' },
+  ]);
   // Thursday is two rooms, each a run: the Regency (doors 7 PM) before Club
   // Six (doors 10 PM), each in play order, every start a guess wearing its
   // tilde. Club Six printed doors only; while Black Rave Culture was its one
@@ -102,7 +109,7 @@ test('a share image is the wall you see: a hidden room is not in a day\'s image,
     filters.saveFolded('portola-2026', []);
   }
   assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
-  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 2);
+  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 4);
 });
 
 test('a lineup-only fest still exports by billing group', () => {

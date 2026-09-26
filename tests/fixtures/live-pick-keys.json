@@ -2,11 +2,12 @@
   "_readme": "Frozen pick keys per live festival: the id, every artist name, every day label. Each must still exist in data/festivals/<id>.json byte-for-byte, or the validator and tests/live-pick-keys.test.mjs fail. Every non-archived festival in index.json must have an entry. Regenerate with `node scripts/freeze-pick-keys.mjs <id>` (or --all-live); removing a string by hand is a deliberate decision to orphan the picks/notes under it.",
   "festivals": {
     "portola-2026": {
-      "frozenAt": "2026-09-25",
+      "frozenAt": "2026-09-26",
       "id": "portola-2026",
       "names": [
         "2manydjs",
         "Adéla",
+        "Aftershock",
         "Ahadadream",
         "Airwolf Paradise",
         "Azzecca",
@@ -16,6 +17,7 @@
         "Bassvictim",
         "Beltran b2b Ben Sterling",
         "Ben UFO",
+        "Big Muscle: Bare Chest Calendar",
         "Black Rave Culture",
         "Boys Noize",
         "Brunello",
@@ -64,6 +66,7 @@
         "Milli Meng",
         "Mind Enterprises",
         "Mochakk",
+        "MÜLL",
         "Naisha",
         "Nate Sib",
         "Neil Frances",

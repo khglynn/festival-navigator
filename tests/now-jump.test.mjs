@@ -424,7 +424,9 @@ test('the next tap across a repaint: a page nobody moved keeps its cycle; a side
 test('one stop, tapped again: it stays while its landing still shows it; once the clock walks it off screen, the tap brings it back', () => {
   const at3 = pt('2026-09-26T15:00:00');
   const at7 = pt('2026-09-26T19:00:00');
-  const { root, ctx } = render(at3, [], { folded: ['Afters'] });
+  // The festival's room only: Folsom folds too, since Big Muscle (Sat 1-7 PM,
+  // added 2026-09-25) is a live Folsom card at 3 PM.
+  const { root, ctx } = render(at3, [], { folded: ['Afters', 'Folsom'] });
   const line = root.querySelector('.times-grid[data-iso="2026-09-26"] .now-line');
   const band = { top: 150, bottom: 523 };
   const phone = (lineY, scrollY) => ({

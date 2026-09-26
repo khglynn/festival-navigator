@@ -209,7 +209,8 @@ test('eventModelOf on Portola: THU FRI SAT SUN, the grid days keep their keys, t
   assert.deepEqual([...afters.byDay.keys()], ['Thursday', 'Friday', 'Saturday', 'Sunday']);
   assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [7, 21, 15, 25],
     'Friday: twenty Afters entries plus Horse Meat Disco (Afters & Folsom); the 2026-09-23 pass added The Hellp & Bassvictim (Fri), Boys Noize (Sat) and the billed support acts; 2026-09-24 added Club Six\'s three (Thu), 2026-09-25 the Midway\'s three (Sun)');
-  assert.deepEqual([...m.sections[1].byDay].map(([k, l]) => [k, l.length]), [['Friday', 2], ['Saturday', 2], ['Sunday', 4]]);
+  assert.deepEqual([...m.sections[1].byDay].map(([k, l]) => [k, l.length]), [['Friday', 3], ['Saturday', 4], ['Sunday', 4]],
+    'Folsom: 2026-09-25 added MÜLL (Fri), Big Muscle and Aftershock (Sat — its 3 AM is the small hours of Sunday, filed under Saturday night)');
   assert.deepEqual(afters.loose, [], 'every Portola event says its night');
 });
 
