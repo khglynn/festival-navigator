@@ -31,7 +31,7 @@ import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, fingerHand } from './card-facts.js';
-import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS } from './motion.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_SURFACE } from './motion.js';
 import { router } from './router.js';
 import { loadJSON, saveLS, getLS } from '../util.js';
 
@@ -856,7 +856,10 @@ function arrive(sheet, backdrop, ctx, parts) {
   if (!canAnimate(sheet, ctx) || !phoneShelf()) return;
   sheet.classList.add('rising'); // the CSS scale-fade stands down: this is the way in
   backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
-  sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  // The box rises on the surface curve, never past its rest: a sheet this
+  // tall overshooting 4% lifted its bottom edge ~25px off the screen's for a
+  // few frames (the tap walk, 2026-09-26). The little life is its lines'.
+  sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_SURFACE, fill: 'backwards' });
   parts.filter(Boolean).forEach((n, i) => n.animate(
     [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
     { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },

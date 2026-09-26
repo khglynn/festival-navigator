@@ -224,6 +224,27 @@ const flows = {
     await shot(page, `${ENGINE}-390-ALT-no-meter-plus2`);
     await ctx.close();
   },
+  // The rise, measured: the sheet's bottom edge every frame of its arrival —
+  // it must never lift off the screen's bottom (an overshoot showed a gap).
+  async rise390() {
+    const { ctx, page } = await open({ width: 390, height: 844, touch: true });
+    const at = await bring(page, 'Robyn');
+    await page.evaluate(() => {
+      window.__bottoms = [];
+      const t0 = performance.now();
+      const tick = () => {
+        const s = document.getElementById('artist-sheet');
+        if (s) window.__bottoms.push(Math.round((s.getBoundingClientRect().bottom - innerHeight) * 10) / 10);
+        if (performance.now() - t0 < 1500) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await page.touchscreen.tap(at.x, at.y);
+    await sleep(1600);
+    const b = await page.evaluate(() => window.__bottoms);
+    say(`  the sheet's bottom vs the screen's, every frame of the rise: min ${Math.min(...b)}px, max ${Math.max(...b)}px over ${b.length} frames (negative = a gap under it)`);
+    await ctx.close();
+  },
   async member320() {
     const { ctx, page, errors } = await open({ width: 320, height: 568, touch: true });
     await tapCard(page, 'Boys Noize');
