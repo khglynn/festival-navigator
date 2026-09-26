@@ -187,7 +187,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     // means pick. (The 2026-08-29 version excluded a whole grown block here,
     // which is how a zoomed card stopped taking picks.)
     if (e.target !== el && e.target.closest && e.target.closest('button')) return;
-    ctx.onTap(artistName, el);
+    ctx.onTap(artistName, el, opts.occ || null);
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   watchFit(el);

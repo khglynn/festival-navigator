@@ -288,7 +288,9 @@ function bookmark() {
 
 // The chips line: the SAME notes door the resting card carries (grown), and
 // the Spotify chip with its flag sitting left of the word "following".
-export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) {
+// `onPick` (v92, the guest shelf round): a guest's zoom carries "Pick shows"
+// beside the notes door — the way to join, where a member's tap would pick.
+export function factChips(facts, { onOpenNotes = null, notesChip = true, onPick = null } = {}) {
   const row = document.createElement('div');
   row.className = 'f-chips';
   if (!notesChip) { if (facts.spotify) spotChip(row, facts); return row; }
@@ -302,9 +304,22 @@ export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) 
     notes.addEventListener('click', (e) => { e.stopPropagation(); onOpenNotes(facts.name); });
   }
   row.appendChild(notes);
+  if (onPick) {
+    row.classList.add('f-guest-row');
+    const pick = document.createElement('button');
+    pick.className = 'f-pick';
+    pick.textContent = PICK_SHOWS;
+    pick.setAttribute('aria-label', `Pick ${facts.name}`);
+    pick.addEventListener('click', (e) => { e.stopPropagation(); onPick(facts.name); });
+    row.appendChild(pick);
+  }
   if (facts.spotify) spotChip(row, facts);
   return row;
 }
+// The guest's door in the zoom says what the welcome card's right half says
+// (welcome.js WORDS.join) — one idea, one wording; kept here as a plain string
+// so the zoom module takes no dependency on the welcome.
+export const PICK_SHOWS = 'Pick shows';
 
 function spotChip(row, facts) {
   const sp = document.createElement('span');
@@ -407,7 +422,7 @@ function linksRow(links) {
   return row;
 }
 
-function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
+function grownBlock(facts, { onOpenNotes = null, notesChip = true, onPick = null } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
   if (facts.when) {
@@ -451,7 +466,7 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   // every UNPICKED grown card — the common view. Reverted; the still-hand
   // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
   if (facts.people.length) grown.appendChild(whoPills(facts));
-  const chips = factChips(facts, { onOpenNotes, notesChip });
+  const chips = factChips(facts, { onOpenNotes, notesChip, onPick });
   if (chips.childNodes.length) grown.appendChild(chips);
   return grown;
 }
@@ -569,6 +584,12 @@ const stillHand = (e) => !!lastMouse && Math.abs(e.clientX - lastMouse.x) < 0.5 
 // Capture phase, so a handler that stops propagation cannot blind it; a lone
 // modifier (Cmd-Tab back into the window) says nothing and is ignored.
 let lastInput = 'pointer';
+// The hand behind the last press (v92, the guest shelf round): a guest's
+// FINGER tap on a card opens its zoom, a mouse click goes straight to the
+// join (desktop as is). Decided by the hand, not the screen width — an iPad
+// with a mouse behaves like a desktop.
+let lastPointerType = 'mouse';
+export const tapOpensZoom = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 // A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
 // follows a touch tap with a click whose pointerType is "mouse", and when the
@@ -618,6 +639,7 @@ if (typeof document !== 'undefined') {
   }, { passive: true, capture: true });
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
+    lastPointerType = e.pointerType || 'mouse';
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
   }, { passive: true, capture: true });
@@ -782,7 +804,10 @@ function buildParts(z, facts) {
   const name = document.createElement('div');
   name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
-  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
+  // A guest (no name on this phone) has no level to change: their zoom offers
+  // "Pick shows" instead, which asks who they are (app.js ctx.onGuestPick).
+  const guest = !!(z.ctx && !z.ctx.meName && z.ctx.onGuestPick);
+  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes, onPick: guest ? () => z.ctx.onGuestPick(z.artist) : null });
   return [surface, name, grown];
 }
 
@@ -1038,14 +1063,17 @@ const pressedOverlayJustNow = (e) => e.relatedTarget == null
 // decides nothing.
 export const DOOR_SETTLE_MS = 700;
 const ZOOM_DOORS = 'a.f-link, a.f-where, a.f-order, a.f-cancel';
-function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
+function unzoomInner({ instant = false, why = 'unspecified', meant = false } = {}) {
   if (!zoomed) return;
   overlayPressAt = -Infinity; // a press on this zoom never shields the next one
   // Kevin's "every click closes the hover" journaled itself as NOTHING —
   // no throw, so one of these legitimate close paths fires wrongly on his
   // machine. Every close names its cause; only the click-adjacent ones are
-  // worth the journal's 20 slots (2026-08-31).
-  if (Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
+  // worth the journal's 20 slots (2026-08-31). `meant`: this close IS the
+  // press's purpose (the notes door opening its sheet, "Pick shows" asking
+  // who you are, a finger's tap outside) — journaling those filled the queue
+  // with false alarms in the guest shelf round's rig (2026-09-25).
+  if (!meant && Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
   const z = zoomed;
   zoomed = null;
   const animate = !instant && z.el.isConnected && canAnimate(z.card, z.ctx);
@@ -1228,6 +1256,10 @@ function wireSlot(z) {
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
     if (isOwnControl(e.target)) return;
+    // A guest's finger zoom is for reading: its body does nothing, so a look
+    // never turns into a question by accident — "Pick shows" is the way in
+    // (v92, the guest shelf round). A member's zoom picks, as it always has.
+    if (z.ctx && !z.ctx.meName && (z.source === 'tap' || z.source === 'touch')) return;
     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
     z.ctx.onTap(z.artist, z.el);
   });

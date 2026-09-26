@@ -42,6 +42,7 @@ const APP_CORE = [
   '/js/v3/app.js',
   '/js/v3/crew-entry.js',
   '/js/v3/welcome.js',
+  '/js/v3/join-shelf.js',
   '/js/v3/wall.js',
   '/js/v3/card-facts.js',
   '/js/v3/who-motion.js',

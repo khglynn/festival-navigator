@@ -209,11 +209,19 @@ html { touch-action: manipulation; }
 .welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
-/* Kevin's right-hand door for a guest (2026-09-25): "Pick shows" sits
- * on the right; where the row is too narrow (320) it wraps under Look around and
- * How it works, and auto margin keeps it right. */
-.welcome-card .bring-actions { flex-wrap: wrap; }
-.welcome-card .welcome-join { margin-left: auto; }
+/* The card's choice is two doors of one width (the guest shelf round,
+ * 2026-09-25 — Kevin: the three-button row did not line up): Look around (the
+ * quiet way, outlined) on the left, Pick shows (filled) on the right, the same
+ * two halves at 320 and 390. A member who has just joined has the one door,
+ * full width. "More info" is the explanation's last words — a real button
+ * drawn as a link, its 44px reach borrowed around it. */
+.welcome-card .bring-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.welcome-card .bring-actions .btn-tonal,
+.welcome-card .bring-actions .btn-ghost { font-size: 13px; padding: 11px 12px; white-space: nowrap; }
+.welcome-more { display: inline; background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+                font: inherit; font-weight: 700; color: var(--tonal-text); white-space: nowrap;
+                position: relative; min-height: 0; }
+.welcome-more::after { content: ''; position: absolute; inset: -14px -8px; }
 /* A toast's one action never breaks across lines: the toast shrinks to half
  * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
  * as "Not / me" on a 390px phone (walk, 2026-09-23). */
@@ -1302,3 +1310,68 @@ a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .f-links .f-dot { color: rgba(255, 255, 255, .45); }
 a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+
+/* ---- the join shelf (v92, the guest shelf round, 2026-09-25) ------------------
+ * The production sheet (grabber, --r-sheet, dock ground, .45 backdrop) sized to
+ * its content. One column, one gutter: the line, the crew's names, the field,
+ * then the same two halves the welcome card ends on — Look around (quiet) on
+ * the left, the answer (filled) on the right. Brand, never --fest. */
+.sheet.join-shelf { gap: 14px; padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+                    max-height: 88vh; overflow: visible; animation: none; }
+.join-shelf .js-line { color: var(--text-body); font-size: 17px; font-weight: 700; line-height: 1.3;
+                       text-wrap: balance; overflow-wrap: anywhere; }
+.join-shelf .js-line b { color: #fff; font-weight: 800; }
+.join-shelf .js-sub { color: var(--text-secondary); font-size: 12.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
+.join-shelf .js-sub.offline { color: var(--text-tertiary); }
+.join-shelf .js-sub.offline::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px;
+                                      border-radius: var(--r-pill); background: var(--sync-offline); vertical-align: 1px; }
+/* The names: the wall's own person chips, a size up, wrapping; three rows and
+ * a half at most, then they scroll inside (a crew of 12 on a 320 phone). */
+.join-shelf .js-names-wrap { position: relative; }
+.join-shelf .js-names { display: flex; flex-wrap: wrap; gap: 8px; max-height: calc(3.5 * 36px + 3 * 8px + 4px);
+                        padding: 4px; margin: -4px;
+                        overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.join-shelf .js-names::-webkit-scrollbar { display: none; }
+.join-shelf .js-names-wrap.more::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
+                                         background: linear-gradient(to bottom, transparent, var(--dock)); pointer-events: none; }
+.join-shelf .js-name { display: inline-flex; align-items: center; gap: 7px; height: 36px; min-height: 36px;
+                       padding: 0 14px 0 5px; font-size: 13.5px; font-weight: 700; white-space: nowrap;
+                       transition: opacity .18s ease, box-shadow .18s ease; }
+.join-shelf .js-initial { width: 26px; height: 26px; border-radius: var(--r-pill); display: inline-flex;
+                          align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+                          background: rgba(0, 0, 0, .28); }
+.join-shelf .js-name.on { box-shadow: 0 0 0 2px var(--dock), 0 0 0 4px #fff; }
+.join-shelf .js-name.off { opacity: .4; }
+/* The field wears the text fields' shape (8px corners, the input border); 16px
+ * type so iOS never zooms the page to read it. */
+.join-shelf .js-field { width: 100%; box-sizing: border-box; height: 46px; padding: 0 14px;
+                        background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card);
+                        color: var(--text-primary); font: 600 16px var(--font-ui); outline: none; }
+.join-shelf .js-field::placeholder { color: var(--text-tertiary); font-weight: 500; }
+.join-shelf .js-field:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line */
+.join-shelf .js-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.join-shelf .js-status:empty { display: none; }
+.join-shelf .js-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.join-shelf .js-actions .btn-tonal,
+.join-shelf .js-actions .btn-ghost { font-size: 13.5px; padding: 12px 12px; min-height: 46px;
+                                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.join-shelf .js-go:disabled { opacity: .55; cursor: default; }
+/* Typing: the names give way to the field — one sideways line, the same
+ * height for 6 people or 12, so the field and both answers stay above the keys. */
+.join-shelf.typing .js-names { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; max-height: none;
+                               -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+                               mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
+.join-shelf.typing .js-name { flex: none; }
+/* The shelf's name chips are 36px and 8px apart: the wall chips' borrowed 14px
+ * reach would land on the next row's name. Their own box (and 4px) is the target. */
+@media (pointer: coarse) { .join-shelf .js-name::after { inset: -4px -4px; } }
+/* ≥720 the sheet is a centred dialog already (.sheet above). */
+
+/* A guest's zoom (the guest shelf round): the notes door and "Pick shows" side
+ * by side — the way to join where a member's tap would pick. White, so it
+ * reads on any colour wash. */
+.zoom-card .f-chips.f-guest-row { gap: 10px; align-items: center; }
+.zoom-card .f-guest-row .f-chip.notes { align-self: center; height: 34px; padding: 0 14px; font-size: 12px; }
+.f-pick { height: 40px; min-height: 40px; padding: 0 20px; border-radius: var(--r-pill); border: 0; cursor: pointer;
+          background: #fff; color: #120E1E; font: 800 13px var(--font-ui); position: relative; }
+.f-pick::after { content: ''; position: absolute; inset: -8px -6px; }

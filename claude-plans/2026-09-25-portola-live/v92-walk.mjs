@@ -519,6 +519,96 @@ await scenario('390 14 a guest sends nothing — the rig logs every request that
   await ctx.close();
 });
 
+// ---- the guest shelf round (2026-09-25): a finger's tap opens the card; Pick
+// shows asks on a shelf over the wall ----------------------------------------
+for (const [W, H] of [[390, 844], [320, 568]]) {
+  const tag = `${W}`;
+  await scenario(`${tag} 20 shelf: welcome halves, tap → zoom → Pick shows → shelf → type → Look around`, async () => {
+    resetDocs(); writes.length = 0;
+    const { ctx, page, errors } = await phone({ width: W, height: H });
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    await page.waitForSelector('#welcome-card', { timeout: 5000 });
+    await sleep(900);
+    const halves = await page.locator('#welcome-card .bring-actions button').evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return [b.textContent, Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.height)]; }));
+    const more = await page.locator('#welcome-card .welcome-more').evaluate((b) => { const r = b.getBoundingClientRect(); return [b.textContent, Math.round(r.left), Math.round(r.top)]; });
+    note(`welcome halves ${JSON.stringify(halves)}; link ${JSON.stringify(more)}; card height ${Math.round((await page.locator('#welcome-card .bring-card').boundingBox()).height)}`);
+    await shot(page, `${tag}-20-welcome-halves.png`);
+    const card = page.locator('#wall-root .card[data-artist="Tove Lo"]').first();
+    await card.scrollIntoViewIfNeeded();
+    await sleep(200);
+    const yBefore = await page.evaluate(() => Math.round(scrollY));
+    await card.tap();
+    await sleep(700);
+    const zoom = await page.evaluate(() => {
+      const z = document.querySelector('#zoom-layer .zoom-card');
+      if (!z) return null;
+      return { buttons: [...z.querySelectorAll('button')].map((b) => b.textContent), welcome: !!document.getElementById('welcome-card') };
+    });
+    note(`tap → zoom ${JSON.stringify(zoom)}; screens: join ${await visible(page, '#screen-join')}`);
+    await shot(page, `${tag}-21-guest-zoom.png`);
+    // A tap on another card with the zoom up only closes it.
+    const other = page.locator('#wall-root .card[data-artist="Fcukers"]').first();
+    const ob = await other.boundingBox().catch(() => null);
+    if (ob) {
+      await page.touchscreen.tap(ob.x + ob.width / 2, ob.y + 10);
+      await sleep(600);
+      note(`close-tap on another card: zoom open ${await page.locator('#zoom-layer .zoom-card').count()} (expect 0)`);
+      await card.tap();
+      await sleep(700);
+    }
+    await page.locator('#zoom-layer .f-pick').tap();
+    await sleep(700);
+    const shelf = await page.evaluate(() => {
+      const s = document.querySelector('.join-shelf');
+      if (!s) return null;
+      const r = s.getBoundingClientRect();
+      return { line: s.querySelector('.js-line').textContent, names: [...s.querySelectorAll('.js-name')].map((b) => b.textContent), go: s.querySelector('.js-go').textContent, goOff: s.querySelector('.js-go').disabled, top: Math.round(r.top), bottom: Math.round(r.bottom), zoom: !!document.querySelector('#zoom-layer .zoom-card'), y: Math.round(scrollY) };
+    });
+    note(`Pick shows → shelf ${JSON.stringify(shelf)} (wall before ${yBefore})`);
+    await shot(page, `${tag}-22-shelf.png`);
+    await page.locator('.join-shelf .js-name').nth(1).tap();
+    await sleep(250);
+    note(`tapped a name → go "${await page.locator('.join-shelf .js-go').textContent()}"`);
+    await shot(page, `${tag}-23-shelf-name-tapped.png`);
+    await page.locator('.join-shelf .js-field').tap();
+    await page.keyboard.type('Sam');
+    await sleep(250);
+    note(`typed → go "${await page.locator('.join-shelf .js-go').textContent()}"; typing class ${await page.locator('.join-shelf.typing').count()}`);
+    await shot(page, `${tag}-24-shelf-typed.png`);
+    await page.locator('.join-shelf .js-look').tap();
+    await sleep(500);
+    note(`Look around → shelf gone ${!(await page.locator('.join-shelf').count())}; backdrop gone ${!(await page.locator('#sheet-backdrop').count())}; wall y ${await page.evaluate(() => Math.round(scrollY))}; history state ${JSON.stringify(await page.evaluate(() => history.state))}`);
+    note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+  });
+
+  await scenario(`${tag} 21 shelf join: Pick shows → Join as Sam — today's four writes, the pick lands`, async () => {
+    resetDocs(); writes.length = 0;
+    const { ctx, page, errors } = await phone({ width: W, height: H, init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    const card = page.locator('#wall-root .card[data-artist="Kettama"]').first();
+    await card.scrollIntoViewIfNeeded();
+    await sleep(200);
+    const before = await place(page);
+    await card.tap();
+    await sleep(600);
+    await page.locator('#zoom-layer .f-pick').tap();
+    await page.waitForSelector('.join-shelf', { timeout: 3000 });
+    await sleep(400);
+    await page.locator('.join-shelf .js-field').tap();
+    await page.keyboard.type('Sam');
+    await page.locator('.join-shelf .js-go').tap();
+    await sleep(1500);
+    const after = await place(page);
+    note(`joined: me ${await page.evaluate(() => localStorage.getItem(Object.keys(localStorage).find((k) => k.startsWith('fn_me_v3_'))))}; shelf gone ${!(await page.locator('.join-shelf').count())}; place same ${JSON.stringify(before) === JSON.stringify(after)} (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
+    note(`Kettama now ${JSON.stringify(await page.evaluate(async () => (await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections.Kettama))}; dock "${await page.locator('#dock-you').textContent()}"`);
+    await shot(page, `${tag}-25-shelf-joined.png`);
+    await sleep(1500);
+    note(`writes (${writes.length}): ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+  });
+}
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(OUT, 'walk.txt'), report.join('\n') + '\n');

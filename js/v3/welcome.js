@@ -50,7 +50,7 @@ export function rememberWelcomeSeen() {
 export const WORDS = {
   look: 'Look around',           // a guest's left button (and the join screen's way back)
   gotIt: 'Got it',               // a fresh member's left button
-  how: 'How it works',
+  how: 'More info',              // the explanation's last words, drawn as a link (Kevin, the guest shelf round)
   join: 'Pick shows',            // a guest's right-hand button: the join
   line: (fest) => `This is the crew’s plan for ${fest}.`,
   colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
@@ -146,15 +146,19 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   if (cluster) head.appendChild(cluster);
   head.appendChild(node('span', 'micro-label', copy.label));
   const text = node('div', 'bring-text');
-  text.append(node('div', 'bring-line', copy.line), node('div', 'bring-sub', copy.sub));
+  // "More info" is the explanation's last words, not a third button: the
+  // card's choice is two doors of one width (the guest shelf round,
+  // 2026-09-25 — the three-button row was the misalignment Kevin saw).
+  const sub = node('div', 'bring-sub', `${copy.sub} `);
+  const more = node('button', 'welcome-more', copy.more);
+  sub.appendChild(more);
+  text.append(node('div', 'bring-line', copy.line), sub);
   const actions = node('div', 'bring-actions');
-  const yes = node('button', 'btn-tonal', copy.yes);
-  const more = node('button', 'btn-ghost', copy.more);
-  actions.append(yes, more);
-  // The quiet ways to look stay on the left, as the frame drew them; the way
-  // to join and pick sits on the right (it wraps under them on a 320 phone,
-  // still to the right).
+  // Two halves: the quiet way to look on the left, outlined; the way to pick
+  // on the right, filled. A member who has just joined has the one door.
   const join = copy.join && onJoin ? node('button', 'btn-tonal welcome-join', copy.join) : null;
+  const yes = node('button', join ? 'btn-ghost' : 'btn-tonal', copy.yes);
+  actions.append(yes);
   if (join) actions.append(join);
   card.append(head, text, actions);
   box.appendChild(card);
@@ -175,7 +179,7 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
       { duration: CASCADE_MS, delay: ARRIVE_DELAY_MS + GROW_MS / 2 + i * STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
     const after = ARRIVE_DELAY_MS + GROW_MS / 2 + people.length * STAGGER_MS * 2;
-    [yes, more, join].filter(Boolean).forEach((b, i) => b.animate(
+    [yes, join].filter(Boolean).forEach((b, i) => b.animate(
       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
       { duration: CASCADE_MS, delay: after + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
@@ -186,7 +190,7 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
     dismissWelcome({ ctx });
     if (onGotIt) onGotIt();
   });
-  // How it works leaves the card where it is: Settings hides it with the wall,
+  // More info (the How it works page) leaves the card where it is: Settings hides it with the wall,
   // and coming back finds it still there for its left button — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.
   more.addEventListener('click', () => { if (onHow) onHow(); });

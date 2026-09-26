@@ -1,0 +1,262 @@
+// The join shelf (v92, the guest shelf round — Kevin's review, 2026-09-25:
+// "footer shelves?", "being slid into picking feels meh").
+//
+// A guest who wants to pick is asked who they are on a shelf that rises over
+// the wall, never a screen that replaces it: the wall stays exactly where it
+// was (dimmed, behind), so "Look around" is just the shelf going back down,
+// and a join lands the pick on a card you can still see. It is the production
+// bottom sheet — grabber, 20px top corners, dock ground, .45 backdrop, and the
+// sheet ids every closing path, the router and the new-build reload's quiet()
+// already know — sized to its content.
+//
+// This module draws the shelf and keeps its state (nobody chosen, a name
+// tapped, a name typed, busy while an answer settles). The answers themselves
+// — claim a name, join as someone new, the deadline, the offline join, the
+// waiting pick — are app.js's joinAnswers, the same code the full-screen join
+// screen runs. Claiming takes two taps on purpose (the name, then "I'm Maya"):
+// one tap to claim is how friends ended up picking as somebody else.
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+
+export const SHELF_WORDS = {
+  line: (artist) => (artist ? ['Pick ', artist, ' as…'] : ['Pick shows as…']),
+  sub: 'Tap your name, or add yourself.',
+  subOffline: 'You’re offline — join anyway, it sends when you’re back.',
+  field: 'New here? Your name',
+  look: 'Look around',
+  join: 'Join',
+  joinAs: (name) => `Join as ${name}`,
+  claim: (name) => `I’m ${name}`,
+};
+
+const SHEET_ID = 'artist-sheet';   // the production sheet's id: closeSheet, quiet() and the waiters know it
+const BACK_ID = 'sheet-backdrop';
+const DRAG_CLOSE_PX = 70;          // the grabber's swipe, as the notes sheets have it
+
+function node(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+export function joinShelf() {
+  const sheet = document.getElementById(SHEET_ID);
+  return sheet && sheet.classList.contains('join-shelf') ? sheet : null;
+}
+
+// people: [{ name, bg, stroke }] in the crew's order. Returns the shelf's
+// handle: setBusy(on) holds every door while an answer settles, say(text or
+// node) writes the status line, close({ instant }) takes it down.
+export function showJoinShelf({ artist = null, people = [], offline = false, ctx = null, onLook, onClaim, onAnswer } = {}) {
+  document.getElementById(SHEET_ID)?.remove();
+  document.getElementById(BACK_ID)?.remove();
+  const back = node('div', 'sheet-backdrop join-backdrop');
+  back.id = BACK_ID;
+  const sheet = node('div', 'sheet join-shelf');
+  sheet.id = SHEET_ID;
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', artist ? `Pick ${artist} as` : 'Pick shows as');
+  sheet.tabIndex = -1;
+  const grab = node('div', 'grabber');
+
+  const head = node('div', 'js-head');
+  const line = node('div', 'js-line');
+  const parts = SHELF_WORDS.line(artist);
+  if (artist) line.append(parts[0], node('b', null, parts[1]), parts[2]);
+  else line.textContent = parts[0];
+  const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
+  head.append(line, sub);
+
+  const names = node('div', 'js-names');
+  names.setAttribute('role', 'group');
+  names.setAttribute('aria-label', 'The crew');
+  const chips = people.map((p) => {
+    const b = node('button', 'person-chip js-name');
+    b.style.background = p.bg;
+    b.style.border = `1px solid ${p.stroke}`;
+    b.dataset.name = p.name;
+    b.setAttribute('aria-pressed', 'false');
+    b.append(node('span', 'js-initial', p.name.charAt(0).toUpperCase()), node('span', 'js-nm', p.name));
+    names.appendChild(b);
+    return b;
+  });
+  const namesWrap = node('div', 'js-names-wrap');
+  namesWrap.appendChild(names);
+  if (!people.length) namesWrap.hidden = true; // nobody in the crew yet: just the field
+
+  const field = node('input', 'js-field');
+  field.maxLength = 24;
+  field.placeholder = SHELF_WORDS.field;
+  field.setAttribute('aria-label', 'Your name');
+  field.autocomplete = 'off';
+  field.setAttribute('autocapitalize', 'words');
+  field.setAttribute('enterkeyhint', 'go');
+
+  const status = node('div', 'js-status');
+  status.setAttribute('aria-live', 'polite');
+
+  const actions = node('div', 'js-actions');
+  const look = node('button', 'btn-ghost js-look', SHELF_WORDS.look);
+  const go = node('button', 'btn-tonal js-go', SHELF_WORDS.join);
+  actions.append(look, go);
+
+  sheet.append(grab, head, namesWrap, field, status, actions);
+  document.body.append(back, sheet);
+
+  // ---- state: nobody, a name tapped, a name typed; busy while an answer settles ----
+  let chosen = null; // a crew name, tapped
+  let busy = false;
+  let closed = false;
+  const typedMatch = () => {
+    const typed = field.value.trim();
+    return typed ? people.find((p) => p.name.toLowerCase() === typed.toLowerCase()) || null : null;
+  };
+  const paint = () => {
+    const typed = field.value.trim();
+    const match = typedMatch();
+    const who = chosen || (match && match.name) || null;
+    for (const c of chips) {
+      c.classList.toggle('on', c.dataset.name === who);
+      c.classList.toggle('off', !!who && c.dataset.name !== who);
+      c.setAttribute('aria-pressed', c.dataset.name === who ? 'true' : 'false');
+      c.disabled = busy;
+    }
+    field.disabled = busy;
+    look.disabled = busy;
+    if (who) go.textContent = SHELF_WORDS.claim(who);
+    else if (typed) go.textContent = SHELF_WORDS.joinAs(typed);
+    else go.textContent = SHELF_WORDS.join;
+    go.disabled = busy || (!who && !typed);
+  };
+  chips.forEach((c) => c.addEventListener('click', () => {
+    if (busy) return;
+    chosen = chosen === c.dataset.name ? null : c.dataset.name;
+    if (chosen) field.value = '';
+    status.textContent = '';
+    paint();
+  }));
+  field.addEventListener('input', () => { chosen = null; status.textContent = ''; paint(); });
+  field.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go.click(); } });
+  go.addEventListener('click', () => {
+    if (busy) return;
+    const match = typedMatch();
+    const who = chosen || (match && match.name);
+    if (who) { if (onClaim) onClaim(who); return; }
+    const typed = field.value.trim();
+    if (typed && onAnswer) onAnswer(typed);
+  });
+  paint();
+
+  // ---- the keyboard ------------------------------------------------------------------
+  // The names give way to the field — one sideways line instead of rows, the
+  // same height for 6 people or 12 — and the shelf rides on top of the keys:
+  // a fixed sheet sits at the LAYOUT viewport's bottom, which on iOS is
+  // behind the keyboard, so its bottom edge follows the visual viewport.
+  field.addEventListener('focus', () => sheet.classList.add('typing'));
+  field.addEventListener('blur', () => sheet.classList.remove('typing'));
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  const fitKeys = () => {
+    if (!sheet.isConnected) { unfit(); return; }
+    const keys = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    sheet.style.bottom = keys > 40 ? `${keys}px` : '';
+    sheet.style.maxHeight = keys > 40 ? `${Math.max(200, Math.round(vv.height) - 12)}px` : '';
+  };
+  const unfit = () => {
+    if (!vv) return;
+    vv.removeEventListener('resize', fitKeys);
+    vv.removeEventListener('scroll', fitKeys);
+  };
+  if (vv) {
+    vv.addEventListener('resize', fitKeys);
+    vv.addEventListener('scroll', fitKeys);
+  }
+
+  // More names than three rows hold: a soft fade says the list goes on.
+  const edge = () => namesWrap.classList.toggle('more', !sheet.classList.contains('typing')
+    && names.scrollHeight - names.clientHeight - names.scrollTop > 2);
+  names.addEventListener('scroll', edge, { passive: true });
+  field.addEventListener('focus', edge);
+  field.addEventListener('blur', edge);
+  requestAnimationFrame(edge);
+  setTimeout(edge, GROW_MS + CASCADE_MS + STAGGER_MS * (people.length + 3)); // after the names have landed
+
+  // ---- the ways out ------------------------------------------------------------------
+  const close = ({ instant = false } = {}) => {
+    if (closed) return;
+    closed = true;
+    unfit();
+    sheet.removeAttribute('id');
+    back.removeAttribute('id');
+    const gone = () => { sheet.remove(); back.remove(); };
+    if (instant || !canAnimate(sheet, ctx)) { gone(); return; }
+    sheet.style.pointerEvents = 'none';
+    back.style.pointerEvents = 'none';
+    back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    const out = sheet.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    out.onfinish = gone;
+    out.oncancel = gone;
+    setTimeout(gone, OUT_MS * 3 + 50); // a backgrounded tab must not leave the shelf behind
+  };
+  // Look around, a tap on the dimmed wall, or the handle dragged down: the
+  // question is dropped and the shelf goes back down. Never while an answer
+  // is settling — the answer decides where this goes.
+  const leave = () => {
+    if (busy || closed) return;
+    close();
+    if (onLook) onLook();
+  };
+  look.addEventListener('click', leave);
+  back.addEventListener('click', leave);
+  let startY = null;
+  grab.addEventListener('pointerdown', (e) => { startY = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch { /* synthetic */ } });
+  grab.addEventListener('pointermove', (e) => {
+    if (startY === null || busy) return;
+    sheet.style.transform = `translateY(${Math.max(0, e.clientY - startY)}px)`;
+  });
+  const release = (e) => {
+    if (startY === null) return;
+    const dy = e.clientY - startY;
+    startY = null;
+    sheet.style.transform = '';
+    if (dy > DRAG_CLOSE_PX) leave();
+  };
+  grab.addEventListener('pointerup', release);
+  grab.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
+
+  // Tab stays inside the shelf while it is up (the sheets' dialog rule).
+  sheet.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const f = [...sheet.querySelectorAll('button, input')].filter((n) => !n.disabled);
+    if (!f.length) return;
+    const first = f[0];
+    const last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  requestAnimationFrame(() => { if (!closed) sheet.focus({ preventScroll: true }); });
+
+  // ---- the way in --------------------------------------------------------------------
+  // The wall dims as the shelf rises from the bottom edge on the arrival
+  // curve; its lines land a beat apart and the names arrive one after another.
+  // Reduce Motion / Low Power: already there.
+  if (canAnimate(sheet, ctx)) {
+    back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    [head, ...chips, field, actions].forEach((n, i) => n.animate(
+      [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
+    ));
+  }
+
+  return {
+    sheet,
+    setBusy(on) { busy = !!on; paint(); },
+    say(x) {
+      if (x == null || typeof x === 'string') status.textContent = x || '';
+      else status.replaceChildren(x);
+    },
+    close,
+    isClosed: () => closed,
+  };
+}
