@@ -116,10 +116,14 @@ const render = (fid, over = {}) => {
 };
 const blockOf = (root, day) => root.querySelector(`.day-block[data-day="${day}"]`);
 const roomOf = (root, day, key) => blockOf(root, day) && blockOf(root, day).querySelector(`.room[data-room="${key}"]`);
-// What a time list reads as: [[band label, [[name, time label], …]], …].
+// What a time list reads as: [[band label, [[name, "time\nvenue · area"], …]], …]
+// — the time line, then the place's phrases as one line (the card decides at
+// layout whether they share a line; jsdom has none).
+const placeOf = (c) => [...c.querySelectorAll('.place > .phrase')].map((s) => s.textContent);
 const bandsOf = (room) => [...room.querySelectorAll('.time-band')].map((b) => [
   b.querySelector('.band-head .label').textContent,
-  [...b.querySelectorAll('.band-grid > .card')].map((c) => [c.dataset.artist, (c.querySelector('.time') || {}).textContent]),
+  [...b.querySelectorAll('.band-grid > .card')].map((c) => [c.dataset.artist,
+    [(c.querySelector('.time') || {}).textContent, placeOf(c).join(' · ')].filter(Boolean).join('\n')]),
 ]);
 const click = (node) => node.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
 
@@ -222,6 +226,14 @@ test('the wall: a by-time section is a time list on each of its nights, the othe
     ['After-hours', [['Two AM', '2 AM\nVenue F']]],
     ['Time TBA', [['No Clock', 'Venue H']]],
   ]);
+  // The place is PHRASES, never one string: a phrase never breaks inside
+  // itself (Kevin, 2026-09-25), and the dot between them is drawn, not text.
+  const big = fri.querySelector('.card[data-artist="Big Night"]');
+  assert.deepEqual(JSON.parse(big.dataset.place), ['Venue C', 'Mission']);
+  assert.deepEqual([...big.querySelectorAll('.place > *')].map((n) => [n.className, n.textContent]),
+    [['phrase lead', 'Venue C'], ['pdot', '·'], ['phrase', 'Mission']]);
+  assert.equal(big.querySelector('.place .pdot').getAttribute('aria-hidden'), 'true');
+  assert.equal(fri.querySelector('.card[data-artist="Half Past"] .place .pdot'), null, 'no area, no dot');
   const off = fri.querySelector('.card[data-artist="Called Off"]');
   assert.ok(off.classList.contains('cancelled'), 'a cancelled party wears its struck card');
   for (const card of fri.querySelectorAll('.card')) {
@@ -243,12 +255,12 @@ test('the room head is still the door to that section on that date; a tap still 
   click(head);
   assert.deepEqual(ctx.dayDoors, ['2026-09-25|Parties'], 'the note key is unchanged: <iso>|<section>');
   const card = fri.querySelector('.card[data-artist="Half Past"]');
-  const was = [card.dataset.nowFrom, card.dataset.nowTo, card.querySelector('.time').textContent];
+  const was = [card.dataset.nowFrom, card.dataset.nowTo, card.querySelector('.time').textContent, placeOf(card)];
   click(card);
   assert.deepEqual(ctx.taps, ['Half Past']);
   const fresh = fri.querySelector('.card[data-artist="Half Past"]');
   assert.notEqual(fresh, card, 'the pick repainted the card');
-  assert.deepEqual([fresh.dataset.nowFrom, fresh.dataset.nowTo, fresh.querySelector('.time').textContent], was);
+  assert.deepEqual([fresh.dataset.nowFrom, fresh.dataset.nowTo, fresh.querySelector('.time').textContent, placeOf(fresh)], was);
   assert.equal(fresh.parentElement.classList.contains('band-grid'), true, 'in its band, where it was');
 });
 

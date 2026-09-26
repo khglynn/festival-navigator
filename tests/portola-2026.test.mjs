@@ -113,11 +113,13 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
   assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.room), ['Afters', 'Folsom']);
   // As stacks, the venue heads its group and the card says the time only; as a
-  // by-time list (v94, once the file declares it) the card says its place too.
+  // by-time list (v94, once the file declares it) the card says its place too,
+  // as phrases under the time.
   const hmdEntry = portola.artists.find((a) => a.name === 'Horse Meat Disco');
-  assert.equal(hmd[1].dataset.time, sectionLayoutOf(portola, 'Folsom') === BY_TIME
-    ? `9 PM – 3 AM\n${[hmdEntry.venue, hmdEntry.area].filter(Boolean).join(' · ')}`
-    : '9 PM – 3 AM', 'a Folsom card says its time, and its place when no venue head says it');
+  assert.equal(hmd[1].dataset.time, '9 PM – 3 AM', 'a Folsom card says its time');
+  assert.deepEqual(hmd[1].dataset.place ? JSON.parse(hmd[1].dataset.place) : null,
+    sectionLayoutOf(portola, 'Folsom') === BY_TIME ? [hmdEntry.venue, hmdEntry.area].filter(Boolean) : null,
+    'and its place, when no venue head says it');
   root.remove();
 });
 

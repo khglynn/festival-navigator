@@ -56,7 +56,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   const facts = factsFor(artistName, ctx, opts.occ || null);
   const people = facts.people;
   const el = document.createElement('div');
-  el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
+  el.className = 'card' + (opts.cell ? ' cell' : '') + ((opts.time || opts.place) && !opts.cell ? ' timed' : '');
   // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
   // and carries the crew's marks — worn quieter and struck through (v3.css
   // .card.cancelled). The caller says "Cancelled" where the time goes.
@@ -92,6 +92,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
+  if (opts.place) el.dataset.place = JSON.stringify(opts.place);
   if (opts.occ) el.dataset.occ = JSON.stringify(opts.occ);
   if (opts.tag) {
     el.dataset.tag = opts.tag;
@@ -118,6 +119,30 @@ export function renderCard(artistName, ctx, opts = {}) {
     t.style.color = facts.subColor;
     t.textContent = opts.time;
     el.appendChild(t);
+  }
+  // Where, as PHRASES (v94, a by-time card: [venue, area]). A phrase never
+  // breaks inside itself (Kevin, 2026-09-25 — "Mayes Oyster House · Polk /
+  // Gulch" split the neighbourhood): the phrases share one line, a dot
+  // between them, only when every one fits whole; otherwise each takes its
+  // own line and the dot goes (fitPlace, below, decides from the drawn widths).
+  if (opts.place && opts.place.length) {
+    const p = document.createElement('span');
+    p.className = 'place';
+    p.style.color = facts.subColor;
+    opts.place.forEach((phrase, i) => {
+      if (i) {
+        const sep = document.createElement('span');
+        sep.className = 'pdot';
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '·';
+        p.appendChild(sep);
+      }
+      const seg = document.createElement('span');
+      seg.className = i ? 'phrase' : 'phrase lead';
+      seg.textContent = phrase;
+      p.appendChild(seg);
+    });
+    el.appendChild(p);
   }
   if (opts.tall) {
     el.classList.add('tall');
@@ -415,6 +440,28 @@ function bandText(card) {
   return middle || name ? { middle, name, mid, nm: nmX } : null;
 }
 
+// A place line's phrases (renderCard `place`) share one line only when all of
+// them fit whole, the dot between them included; otherwise they stack, one
+// phrase a line, no dot. Decided from what was DRAWN — each phrase's own
+// width (a nowrap inline box, the same in either mode) against the line's —
+// so the answer does not depend on which mode the card is in, and a card
+// never flips back and forth. All reads, then all writes. The observer that
+// calls this runs after layout and before paint, so no frame shows a phrase
+// cut; a stack makes the card taller, the observer fires once more, and the
+// same answer comes back. SEP_W is v3.css's `.card .place .pdot` width.
+const SEP_W = 11;
+function fitPlaces(cards) {
+  const answers = [];
+  for (const el of cards) {
+    const p = el.isConnected ? el.querySelector(':scope > .place') : null;
+    const segs = p ? p.querySelectorAll(':scope > .phrase') : [];
+    if (segs.length < 2 || !p.clientWidth) continue;
+    const need = [...segs].reduce((w, s) => w + s.scrollWidth, 0) + SEP_W * (segs.length - 1);
+    answers.push([p, need > p.clientWidth + 0.5]);
+  }
+  for (const [p, stacked] of answers) p.classList.toggle('stacked', stacked);
+}
+
 // A card learns its width only once it is laid out — and again on a rotation
 // or a lane split — so the fit rides a ResizeObserver, whose callback runs
 // after layout and before paint: no frame ever shows the two corners
@@ -433,6 +480,7 @@ const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entr
     todo.push([target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2, bandText(target)]);
   }
   fitAll(todo);
+  fitPlaces(todo.map(([el]) => el));
 }) : null;
 // A late font changes every width without resizing a single card, so no
 // observer fires: refit every watched card when the fonts land — once when
@@ -445,6 +493,7 @@ function refitAll() {
     if (width > 0) todo.push([el, width - 2, bandText(el)]);
   }
   fitAll(todo);
+  fitPlaces(todo.map(([el]) => el));
 }
 try {
   if (fitWatch && typeof document !== 'undefined' && document.fonts) {
@@ -475,6 +524,7 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
+    place: el.dataset.place ? JSON.parse(el.dataset.place) : undefined,
     tag: el.dataset.tag || undefined,
     tall: el.dataset.tall === '1',
     until: el.dataset.until || null,
@@ -1601,17 +1651,18 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 // The time line says what the file says: the printed range; else the start
 // (its tilde if guessed) running to the room's close when the file has one —
 // "9:30 PM – ~2 AM", the stacks' sub line said on the card, since no venue
-// head sits above it; else the doors; else nothing.
-const byTimeLabel = (m) => {
+// head sits above it; else the doors; else nothing. The place is its own
+// line of phrases (renderCard `place`): the venue, then the area.
+const byTimeWhen = (m) => {
   const e = m.e;
   const close = typeof e.close === 'string' && e.close ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
   const when = m.cancelled ? 'Cancelled'
     : m.endStr ? timeRange(e.time)
       : m.startStr ? [approxMark(e, m.startStr), close].filter(Boolean).join(' – ')
         : e.doors ? [`Doors ${e.doors}`, close].filter(Boolean).join(' · ') : '';
-  const where = [m.venue, areaOf(m.e)].filter(Boolean).join(' · ');
-  return [when, where].filter(Boolean).join('\n') || undefined;
+  return when || undefined;
 };
+const byTimePlace = (m) => [m.venue, areaOf(m.e)].filter(Boolean);
 export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
   const list = mk('div', 'time-list');
   if (day && day.iso) list.dataset.iso = day.iso;
@@ -1627,7 +1678,7 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
     grid.setAttribute('role', 'group');
     grid.setAttribute('aria-label', band.label);
     for (const m of band.members) {
-      const card = renderCard(m.e.name, ctx, { time: byTimeLabel(m), occ: occOf(m.e) });
+      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: byTimePlace(m), occ: occOf(m.e) });
       if (m.nowFrom != null && m.nowTo != null) {
         card.dataset.nowFrom = String(m.nowFrom);
         card.dataset.nowTo = String(m.nowTo);
