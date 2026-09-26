@@ -236,7 +236,19 @@ the top-up's own note, and a re-render mid-run — call 3b).
      room until it is gone (as `dayRowGeometry` already said) — v102's
      sequence of events exactly. (Ruled out by a probe: a same-place scrollTo
      does abort a smooth glide in both engines, so it is not a no-op race.)
-     Watching CI for it; not claimed fixed until CI says so.
+     That was not it — CI 36279447834 (250537d) red again, the wide-glyph
+     twin. **Diagnosed with a row log** (now carried in the test's failure
+     message): on the Tuesday tick the day turns, `recomputePast` redraws the
+     whole festival (a record, read whole: THU and FRI back above), and
+     `renderDayNav` wires the scrollspy at the page's OLD height — it lights
+     THURSDAY and the row rests at 0 — before `keepWallPlace` restores the
+     place; the spy then relights SATURDAY a long frame later (~950 ms here,
+     longer on a loaded runner) and glides the row to it. The test read the
+     row in that window: Saturday lit, row still on Thursday. The app ends
+     right; the test's "at rest" now waits for the lit day to be whole as well
+     as the row still (`dockStill`). The late relight is the banked "FRI flash
+     on open" (NOW.md, ACL prep) — the same spy-before-place order — so it is
+     left for that fix and not patched here.
   3. **`WebKit 390: NOW is the day row's first item … a tap lands`** (runs 1
      and 2, Linux WebKit): the page never moved, so the tap missed NOW. At 390
      on Saturday NOW rests past the edge and the test let Playwright's click

@@ -134,6 +134,14 @@ const menusGone = (page) => page.waitForFunction(() => ![...document.querySelect
 // The dock's row and pill at rest before they are read: a refit moves them,
 // and a day change glides the row (a smooth scroll, which is no animation:
 // the row is at rest when its scroll has held still for four reads).
+// At rest also means the scrollspy has settled (v103): after the day turns
+// under an open page, the wall is drawn whole again and the spy lights the
+// day at the page's OLD height (Thursday) before the place is held, then the
+// day you are in (Saturday) a long frame later — a second on a loaded
+// runner, the banked "FRI flash" of the NOW.md list — and the row glides
+// there. A read in between saw Saturday lit over a row still resting on
+// Thursday (CI, three runs in five). So: still, and the lit day whole; past
+// the timeout the assertions that follow say what is wrong.
 const dockStill = async (page) => {
   await motionDone(page, { within: '#dock' });
   await page.evaluate(() => { window.__rowRest = { left: NaN, same: 0 }; });
@@ -141,8 +149,13 @@ const dockStill = async (page) => {
     const r = document.getElementById('dock-days');
     const w = window.__rowRest;
     if (r.scrollLeft !== w.left) { w.left = r.scrollLeft; w.same = 0; return false; }
-    return ++w.same >= 4;
-  }, null, { timeout: 4000, polling: 50 });
+    if (++w.same < 4) return false;
+    const on = r.querySelector('.day-tab.active');
+    if (!on) return true;
+    const a = on.getBoundingClientRect();
+    const b = r.getBoundingClientRect();
+    return (a.left >= b.left - 2 && a.right <= b.right + 2) || w.same >= 40; // two seconds still: let the assertions speak
+  }, null, { timeout: 4000, polling: 50 }).catch(() => {});
 };
 const menuState = (page, bar) => page.evaluate((b) => {
   const pop = document.querySelector(`#${b}-you-wrap .hl-pop`);
@@ -557,6 +570,30 @@ for (const wide of [null, '0.7px']) {
       assert.ok(live.now, 'NOW is live');
       assertPillPromise(live, four, label('NOW live'));
       await assertPillFull(live, four, label('NOW live'));
+      // Every move of the dock's day row from here, for a failure message
+      // (v103: CI caught this row resting at its start with the day you are
+      // in off its right edge, three runs in five, never on a Mac).
+      await page.evaluate(() => {
+        const row = document.getElementById('dock-days');
+        const now = document.getElementById('dock-now');
+        const log = window.__rowLog = [];
+        const t0 = performance.now();
+        const at = () => Math.round(performance.now() - t0);
+        const lit = () => (row.querySelector('.day-tab.active') || {}).dataset?.day || '-';
+        const who = () => (new Error().stack.split('\n').slice(3, 6).map((l) => l.trim().replace(/^at /, '').replace(/https?:\/\/[^/]+/g, '').replace(/\(?\/js\/v3\//g, '').replace(/\)$/, '')).join(' < '));
+        const scrollToWas = Element.prototype.scrollTo;
+        Element.prototype.scrollTo = function (...a) {
+          if (this === row) log.push(`${at()} scrollTo ${JSON.stringify(a[0])} from ${Math.round(row.scrollLeft)} lit ${lit()} w ${row.clientWidth} | ${who()}`);
+          return scrollToWas.apply(this, a);
+        };
+        const d = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
+        Object.defineProperty(row, 'scrollLeft', { configurable: true, get() { return d.get.call(this); },
+          set(v) { log.push(`${at()} scrollLeft= ${v} from ${Math.round(d.get.call(this))} lit ${lit()} | ${who()}`); d.set.call(this, v); } });
+        new MutationObserver(() => log.push(`${at()} NOW hidden=${now.hidden} leaving=${!!now.dataset.leaving}`)).observe(now, { attributes: true, attributeFilter: ['hidden', 'data-leaving'] });
+        new MutationObserver(() => log.push(`${at()} tabs rebuilt, lit ${lit()}`)).observe(row, { childList: true });
+        let last = -1;
+        row.addEventListener('scroll', () => { const v = Math.round(row.scrollLeft); if (v !== last) { last = v; log.push(`${at()} at ${v}`); } });
+      });
       await page.clock.setFixedTime(new Date('2026-09-29T12:00:00-07:00')); // Tuesday: nothing live
       await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
       await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
@@ -564,6 +601,8 @@ for (const wide of [null, '0.7px']) {
       await dockStill(page);
       const gone = await pillRead(page);
       assert.equal(gone.now, null, 'NOW is hidden (still first in the row)');
+      const lit = gone.active && gone.active[0] >= gone.row[0] - 2 && gone.active[1] <= gone.row[1] + 2;
+      if (!lit) assert.fail(`${label('NOW gone')}: the day you are in is whole (${JSON.stringify(gone)})\n${(await page.evaluate(() => window.__rowLog)).join('\n')}`);
       assertPillPromise(gone, four, label('NOW gone'));
       const size = (r) => (r.compact ? 0 : r.discs); // folded is the smallest
       assert.ok(size(gone) >= size(live), `more room never yields fewer discs (${size(live)} → ${size(gone)})`);
