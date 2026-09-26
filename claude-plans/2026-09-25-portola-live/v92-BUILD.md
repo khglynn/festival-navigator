@@ -222,3 +222,63 @@ the button sits alone on the second line, still right (153–293 of 308); all
 three 44px. Tests: the guest file checks it is the right-hand door and opens
 the join with nothing waiting and no writes; the member test checks a member
 has none; the copy test covers the empty crew.
+
+**~9:55 PM — independent review (Opus, read-only, on the branch as of
+2751c62): no blockers; 11 findings, each checked against the code.**
+
+Fixed (with tests):
+1. *A guest could record an empty festival row in the crew.* With no `&f=`,
+   no invite stamp and no picks, a guest fell to the catalog default (Portola)
+   and activation's `ensureFestivalState` queued `festivals.<default>` for
+   push. Now a guest falls back to any festival the crew already holds
+   (`guestFestOf`). Test: an ACL-only crew opens on ACL, nothing queued.
+2. *A guest on a legacy v3 doc asked for the one-shot migration* (a POST).
+   Now only a named phone asks; a guest's `migrationPending` stays false (no
+   banner either), and joining re-enters `enterApp`, which runs it. Test.
+3. *History/refresh could open a member-only drill for a guest* (`sub:bulk`,
+   `sub:spotify`, `sub:add-fest`, `sheet:add-member`) — reachable via "Not
+   me" inside a restored Settings stack. The router openers now land a guest
+   on Settings itself. Test.
+4. *"Just looking" during an in-flight join* would show the wall, then the
+   join landed anyway and dropped the waiting pick. It is disabled while the
+   join POST is out.
+5. *"Show all" acted on whatever festival was current* when tapped. Bound to
+   the crew and festival it was said about.
+6. *The join screen could name the stamp's festival* rather than the one the
+   guest is looking at. `askToJoin` passes `ctx.fid`; the offline-join branch
+   uses the same festival. Test (the ACL crew's join says ACL).
+7. *A creator was told about themselves in the third person* ("Kevin started
+   this plan…" to Kevin). A lone member reading their own plan now gets
+   "Your plan for Portola is ready. Nobody's picked yet." Test.
+8. *The welcome could skip a visit* when a refresh restored Settings over the
+   wall. `closeSettings` now offers it (idempotent; the offer still waits for
+   Got it, so no existing offer flow changes).
+11. The first-open extras (the view seed, the welcome) run inside `safely()`:
+    a throw is recorded and the wall opens without them, never the fatal
+    screen.
+
+Accepted and noted (not changed tonight):
+- 1(a)/(c): a link's `&f=` naming a festival the doc doesn't hold yet (the
+  sharer's own membership push is in flight — same idempotent write), and
+  the offline fallback festival (a guest's first open needs the network).
+- 9: `&show=` treats "this phone has shown the festival" as "a known crew is
+  saved on it"; a crew opened with no festival hint, then forgotten, doesn't
+  count. Portola crews all carry an invite stamp, so they are saved.
+- 10: system Back on the join screen leaves the app (no history entry) — "Just
+  looking" is the way back; the post-Portola sheet fixes it properly.
+- Found while testing 1: **sync.js pushes the ACTIVE crew's pending changes
+  when a debounce scheduled on the previous crew fires after a switch** — for
+  a guest that is `{data: {}}`, which the merge leaves unchanged. Pre-existing,
+  content-free, and sync is off-limits tonight; worth a one-line guard in
+  `pushSync` (bail on empty pending) after Portola. The guest tests assert
+  "no content written" with that noted.
+
+Re-verified after the fixes: first-open tests 34/34; full `npm test` 945/946
+(only the asset stamp, expected); `npm run test:browser` 180/180; the whole
+walk again at 390/320/1440 — every scenario, zero page errors.
+
+**For the orchestrator:** (1) stamp after the rebase; (2) when v91 lands,
+rebase: the only conflict is adjacent import lines at the top of `app.js`,
+and `wallPlace`/`restorePlace` should then also carry v91's sideways stack
+rows (`.stack-scroll`, keyed by v91's exported `stackRowKey`) so "back where
+you were" covers the afters rows on a phone too.

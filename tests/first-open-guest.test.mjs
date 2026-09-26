@@ -32,6 +32,9 @@ const CLAIM = 'firstopentest_claim_0123';
 const BARE = 'firstopentest_bare_01234'; // no inviteFestId: a guest must not stamp one
 const EMPTY = 'firstopentest_empty_0123';
 const MINE = 'firstopentest_mine_01234'; // a personal link lands here
+const ACLONLY = 'firstopentest_aclon_0123'; // no picks, no stamp, one festival that is not the catalog default
+const OLDV3 = 'firstopentest_oldv3_0123'; // a legacy doc that still needs its one-shot migration
+const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
 
 const crewDoc = (people, selections = {}, meta = { name: 'The Test Crew', inviteFestId: FID }) => ({
   v: 4, meta, spotify: {}, affinity: {}, people, festivals: { [FID]: { selections } },
@@ -43,6 +46,8 @@ const SERVER = {
   [BARE]: crewDoc({ Kevin: { colorIndex: 0 } }, { Robyn: { Kevin: 1 } }, { name: 'Bare Crew' }),
   [EMPTY]: crewDoc({}),
   [MINE]: crewDoc({ Kevin: { colorIndex: 0 }, Drew: { colorIndex: 2 } }),
+  [ACLONLY]: { v: 4, meta: { name: 'ACL Crew' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'acl-2026': { selections: {} } } },
+  [OLDV3]: { ...crewDoc({ Kevin: { colorIndex: 0 } }, { Robyn: { Kevin: 2 } }), v: 3 },
 };
 
 const writes = []; // every non-GET request, as `METHOD path?t=… body`
@@ -53,6 +58,7 @@ async function network(url, opts = {}) {
   if (method !== 'GET') writes.push({ method, url: u, body: opts.body ? JSON.parse(opts.body) : null });
   if (u === '/data/festivals/index.json') return json(INDEX);
   if (u === `/data/festivals/${FID}.json`) return json(FEST);
+  if (u === '/data/festivals/acl-2026.json') return json(ACL);
   if (u.startsWith('/api/festival-add?')) return json({ festivals: [] });
   if (u === '/api/person') {
     if (method === 'GET') return json({ error: 'nobody' }, 404);
@@ -80,6 +86,11 @@ const welcome = () => document.getElementById('welcome-card');
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((b) => b.textContent === label);
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
+// Writes that carry anything. sync.js pushes the ACTIVE crew's pending
+// changes when a debounce scheduled on the previous crew fires after a switch
+// — with nothing pending that is `{data: {}}`, which the merge leaves exactly
+// as it was (pre-existing, and not a guest's doing). The law is about content.
+const contentWrites = (t) => crewWrites(t).filter((w) => /[?&]op=/.test(w.url) || Object.keys((w.body && w.body.data) || {}).length > 0);
 async function open(hash) {
   location.hash = hash;
   await settle(120);
@@ -284,4 +295,42 @@ test('a personal link still asks first ("this link is yours"), and "Just looking
   assert.equal(crew.me(MINE), null, 'looking, not claiming');
   assert.ok($('dock-you').classList.contains('guest'));
   assert.deepEqual(crewWrites(MINE), []);
+});
+
+test('a guest with no festival in the link or the crew lands where the crew is — never on a festival the crew does not have', async () => {
+  // The catalog default is Portola; this crew only has ACL, with no picks and
+  // no invite stamp. Opening Portola here would record it in the crew's doc.
+  await open(`#g=${ACLONLY}`);
+  await settle(80);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(state.activeFestivalId, 'acl-2026');
+  assert.equal(state.pendingChanges.festivals, undefined, 'no festival membership queued');
+  assert.deepEqual(contentWrites(ACLONLY), [], 'nothing written into the crew');
+  // And a tap asks in that festival's name, not a stamp's or a default's.
+  document.querySelector('#wall-root .card[data-artist]').click();
+  assert.deepEqual(shown(), ['screen-join']);
+  assert.match($('join-fest-name').textContent, /^ACL/);
+  $('join-look').click();
+  await settle(40);
+});
+
+test('a guest never asks for a legacy crew’s one-shot migration — that is a write; joining runs it', async () => {
+  await open(`#g=${OLDV3}&f=${FID}`);
+  await settle(80);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(crew.me(OLDV3), null);
+  assert.deepEqual(contentWrites(OLDV3), [], 'no op=migrate from a guest');
+  assert.equal(document.getElementById('migration-banner'), null, 'and no "picks unlock in a moment" for someone with no picks');
+});
+
+test('history cannot open a member-only drill for a guest: it lands on Settings itself', async () => {
+  const { dom } = shell;
+  dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate', { state: { layers: ['settings', 'sub:bulk'] } }));
+  await settle(20);
+  assert.deepEqual(shown(), ['screen-settings']);
+  assert.notEqual(document.getElementById('settings-main').style.display, 'none', 'the Settings page, not the drill');
+  assert.equal(document.querySelector('#settings-subview textarea'), null, 'no bulk paste box');
+  dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate', { state: { layers: [] } }));
+  await settle(20);
+  assert.deepEqual(contentWrites(OLDV3), []);
 });

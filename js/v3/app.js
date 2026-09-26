@@ -430,7 +430,7 @@ function askToJoin(artist = null) {
   rememberWelcomeSeen();
   dismissWelcome({ instant: true });
   pendingJoin = { token, fid: ctx.fid, artist, place: wallPlace() };
-  renderJoin(token, state.crewDoc, { artist });
+  renderJoin(token, state.crewDoc, { artist, fid: ctx.fid });
 }
 
 // After a join from the wall: back where they were standing, and the artist
@@ -1639,6 +1639,24 @@ function inviteViewLine() {
   return view ? `Opens on ${view.label} — what you’re showing now.` : '';
 }
 
+// The first-open extras (v92) — the link's view, the welcome — are never
+// worth a friend's entry: whatever they throw is recorded and the wall opens
+// without them, rather than on boot's fatal screen.
+function safely(what, fn) {
+  try { return fn(); } catch (e) { record(`first-open:${what}`, e); return null; }
+}
+
+// Where a guest lands when neither the link nor the crew names a festival:
+// where the crew's picks are, or else any festival the crew already holds.
+// Opening a festival the crew does not have records it in the doc
+// (state.ensureFestivalState) — a write a guest must never make.
+function guestFestOf(doc) {
+  const known = FESTIVAL_INDEX.map((f) => f.id);
+  return model.busiestFestival(doc, known)
+    || Object.keys((doc && doc.festivals) || {}).find((id) => known.includes(id))
+    || null;
+}
+
 // The other end of a link's view: has this phone shown this festival before —
 // any crew it knew, pointed at it? Then its own view of the festival is its
 // choice (even "everything", which stores nothing), and a link never moves it.
@@ -1927,7 +1945,9 @@ let settingsActions = null;
 // Coming back from Settings may mean a festival switch — land on the new
 // fest's own day (its now line if it is on today), once per fest-day, like a
 // fresh open.
-function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); }
+// A welcome that could not show (a refresh restored Settings over the wall)
+// gets its turn here, v92; the offer still waits for its "Got it".
+function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
 
 function openSettings() {
   closeSheet();
@@ -2383,7 +2403,7 @@ function maybeWelcome() {
   const picked = Object.keys(model.picksFor(state.crewDoc, ctx.fid)).length > 0;
   const copy = welcomeCopy({
     crewName: state.crewName(), festName: (state.fest() || {}).name,
-    people: people.map(([n]) => n), picked, guest: !ctx.meName,
+    people: people.map(([n]) => n), picked, guest: !ctx.meName, meName: ctx.meName,
   });
   const faces = people.map(([name, p]) => {
     const ci = colorIndexOf(name, p);
@@ -2458,7 +2478,7 @@ function bringPicksHere(key) {
 // `artist` (v92): a guest tapped this artist on the wall — the screen says
 // the pick is waiting behind the answer, and finishJoin makes it. Every way
 // in ends in finishJoin, which does nothing when no guest was asking.
-function renderJoin(token, doc, { artist = null } = {}) {
+function renderJoin(token, doc, { artist = null, fid = null } = {}) {
   show('screen-join');
   const forLine = $('join-for');
   if (forLine) {
@@ -2477,7 +2497,8 @@ function renderJoin(token, doc, { artist = null } = {}) {
   });
   // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
   // crew is who with. Fest context comes from the link's &f= or the doc stamp.
-  const hintId = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+  // A guest asked from the wall: the festival they are looking at (v92).
+  const hintId = fid || pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
   const festMeta = hintId ? FESTIVAL_INDEX.find((f) => f.id === hintId) : null;
   const crewLabel = (doc.meta && doc.meta.name) || 'your crew';
   const headline = $('join-fest-name');
@@ -2538,6 +2559,10 @@ function renderJoin(token, doc, { artist = null } = {}) {
     if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc)); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
+    // The answer decides where this goes: "Just looking" waits for it (a join
+    // the server already took would land anyway, minus the waiting pick).
+    const lookBtn = $('join-look');
+    if (lookBtn) lookBtn.disabled = true;
     status.textContent = '';
     status.appendChild(eqLoader('Finding your people…'));
     const taken = Object.values(doc.people || {})
@@ -2547,7 +2572,7 @@ function renderJoin(token, doc, { artist = null } = {}) {
     // removed:true and enter the crew invisible. Holding the link IS the
     // capability — rejoining resurrects.
     const person = { colorIndex: nextColorIndex(taken), removed: false };
-    const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+    const festHint = hintId; // the festival the screen names — a guest's, the link's, or the crew's stamp
     document.body.dataset.busy = 'join'; // a new build's reload waits for the answer
     try {
       // The first write happens BEFORE entry (FLOW-5): if the server says no
@@ -2577,6 +2602,7 @@ function renderJoin(token, doc, { artist = null } = {}) {
     } finally {
       delete document.body.dataset.busy;
       btn.disabled = false;
+      if (lookBtn) lookBtn.disabled = false;
     }
   };
 }
@@ -2643,8 +2669,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // A guest (v92) with neither — an old link, an old doc — lands where the
   // crew's picks are rather than on the catalog's default, which is also a
   // festival the crew may not have (and opening one records it in the doc).
+  // Failing that (a crew with no picks yet), any festival the crew already
+  // holds — never one it doesn't (review, 2026-09-25).
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId)
-    || (crew.me(token) ? null : model.busiestFestival(doc, FESTIVAL_INDEX.map((f) => f.id)))
+    || (crew.me(token) ? null : guestFestOf(doc))
     || null;
   pendingFestHint = null;
   state.activateCrew(token, doc, festHint, { festival: warm ? warm.fid : null });
@@ -2678,11 +2706,14 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
         if (!ctx.migrationPending) repaintWall();
       });
     }
-  } else if (model.needsMigration(state.crewDoc)) {
+  } else if (model.needsMigration(state.crewDoc) && crew.me(token)) {
     await sync.requestMigration();
     if (!current()) return;
     ctx.migrationPending = model.needsMigration(state.crewDoc);
   } else {
+    // A guest (v92) never asks for the one-shot migration: it is a write, and
+    // a guest writes nothing. Reads are safe on a v3 doc, a guest has no picks
+    // to gate, and joining re-enters here with a name, which runs it.
     ctx.migrationPending = false;
   }
   try {
@@ -2721,7 +2752,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   const savedLayers = (history.state && history.state.layers) || null;
   // Seeded BEFORE the first paint, so the wall opens already on the view the
   // link carried — nothing folds away under the person's eyes.
-  const opened = showFor && state.activeFestivalId === showFor ? seedShowOnce(showFor, showHint) : null;
+  const opened = showFor && state.activeFestivalId === showFor ? safely('show-seed', () => seedShowOnce(showFor, showHint)) : null;
   show('screen-app');
   applyFestTheme();
   refreshCtx();
@@ -2752,13 +2783,20 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   });
   // Said once, on arrival, with the one door back to everything (v92). A
   // recognized phone's "Not me" outranks it — the next line replaces it.
-  if (opened) showActionToast($('toast-root'), `Opened on ${opened}.`, 'Show all', unfoldAll, 6000);
+  if (opened) {
+    // Bound to the crew and festival it was said about: a switch inside the
+    // toast's six seconds must not unfold another festival's own view.
+    const fid = state.activeFestivalId;
+    showActionToast($('toast-root'), `Opened on ${opened}.`, 'Show all', () => {
+      if (state.getCrewToken() === token && ctx.fid === fid) unfoldAll();
+    }, 6000);
+  }
   if (recognized) welcomeRecognized(token, recognized);
   // After the toasts: the cards step up over them. `holdOffer`: the caller is
   // about to open a sheet (the create flow's share moment), and asks for the
   // welcome and the offer itself once that sheet is up, so they wait for it.
   // The welcome first — the offer never asks before it has been read.
-  if (!holdOffer) { maybeWelcome(); maybeOfferBringPicks(); }
+  if (!holdOffer) { safely('welcome', maybeWelcome); maybeOfferBringPicks(); }
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off. A MEMBER: a guest (the
   // hop's absorb failed, so this phone has no name here yet) keeps it waiting
@@ -3110,12 +3148,20 @@ export function init() {
   // Browser navigation models the layer stack (FLOW-2): back closes the top
   // layer, forward re-opens it, refresh restores it (spec F10).
   router.registerKind('settings', () => openSettings(), () => closeSettings());
-  router.registerKind('sub:', (key) => { openSettings(); openSubviewByKey(key, ctx, settingsActions); }, () => openSettings());
+  // A guest's Settings has no door to the member-only drills (v92) — and a
+  // history entry or a refresh must not open one either (review, 2026-09-25):
+  // it lands on Settings itself.
+  const MEMBER_ONLY = new Set(['sub:bulk', 'sub:spotify', 'sub:add-fest']);
+  router.registerKind('sub:', (key) => {
+    openSettings();
+    if (!ctx.meName && MEMBER_ONLY.has(key)) return;
+    openSubviewByKey(key, ctx, settingsActions);
+  }, () => openSettings());
   router.registerKind('sheet:', (key) => {
     refreshCtx();
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
-    else if (key === 'sheet:add-member') openAddMember();
+    else if (key === 'sheet:add-member') { if (ctx.meName) openAddMember(); } // a guest adds nobody (v92)
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {

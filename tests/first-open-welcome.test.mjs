@@ -84,6 +84,8 @@ test('the words for the other crews a friend can open onto', () => {
   );
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).line, 'Kevin started this plan for Portola. Nobody’s picked yet.');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin', 'Maya'], picked: false }).line, 'This is the crew’s plan for Portola. Nobody’s picked yet.');
+  assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false, guest: false, meName: 'Kevin' }).line,
+    'Your plan for Portola is ready. Nobody’s picked yet.', 'a creator is never told about themselves in the third person');
   assert.match(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).sub, /Tap any artist to be first\.$/);
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: true }).label, 'Portola 26');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: true }).join, 'Pick with the crew');

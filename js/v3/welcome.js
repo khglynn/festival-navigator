@@ -44,7 +44,7 @@ export function rememberWelcomeSeen() {
 // A guest also gets Kevin's right-hand door (2026-09-25, 7:55 PM: "a right
 // justified button in there to pick with the crew") — for friends who already
 // know they want to pick. A member is already picking, so theirs has none.
-export function welcomeCopy({ crewName = '', festName = '', people = [], picked = false, guest = true } = {}) {
+export function welcomeCopy({ crewName = '', festName = '', people = [], picked = false, guest = true, meName = null } = {}) {
   const fest = festName || 'this festival';
   const label = crewName || 'Your crew';
   const buttons = { yes: 'Got it', more: 'How it works', join: guest ? 'Pick with the crew' : null };
@@ -52,9 +52,14 @@ export function welcomeCopy({ crewName = '', festName = '', people = [], picked 
     return { label, line: 'Nobody’s in this crew yet.', sub: 'Tap any artist to be first — you’ll pick a name as you do.', ...buttons };
   }
   if (!picked) {
-    const line = people.length === 1
-      ? `${people[0]} started this plan for ${fest}. Nobody’s picked yet.`
-      : `This is the crew’s plan for ${fest}. Nobody’s picked yet.`;
+    // The only person here is the one reading it (a creator, just after the
+    // share moment): their plan, in the second person.
+    const mine = people.length === 1 && !guest && meName && people[0] === meName;
+    const line = mine
+      ? `Your plan for ${fest} is ready. Nobody’s picked yet.`
+      : people.length === 1
+        ? `${people[0]} started this plan for ${fest}. Nobody’s picked yet.`
+        : `This is the crew’s plan for ${fest}. Nobody’s picked yet.`;
     return { label, line, sub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist to be first.', ...buttons };
   }
   return {
