@@ -2688,7 +2688,22 @@ let settingsActions = null;
 // fresh open.
 // A welcome that could not show (a refresh restored Settings over the wall)
 // gets its turn here, v92; the offer still waits for its "Got it".
-function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+function closeSettings() { show('screen-app'); keepWallAddress(); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+// The wall's address follows its festival (v96 — Sol's review of 3599950):
+// a festival switched in Settings is no boot, so nothing rewrote the address,
+// and it kept the old one — a link copied from the bar previewed the old
+// festival, and a reload went back to it (the address's &f= is a hint, and a
+// hint wins at boot). Rewritten here, as the wall comes back: by then the
+// Settings entry is gone and the page stands on the wall's own entry (and on
+// any other layer's, the address is the wall's too). Its state is kept.
+function keepWallAddress() {
+  const token = state.getCrewToken();
+  if (!token) return;
+  try {
+    const url = wallUrl(token);
+    if (url !== location.href) history.replaceState(history.state, '', url);
+  } catch { /* an address this history will not take: the next boot writes it */ }
+}
 
 function openSettings() {
   closeSheet();
@@ -2699,12 +2714,22 @@ function openSettings() {
     rerender: openSettings,
     switchFestival: async (fid) => {
       // Load BEFORE persisting the switch: an offline device must never be
-      // left pointing at a festival it cannot render (CORE-12).
+      // left pointing at a festival it cannot render (CORE-12). The load is a
+      // wait, and the person can leave meanwhile ("Switch crew", another
+      // festival's board, a link): a switch that finds its Settings gone, its
+      // crew changed or a newer boot does nothing at all — no festival saved,
+      // no wall over the fest list, no address written (Sol's review of
+      // 688d9b1: the old crew's wall came up over the list at "/").
+      const token = state.getCrewToken();
+      const gen = bootGeneration;
+      const stillHere = () => state.getCrewToken() === token && bootGeneration === gen
+        && $('screen-settings').style.display !== 'none';
       try { await loadFestival(fid); }
       catch {
-        showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
+        if (stillHere()) showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
         return;
       }
+      if (!stillHere()) return;
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);

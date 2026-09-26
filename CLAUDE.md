@@ -158,6 +158,27 @@ Non-inferable facts only (the code answers everything else — read it).
   try. The suite carries receiver-strict and throwing-getter stubs now, but
   the defence with teeth is a real-browser walk (a Sonnet teammate, real
   pointer input, never `element.click()`) before any promote.
+- **Browser tests have two input traps that pass on a Mac and fail on CI**
+  (both 2026-09-26): under `page.clock` the long-press timer runs late on a
+  big wall, so hold until the zoom stands, as `holdOpen` in
+  `tests/browser/zoom-chips-contract.test.mjs` does (newer tests had copied
+  a fixed 650 ms hold from older ones instead); and a CDP touch flick leaves a
+  fling, so a quick tap after it only stops the coast (Chromium on Linux
+  drops that click). End the drag with the finger still, as
+  `tests/browser/guest-tap-route.test.mjs` does. To chase a CI-only flake,
+  log every input in a copy of the test, throttle the CPU (CDP
+  `Emulation.setCPUThrottlingRate`) and bisect across builds on a quiet
+  machine; another agent's browser run alongside gave false results.
+- **Browser history is shared state the app cannot fully own** (2026-09-26).
+  Entries older builds wrote live on friends' phones, two visits to one URL
+  are two real places, a native link bypasses the router, and "skip the
+  dead entry" can step out of the app. So a menu or popover takes no entry
+  of its own: the Show menu has none, and v93 spent four review rounds on
+  Back bugs giving it one before cutting it. Layers Back must close
+  (Settings and its drills, the note sheets) ride one designed model,
+  `js/v3/router.js`, and the join shelf keeps its own entry; anything new
+  that Back must close joins the router with those four cases as its
+  tests, not a patch mid-release.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies images
