@@ -353,3 +353,16 @@ the old count until the drill opens again (and says "1 artists"); a
 connect-time top-up still records artists only by the member who connected
 (other members' saves for an artist already on the ledger are never added —
 the ledger's design, not this bug).
+
+## For the coordinator (not done here)
+
+- **CLAUDE.md not edited** (the harness's instruction file). Proposed, for the
+  List bullet: "In the List a highlight FILTERS (v103): rows none of the
+  highlighted picked leave the DOM, an emptied room is its own head, quiet
+  (`wall.js thinByPeople`); the Board still dims. `filters.js passesPeople`
+  is the one 'did they pick this' predicate — the dim, the filter and Our
+  picks' route all ask it." And for NOW: the day row's first item, one place
+  whatever the day (the `SAT · NOW` wording in the zoom bullet's neighbours is
+  history now).
+- **Not stamped, no PR** (the brief). `renderDayNav` → `paintPlan` order is
+  unchanged; `paintPlan`, `openShowMenu` and the menus are untouched.
