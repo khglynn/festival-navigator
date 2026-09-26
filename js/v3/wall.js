@@ -1542,14 +1542,14 @@ const stackTime = (m) => {
 // bottom in play order. The people filter dims here exactly as it does on
 // the clock — renderCard's one rule — and never takes a card or a group away.
 //
-// `clock` says a timetable sits above these stacks on the same day, so their
-// columns line up with its columns (Kevin at Portola, 2026-09-25: "times on
-// the left, and the items that don't have them don't line up"): 'room' when
-// the stacks are the clock's own room (a cancelled act, a set off the
+// `clock` says a timetable sits above these stacks on the same day: 'room'
+// when the stacks are the clock's own room (a cancelled act, a set off the
 // columns, a name with no time yet), 'day' when they are another room on that
-// day (SAT AFTERS). How far each one moves is v3.css's call.
+// day (SAT AFTERS). From 720 up it changes nothing — every room starts on the
+// wall's one edge (v3.css #wall-root, 2026-09-26) — but on a phone the edge is
+// the shell's, and a clocked row carries the clock's gutter itself:
 //
-// A clocked row also sits in its own sideways scroller, `.stack-scroll` (v91):
+// it sits in its own sideways scroller, `.stack-scroll` (v91):
 // on a phone the rail's 40px is lead space inside it — the columns start
 // where the clock's do and keep their full width, and the lead scrolls away
 // under a swipe (Kevin: "a little bit of extra padding that obviously scrolls
@@ -1623,8 +1623,8 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 // label (venueGroupsOf built both), so a pick, the zoom, notes, the crew's
 // marks and NOW all behave exactly as they do one room over.
 //
-// `clock` as for venueGroups: under a day's timetable the list steps in by
-// the hour rail from 720 up, so its columns sit under the clock's (v3.css).
+// Where it starts is the wall's (v3.css #wall-root): from 720 up on the one
+// edge with every other room, its columns under the clock's (one track).
 // On a phone it does NOT scroll sideways the way a clocked stack row does: a
 // stack is read one room at a time, top to bottom, but a time list is read
 // ACROSS — the 9:30 beside the 9 — and a row that parks its right-hand card
@@ -1662,11 +1662,10 @@ const rowPlace = (m, siteName) => [m.venue === siteName ? null : m.venue, areaOf
 // card full width, one to a row (.time-list.rows, v3.css). A festival-grid set
 // carries the grid's own occurrence (`gridOcc`), so its zoom, its notes and a
 // zoom kept across a repaint are the grid cell's, whichever view drew it.
-export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null, ladder = 'night', row = false, window = 'printed' } = {}) {
+export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, ladder = 'night', row = false, window = 'printed' } = {}) {
   const list = mk('div', row ? 'time-list rows' : 'time-list');
   if (day && day.iso) list.dataset.iso = day.iso;
   if (fest && fest.timezone) list.dataset.tz = fest.timezone;
-  if (clock) list.dataset.clock = clock;
   let shown = 0;
   for (const band of timeBandsOf(entries, { fallbackVenue, ladder, window })) {
     const b = mk('div', 'time-band');
@@ -1703,7 +1702,7 @@ function sectionBody(fest, key, ctx = {}) {
     // room the stacks' (the next act's start wins) — events.js timeBandsOf.
     const byTime = sectionLayoutOf(fest, key) === BY_TIME;
     return (root, entries, c, opts = {}) => timeGroups(root, entries, c,
-      { ...opts, clock: null, ladder: byTime ? 'night' : 'hours', window: byTime ? 'printed' : 'stack', row: true });
+      { ...opts, ladder: byTime ? 'night' : 'hours', window: byTime ? 'printed' : 'stack', row: true });
   }
   return sectionLayoutOf(fest, key) === BY_TIME ? timeGroups : venueGroups;
 }
@@ -2405,9 +2404,10 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
   for (const day of plan.days) {
     const block = dayBlock(day.key, day.iso);
     const weekday = headWeekday(day);
-    // Whether this day drew a clock (the festival's timetable): every stack
-    // under it lines up with its columns. A hidden festival room, or a grid
-    // day with no set times yet, has none.
+    // Whether this day drew a clock (the festival's timetable): on a phone
+    // every stack under it rides a row that lines it up with the clock's
+    // columns (from 720 up the wall's one edge does that for every room). A
+    // hidden festival room, or a grid day with no set times yet, has none.
     let clocked = false;
     // The date rides the day's FIRST head and no other, whichever room that
     // turns out to be — so it is spent by the first head made, never assigned
