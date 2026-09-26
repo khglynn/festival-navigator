@@ -1769,6 +1769,7 @@ function closeShowMenu({ instant = false } = {}) {
   if (!openMenu) { if (instant) settleMenuExit(); return; }
   const { pop, link, bar, onClose } = openMenu;
   openMenu = null;
+  catchStrayTaps(false);
   link.setAttribute('aria-expanded', 'false');
   if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;
   // A keyboard standing on a row goes back to the fest name that opened the
@@ -1789,6 +1790,22 @@ function closeShowMenu({ instant = false } = {}) {
   anim.oncancel = done;
 }
 
+// WebKit sends a tap's click only where something under the finger listens
+// for one (the iPhone's rule), and the menus' outside tap is a DOCUMENT
+// listener, which does not count: a tap on the wall's empty space (a gutter,
+// the time rail) left a menu open in WebKit and on an iPhone while Chromium
+// closed it (measured 2026-09-26, the people menu's walk). While a menu is
+// up the wall listens, and its tap highlight is off, so a closing tap never
+// flashes the whole wall grey; neither outlives the menu.
+const strayTap = () => {};
+function catchStrayTaps(on) {
+  const app = document.getElementById('screen-app');
+  if (!app) return;
+  app.classList.toggle('menu-open', on);
+  if (on) app.addEventListener('click', strayTap);
+  else app.removeEventListener('click', strayTap);
+}
+
 function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   closeShowMenu({ instant: true });
   settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
@@ -1801,6 +1818,7 @@ function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   const bar = wrap.closest('.dock, .day-rail');
   if (bar) bar.classList.add('menu-up');
   openMenu = { wrap, link, pop, bar, onClose };
+  catchStrayTaps(true);
   pop.style.display = '';
   link.setAttribute('aria-expanded', 'true');
   // The way in has the beat.

@@ -355,6 +355,9 @@ html { touch-action: manipulation; }
  * (50) — its menu paints at the bar's level, the bar being a stacking context
  * (app.js openShowMenu). */
 .dock.menu-up, .day-rail.menu-up { z-index: 39; }
+/* While a menu is up the wall listens for a stray tap (app.js catchStrayTaps),
+ * which in WebKit makes it a tap target: no grey flash over the whole wall. */
+#screen-app.menu-open { -webkit-tap-highlight-color: transparent; }
 
 /* ---- the people menu (2026-09-26) ------------------------------------------------ */
 /* Your avatar opens HIGHLIGHT, the twin of the fest name's SHOW: the same
@@ -407,7 +410,7 @@ html { touch-action: manipulation; }
 .hl-faces .avatar { width: 20px; height: 20px; font-size: 8.5px; box-sizing: border-box; box-shadow: 0 0 0 1.5px var(--dock); }
 .hl-faces .avatar + .avatar { margin-left: -6px; }
 .hl-faces .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
-.hl-x { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; margin-left: 1px;
+.hl-x { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
         color: var(--tonal-text); font-size: 10px; font-weight: 800; }
 /* What is leaving the slot, drawn where it stood while it goes (people-menu.js
  * setSlot) — out of the flow (a ghost of the avatar is still `.dock .you`,

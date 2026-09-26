@@ -236,9 +236,9 @@ export function pillFaces(people, cap = PILL_FACES) {
   return { faces: people.slice(0, k - 1), more: people.length - (k - 1) };
 }
 // The pill's width with `discs` discs, from v3.css: 3.5px padding each side,
-// 20px discs overlapping 6px, the ✕'s 20px and its 1px. The browser contract
+// 20px discs overlapping 6px, and the ✕'s 20px. The browser contract
 // (tests/browser/people-menu.test.mjs) holds this to the drawn width.
-export const pillWidth = (discs) => 7 + 20 + 14 * (Math.max(1, discs) - 1) + 21;
+export const pillWidth = (discs) => 7 + 20 + 14 * (Math.max(1, discs) - 1) + 20;
 
 export function ensurePill(wrap, { onFaces, onClear } = {}) {
   let pill = wrap.querySelector(':scope > .hl-pill');
