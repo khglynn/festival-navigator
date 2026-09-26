@@ -33,6 +33,13 @@ export const SHELF_WORDS = {
   join: 'Join',
   joinAs: (name) => `Join as ${name}`,
   claim: (name) => `I’m ${name}`,
+  // A MEMBER's words (the people menu's "Pick as someone else", 2026-09-26):
+  // the same question and the same two taps — a name, then "I'm Ben" — with
+  // staying who you are as the quiet way out.
+  memberSub: 'Tap a name, then confirm.',
+  you: ' · you',
+  stay: (name) => `Stay ${name}`,
+  switchTo: 'Switch',
 };
 
 const SHEET_ID = 'artist-sheet';   // the production sheet's id: closeSheet, quiet() and the waiters know it
@@ -56,7 +63,11 @@ export function joinShelf() {
 // node) writes the status line, close({ instant }) takes it down.
 // `opener`: where keyboard focus goes back to when the shelf closes (the
 // review of 963e599: closing it dropped focus to <body>).
-export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, opener = null, onLook, onClaim, onAnswer } = {}) {
+// `me`: a member's own name — the member's shelf (Pick as someone else): your
+// chip says "you" and is where you already are (a tap on it chooses nobody),
+// there is no field (a new person comes in through + Invite someone, the
+// menu's next row — PEOPLE-BUILD.md), and the quiet way out is "Stay Ana".
+export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, opener = null, me = null, onLook, onClaim, onAnswer } = {}) {
   document.getElementById(SHEET_ID)?.remove();
   document.getElementById(BACK_ID)?.remove();
   const back = node('div', 'sheet-backdrop join-backdrop');
@@ -74,7 +85,8 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   const parts = SHELF_WORDS.line(artist, intent);
   if (artist) line.append(parts[0], node('b', null, parts[1]), parts[2]);
   else line.textContent = parts[0];
-  const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
+  if (me) offline = false; // picking as someone else is this phone's own choice: nothing to send
+  const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), me ? SHELF_WORDS.memberSub : offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
   head.append(line, sub);
 
   const names = node('div', 'js-names');
@@ -87,6 +99,7 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     b.dataset.name = p.name;
     b.setAttribute('aria-pressed', 'false');
     b.append(node('span', 'js-initial', p.name.charAt(0).toUpperCase()), node('span', 'js-nm', p.name));
+    if (me && p.name === me) { b.classList.add('js-me'); b.appendChild(node('span', 'js-you', SHELF_WORDS.you.trim())); }
     names.appendChild(b);
     return b;
   });
@@ -108,11 +121,12 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   // The answer first, on the left — "Join as Sam" — and the quiet way out on
   // the right: the welcome card's order (Kevin, 2026-09-25).
   const actions = node('div', 'js-actions');
-  const look = node('button', 'btn-ghost js-look', SHELF_WORDS.look);
+  const look = node('button', 'btn-ghost js-look', me ? SHELF_WORDS.stay(me) : SHELF_WORDS.look);
   const go = node('button', 'btn-tonal js-go', SHELF_WORDS.join);
   actions.append(go, look);
 
-  sheet.append(grab, head, namesWrap, field, status, actions);
+  if (me) sheet.append(grab, head, namesWrap, status, actions);
+  else sheet.append(grab, head, namesWrap, field, status, actions);
   document.body.append(back, sheet);
 
   // ---- state: nobody, a name tapped, a name typed; busy while an answer settles ----
@@ -137,12 +151,13 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     look.disabled = busy;
     if (who) go.textContent = SHELF_WORDS.claim(who);
     else if (typed) go.textContent = SHELF_WORDS.joinAs(typed);
-    else go.textContent = SHELF_WORDS.join;
+    else go.textContent = me ? SHELF_WORDS.switchTo : SHELF_WORDS.join;
     go.disabled = busy || (!who && !typed);
   };
   chips.forEach((c) => c.addEventListener('click', () => {
     if (busy) return;
-    chosen = chosen === c.dataset.name ? null : c.dataset.name;
+    // Your own chip (a member's shelf) is where you already are: it chooses nobody.
+    chosen = chosen === c.dataset.name || c.dataset.name === me ? null : c.dataset.name;
     if (chosen) field.value = '';
     status.textContent = '';
     paint();

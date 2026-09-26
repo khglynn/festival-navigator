@@ -1,6 +1,6 @@
 // v3 app shell: boot flow, screen switching (landing / create / join / wall /
 // settings / lost states — all six render HERE), wall wiring, sync cadence,
-// sheets (share moment, add member), and the server-side v4 migration call.
+// sheets (the Invite sheet), and the server-side v4 migration call.
 // wall.js renders the wall's CONTENT; settings.js and notes.js own their
 // surfaces and mount into hosts this shell controls.
 import * as state from '../state.js';
@@ -57,6 +57,9 @@ configureReports({
   },
 });
 import { createSortControl } from './sort-control.js';
+// The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
+import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
+import { passesPeople } from './filters.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
@@ -840,6 +843,40 @@ function askToJoin(artist = null, { intent = 'pick' } = {}) {
   pendingJoin = { token, fid: ctx.fid, artist: intent === 'pick' ? artist : null, place: wallPlace() };
   openJoinShelf(token, artist, intent, opener);
 }
+// "Pick as someone else" (the people menu, 2026-09-26): the join shelf itself,
+// in a member's words — your chip marked "you", a name, then "I'm Ben" beside
+// "Stay Ana". Two taps on purpose, the rule that stopped friends picking as
+// each other; the switch is Settings → You's own (switchIdentity). The shelf
+// keeps its own history entry, as it does for a guest (Back takes it down).
+function openPickAs() {
+  const token = state.getCrewToken();
+  const me = ctx.meName;
+  if (!token || !me) return;
+  const opener = shelfOpener();
+  unzoom({ why: 'pick as someone else', meant: true });
+  const people = state.activePeople().map(([name, p]) => {
+    const ci = colorIndexOf(name, p);
+    return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, name === me) };
+  });
+  let shelf = null;
+  shelf = showJoinShelf({
+    me, people, ctx, opener,
+    onLook: () => popShelfEntry(),
+    onClaim: (name) => {
+      if (!shelf || shelf.isClosed()) return;
+      shelf.close();
+      popShelfEntry();
+      // Only for the crew and the person this shelf was opened for, and only
+      // to someone still in it (a crew-mate removed while the shelf was up
+      // is nobody to be — Codex's review of a1612a0).
+      const still = state.activePeople().some(([n]) => n === name);
+      if (state.getCrewToken() === token && ctx.meName === me && name !== me && still) switchIdentity(name);
+    },
+  });
+  shelfUp = shelf;
+  try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
+}
+
 // Where keyboard focus goes back to when the shelf closes: what had it (a
 // button in Settings, the dashed +), or the card a zoom's door asked about —
 // never a node on its way out (the zoom's own door, the welcome card), and
@@ -849,7 +886,7 @@ function shelfOpener() {
   if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card')) return a;
   const card = zoomedCard();
   if (card) return card;
-  const you = [$('dock-you'), $('rail-you')].find((n) => n && n.offsetParent !== null);
+  const you = [$('dock-you'), $('rail-you'), ...document.querySelectorAll('.you-wrap > .hl-pill .hl-faces')].find((n) => n && n.offsetParent !== null); // the pill's faces stand in the slot while a highlight is on
   return you || $('dock-you');
 }
 
@@ -1092,13 +1129,35 @@ function renderPersonChips() {
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
   }
+  paintHighlight(); // the people menu and the avatar's pill say the same thing (2026-09-26)
 }
 
+// A highlight is a VIEW: filters.js keeps it in this tab (sessionStorage, per
+// festival), never in the crew doc (fests × circles × you, law 2). The wall
+// dims in place (people menu, 2026-09-26): the cards whose dim changes step
+// back or forward while the menu stays open over them, instead of a
+// repaint's cut. The rule is the one wall.js renders with (`passesPeople`,
+// cardFor's `.dim`), so a later repaint draws exactly this; a standing zoom
+// takes the repaint path, which knows how to keep it.
 function setPeopleFilter(names) {
   savePeopleFilter(ctx.fid, names);
   refreshCtx();
   renderPersonChips();
-  repaintWall();
+  if (zoomedCard()) { repaintWall(); return; }
+  dimInPlace();
+}
+let dimSettle = 0;
+function dimInPlace() {
+  const root = $('wall-root');
+  const people = ctx.filterPeople || [];
+  if (canAnimate(root, ctx)) {
+    root.classList.add('hl-shift');
+    clearTimeout(dimSettle);
+    dimSettle = setTimeout(() => root.classList.remove('hl-shift'), GROW_MS + 80);
+  }
+  for (const card of root.querySelectorAll('.card[data-artist]')) {
+    card.classList.toggle('dim', people.length > 0 && !passesPeople(ctx.picks, card.dataset.artist, people));
+  }
 }
 function togglePeopleFilter(name) { setPeopleFilter(togglePerson(ctx.filterPeople || [], name)); }
 
@@ -1704,14 +1763,19 @@ function renderYou() {
   for (const id of ['dock-you', 'rail-you']) {
     const you = $(id);
     const wasGuest = you.classList.contains('guest');
+    const wasName = you.title || '';
     you.textContent = '';
     you.classList.toggle('guest', guest);
+    // The avatar opens the people menu, for a guest too (2026-09-26): jump
+    // to top retired with no door (PEOPLE-BUILD.md).
+    you.setAttribute('aria-haspopup', 'listbox');
+    if (!you.hasAttribute('aria-expanded')) you.setAttribute('aria-expanded', 'false');
+    you.setAttribute('aria-label', PEOPLE_WORDS.avatar(ctx.meName));
     if (!ctx.meName) {
       // No name: nothing of the last person's colour stays behind.
       you.style.background = '';
       you.removeAttribute('title');
       if (guest) you.textContent = '+';
-      you.setAttribute('aria-label', guest ? 'Add yourself to the crew' : 'Jump to top');
       continue;
     }
     const p = state.people()[ctx.meName];
@@ -1719,14 +1783,16 @@ function renderYou() {
     you.style.background = hslOf(ci, 0.5);
     you.textContent = ctx.meName.charAt(0).toUpperCase();
     you.title = ctx.meName;
-    you.setAttribute('aria-label', `${ctx.meName} — jump to top`);
-    // The + becoming you is a small event: the letter grows in where the
-    // ring was, rather than swapping under the eye.
-    if (wasGuest && canAnimate(you, ctx)) {
+    // The + becoming you — or you becoming someone else (Pick as someone
+    // else) — is a small event: the letter grows in where the last one was,
+    // rather than swapping under the eye.
+    const changed = wasGuest || (wasName && wasName !== ctx.meName);
+    if (changed && canAnimate(you, ctx) && you.offsetParent !== null) {
       you.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }],
         { duration: GROW_MS, easing: EASE_ARRIVE });
     }
   }
+  paintHighlight();
 }
 
 // Sticky-chrome geometry, measured not hardcoded: the stage strip pins below
@@ -1874,13 +1940,21 @@ function closeShowMenu({ instant = false } = {}) {
   // Nothing open: an instant close still ends a fade in flight (a crew switch,
   // the shelf rising), so the bar is never left raised behind it.
   if (!openMenu) { if (instant) settleMenuExit(); return; }
-  const { pop, link, bar } = openMenu;
+  const { pop, link, bar, onClose } = openMenu;
   openMenu = null;
+  catchStrayTaps(false);
   link.setAttribute('aria-expanded', 'false');
   if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;
   // A keyboard standing on a row goes back to the fest name that opened the
   // menu, not to the top of the page (Escape from a row is the usual way out).
   if (pop.contains(document.activeElement)) link.focus({ preventScroll: true });
+  // A menu on its way out takes no more taps: its rows stayed live through
+  // the 130 ms fade, so a tap there still moved a room or a highlight after
+  // the menu had closed (Codex's review of a1612a0). Given back on open.
+  pop.style.pointerEvents = 'none';
+  // The people menu's close (2026-09-26): its slot turns into the pill while
+  // the menu is still there to measure (its marks are where the faces start).
+  if (onClose) onClose({ pop, instant: instant || !canAnimate(pop, ctx) });
   settleMenuExit(); // an earlier menu still fading ends now
   // The way out is quick and plain.
   if (instant || !canAnimate(pop, ctx)) { hideShowMenu(pop, bar); return; }
@@ -1893,7 +1967,23 @@ function closeShowMenu({ instant = false } = {}) {
   anim.oncancel = done;
 }
 
-function openShowMenu(wrap, link, pop) {
+// WebKit sends a tap's click only where something under the finger listens
+// for one (the iPhone's rule), and the menus' outside tap is a DOCUMENT
+// listener, which does not count: a tap on the wall's empty space (a gutter,
+// the time rail) left a menu open in WebKit and on an iPhone while Chromium
+// closed it (measured 2026-09-26, the people menu's walk). While a menu is
+// up the wall listens, and its tap highlight is off, so a closing tap never
+// flashes the whole wall grey; neither outlives the menu.
+const strayTap = () => {};
+function catchStrayTaps(on) {
+  const app = document.getElementById('screen-app');
+  if (!app) return;
+  app.classList.toggle('menu-open', on);
+  if (on) app.addEventListener('click', strayTap);
+  else app.removeEventListener('click', strayTap);
+}
+
+function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   closeShowMenu({ instant: true });
   closePlan(); // Our plan: the fest name is a way out of the open plan too (SPEC-ui §7)
   settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
@@ -1905,7 +1995,9 @@ function openShowMenu(wrap, link, pop) {
   // (v3.css .menu-up); it steps back once the menu has gone.
   const bar = wrap.closest('.dock, .day-rail');
   if (bar) bar.classList.add('menu-up');
-  openMenu = { wrap, link, pop, bar };
+  openMenu = { wrap, link, pop, bar, onClose };
+  catchStrayTaps(true);
+  pop.style.pointerEvents = '';
   pop.style.display = '';
   link.setAttribute('aria-expanded', 'true');
   // The way in has the beat.
@@ -2076,6 +2168,161 @@ function paintShowMenus() {
     if (existing) dropShowMenu(existing);
     link.setAttribute('aria-expanded', 'false');
     wrap.appendChild(buildShowMenu(rooms, folded, { views }));
+  }
+}
+
+// ---- the people menu (2026-09-26) ------------------------------------------------
+// Your avatar, at the LEFT of the dock and of the laptop's day rail, opens
+// HIGHLIGHT — the twin of the fest name's SHOW on the right (Kevin: "pretty
+// similar, so it's clear it has a similar action pattern"). The rows, the
+// pill and the slot's motion are people-menu.js's; this wires them. It opens
+// and closes through the Show menu's own openShowMenu / closeShowMenu, so
+// one menu is open at a time, a tap outside / Escape / the avatar again
+// close it, it takes no history entry, and it holds a new build's reload
+// while it is up. Unlike Show it is multi-select: a tap on a person leaves it
+// open, and the wall dims live behind it (setPeopleFilter).
+// Design: claude-plans/2026-09-25-portola-live/design/people-shelf/BRIEF.md;
+// every call the design did not cover: PEOPLE-BUILD.md beside PEOPLE-BRIEF.md.
+const YOU_SLOTS = [['dock-you-wrap', 'dock-you', 'dock-days'], ['rail-you-wrap', 'rail-you', 'rail-days']];
+const hlPop = (wrap) => (wrap ? wrap.querySelector(':scope > .hl-pop') : null);
+const highlightOpenIn = (wrap) => !!(openMenu && openMenu.wrap === wrap);
+
+// Our plan's row slots into the menu above Pick as someone else (the Our plan
+// build on live/plan fills this: return people-menu.js menuActionRow(...)
+// wired to open the plan, or null). Nothing here yet — the brief, item 4.
+function peopleMenuPlanRow() { return null; }
+
+function peopleMenuData() {
+  const guest = !ctx.meName;
+  const active = state.activePeople();
+  return {
+    people: active.map(([name, p]) => ({ name, color: hslOf(colorIndexOf(name, p)) })),
+    me: ctx.meName,
+    guest,
+    highlighted: ctx.filterPeople || [],
+    // Nobody else in the crew: nobody to pick as (PEOPLE-BUILD.md).
+    pickAs: !guest && active.some(([n]) => n !== ctx.meName),
+    invite: !guest,
+    plan: peopleMenuPlanRow,
+  };
+}
+const PEOPLE_DOORS = {
+  toggle: (name) => setPeopleFilter(togglePerson(ctx.filterPeople || [], name)),
+  everyone: () => setPeopleFilter([]),
+  pickAs: () => { closeShowMenu(); openPickAs(); },
+  invite: () => { closeShowMenu(); openAddMember(); router.push('sheet:add-member'); },
+  // The menu first, so focus is back on the + before the shelf asks where it
+  // should return (a row about to hide is no place to come back to).
+  join: () => { closeShowMenu(); if (state.getCrewToken()) askToJoin(null); },
+};
+
+// Paints both menus (built once, then in place) and both slots. Idempotent:
+// renderPersonChips and renderYou call it after every people or highlight
+// change, a poll's included.
+function paintHighlight() {
+  const data = peopleMenuData();
+  for (const [wrapId] of YOU_SLOTS) {
+    const wrap = $(wrapId);
+    if (!wrap) continue;
+    let pop = hlPop(wrap);
+    if (!pop) { pop = buildHighlightMenu(); wrap.appendChild(pop); }
+    paintHighlightMenu(pop, { ...data, animate: highlightOpenIn(wrap) && canAnimate(pop, ctx), on: PEOPLE_DOORS });
+  }
+  paintSlots();
+}
+
+// The avatar's slot is the pill while a highlight is on and its menu is shut
+// (design §2). `sources`: where the faces travel from (the menu's marks).
+// `instant`: a close that asked for no motion (Back, a boot, a crew switch).
+function paintSlots({ sources = null, instant = false } = {}) {
+  const names = new Set(ctx.filterPeople || []);
+  const faces = state.activePeople().filter(([n]) => names.has(n)).map(([name, p]) => {
+    const ci = colorIndexOf(name, p);
+    return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, name === ctx.meName) };
+  });
+  for (const [wrapId, , rowId] of YOU_SLOTS) {
+    const wrap = $(wrapId);
+    if (!wrap) continue;
+    ensurePill(wrap, { onFaces: () => openHighlight(wrap), onClear: () => setPeopleFilter([]) });
+    const row = $(rowId);
+    // The first paint, and a bar that is not on screen (the dock on a
+    // laptop, the dock while the search field has the keyboard), change
+    // without motion.
+    const animate = !instant && !!wrap.dataset.slot && wrap.offsetParent !== null && canAnimate(wrap, ctx);
+    const before = animate && row ? tabLefts(row) : null;
+    const edges = row ? edgesOf(row) : [];
+    const cap = pillCap(wrap, row, faces.length);
+    const changed = setSlot(wrap, { pill: faces.length > 0 && !highlightOpenIn(wrap), people: faces, cap, sources, animate });
+    if (changed && row) {
+      restDayRow(row);
+      if (before) slideTabs(row, before, edges, { out: !faces.length || highlightOpenIn(wrap) });
+    }
+  }
+}
+
+// How many discs the pill may hold (design §2: "up to three"): as many as
+// leave the day row its promise (wall.js restingLeft, rules 1-2) — the day
+// you are in whole, and while something is live NOW whole beside the day it
+// follows. At 320 with NOW live a third disc pushes NOW out on a Mac
+// (92px of row for SAT · NOW's 101); Linux and Android draw wider and fit
+// one. Where not even one disc and its ✕ leave that room, the pill folds to
+// the avatar's own size (one disc in the ring, no ✕ — Everyone in the menu
+// clears), so a highlight never costs the row more than the avatar did. The
+// rule only ever gives fewer discs for less room —
+// promising NOW only where it fits made a narrower dock show MORE discs than
+// a wider one (ACL: two at 320, one at 360), so NOW's room is always asked
+// for while it is live. The laptop's rail has room.
+function pillCap(wrap, row, n) {
+  if (!n || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
+  const room = row.clientWidth + wrap.getBoundingClientRect().width; // the row and the slot share this width
+  const tabs = [...row.children].filter((t) => !t.hidden);
+  const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
+  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
+  const focus = [active, nowAt >= 0 ? tabs[nowAt] : null, nowAt > 0 ? tabs[nowAt - 1] : null].filter(Boolean);
+  const need = focus.length ? Math.max(...focus.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...focus.map((t) => t.offsetLeft)) : 0;
+  for (let k = PILL_FACES; k >= 1; k -= 1) if (pillWidth(Math.min(k, n)) + need <= room) return k;
+  return 0;
+}
+
+function openHighlight(wrap) {
+  const you = wrap.querySelector(':scope > .you-avatar');
+  const from = faceRects(wrap); // opened from the pill: the faces travel back up
+  refreshCtx(); // the crew as it is now: someone who left has no row, and their highlight is let go
+  paintHighlight();
+  const pop = hlPop(wrap);
+  if (!you || !pop) return;
+  openShowMenu(wrap, you, pop, { onClose: ({ pop: p, instant }) => paintSlots({ instant, sources: instant ? null : markRects(p, ctx.filterPeople || []) }) });
+  paintSlots(); // this slot is the avatar while its menu is up
+  alignHighlightMenu(wrap, pop);
+  marksFromFaces(pop, from, canAnimate(pop, ctx));
+}
+function toggleHighlight(wrap) {
+  if (highlightOpenIn(wrap)) closeShowMenu();
+  else openHighlight(wrap);
+}
+
+// The mirror of Show (design §1): its LEFT edge on the avatar's left edge
+// (v3.css), and its far edge on the same line as Show's — the bottom in the
+// dock (it opens upward), the top under the rail. The two wraps are
+// different heights, so the line is measured, and the menu never runs off
+// the screen: past the room there is, it scrolls.
+function alignHighlightMenu(wrap, pop) {
+  const bar = wrap.closest('.dock, .day-rail');
+  const fest = bar && bar.querySelector('.sort-wrap:not(.you-wrap)');
+  pop.style.top = '';
+  pop.style.bottom = '';
+  pop.style.maxHeight = '';
+  if (!bar || !fest) return;
+  const w = wrap.getBoundingClientRect();
+  const f = fest.getBoundingClientRect();
+  if (bar.classList.contains('dock')) {
+    const gap = 8 + (w.top - f.top);
+    pop.style.bottom = `calc(100% + ${gap}px)`;
+    pop.style.maxHeight = `${Math.max(160, Math.floor(w.top - gap - 12))}px`;
+  } else {
+    const gap = 6 + (f.bottom - w.bottom);
+    pop.style.top = `calc(100% + ${gap}px)`;
+    pop.style.maxHeight = `${Math.max(160, Math.floor(window.innerHeight - (w.bottom + gap) - 12))}px`;
   }
 }
 
@@ -2589,129 +2836,155 @@ function openImport() {
   return true;
 }
 
-// ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
-// One centered dialog right after create (and re-openable from Settings):
-// the link is VISIBLE — share sheets fail silently, a printed URL never does.
-function openShareMoment() {
+// ---- the Invite sheet (2026-09-26) ----------------------------------------------------
+// ONE sheet, wherever someone is invited — + Invite someone in the people
+// menu, the laptop's people row and Settings, and the moment a crew is made.
+// Kevin's order (LEDGER call 8): the crew link FIRST (Copy / Share), then a
+// name (their own link, as the add-someone sheet always gave), then the
+// people from your other fests. It replaced two sheets that said the same
+// thing twice: the share moment ("ONE LINK MAKES IT A CREW", after create)
+// and add-someone ("INVITE SOMEONE").
+//
+// The link is VISIBLE — share sheets fail silently, a printed URL never does
+// (FLOW-12). `moment`: opened by the making of a crew, the sheet keeps that
+// moment's title and its "Later". A guest (Settings can open the link) sees
+// the link only: a guest writes nothing into the crew until it joins (v92) —
+// no name to add, no invite-festival stamp. openShareMoment / openAddMember
+// stay the router's and Settings' two names for it.
+function openShareMoment() { openInvite({ moment: true }); }
+function openAddMember() { openInvite(); }
+
+const INVITE_WORDS = {
+  title: 'INVITE SOMEONE',
+  momentTitle: 'ONE LINK MAKES IT A CREW',
+  opens: (crewName) => `Opens straight into ${crewName}. No accounts needed.`,
+  share: 'Share the link',
+  byName: 'Add by name',
+  byNameSub: 'Pick for them until they open their link.',
+  field: 'Their name',
+  others: 'From your other fests',
+};
+
+function inviteLinkRow(link, label) {
+  const row = document.createElement('div');
+  row.className = 'inv-link';
+  const box = document.createElement('input');
+  box.readOnly = true;
+  box.value = link;
+  box.setAttribute('aria-label', label);
+  box.addEventListener('focus', () => box.select());
+  const copy = document.createElement('button');
+  copy.className = 'btn-tonal inv-copy';
+  copy.textContent = 'Copy';
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(link); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy'; }, 1800); }
+    catch { box.select(); }
+  });
+  row.append(box, copy);
+  return row;
+}
+function sheetDismiss(word) {
+  const b = document.createElement('button');
+  b.className = 'btn-ghost inv-done';
+  b.textContent = word;
+  b.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
+  return b;
+}
+
+function openInvite({ moment = false } = {}) {
   rememberOpener();
   closeSheet();
+  const member = !!ctx.meName;
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
   backdrop.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
   const sheet = document.createElement('div');
-  sheet.className = 'sheet';
+  sheet.className = 'sheet invite-sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  // The shared chrome from notes.js — grabber that really swipes, title, and a
-  // real ✕. This sheet used to hand-copy the markup, which is exactly how it
-  // drifted into having no close button and no dialog semantics while looking
-  // pixel-identical to the ones that do.
-  sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
+  // The shared chrome from notes.js — grabber that really swipes, title, and
+  // a real ✕ (these sheets used to hand-copy it, and drifted).
+  sheetChrome(sheet, moment ? INVITE_WORDS.momentTitle : INVITE_WORDS.title);
+
+  // 1. The crew link: anyone who opens it is in.
   const sub = document.createElement('div');
-  sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = `Opens straight into ${state.crewName()}. No accounts needed.`;
+  sub.className = 'inv-sub';
+  sub.textContent = INVITE_WORDS.opens(state.crewName());
   const viewLine = inviteViewLine();
   if (viewLine) sub.append(document.createElement('br'), viewLine);
   const link = inviteLink();
   // Only a member stamps the crew's invite festival: a guest writes nothing
   // into the crew until they join (v92).
-  if (ctx.meName && (state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
+  if (member && (state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
     state.recordInviteFest(state.activeFestivalId);
     sync.scheduleSync();
   }
-  const linkRowEl = document.createElement('div');
-  linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
-  const linkBox = document.createElement('input');
-  linkBox.readOnly = true;
-  linkBox.value = link;
-  linkBox.setAttribute('aria-label', 'Crew invite link');
-  linkBox.style.cssText = 'flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body); font-size: 12px; font-family: var(--font-ui);';
-  linkBox.addEventListener('focus', () => linkBox.select());
-  const copy = document.createElement('button');
-  copy.className = 'btn-tonal';
-  copy.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
-  copy.textContent = 'Copy';
-  copy.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(link); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy'; }, 1800); }
-    catch { linkBox.select(); }
-  });
-  linkRowEl.append(linkBox, copy);
-  const actionsRow = document.createElement('div');
-  actionsRow.style.cssText = 'display: flex; gap: 8px;';
+  const actions = document.createElement('div');
+  actions.className = 'inv-actions';
   if (navigator.share) {
     const shareBtn = document.createElement('button');
-    shareBtn.className = 'btn-tonal';
-    shareBtn.style.cssText = 'flex: 1; font-size: 13px; padding: 11px;';
-    shareBtn.textContent = 'Share the link';
+    shareBtn.className = 'btn-tonal inv-share';
+    shareBtn.textContent = INVITE_WORDS.share;
     shareBtn.addEventListener('click', async () => {
       try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); }
       catch { /* dismissed — the visible link is the fallback */ }
     });
-    actionsRow.appendChild(shareBtn);
+    actions.appendChild(shareBtn);
   }
-  const later = document.createElement('button');
-  later.className = 'btn-ghost';
-  later.style.cssText = 'font-size: 12px; padding: 11px 16px;' + (navigator.share ? '' : ' flex: 1;');
-  later.textContent = 'Later';
-  later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
-  actionsRow.appendChild(later);
-  sheet.append(sub, linkRowEl, actionsRow); // chrome (grabber + title + ✕) is already on
-  dialogize(sheet, 'Share your crew link');
+  actions.appendChild(sheetDismiss(moment ? 'Later' : 'Done'));
+  sheet.append(sub, inviteLinkRow(link, 'Crew invite link'), actions); // chrome (grabber + title + ✕) is already on
+  dialogize(sheet, moment ? 'Share your crew link' : 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
-}
+  if (!member) return;
 
-// ---- add a member on their behalf (Kevin note 5, 2026-07-12) -----------------------
-// Shared-phone crews: one person tracks for everyone; not everyone joins via
-// a link. Server-first like the join screen (FLOW-5) so the people-cap
-// answers here; offline falls back to the local doc + sync. Success mints the
-// per-person claim link (&me=) — opening it lands them on THEIR circle with
-// every pick already theirs.
-function openAddMember() {
-  rememberOpener();
-  closeSheet();
-  const backdrop = document.createElement('div');
-  backdrop.className = 'sheet-backdrop';
-  backdrop.id = 'sheet-backdrop';
-  backdrop.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
-  sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  sheetChrome(sheet, 'INVITE SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
-  const sub = document.createElement('div');
-  sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = 'Pick for them until they open their link.';
+  // 2. A name: someone without the link yet — a shared phone, a friend who
+  // is not on their phone. Server-first like the join screen (FLOW-5), so the
+  // people cap answers here; offline falls back to the local doc + sync.
+  // Success mints the per-person claim link (&me=): opening it lands them on
+  // their circle with every pick already theirs. Not focused on open: the
+  // keyboard would cover the link, which comes first.
+  const byName = document.createElement('div');
+  byName.className = 'inv-section';
+  const byLabel = document.createElement('div');
+  byLabel.className = 'micro-label';
+  byLabel.textContent = INVITE_WORDS.byName;
+  const bySub = document.createElement('div');
+  bySub.className = 'inv-sub';
+  bySub.textContent = INVITE_WORDS.byNameSub;
   const row = document.createElement('div');
-  row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  row.className = 'inv-name';
   const input = document.createElement('input');
   input.maxLength = 24;
-  input.placeholder = 'Their name';
-  input.setAttribute('aria-label', 'Their name');
-  input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px; font-family: var(--font-ui);';
+  input.placeholder = INVITE_WORDS.field;
+  input.setAttribute('aria-label', INVITE_WORDS.field);
+  input.autocomplete = 'off';
+  input.setAttribute('autocapitalize', 'words');
+  input.setAttribute('enterkeyhint', 'done');
   const addBtn = document.createElement('button');
-  addBtn.className = 'btn-tonal';
-  addBtn.style.cssText = 'font-size: 13px; padding: 11px 20px; flex: none;';
+  addBtn.className = 'btn-tonal inv-add';
   addBtn.textContent = 'Add';
   row.append(input, addBtn);
   const status = document.createElement('div');
-  status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
-  sheet.append(sub, row, status); // chrome (grabber + title + ✕) is already on
-  // Recurring humans, one tap (fests × circles × you, decision 4): the people
-  // from your OTHER fests — Drew doesn't get retyped a third time.
+  status.className = 'inv-status';
+  status.setAttribute('aria-live', 'polite');
+  byName.append(byLabel, bySub, row, status);
+  sheet.appendChild(byName);
+  // 3. Recurring humans, one tap (fests × circles × you, decision 4): the
+  // people from your OTHER fests — Drew doesn't get retyped a third time.
   const others = model.otherFestPeople(
     state.getCrewToken(), crew.knownCrews(), state.cachedDoc, state.people(), ctx.meName,
   );
   if (others.length) {
     const pickWrap = document.createElement('div');
+    pickWrap.className = 'inv-section';
     const pickLabel = document.createElement('div');
     pickLabel.className = 'micro-label';
-    pickLabel.style.cssText = 'margin-bottom: 7px;';
-    pickLabel.textContent = 'From your other fests';
+    pickLabel.textContent = INVITE_WORDS.others;
     const chips = document.createElement('div');
-    chips.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px;';
+    chips.className = 'inv-others';
     for (const { name } of others.slice(0, 12)) {
       const chip = document.createElement('button');
       chip.className = 'btn-tonal';
-      chip.style.cssText = 'font-size: 12.5px; padding: 7px 13px;';
       chip.textContent = `+ ${name}`;
       chip.addEventListener('click', () => { input.value = name; doAdd(); });
       chips.appendChild(chip);
@@ -2719,9 +2992,6 @@ function openAddMember() {
     pickWrap.append(pickLabel, chips);
     sheet.appendChild(pickWrap);
   }
-  dialogize(sheet, 'Invite someone to the crew');
-  document.body.append(backdrop, sheet);
-  input.focus();
 
   const succeed = (canonical) => {
     refreshCtx();
@@ -2732,46 +3002,23 @@ function openAddMember() {
     // the moment it becomes the thing you are actually looking at.
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
-    explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
+    explain.className = 'inv-sub';
     explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
-    const link = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
-    const linkRowEl = document.createElement('div');
-    linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
-    const linkBox = document.createElement('input');
-    linkBox.readOnly = true;
-    linkBox.value = link;
-    linkBox.setAttribute('aria-label', `${canonical}'s personal invite link`);
-    linkBox.style.cssText = 'flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body); font-size: 12px; font-family: var(--font-ui);';
-    linkBox.addEventListener('focus', () => linkBox.select());
-    const copy = document.createElement('button');
-    copy.className = 'btn-tonal';
-    copy.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
-    copy.textContent = 'Copy';
-    copy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(link); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy'; }, 1800); }
-      catch { linkBox.select(); }
-    });
-    linkRowEl.append(linkBox, copy);
-    const actionsRow = document.createElement('div');
-    actionsRow.style.cssText = 'display: flex; gap: 8px;';
+    const theirs = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
+    const done = document.createElement('div');
+    done.className = 'inv-actions';
     if (navigator.share) {
       const shareBtn = document.createElement('button');
-      shareBtn.className = 'btn-tonal';
-      shareBtn.style.cssText = 'flex: 1; font-size: 13px; padding: 11px;';
+      shareBtn.className = 'btn-tonal inv-share';
       shareBtn.textContent = `Share ${canonical}’s link`;
       shareBtn.addEventListener('click', async () => {
-        try { await navigator.share({ title: 'Festival Navigator', url: link }); }
+        try { await navigator.share({ title: 'Festival Navigator', url: theirs }); }
         catch { /* dismissed — the visible link is the fallback */ }
       });
-      actionsRow.appendChild(shareBtn);
+      done.appendChild(shareBtn);
     }
-    const doneBtn = document.createElement('button');
-    doneBtn.className = 'btn-ghost';
-    doneBtn.style.cssText = 'font-size: 12px; padding: 11px 16px;' + (navigator.share ? '' : ' flex: 1;');
-    doneBtn.textContent = 'Done';
-    doneBtn.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
-    actionsRow.appendChild(doneBtn);
-    sheet.append(explain, linkRowEl, actionsRow);
+    done.appendChild(sheetDismiss('Done'));
+    sheet.append(explain, inviteLinkRow(theirs, `${canonical}'s personal invite link`), done);
   };
 
   const doAdd = async () => {
@@ -4271,11 +4518,22 @@ export function init() {
       if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isCard))) paintPlan();
     }).observe($('screen-app'), { childList: true });
   }
-  const jumpTop = () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' });
-  // The "you" slot jumps to the top — or, for a guest, is the door to join (v92).
-  const youTap = () => (!ctx.meName && state.getCrewToken() ? askToJoin(null) : jumpTop());
-  $('dock-you').addEventListener('click', youTap);
-  $('rail-you').addEventListener('click', youTap);
+  // The "you" slot opens the people menu (2026-09-26) — a guest's dashed +
+  // too, whose menu ends in Join the crew. Jump to top retired with no door
+  // (PEOPLE-BUILD.md): its real job was reaching the people row.
+  for (const [wrapId, youId] of YOU_SLOTS) $(youId).addEventListener('click', () => toggleHighlight($(wrapId)));
+  // The pill holds what the day row can spare (pillCap), and the row changes
+  // under it: NOW arrives or leaves on the minute tick, a repaint rebuilds
+  // the tabs, a phone turns. Each refits a pill that is up (Codex's review of
+  // a1612a0: NOW arriving after a three-disc pill could not be whole at 320).
+  const refitPill = () => { if ((ctx.filterPeople || []).length) paintSlots(); };
+  const Watch = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (typeof Watch === 'function') {
+    const rows = new Watch(refitPill);
+    for (const [, , rowId] of YOU_SLOTS) if ($(rowId)) rows.observe($(rowId), { childList: true });
+  }
+  let refitTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(refitTimer); refitTimer = setTimeout(refitPill, 160); });
   for (const [id] of NOW_DOORS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
