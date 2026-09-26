@@ -17,7 +17,12 @@ branch are the handoff.*
 - [x] gate, local, on `c8d30d5`'s code: `npm test` at UTC, TZ=Asia/Tokyo and the night
       clock (2026-09-27T04:30Z) — 1137 tests, 1135 pass, the one fail the service-worker
       stamp (not stamped, by instruction) in all three; `npm run test:browser` 237/237
-- [ ] CI on the final head
+- [x] CI on `aa3f24c` (run 36261551665): `browser` green; `checks` 1135/1137, the one
+      fail the stamp. This log line is the only change after it (docs), and its own
+      run is reported in the hand-off.
+- Not done, by instruction: no stamp, no PR, no review agent. Next for the
+  coordinator: an independent review of `16981ff`, then stamp + PR with the
+  other releases in their order.
 
 ## What is there today (why the edge jumps)
 
