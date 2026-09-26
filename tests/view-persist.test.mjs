@@ -91,3 +91,21 @@ test('viewFromHash reads list or board and nothing else, whatever surrounds it',
   assert.equal(crew.festFromHash(), 'portola-2026');
   globalThis.location.hash = '';
 });
+
+// The plan's Share (2026-09-26): `&plan=open` opens the link on Our picks.
+test('crewLink puts &plan=open last, only when asked and only beside a festival; planFromHash reads it and nothing like it', () => {
+  const T = 'viewpersist_aaaa_0123456';
+  assert.equal(crew.crewLink(T, 'portola-2026', null, ['folsom'], 'list', { plan: true }),
+    `https://fest.kevinhg.com/f/portola-2026#g=${T}&f=portola-2026&show=folsom&view=list&plan=open`);
+  assert.doesNotMatch(crew.crewLink(T, 'portola-2026', null, null, null), /plan=/, 'an ordinary link says nothing');
+  assert.doesNotMatch(crew.crewLink(T, null, null, null, null, { plan: true }), /plan=/, 'no festival, no plan');
+  const at = (hash) => { globalThis.location.hash = hash; return crew.planFromHash(); };
+  assert.equal(at(`#g=${T}&f=portola-2026&plan=open`), true);
+  assert.equal(at(`#g=${T}&plan=open&f=portola-2026`), true);
+  assert.equal(at(`#g=${T}&plan=opened`), false);
+  assert.equal(at(`#g=${T}&myplan=open`), false, 'another key that ends in plan is not the plan');
+  assert.equal(at(`#g=${T}`), false);
+  globalThis.location.hash = `#g=${T}&f=portola-2026&view=list&plan=open`;
+  assert.equal(crew.viewFromHash(), 'list', 'the view before it reads as it always did');
+  globalThis.location.hash = '';
+});

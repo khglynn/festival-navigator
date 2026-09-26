@@ -88,7 +88,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // (`meName`) additionally carries WHO it's for: someone added on another
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
-export function crewLink(token, festId, meName, show = null, view = null) {
+export function crewLink(token, festId, meName, show = null, view = null, { plan = false } = {}) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
   //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
@@ -128,7 +128,11 @@ export function crewLink(token, festId, meName, show = null, view = null) {
   // the same rule as `show` — and it goes LAST, so every parser before it
   // (an older build's included) reads the link exactly as it did.
   const l = ok && view === 'list' ? '&view=list' : '';
-  return `${base}#g=${token}${f}${m}${v}${l}`;
+  // The plan's own Share (2026-09-26): `&plan=open`, so the link opens on Our
+  // picks, the day it was sent about. Only that Share sends it, only beside a
+  // festival, and last of all, for the same reason as the view.
+  const o = ok && plan ? '&plan=open' : '';
+  return `${base}#g=${token}${f}${m}${v}${l}${o}`;
 }
 
 const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
@@ -164,6 +168,14 @@ export function showFromHash() {
 export function viewFromHash() {
   const m = (location.hash || '').match(/[#&]view=(list|board)(?:&|$)/);
   return m ? m[1] : null;
+}
+
+// The plan's Share link (#g=…&plan=open): open Our picks on arrival. Read at
+// boot beside viewFromHash, BEFORE enterApp's replaceState strips the hash;
+// app.js opens the plan once it has risen (after the welcome card, for a
+// newcomer) and never writes it anywhere.
+export function planFromHash() {
+  return /[#&]plan=open(?:&|$)/.test(location.hash || '');
 }
 
 // The member a personal invite link is for (#g=<token>&me=<name>). Read at
