@@ -21,7 +21,10 @@ The error events' details live under `props.exception_props.*` (only name,
 description, first_seen, severity, fingerprint, exception_timestamp and
 status are top-level), so the script reads `exception_props.X` first and
 falls back to `props.X` — Eachie's survey path, which has no
-`exception_props`, is unchanged. Rollback: PATCH each function
+`exception_props`, is unchanged. Each Fest error message carries a "What it means" line for a
+non-developer, from a small table in the script (the app's own error kinds,
+then a few browser-message patterns; an unrecognized error gets no line
+rather than a guess) — added 2026-09-25 at Kevin's ask. Rollback: PATCH each function
 `{"enabled": false}` at `/api/environments/627900/hog_functions/<id>/` with
 the write key (`POSTHOG_API_KEY_FESTNAV` in ~/.env).
 
