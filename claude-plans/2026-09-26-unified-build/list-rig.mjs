@@ -110,22 +110,58 @@ async function shot(page, id, opts = {}) {
 }
 
 // ---- the frames --------------------------------------------------------------------
+// Every state the brief names, at 390 / 320 / 1280 (Portola live on Saturday
+// 4:15 PM; ACL on its first Saturday, 8 PM in Austin), plus the zoom on a row,
+// the rings at night, the 5 AM rollover and NOW's landing.
 const room = (day, r) => `.day-block[data-day="${day}"] .room[data-room="${r}"]`;
+const SAT = PT('2026-09-26T16:15:00');
+const ACL_SAT = CDT('2026-10-03T20:00:00');
+const W3 = (id, o) => [390, 320, 1280].map((width) => ({ id: `${id}-${width}`, width, height: width >= 720 ? 900 : 844, now: SAT, ...o, act: o.act ? o.act(width) : undefined }));
+const lateNight = (iso) => `.day-block .room[data-room="Late nights"][data-iso="${iso}"]`;
 export const FRAMES = [
-  { id: 'list-sat-top-390', now: PT('2026-09-26T16:15:00'), width: 390, at: null },
-  { id: 'list-sat-portola-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest') },
-  { id: 'list-sat-portola-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest') },
-  { id: 'list-sat-portola-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: room('Saturday', ':fest') },
-  { id: 'list-sat-afters-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', 'Afters') },
-  { id: 'list-sat-folsom-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', 'Folsom') },
-  { id: 'board-sat-portola-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest') },
-  { id: 'menu-open-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
-  { id: 'menu-open-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
-  { id: 'menu-open-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: room('Saturday', ':fest'), act: (p) => click(p, '#rail-fest-link') },
-  { id: 'menu-board-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
-  { id: 'dock-closed-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), clip: 'dock' },
-  { id: 'dock-closed-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), clip: 'dock' },
+  ...W3('p-sat-top', { at: 'top' }),
+  ...W3('p-sat-portola', { at: room('Saturday', ':fest') }),
+  ...W3('p-sat-portola-open', { at: room('Saturday', ':fest'), act: (w) => (p) => (w >= 720 ? click : tap)(p, `${room('Saturday', ':fest')} .past-line`) }),
+  ...W3('p-days-open', { at: 'top', act: (w) => (p) => (w >= 720 ? click : tap)(p, '#wall-root > .past-line') }),
+  ...W3('p-sat-afters', { at: room('Saturday', 'Afters') }),
+  ...W3('p-sat-folsom', { at: room('Saturday', 'Folsom') }),
+  ...W3('p-sun-portola', { at: room('Sunday', ':fest') }),
+  ...W3('p-menu-open', { at: room('Saturday', ':fest'), act: (w) => (p) => (w >= 720 ? click(p, '#rail-fest-link') : tap(p, '#dock-fest-link')) }),
+  ...W3('p-board-top', { view: 'board', at: 'top' }),
+  { id: 'p-dock-closed-390', width: 390, now: SAT, at: room('Saturday', ':fest'), clip: 'dock' },
+  { id: 'p-dock-closed-320', width: 320, now: SAT, at: room('Saturday', ':fest'), clip: 'dock' },
+  { id: 'p-dock-open-390', width: 390, now: SAT, at: room('Saturday', ':fest'), clip: 'dock', act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'p-zoom-row-390', width: 390, now: SAT, at: room('Saturday', ':fest'), act: (p) => hold(p, 'Tricky') },
+  { id: 'p-zoom-row-1280', width: 1280, height: 900, now: SAT, at: room('Saturday', ':fest'), act: (p) => hover(p, 'Tricky') },
+  { id: 'p-now-landing-390', width: 390, now: SAT, at: 'top', act: (p) => tap(p, '#dock-now').then(() => sleep(1300)) },
+  { id: 'p-930pm-afters-390', width: 390, now: PT('2026-09-26T21:30:00'), at: room('Saturday', 'Afters') },
+  { id: 'p-6am-sun-390', width: 390, now: PT('2026-09-27T06:00:00'), at: 'top' },
+  ...W3('acl-sat-grid', { fid: 'acl-2026', now: ACL_SAT, at: '.day-block[data-day="Saturday|W1"] .room[data-room=":fest"]' }),
+  ...W3('acl-late-night', { fid: 'acl-2026', now: ACL_SAT, at: lateNight('2026-10-03') }),
+  { id: 'acl-menu-open-390', width: 390, fid: 'acl-2026', now: ACL_SAT, at: '.day-block[data-day="Saturday|W1"] .room[data-room=":fest"]', act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'acl-board-top-390', width: 390, view: 'board', fid: 'acl-2026', now: CDT('2026-10-09T15:00:00'), at: 'top' },
+  { id: 'acl-list-top-w2-390', width: 390, fid: 'acl-2026', now: CDT('2026-10-09T15:00:00'), at: 'top' },
 ];
+// A finger's hold (the long-press zoom; its timer can run late under a pinned
+// clock, so hold until the card grows, as a finger does), and a mouse's hover.
+export async function hold(page, artist) {
+  const at = await page.evaluate((a) => {
+    const el = [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a);
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, artist);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
+  await sleep(650);
+  for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(700);
+}
+export async function hover(page, artist) {
+  const b = await page.locator(`#wall-root .card[data-artist="${artist}"]`).first().boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 });
+  await sleep(900);
+}
 // Real input: a finger's tap on a phone, a mouse's click on a laptop.
 export async function tap(page, sel) {
   const b = await page.locator(sel).first().boundingBox();
@@ -147,7 +183,8 @@ export async function renderFrames(prefixes = []) {
       for (const f of FRAMES.filter((x) => want(x.id))) {
         const { ctx, page, errors } = await openApp(rig, { now: f.now, width: f.width, height: f.height || (f.width >= 720 ? 900 : 844), view: f.view || 'list', fid: f.fid });
         try {
-          if (f.at) await scrollTo(page, f.at);
+          if (f.at === 'top') { await page.evaluate(() => window.scrollTo(0, 0)); await sleep(900); }
+          else if (f.at) await scrollTo(page, f.at);
           if (f.act) await f.act(page);
           let opts = f.full ? { fullPage: true } : {};
           if (f.clip === 'dock') {

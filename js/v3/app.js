@@ -64,6 +64,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+import { openImportSheet } from './import.js'; // picks from a festival app's schedule export (2026-09-26)
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
@@ -119,6 +120,14 @@ const ctx = {
   // the Board · List row in the show menu. A fest with no clock has nothing
   // to list by time, so it is always the board there (wall.js listOffered).
   view: BOARD,
+  // The past (Phase 1): the clock the fold was last judged at (wall.js
+  // foldPast), held still between the moments recomputePast moves it — a
+  // boot, a resume, the festival day turning, a NOW tap long after — and what
+  // this page has opened (`<iso>|<room>`, 'days'). Memory only: a reveal was
+  // a moment, not a choice, and a reload folds the past again.
+  pastAt: null,
+  pastOpen: new Set(),
+  onPast: (key) => togglePast(key),
   now: null, // tests pin the clock; null = new Date() at render
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
@@ -430,6 +439,98 @@ function unfoldAll() {
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
+// ---- the past: one line that flips (Phase 1, 2026-09-26) ---------------------------
+// A tap on "EARLIER · 7 SETS" brings that room's past back into its bands,
+// for this page only; the same line, in the same spot, now reads "HIDE
+// EARLIER" — and a tap folds it again. THE LINE HOLDS STILL under the finger
+// both ways (so the flip is a flip, and a second tap needs no aim): opening,
+// the past comes down out of it — the cards arrive with the beat, 30 ms apart,
+// nearest the line first — and the words cross-fade as the caret turns;
+// folding is quick and plain, the past fades and the rows close up under the
+// line. The days line at the top of the wall does the same with whole days.
+// Low Power and Reduce Motion: instant, the line still held.
+let pendingPast = null; // { finish } while a fold's past is fading
+function settlePast() { if (pendingPast) pendingPast.finish(); }
+const PAST_STAGGER_MS = 30;
+function togglePast(key) {
+  settleFold();
+  settleView();
+  settlePast();
+  const root = $('wall-root');
+  const lineOf = () => root.querySelector(`.past-line[data-past="${CSS.escape(key)}"]`);
+  const line = lineOf();
+  if (!line) return;
+  const opening = !ctx.pastOpen.has(key);
+  const top = line.getBoundingClientRect().top;
+  const focused = document.activeElement === line;
+  // What the line holds back: whole days (the days line) or a room's cards.
+  const pastOf = () => (key === 'days'
+    ? [...root.querySelectorAll(':scope > .day-block.past-day')]
+    : [...((lineOf() || { parentElement: null }).parentElement || root).querySelectorAll('.card.past')]);
+  const land = () => {
+    const l = lineOf();
+    if (!l) return null;
+    const d = l.getBoundingClientRect().top - top;
+    if (Math.abs(d) >= 1) window.scrollTo({ top: Math.max(0, window.scrollY + d), behavior: 'auto' });
+    if (focused) l.focus({ preventScroll: true });
+    if (canAnimate(l, ctx)) {
+      l.querySelector('.past-label').animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, easing: EASE_ARRIVE });
+    }
+    return l;
+  };
+  if (opening) {
+    ctx.pastOpen.add(key);
+    repaintWall();
+    const l = land();
+    if (!l || !canAnimate(l, ctx)) return;
+    pastOf().forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: Math.min(i, 12) * PAST_STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+    return;
+  }
+  const leaving = pastOf().filter((el) => canAnimate(el, ctx));
+  let done = false;
+  const fold = {};
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingPast === fold) pendingPast = null;
+    if (document.body.dataset.busy === 'past') delete document.body.dataset.busy;
+    ctx.pastOpen.delete(key);
+    repaintWall();
+    land();
+  };
+  fold.finish = finish;
+  if (!leaving.length) { finish(); return; }
+  pendingPast = fold;
+  // Busy while it fades (index.html quiet()): a new build's reload must not
+  // land in the middle of it.
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'past';
+  let pending = leaving.length;
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
+  for (const el of leaving) {
+    const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = settle;
+    a.oncancel = settle;
+  }
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+}
+// Judge the past again, now, holding the page by time: a set that ended
+// while the phone was locked folds away, and the set at the top of what you
+// saw — or the nearest one after it — stays where it was on screen. Only
+// when nothing is in progress: a zoom, a sheet, the menu or a fold in flight
+// keep the wall as it is until the next chance.
+function pastMayMove() {
+  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy
+    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast;
+}
+function recomputePast() {
+  ctx.pastAt = new Date();
+  const place = takeWallPlace();
+  repaintWall();
+  keepWallPlace(place, { byTime: true });
+}
+
 // ---- Board ↔ List (Phase 1, 2026-09-26) --------------------------------------------
 // The show menu's view row. The choice lands at once (memory and storage,
 // and the row's own words), then the switch is a small event (Kevin, the
@@ -442,12 +543,19 @@ function unfoldAll() {
 // The menu stays up behind it (v93's popover), for the next choice.
 let pendingView = null; // { finish } while the old wall is fading
 function settleView() { if (pendingView) pendingView.finish(); }
+// The place the last switch held, and where the page stood after it. Flipping
+// Board · List · Board without scrolling in between comes back EXACTLY: each
+// switch reusing the first one's place, rather than re-reading "the card at
+// the top" of a view whose top card is a different set at nearly the same
+// time (the round trip drifted ~60px in the browser contract before this).
+// Any scroll since, and the place is read again, where you are.
+let viewPlace = null; // { place, y }
 function switchView(next) {
   settleFold();
   settleView();
   if (ctx.view === next || !listOffered(state.fest())) return;
   const root = $('wall-root');
-  let place = takeWallPlace();
+  let place = viewPlace && Math.abs(window.scrollY - viewPlace.y) < 1 ? viewPlace.place : takeWallPlace();
   const tookAt = window.scrollY;
   saveView(ctx.fid, next);
   ctx.view = next;
@@ -466,6 +574,7 @@ function switchView(next) {
     repaintWall();
     if (fade) { fade.onfinish = null; fade.oncancel = null; try { fade.cancel(); } catch { /* done */ } }
     keepWallPlace(place, { byTime: true });
+    viewPlace = place ? { place, y: window.scrollY } : null;
     arriveBlocks(inView(root));
   };
   sw.finish = finish;
@@ -818,9 +927,22 @@ function lookAround(token, doc) {
 // The layer is dropped from the model first (its history entry stays, and
 // reconciles to nothing), so "Look around" comes back to the wall, never to
 // a layer the history no longer holds.
+// The wall's own address keeps the festival in its path (/f/<fest>#g=…), the
+// same shape a share link has (crew.js crewLink), so a link copied from the
+// address bar or sent from the browser's share button previews as that
+// festival ("Portola '26", its image) instead of the bare app (Kevin, 2026-09-26:
+// a link he sent from the address bar previewed as plain "Festival Navigator").
+// The rewrite had written `/#g=` since July, dropping the /f/ path a share link
+// arrived with. /f/<id> is served by api/share.js online and by the worker's
+// precached shell offline (every navigation falls back to it), so a reload
+// there works in a field. The token stays in the hash, never the path.
+function wallUrl(token) {
+  return crew.crewLink(token, state.activeFestivalId);
+}
+
 function joinFromLayer() {
   router.reset();
-  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+  history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
   show('screen-app');
   askToJoin(null);
@@ -937,9 +1059,20 @@ let clockTimer = null;
 function startClock() {
   if (clockTimer) return;
   clockTimer = setInterval(tickClock, 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    // Back from the lock screen: the past is judged again (Phase 1) — the
+    // sets that ended while the phone slept fold, the page held by time.
+    if (state.getCrewToken() && pastMayMove()) recomputePast();
+    tickClock();
+  });
 }
 function tickClock(date = new Date()) {
+  // The festival day turned (5 AM) under an open page: judge the past again.
+  // The minute tick itself never moves it — a set that ends while you read
+  // stays where it is until one of the fold's own moments.
+  const tz = (state.fest() || {}).timezone || null;
+  if (ctx.pastAt && !ctx.now && festivalClock(date, tz).iso !== festivalClock(ctx.pastAt, tz).iso && pastMayMove()) recomputePast();
   // A 'show-menu' busy flag with no menu open is a leftover (it would hold
   // every new build's reload on this phone for good): given back here, at the
   // minute tick and whenever the page is shown again.
@@ -1267,6 +1400,11 @@ const pageGeo = (root) => ({
 });
 function jumpToNow() {
   settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
+  settleView();
+  settlePast();
+  // A NOW tap long after the past was judged (Phase 1): judge it first, so
+  // NOW lands on the wall as it is now, not with an hour of ended sets above.
+  if (ctx.pastAt && !ctx.now && Date.now() - ctx.pastAt.getTime() > 5 * 60 * 1000 && pastMayMove()) recomputePast();
   const seq = ++nowSeq;
   const root = $('wall-root');
   const geo = pageGeo(root);
@@ -1599,7 +1737,16 @@ function renderDayNav() {
     const at = day.anchor || day.key;
     const jump = () => {
       settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
-      const target = document.querySelector(anchorFor(at));
+      settleView();
+      settlePast();
+      let target = document.querySelector(anchorFor(at));
+      // A day that is over sits behind the days line (Phase 1): its tab stays
+      // in the row (it is navigation), and a tap opens the line and lands.
+      if (!target && $('wall-root').querySelector(':scope > .past-line[data-past="days"]')) {
+        ctx.pastOpen.add('days');
+        repaintWall();
+        target = document.querySelector(anchorFor(at));
+      }
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
     for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {
@@ -2318,6 +2465,76 @@ function seedViewOnce(fid, { show = null, view = null } = {}) {
   return { rooms, list };
 }
 
+// ---- import from a festival app's schedule export (2026-09-26) ----------------------
+// A pick a Settings tool makes — Bulk paste, the schedule import — goes the
+// way a tap's does: the same migration gate (nothing counts while a legacy
+// crew is being updated, and the tool says so), the same pending write and
+// local mirror. The caller schedules the sync once, after its whole batch.
+function recordToolPick(artist, person, level) {
+  if (ctx.migrationPending) return false; // same gate as handleTap
+  state.recordSelection(artist, person, level);
+  applyLocalPick(artist, person, level);
+  return true;
+}
+
+// The sheet (js/v3/import.js) reads the images, lands the levels, and hands
+// back only the picks the person chose, for them alone. Once they are added:
+// one sync, then the wall — every layer down at once (history.go through
+// the router's own stack, so Back never lands on a dead Settings) — and a
+// line saying what happened. False when there is nothing to open (a guest,
+// a festival with no lineup yet).
+function openImport() {
+  refreshCtx();
+  const fest = state.fest();
+  const token = state.getCrewToken();
+  if (!ctx.meName || !token || !fest || !(fest.artists || []).length) return false;
+  const me = ctx.meName;
+  const fid = ctx.fid;
+  openImportSheet({
+    ctx, fest, token, me,
+    // Only ever the person importing, and only on the festival it opened on.
+    record: (name, level) => (state.getCrewToken() === token && state.activeFestivalId === fid && ctx.fid === fid && ctx.meName === me
+      ? recordToolPick(name, me, level) : false),
+    close: () => { if (!router.requestClose()) closeSheet(); },
+    done: (n, { stay = false, first = null } = {}) => {
+      sync.scheduleSync();
+      refreshCtx();
+      if (stay) { repaintWall(); return; }
+      // The picks are the point, so the wall opens on the first one added
+      // (a closed Settings otherwise leaves the wall at its top — true of
+      // every Settings close today, noted in IMPORT-BUILD.md).
+      const land = () => {
+        const card = first && document.querySelector(`#wall-root .card[data-artist="${CSS.escape(first)}"]`);
+        if (card) card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      };
+      const depth = router.depth();
+      if (depth > 0) {
+        // The browser restores the wall entry's own scroll just AFTER
+        // popstate (a scroll to its top, measured 2026-09-26), undoing a
+        // scroll made in the handler. So the landing rides that restoring
+        // scroll event — it runs before the frame paints, so the top of the
+        // wall is never shown — with a timer behind it for an engine that
+        // restores nothing.
+        // One landing, never two (a second would yank someone already
+        // scrolling), and a listener that outlives a traversal that never
+        // came is dropped rather than left for some later Back.
+        let timer = 0;
+        const once = () => { clearTimeout(timer); land(); };
+        const onPop = () => {
+          clearTimeout(forget);
+          window.addEventListener('scroll', once, { once: true, passive: true });
+          timer = setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
+        };
+        const forget = setTimeout(() => window.removeEventListener('popstate', onPop), 1500);
+        window.addEventListener('popstate', onPop, { once: true });
+        history.go(-depth);
+      } else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); land(); }
+      showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);
+    },
+  });
+  return true;
+}
+
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
@@ -2643,13 +2860,11 @@ function openSettings() {
       const gen = bootGeneration;
       if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
     },
-    recordPick: (artist, person, level) => {
-      if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
-      state.recordSelection(artist, person, level);
-      applyLocalPick(artist, person, level);
-      return true;
-    },
+    recordPick: (artist, person, level) => recordToolPick(artist, person, level),
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // Import from the festival app's schedule export (2026-09-26): a sheet
+    // over Settings, a history entry of its own like every sheet.
+    openImport: () => { if (openImport()) router.push('sheet:import'); },
     // Every link Settings hands out carries this phone's view (v92, SD1), and
     // says so in one line.
     inviteLink: (meName = null) => inviteLink(meName),
@@ -3466,6 +3681,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   show('screen-app');
   applyFestTheme();
   refreshCtx();
+  // The past is judged at the first paint (Phase 1), and nothing this page
+  // opened in another crew stays open in this one.
+  ctx.pastAt = new Date();
+  ctx.pastOpen.clear();
   // New here (v92): a guest, or the join screen's answer. A phone that knows
   // you or recognizes you lands as it did in v91, with no card.
   welcomeHere = !ctx.meName ? 'guest' : joined ? 'joined' : null;
@@ -3474,7 +3693,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   repaintWall();
   maybeOpenOnDay();
   startClock();
-  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
+  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
@@ -3883,6 +4102,7 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') { if (ctx.meName) openAddMember(); } // a guest adds nobody (v92)
+    else if (key === 'sheet:import') openImport(); // your picks only: a member's sheet (it opens nothing for a guest)
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {

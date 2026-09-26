@@ -428,7 +428,10 @@ for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
       await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
       await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
       await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-      await page.clock.setFixedTime(new Date('2026-09-26T09:00:00-07:00')); // before doors: no now-line landing to move the page
+      // A week before Portola: no now-line landing to move the page, and every
+      // day on the wall (on a festival day the days that are over wait behind
+      // one line — the past, Phase 1 — and this is about Thursday and Friday).
+      await page.clock.setFixedTime(new Date('2026-09-19T09:00:00-07:00'));
       await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
       const door = width >= 720 ? 'rail' : 'dock';
       await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 10000 });
@@ -535,7 +538,8 @@ test('the show menu: opening it pushes nothing; Back with it up leaves no menu a
     await page.waitForTimeout(900);
     await wall();
     const back = await state();
-    assert.equal(back.url, `#g=${OTHER}`, 'one Back: the crew before, as Back always did');
+    const crewOf = (hash) => (/[#&]g=([^&]+)/.exec(hash) || [])[1];
+    assert.equal(crewOf(back.url), OTHER, `one Back: the crew before, as Back always did: ${back.url}`);
     assert.deepEqual([back.menu, back.shown, back.busy], ['false', 'none', null], 'with no menu and no busy flag left behind');
 
     await page.evaluate(() => history.forward());
@@ -551,7 +555,7 @@ test('the show menu: opening it pushes nothing; Back with it up leaves no menu a
     await page.evaluate(() => history.back());
     await page.waitForTimeout(900);
     await wall();
-    assert.equal((await state()).url, `#g=${OTHER}`, 'and Back from the fest list is the crew before');
+    assert.equal(crewOf((await state()).url), OTHER, 'and Back from the fest list is the crew before');
   } finally {
     await ctx.close();
   }

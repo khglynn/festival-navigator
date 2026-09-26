@@ -100,6 +100,10 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   renderWall(root, {
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
+    // The week's shape, not the hour: a week before Portola, whenever this
+    // runs — on a festival day the days that are over wait behind one line
+    // (the past, Phase 1), and this is about all four.
+    now: new Date('2026-09-19T12:00:00-07:00'),
   });
   const days = [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
   assert.deepEqual(days, ['Thursday', 'Friday', 'Saturday', 'Sunday']);
@@ -129,6 +133,10 @@ test('portola-2026: a set of three hours or more is a TALL cell — name at the 
   renderWall(root, {
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
+    // The week's shape, not the hour: a week before Portola, whenever this
+    // runs — on a festival day the days that are over wait behind one line
+    // (the past, Phase 1), and this is about all four.
+    now: new Date('2026-09-19T12:00:00-07:00'),
   });
   const gridCells = [...root.querySelectorAll('.room[data-room=":fest"] .card.cell')];
   const despacio = gridCells.filter((c) => c.dataset.artist === 'Despacio');

@@ -12,9 +12,63 @@ are the handoff.*
 - [x] A. persistence: view per phone per festival, `&view=list` seeded once, no sync — `c5e436b`
 - [x] B. the List: every room by time, full-width rows, hour/night ladders, 560 column — `9a07232`
 - [x] C. the menu bar: dot · NAME · ☰, the menu's Board · List row, the switch motion — `d292959`
-- [ ] D. the past: the room fold (List), the days line (both views), recompute on resume
-- [ ] E. browser tests + frames (390 / 320 / 1280) + a real-input walk
-- [ ] F. docs that must move with the code (docs-truth), three clocks + browser suite
+- [x] D. the past: the room fold (List), the days line (both views), recompute on resume — `6960b40`
+- [x] E1. browser contract with real input (Chromium touch, WebKit touch, 1280 mouse) — `7db238c`
+- [x] merged `origin/live/v93` (now v96: the import, `wallUrl`, the Linux day-row test fixes) — `bf8dfa6`;
+      one conflict (two imports side by side in wall.js). Node suite green at UTC, Tokyo and the
+      night clock except the stamp; `npm run test:browser` 235/235.
+- [x] E2. frames for every state at 390 / 320 / 1280, looked at — 44 frames in `list-shots/`
+      (git-ignored), rendered by `list-rig.mjs` over this worktree's own code, no page errors,
+      every write refused (44 boot pings to /api/person, all 503)
+- [x] F. MODEL-V4 §3.1 "Since Phase 1" and row 7's picture — `41bb914`. CLAUDE.md NOT edited
+      (the harness's instruction file; wording proposed below for the coordinator/Kevin).
+
+## Results (merged head, 2026-09-26 ~5 AM PT)
+
+- `npm test` at UTC, `TZ=Asia/Tokyo` and the night clock (`NIGHT_CLOCK=2026-09-27T04:30:00Z`):
+  1108 pass, 1 fail each — the service-worker stamp, by instruction (not stamped).
+- `npm run test:browser` (Chromium + WebKit on this Mac): 235 / 235.
+- The five browser files my first cut broke passed 88/88 on the branch base (checked in a scratch
+  worktree of `aba41c3`), so every one of those 17 reds was mine; each was fixed at its cause (the
+  gallery's and one contract's clocks; the dock's width for the three lines).
+
+## Frames (`list-shots/`, re-render: `node claude-plans/2026-09-26-unified-build/list-rig.mjs [prefix]`)
+
+Portola, Saturday 4:15 PM PT, at 390 / 320 / 1280 each: `p-sat-top-*` (days line + the folded
+room), `p-sat-portola-*`, `p-sat-portola-open-*` (HIDE EARLIER), `p-days-open-*`,
+`p-sat-afters-*`, `p-sat-folsom-*`, `p-sun-portola-*`, `p-menu-open-*`, `p-board-top-*`.
+Plus `p-dock-closed-390/320`, `p-dock-open-390`, `p-zoom-row-390` (a finger's hold),
+`p-zoom-row-1280` (hover), `p-now-landing-390`, `p-930pm-afters-390` (rings at night),
+`p-6am-sun-390` (the rollover). ACL, first Saturday 8 PM CDT at 390 / 320 / 1280:
+`acl-sat-grid-*`, `acl-late-night-*`; `acl-menu-open-390`; second Friday 3 PM:
+`acl-board-top-390`, `acl-list-top-w2-390` ("EARLIER · FRI 2 · SAT 3 · SUN 4").
+Earlier iterations are set aside in `list-shots/earlier-iterations/`.
+
+## Proposed CLAUDE.md wording (not applied — the coordinator's or Kevin's call)
+
+> **The List is a VIEW the reader picks, not a presentation the data picks** (Phase 1,
+> 2026-09-26): the show menu's Board · List row, per phone per festival
+> (`fn_view_v1_<fid>`), `&view=list` in a share link, never in the crew doc. In the List
+> every room is a time list of rows (`.card.row`, the same card on a grid; `--list-w`, the
+> 560px reading column from 720 up) — the grid and afters on hours, a declared by-time
+> section on its own ladder. **What is over folds** (`js/v3/wall.js` pastOf / foldPast):
+> over = the ring can never light again, judged at a held clock (`ctx.pastAt`: boot,
+> resume, the festival day turning — never the tick), folded cards are not in the DOM,
+> and a reveal is page memory only.
+
+## Follow-ups (not built; none blocks this release)
+
+1. How it works row 7: Kevin's words still say "Show or hide parts of the week." —
+   suggested: "Show or hide parts of the week, as a board or a list."
+2. The gallery has no List or fold section (its wall judges its past before the week so
+   its contracts keep every day); the frames rig and `tests/browser/list-view.test.mjs`
+   cover the states meanwhile.
+3. Late nights' past dates fold room by room in the List; they could fold as days inside
+   the Late nights block.
+4. The Board's in-room cut (m's grid mask) — deliberately not built (call 2).
+5. The production now line inside a time list (round five's critic): not built; the rings
+   read cleanly in the frames (`p-930pm-afters-390`), dense daytime Folsom bands are the
+   heaviest case (8 rings) and read the same as the Board's.
 
 ## The build, in one screen
 
@@ -95,3 +149,44 @@ are the handoff.*
     a test holds the two paths equal.
 12. **The service-worker stamp test is red on this branch by instruction**
     (the coordinator stamps at release); every other test is green.
+13. **"Over" judges what was drawn, at a held clock.** A DOM pass after the
+    render reads each card's own window on its host's night (`pastOf`, pure
+    and tested), against `ctx.pastAt` — set at boot, on resume (nothing busy,
+    no zoom, no sheet), when the festival day turns, and on a NOW tap more than
+    five minutes after the last judgement. Never on the minute tick or the 25 s
+    poll, so a set that ends while you read never vanishes under your thumb.
+    Folded cards are not in the DOM (the wall is what you see), so no anchor,
+    fit or NOW code ever meets a hidden card.
+14. **The line holds still under the finger, both ways** (I argue with the
+    riff here). d's motion notes held "the row you were reading" and glided up
+    45%; that sends the control you just tapped off the screen and makes the
+    flip back a hunt. Holding the line keeps "flips into a hide option" literal:
+    the past comes down out of it (30 ms apart, nearest first), and a second
+    tap folds it with nothing moved.
+15. **A festival over end to end folds nothing** — it is a record, read whole;
+    one line for the whole week would be a blank wall. Before the festival
+    nothing is over either.
+16. **Whole days: "EARLIER · THU · FRI"** (d's words, no count; ACL names its
+    dated tabs, "FRI 2 · SAT 3 · SUN 4"). Their tabs stay in the row (they are
+    navigation); a tap on one opens the line and lands. At the top of the page
+    the scrollspy lights the first day on the wall (SAT), not the first tab.
+17. **A room that is entirely over keeps its head** (the note door) and its
+    line, "EARLIER · 32 SETS" — m's "ALL 32 SETS OVER" was not in the riff.
+    Late nights' past dates fold room by room in the List (a follow-up could
+    fold them as days inside the Late nights block).
+18. **The line overlaps nothing.** The riff's negative margins put the first
+    band head over the line's lower half; a real finger on its middle hit the
+    band head (`element.click()` never notices). The line abuts the room above
+    and the band head under it gives up its empty top; the words land within a
+    few pixels of the approved frames.
+19. **The dock pays for the three lines** (~11px, the price d's riff named):
+    its sides on the wall's own gutter (14 not 16, aligning the dock with the
+    room heads), the fest link's gap 5, the dock's gaps 9. Every day-row
+    contract holds — 390 FRI SAT NOW SUN, 320 SAT NOW, ACL at 305 and at 320
+    with Linux-wide glyphs.
+20. **Board ↔ List round trips exactly**: a switch made with no scroll since
+    the last one reuses that one's place.
+21. **Tests about the week's shape pin their clock a week before Portola**
+    (the shell rig gains `now:`; three data tests pass `ctx.now`; the gallery
+    judges its past before the week; one browser contract re-pinned) — a live
+    festival day now opens folded, and those tests are about all four days.

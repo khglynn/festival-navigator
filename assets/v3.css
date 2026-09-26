@@ -532,14 +532,22 @@ button.room-head { cursor: pointer; }
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--dock); border-top: 1px solid var(--hairline);
-  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+  /* The sides are the wall's own gutter (--sp-gutter, 14px on every phone),
+   * not 16: the dock's avatar and fest name now line up with the room heads'
+   * and the cards' edges above them, and the 4px it returns go to the day row
+   * — the menu bar's three lines cost it about 11px (Phase 1, 2026-09-26). */
+  padding: 9px var(--sp-gutter) calc(9px + env(safe-area-inset-bottom));
   /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
    * and the row's two gaps give exactly that back — so the D1 frames hold
    * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
    * at the edge), and ACL's long name still leaves the day you are in whole
    * at 320 where Linux and Android draw Inter wide. The row's edge fades
-   * keep the air the eye reads between the parts. */
-  display: flex; align-items: center; gap: 10px;
+   * keep the air the eye reads between the parts. 9px, not 10 (Phase 1):
+   * the menu bar's three lines cost the row ~11px; the gutter above returns
+   * 4, the fest link's own gap 2, these two gaps 2 — and ACL's long name
+   * still leaves the day you are in whole at 320 with Linux-wide glyphs
+   * (tests/browser/now-jump.test.mjs). */
+  display: flex; align-items: center; gap: 9px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
 
@@ -703,7 +711,7 @@ button.room-head { cursor: pointer; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 /* Shared between dock and day rail (one component, two positions). */
-.fest-link { display: inline-flex; align-items: center; gap: 6px; background: none;
+.fest-link { display: inline-flex; align-items: center; gap: 5px; background: none;
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
@@ -1467,6 +1475,37 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .card.row .corner-about { grid-area: about; position: relative; inset: auto; margin-left: 12px; }
 .card.row .corner-who { grid-area: who; position: relative; inset: auto; margin-left: 6px; }
 
+/* THE PAST (Phase 1, wall.js foldPast): folded by default behind one quiet
+ * line — the app's section micro-label, a caret, the band heads' hairline —
+ * that reads "EARLIER · 7 SETS ⌄" and, tapped, flips in the same spot to
+ * "HIDE EARLIER ⌃". A bare button (the 44px floor comes with it), no chip.
+ * In a List room it heads the time list; whole days over leave one at the
+ * top of the wall. It keeps its whole 44px and OVERLAPS NOTHING: the riff's
+ * prototype pulled the band head up over the line's lower half, and a real
+ * finger on the line's middle hit the band head instead (the frames rig,
+ * 2026-09-26 — `element.click()` never notices). So the line abuts the room
+ * above it (the room's own 9px, given back) and the first band head under it
+ * gives up its empty top instead, which lands the words where the riff's
+ * frames drew them (Kevin approved those) to within a few pixels. */
+.past-line { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 44px; padding: 0; margin: -9px 0 0;
+             background: none; border: 0; cursor: pointer; font-family: var(--font-ui); text-align: left;
+             color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label);
+             text-transform: uppercase; line-height: 1; -webkit-tap-highlight-color: transparent; }
+.past-caret { flex: none; width: 5px; height: 5px; margin: 0 1px; border: solid var(--text-tertiary);
+              border-width: 1.5px 0 0 1.5px; transform: translateY(-1.5px) rotate(225deg); transition: transform .12s ease; }
+.past-line[aria-expanded="true"] .past-caret { transform: translateY(1.5px) rotate(45deg); }
+.past-rule { flex: 1 1 0; min-width: 0; height: 1px; margin-left: 3px;
+             background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+@media (hover: hover) { .past-line:hover { color: var(--text-body); } }
+.past-line:active { opacity: .6; }
+/* (Out-ranks the first band's tuck under the room head: that -8px pulled the
+ * band up over the line's bottom edge, and a tap there hit the band head.) */
+.room > .time-list.rows.has-past > .time-band:first-of-type { margin-top: 0; }
+.time-list.rows > .past-line + .time-band > .band-head { min-height: 20px; }
+/* The days line at the top of the wall abuts the first day's head (a note
+ * door): the wall's 13px gap is given back, never more. */
+#wall-root > .past-line { margin: -10px 0 -13px; }
+
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
  * one piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
@@ -1601,6 +1640,87 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * meet it on either side. */
 .zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
 .zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }
+
+/* ---- import from a festival app's schedule export (2026-09-26) ---------------
+ * The production sheet, grown for a small wall: its side padding is the wall's
+ * own gutter, so two --col-w cards sit across a phone exactly as they do on
+ * the wall, and from 720 the dialog is as wide as three of them. The images
+ * sit in a row at the top (9:16, like the export), each captioned with what
+ * it was read as; the days' cards arrive under them; one button at the foot.
+ * Brand where anything wants to look "ours", never --fest. */
+.sheet.import-sheet { max-height: 88vh; gap: 12px;
+                      padding: 8px var(--sp-gutter) 0; }
+/* Nothing in it gives up height to fit: the sheet scrolls instead. (The image
+ * row is a sideways scroller, so its min-height is 0 and it was the first
+ * thing a full sheet squeezed flat.) */
+.sheet.import-sheet > * { flex-shrink: 0; }
+@media (min-width: 720px) {
+  .sheet.import-sheet { width: min(calc(3 * var(--col-w) + 2 * var(--col-gap) + 40px), 92vw); padding: 16px 20px 0; }
+}
+.import-sheet .imp-lede { margin: 0; overflow: hidden; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+.import-sheet .imp-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+/* The images. Before the first choice the dashed "+" is the whole row: the
+ * one thing to do here. After it, the "+" is one more tile at the row's end. */
+.import-sheet .imp-shots { display: flex; gap: 10px; overflow-x: auto; padding: 2px; margin: -2px;
+                           scrollbar-width: none; overscroll-behavior-x: contain; }
+.import-sheet .imp-shots::-webkit-scrollbar { display: none; }
+.import-sheet .imp-add { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+                         height: 112px; background: transparent; border: 1.5px dashed var(--border-emphasis);
+                         border-radius: var(--r-settings); color: var(--text-secondary); cursor: pointer; font-family: inherit;
+                         -webkit-tap-highlight-color: transparent; }
+.import-sheet .imp-add:active { border-color: rgba(var(--brand), .6); }
+.import-sheet .imp-add-glyph { font: 300 28px/1 var(--font-ui); color: var(--text-header); }
+.import-sheet .imp-add-word { font-size: 13px; font-weight: 700; }
+.import-sheet .imp-shots.has-shots .imp-add { flex: none; width: 64px; height: 114px; border-radius: var(--r-card); align-self: flex-start; }
+.import-sheet .imp-shots.has-shots .imp-add-glyph { font-size: 22px; }
+.import-sheet .imp-shots.has-shots .imp-add-word { font-size: 10.5px; }
+.import-sheet .imp-shot { flex: none; width: 64px; display: flex; flex-direction: column; gap: 6px; }
+.import-sheet .imp-shot-face { display: block; width: 64px; height: 114px; min-height: 0; padding: 0; overflow: hidden;
+                               background: var(--card); border: 1px solid var(--hairline); border-radius: var(--r-card);
+                               cursor: default; -webkit-tap-highlight-color: transparent; }
+.import-sheet .imp-shot-face img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity .2s ease; }
+.import-sheet .imp-shot[data-state="reading"] .imp-shot-face img { opacity: .55; }
+.import-sheet .imp-shot[data-state="error"] .imp-shot-face { border-color: rgba(248, 113, 113, .55); cursor: pointer; }
+/* No signal is a state, not a fault: gray, like the sync dot's offline. */
+.import-sheet .imp-shot[data-error="offline"] .imp-shot-face,
+.import-sheet .imp-shot[data-error="stay"] .imp-shot-face { border-color: var(--border-emphasis); }
+.import-sheet .imp-shot[data-state="error"] .imp-shot-face img,
+.import-sheet .imp-shot[data-state="empty"] .imp-shot-face img { opacity: .4; }
+.import-sheet .imp-shot-cap { display: flex; flex-direction: column; gap: 1px; min-height: 28px;
+                              color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; line-height: 1.25; }
+.import-sheet .imp-shot-cap .eq-loader { height: 10px; }
+.import-sheet .imp-shot-day { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 14px; font-weight: 400;
+                              color: var(--text-header); line-height: 1.1; }
+.import-sheet .imp-shot-n.err { color: var(--danger); }
+.import-sheet .imp-shots-note:empty { display: none; }
+/* Heard, not seen: what each read found, for a screen reader. */
+.import-sheet .imp-heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* The days: each one's head, its cards (the wall's own, --col-w wide), and
+ * the lines under it. */
+.import-sheet .imp-days { display: flex; flex-direction: column; gap: 20px; }
+.import-sheet .imp-days:empty { display: none; }
+.import-sheet .imp-day-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.import-sheet .imp-day-title { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display);
+                               font-size: var(--fs-day); color: var(--text-header); }
+.import-sheet .imp-day-sub { color: var(--text-tertiary); font-size: 11px; font-weight: 700; }
+.import-sheet .imp-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w)); gap: var(--col-gap); }
+.import-sheet .imp-notes { display: flex; flex-direction: column; gap: 5px; margin-top: 9px; }
+.import-sheet .imp-note { margin: 0; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.import-sheet .imp-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.import-sheet .imp-kept-label { color: var(--text-secondary); }
+.import-sheet .imp-kept-item { display: inline-flex; align-items: center; gap: 6px; color: var(--text-body); }
+/* The foot rides the sheet's bottom edge while the days scroll under it. */
+.import-sheet .imp-foot { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 7px;
+                          margin: 0 calc(-1 * var(--sp-gutter)); padding: 14px var(--sp-gutter) calc(14px + env(safe-area-inset-bottom, 0px));
+                          background: linear-gradient(to bottom, rgba(10, 8, 18, 0), var(--dock) 14px); }
+@media (min-width: 720px) {
+  .import-sheet .imp-foot { margin: 0 -20px; padding: 14px 20px 18px; }
+}
+.import-sheet .imp-foot[hidden] { display: none; }
+.import-sheet .imp-go { width: 100%; min-height: 46px; padding: 12px; font-size: 14px; font-family: inherit; }
+.import-sheet .imp-go:disabled { opacity: .45; cursor: default; }
+.import-sheet .imp-status { color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.import-sheet .imp-status:empty { display: none; }
 
 /* ---- OUR PLAN (2026-09-26 — Kevin's call #5; round three's design) -----------
  * Where most of us will be, as a route of stops (js/v3/plan.js), drawn as one

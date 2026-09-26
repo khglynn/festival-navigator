@@ -42,6 +42,9 @@ const shell = await bootShell({
     fn_welcome_v1: '1', // the welcome card is not what this file is about
   },
   fetch: network,
+  // The week's shape, not the hour: a week before Portola, so every day is
+  // on the wall whenever this runs (the now-mark tests below pin their own).
+  now: '2026-09-19T19:00:00Z',
 });
 test.after(() => shell.close());
 const { $, dom } = shell;
@@ -49,6 +52,7 @@ for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) awa
 
 const app = await import('../js/v3/app.js'); // the SAME instance the page booted
 const filters = await import('../js/v3/filters.js');
+const state = await import('../js/state.js'); // the SAME instance: its pendingChanges are the page's
 
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const menu = (which) => $(`${which}-fest-wrap`).querySelector('.sort-pop');
@@ -161,6 +165,14 @@ test('the show menu\'s rows are real buttons, and still options in the listbox',
 // place: opening it makes no history entry, and a Back with it open does
 // what Back does, with the menu gone.
 const escape = () => dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+// A traversal lands when its popstate does — waited for, never guessed at: a
+// fixed 40 ms held by daylight, and on a loaded runner at night (a live wall
+// is more work per task) jsdom's traversal landed after it (v96, CI).
+const traverse = (go) => new Promise((resolve) => {
+  const timer = setTimeout(resolve, 3000);
+  dom.window.addEventListener('popstate', () => { clearTimeout(timer); setTimeout(resolve, 0); }, { once: true });
+  go();
+});
 test('a tap opens it; Escape, a tap outside and the fest name again each close it; opening it makes no history entry', async () => {
   const link = $('dock-fest-link');
   const pop = menu('dock');
@@ -195,8 +207,7 @@ test('Back with the menu up does what Back does, and the menu, its busy flag and
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true');
   assert.equal(dom.window.document.body.dataset.busy, 'show-menu', 'busy while it is up');
   assert.equal(h.length, start, 'opening it pushed nothing');
-  h.back();
-  await settle(40);
+  await traverse(() => h.back());
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu went with the step');
   assert.equal(menu('dock').style.display, 'none');
   assert.equal(dom.window.document.body.dataset.busy, undefined, 'and gave the reload back');
@@ -208,9 +219,16 @@ test('Back with the menu up does what Back does, and the menu, its busy flag and
 // way out of a menu is a write nobody meant.
 test('a tap outside the open menu only closes it: the card under the tap is not picked', async () => {
   const card = $('wall-root').querySelector('.card[data-artist]');
+  const pending = () => JSON.stringify(state.pendingChanges);
+  const before = pending();
   let heard = 0;
-  const hear = () => { heard += 1; };
-  card.addEventListener('click', hear);
+  // Heard at the card and stopped there (capture, at the target): this test
+  // proves the tap reaches the card once the menu is away, and must not make
+  // a real pick doing it — a pick is a sync push 1.2 s later whose answer
+  // repaints the wall, and on a loaded runner it landed inside the fold tests
+  // below and took their arrivals with it (v96, CI).
+  const hear = (e) => { heard += 1; e.stopImmediatePropagation(); };
+  card.addEventListener('click', hear, true);
   try {
     click($('dock-fest-link'));
     click(card);
@@ -219,8 +237,9 @@ test('a tap outside the open menu only closes it: the card under the tap is not 
     assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
     click(card);
     assert.equal(heard, 1, 'and with the menu away, the next tap is the card\'s');
+    assert.equal(pending(), before, 'and no write is left behind for a later test to trip over');
   } finally {
-    card.removeEventListener('click', hear);
+    card.removeEventListener('click', hear, true);
   }
 });
 
@@ -289,8 +308,7 @@ test('Settings from the menu: the menu goes, Settings takes one entry, and Back 
   assert.equal(menu('dock').style.display, 'none', 'the menu is gone');
   assert.deepEqual(h.state, { layers: ['settings'] });
   assert.ok(h.length <= start + 1, 'one entry, Settings\' own — none for the menu');
-  h.back();
-  await settle(30);
+  await traverse(() => h.back());
   assert.equal($('screen-app').style.display, '', 'Back: the wall');
   assert.equal(JSON.stringify(h.state), found);
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'and no menu comes back with it');

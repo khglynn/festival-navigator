@@ -2,8 +2,8 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v95'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
-const ASSET_STAMP = '376ec98a'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const CACHE_VERSION = 'festival-nav-v96'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const ASSET_STAMP = '890473ca'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -39,6 +39,7 @@ const APP_CORE = [
   '/js/errlog.js',
   '/js/spotify.js',
   '/js/name-rules.mjs',
+  '/js/fold.mjs',
   '/js/v3/app.js',
   '/js/v3/crew-entry.js',
   '/js/v3/welcome.js',
@@ -49,6 +50,8 @@ const APP_CORE = [
   '/js/v3/notes.js',
   '/js/v3/settings.js',
   '/js/v3/tools.js',
+  '/js/v3/import.js',
+  '/js/v3/import-match.js',
   '/js/v3/model.js',
   '/js/v3/aura.js',
   '/js/v3/palette.js',
