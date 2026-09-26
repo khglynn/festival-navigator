@@ -23,15 +23,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const server = await serveStatic(ROOT);
 const browser = await launchBrowser();
-test.after(async () => { if (browser) await browser.close(); await server.close(); });
+// WebKit, where installed, for the geometry: iPhones are WebKit, and a grid
+// sized to its content inside an overflow box is exactly where engines differ.
+let webkit = null;
+try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that case skips */ }
+test.after(async () => { if (browser) await browser.close(); if (webkit) await webkit.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
 
 const FID = 'portola-2026';
 // Before the festival: no NOW marks, no day-of landing — the wall at rest.
 const BEFORE = new Date('2026-09-20T12:00:00-07:00');
 
-async function open(width, { touch = true } = {}) {
-  const ctx = await browser.newContext({ viewport: { width, height: 844 }, hasTouch: touch, isMobile: touch, serviceWorkers: 'block' });
+async function open(width, { touch = true, engine = browser } = {}) {
+  const ctx = await engine.newContext({ viewport: { width, height: 844 }, hasTouch: touch, ...(engine === browser ? { isMobile: touch } : {}), serviceWorkers: 'block' });
   const TOKEN = 'stackrowcontract_0123456789'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -89,9 +93,13 @@ const geometry = (page) => page.evaluate(() => {
   return { clocks, rows, shellLeft, pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
 });
 
-for (const width of [320, 390, 430]) {
-  test(`${width}px phone: every stack under a clock starts at the clock's columns, at the one card width, and scrolls away only the lead`, { skip }, async () => {
-    const { ctx, page } = await open(width);
+const phoneCases = [
+  ...[320, 390, 430].map((width) => ({ width, engine: browser, name: `${width}px phone`, skip })),
+  { width: 390, engine: webkit, name: 'WebKit, 390px phone', skip: webkit ? false : 'WebKit not installed (npx playwright install webkit)' },
+];
+for (const { width, engine, name, skip: why } of phoneCases) {
+  test(`${name}: every stack under a clock starts at the clock's columns, at the one card width, and scrolls away only the lead`, { skip: why }, async () => {
+    const { ctx, page } = await open(width, { engine });
     try {
       const g = await geometry(page);
       assert.equal(g.pageOverflow, 0, 'the page itself never scrolls sideways');
