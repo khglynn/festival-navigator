@@ -319,15 +319,21 @@ test('the people menu’s Our plan row: above Pick as someone else, it gives way
   grab.click();
   assert.equal(plan().dataset.state, 'peek');
   assert.equal(history.length, len, 'neither the menu nor the plan takes a history entry');
+  // The plan going away under an open menu takes its row with it, and a
+  // keyboard on another row stays there; the plan coming back brings it back.
+  you.click();
+  menu().querySelector('[data-act="pick-as"]').focus();
   setClock(TUE_NOON);
   await repaint();
   assert.equal(showing(), false);
-  you.click();
+  assert.equal(you.getAttribute('aria-expanded'), 'true', 'the menu is still open');
   assert.equal(row(), null, 'no plan on screen, no row');
-  assert.ok(menu().querySelector('[data-act="pick-as"]'), 'the rest of the menu is as it was');
-  you.click();
+  assert.equal(document.activeElement, menu().querySelector('[data-act="pick-as"]'), 'the keyboard is where it was');
   setClock(SAT_940);
   await repaint();
+  assert.ok(row(), 'the plan back, the row back');
+  assert.equal(document.activeElement.dataset.act, 'pick-as');
+  you.click();
 });
 
 test('nothing two days before the festival; the day before, tomorrow’s first stop with its weekday', async () => {

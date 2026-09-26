@@ -1315,6 +1315,10 @@ function paintPlan(date = ctx.now || new Date()) {
     }
   }
   paintNowTabs(date);
+  // The people menu offers Our plan only while there is one: a plan that
+  // comes or goes (the minute past the last stop, the welcome card leaving)
+  // redraws the menu's rows, an open menu's included (Codex, 2026-09-26).
+  if (planHere() !== menuHasPlan) paintHighlight();
 }
 
 // The day tab NOW follows: the live day's, else none (the row's start).
@@ -2200,8 +2204,10 @@ function peopleMenuPlanRow() {
   return r;
 }
 
+let menuHasPlan = false; // whether the people menu was last drawn with Our plan's row (paintPlan)
 function peopleMenuData() {
   const guest = !ctx.meName;
+  menuHasPlan = planHere();
   const active = state.activePeople();
   return {
     people: active.map(([name, p]) => ({ name, color: hslOf(colorIndexOf(name, p)) })),
@@ -2211,7 +2217,7 @@ function peopleMenuData() {
     // Nobody else in the crew: nobody to pick as (PEOPLE-BUILD.md).
     pickAs: !guest && active.some(([n]) => n !== ctx.meName),
     invite: !guest,
-    plan: planHere() ? peopleMenuPlanRow : null,
+    plan: menuHasPlan ? peopleMenuPlanRow : null,
   };
 }
 const PEOPLE_DOORS = {

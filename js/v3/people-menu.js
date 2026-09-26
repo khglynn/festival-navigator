@@ -126,6 +126,11 @@ export function paintHighlightMenu(pop, opts) {
     }
     return pop;
   }
+  // A redraw under an open menu (someone joined, the plan came or went)
+  // keeps a keyboard where it was: the same row if it is still drawn, else
+  // the menu's first row — never the page.
+  const f = pop.ownerDocument.activeElement;
+  const was = f && f !== pop && pop.contains(f) ? rowKey(f) : null;
   pop.dataset.people = signature;
   pop.textContent = '';
   const head = node('li', 'menu-label', PEOPLE_WORDS.label);
@@ -166,8 +171,16 @@ export function paintHighlightMenu(pop, opts) {
       pop.appendChild(i.li);
     }
   }
+  if (was != null) {
+    const rows = [...pop.querySelectorAll('button')];
+    const again = rows.find((b) => rowKey(b) === was) || rows[0];
+    if (again) again.focus({ preventScroll: true });
+  }
   return pop;
 }
+// A row's identity across redraws: a person (Everyone is the empty name) or
+// an action.
+const rowKey = (b) => (b.dataset.act ? `act:${b.dataset.act}` : b.dataset.person != null ? `person:${b.dataset.person}` : null);
 
 // An action row below the line — exported for Our plan's row, so it is drawn
 // the same way as its neighbours.
