@@ -131,7 +131,10 @@ try {
         await ctx.addInitScript(() => {
           for (const k of Object.keys(localStorage)) if (k.startsWith('fn_me_v3_') || k === 'fn_welcome_v1') localStorage.removeItem(k);
         });
-        await page.reload({ waitUntil: 'load' });
+        // Not page.reload(): since v96 the boot rewrites the address to
+        // /f/<fest>#g=…, a Vercel rewrite this static server does not have.
+        const hash = await page.evaluate(() => location.hash);
+        await page.goto(`${new URL(page.url()).origin}/${hash}`, { waitUntil: 'load' });
         await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 20000 });
         await sleep(1200);
       }
