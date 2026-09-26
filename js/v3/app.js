@@ -663,11 +663,13 @@ function renderPersonChips() {
     row.appendChild(all);
   }
   // Add-on-their-behalf lives right where the crew is visible (note 5) —
-  // only for claimed devices; a spectator can't grow the crew.
+  // only for claimed devices; a spectator can't grow the crew. The plus says
+  // what it adds, in the words Settings uses (v93): a bare "+ Add" beside a
+  // row of names could as well have meant a pick, a note or a festival.
   if (ctx.meName) {
     const add = document.createElement('button');
     add.className = 'person-chip add';
-    add.textContent = '+ Add';
+    add.textContent = '+ Add someone';
     add.setAttribute('aria-label', 'Add someone to the crew');
     add.style.cursor = 'pointer';
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
@@ -1567,7 +1569,7 @@ function festPickRow(f, { muted = false, onPick }) {
 // Multi-pick (fests × circles × you, decision 2): tap toggles a fest into the
 // selection, one button creates a board per fest. "Add all the fests I'm
 // going to, then quickly add people to them" — the people step is gone from
-// here entirely; people questions live on each fest's + Add.
+// here entirely; people questions live on each fest's + Add someone.
 const createSel = new Set();
 function renderCreate() {
   show('screen-create');

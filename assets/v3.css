@@ -206,7 +206,7 @@ html { touch-action: manipulation; }
 .welcome-head .micro-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .welcome-head .avatar { width: 20px; height: 20px; font-size: 8.5px; }
 .welcome-head .avatar-cluster .avatar + .avatar { margin-left: -5px; }
-.welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
+.welcome-head .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; } /* +n more of the crew: solid, like a card's +n — dashed means "add" */
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
 /* The card's choice is two doors of one width (the guest shelf round,
@@ -233,8 +233,12 @@ html { touch-action: manipulation; }
                 letter-spacing: .06em; color: var(--text-tertiary); border: 1px solid var(--border-card);
                 border-radius: var(--r-pill); padding: 1px 5px; background: rgba(10, 8, 18, .6); }
 /* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
- * — it gets the same white-on-scrim treatment as every other mark (audit 8.1). */
-.mark.ghost { border: 1px dashed rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
+ * — it gets the same white-on-scrim treatment as every other mark (audit 8.1).
+ * Its ring is solid (v93): in this app a dashed edge only ever means "add"
+ * (the people row's + Add someone, a guest's + in the dock, + Add a
+ * festival), and +n is people already here. Same 1px, so the corners' width
+ * table (aura.js) is unchanged. */
+.mark.ghost { border: 1px solid rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
               color: #fff; padding: 0 4px; font-size: 7.5px; }
 
 /* ---- people ----------------------------------------------------------------- */
@@ -249,7 +253,7 @@ html { touch-action: manipulation; }
  * when tapped. Same component, honest about which job it is doing here. */
 .person-chip.static { cursor: default; }
 .person-chip.add { background: transparent; border: 1.5px dashed var(--border-emphasis);
-                   color: var(--text-secondary); padding: 4px 10px; }
+                   color: var(--text-secondary); padding: 4px 10px; white-space: nowrap; } /* "+ Add someone" is one thing; it moves to the next line whole */
 .avatar { width: 17px; height: 17px; border-radius: var(--r-pill); color: #fff; font-size: 8px;
           font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .avatar-cluster { display: inline-flex; }

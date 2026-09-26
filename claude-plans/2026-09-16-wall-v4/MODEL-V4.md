@@ -174,7 +174,7 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
 4. **How it works** is grouped the way the screen reads. Rows, in order,
    each drawn with the REAL component (never a re-drawn lookalike):
    1. people chips — `Tap a name to highlight their picks.` / `Switch who you are picking as in Settings.`
-   2. `+ Add` — `Add your people with + Add,` / `or share the crew link — anyone who opens it is in, no account needed.`
+   2. `+ Add someone` — `Add your people with + Add someone,` / `or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93, 2026-09-25: it was `+ Add`)
    3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Tap an artist to add your color.` / `Your bars fill each tap. 4 taps = must see.`
    4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
    5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`

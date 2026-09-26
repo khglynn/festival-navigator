@@ -426,8 +426,8 @@ function openHowItWorks(actions) {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
   }, 'Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'));
   card.appendChild(lesson((d) => {
-    d.append(chipDemo('+ Add', { dashed: true }));
-  }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
+    d.append(chipDemo('+ Add someone', { dashed: true }));
+  }, 'Add your people with + Add someone,', 'or share the crew link — anyone who opens it is in, no account needed.'));
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
   // Row 3 is the card getting brighter with the REAL meter chip on it, filling
