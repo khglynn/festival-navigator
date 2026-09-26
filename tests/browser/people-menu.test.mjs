@@ -34,12 +34,26 @@ const docFor = () => ({
   festivals: { [FID]: { selections: { Robyn: { Ben: 2, Cy: 3 }, 'Dog Blood': { Cy: 3, Dot: 2 }, Soulwax: { Ana: 1 }, Tricky: { Eli: 2 }, 'Tove Lo': { Ben: 1 } } } },
 });
 
-async function openApp(engine, { width = 390, height = 844, guest = false } = {}) {
+// `wide`: every glyph in the dock drawn this much wider than this engine
+// draws it — a stand-in for Linux and Android, whose Inter and Anton are wider
+// than a Mac's (CI put the 320 pill at one disc where the Mac fit two,
+// 2026-09-26). now-jump's trick, aimed at the same dock.
+async function openApp(engine, { width = 390, height = 844, guest = false, wide = null } = {}) {
   const touch = width < 720;
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' });
   const doc = docFor();
   const posts = [];
+  if (wide) {
+    await ctx.addInitScript((w) => {
+      const css = `.dock .day-tab, .dock .now-tab .word { letter-spacing: ${w} !important; }
+        .dock .fest-name { letter-spacing: calc(.04em + ${w}) !important; }`;
+      const add = () => { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); };
+      if (document.head) add(); else document.addEventListener('DOMContentLoaded', add);
+    }, wide);
+  }
   await ctx.addInitScript(([t, o, f, g]) => {
+    // The worker is blocked here; the page's new-build check still asks it to update.
+    if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Menu Crew' }, { token: o, name: 'Other' }]));
     for (const x of [t, o]) { if (!g) localStorage.setItem(`fn_me_v3_${x}`, 'Ana'); localStorage.setItem(`fn_crew_fest_v3_${x}`, f); }
     for (const k of ['fn_welcome_v1', 'fn_welcome_joined_v1', 'fn_coach_v1', 'fn_errlog_off_v1']) localStorage.setItem(k, '1');
@@ -120,17 +134,72 @@ const menuState = (page, bar) => page.evaluate((b) => {
   };
 }, bar);
 
+// The pill's promise, read off the page — never a Mac's disc count (CI's
+// Linux draws Inter wider and fit one disc at 320 where the Mac fit two,
+// 2026-09-26). What must hold at any glyph width (app.js pillCap):
+//   a. the discs and the +n add up to the people highlighted, faces in the crew's order;
+//   b. the day you are in is whole in the day row;
+//   c. while NOW is live, NOW and the day it follows are whole too — wherever
+//      they could be beside the bare avatar (where they cannot, the pill is
+//      not what pushed them out);
+//   d. one to three discs.
+const pillRead = (page) => page.evaluate(() => {
+  const row = document.getElementById('dock-days');
+  const wrap = document.getElementById('dock-you-wrap');
+  const edges = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.right]; };
+  const tabs = [...row.children].filter((t) => !t.hidden);
+  const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
+  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
+  const now = nowAt >= 0 ? tabs[nowAt] : null;
+  const live = nowAt > 0 ? tabs[nowAt - 1] : null;
+  const span = (list) => (list.length ? Math.max(...list.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...list.map((t) => t.offsetLeft)) : 0);
+  const discs = [...wrap.querySelectorAll('.hl-pill .hl-faces .avatar')];
+  return {
+    slot: wrap.dataset.slot,
+    named: discs.filter((a) => a.dataset.name).map((a) => a.dataset.name),
+    count: discs.reduce((n, a) => n + (a.dataset.name ? 1 : Number(a.textContent.replace('+', ''))), 0),
+    discs: discs.length,
+    row: edges(row), active: active && edges(active), now: now && edges(now), live: live && edges(live),
+    room: row.clientWidth + wrap.getBoundingClientRect().width,
+    focus: span([active, now, live].filter(Boolean)),
+    activeW: active ? active.offsetWidth : 0,
+    pill: wrap.querySelector('.hl-pill').getBoundingClientRect().width,
+  };
+});
+const BARE = 26; // the avatar's width (v3.css .dock .you)
+function assertPillPromise(r, people, label) {
+  const whole = (x) => !!x && x[0] >= r.row[0] - 1 && x[1] <= r.row[1] + 1;
+  assert.equal(r.slot, 'pill', `${label}: the slot is the pill`);
+  assert.equal(r.count, people.length, `${label}: the discs and the +n add up to ${people.length} (${JSON.stringify(r)})`);
+  assert.deepEqual(r.named, people.slice(0, r.named.length), `${label}: the faces are the first of the highlighted, in the crew's order`);
+  assert.ok(r.discs >= 1 && r.discs <= 3, `${label}: one to three discs (${r.discs})`);
+  assert.ok(whole(r.active), `${label}: the day you are in is whole (${JSON.stringify(r)})`);
+  if (r.now && r.focus <= r.room - BARE) {
+    assert.ok(whole(r.now) && whole(r.live), `${label}: NOW and its day are whole (${JSON.stringify(r)})`);
+  }
+}
+// And it uses the room it has: one disc more would break the promise (the
+// refit's reason to exist; pillWidth is held to the drawn pill below).
+async function assertPillFull(r, people, label) {
+  const { pillWidth } = await import('../../js/v3/people-menu.js');
+  if (r.discs >= Math.min(3, people.length)) return;
+  const need = r.now && r.focus <= r.room - BARE ? r.focus : r.activeW;
+  assert.ok(pillWidth(r.discs + 1) + need > r.room, `${label}: ${r.discs} disc(s) where ${r.discs + 1} would fit (${JSON.stringify(r)})`);
+}
+
 const ENGINES = [
   ['Chromium 390 touch', () => chromium, 390],
   ['WebKit 390 touch', () => webkit, 390],
   ['Chromium 320 touch', () => chromium, 320],
+  // Linux / Android widths: the Mac draws Inter narrower than CI does.
+  ['Chromium 320 touch, wide glyphs', () => chromium, 320, '0.7px'],
   ['Chromium 1280 mouse', () => chromium, 1280],
 ];
-for (const [name, get, width] of ENGINES) {
+for (const [name, get, width, wide = null] of ENGINES) {
   const skip = get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER);
 
   test(`${name}: the avatar opens Highlight on Show's line; taps highlight live and keep it open; outside closes into the pill; the faces reopen, the avatar closes; the ✕ clears`, { skip }, async () => {
-    const { ctx, page, errors, posts, phone, bar, press, outside } = await openApp(get(), { width });
+    const { ctx, page, errors, posts, phone, bar, press, outside } = await openApp(get(), { width, wide });
     try {
       const w = wrapSel(bar);
       const len0 = (await menuState(page, bar)).len;
@@ -163,7 +232,9 @@ for (const [name, get, width] of ENGINES) {
       // Outside: the menu goes and the slot is the pill.
       await outside();
       s = await menuState(page, bar);
-      assert.deepEqual([s.open, s.slot, s.faces], [false, 'pill', ['Ben', 'Cy']], `outside closed it into the pill: ${JSON.stringify(s)}`);
+      assert.deepEqual([s.open, s.slot], [false, 'pill'], `outside closed it into the pill: ${JSON.stringify(s)}`);
+      if (phone) assertPillPromise(await pillRead(page), ['Ben', 'Cy'], `${width}${wide ? ' wide' : ''}`);
+      else assert.deepEqual(s.faces, ['Ben', 'Cy'], 'the rail has room for both faces');
       assert.ok(await page.locator(`${w} .hl-pill`).isVisible(), 'the pill is on screen');
       assert.equal(await page.locator(`#${bar}-you`).isVisible(), false, 'in the avatar’s place');
       // The faces reopen; the avatar closes.
@@ -293,32 +364,28 @@ test('Chromium 390: Back with the menu up does what Back always did — the crew
   } finally { await ctx.close(); }
 });
 
-test('Chromium 320, NOW live: four highlighted — the pill leaves the day you are in and NOW whole in the day row', { skip: chromium ? false : NO_BROWSER }, async () => {
-  const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320 });
-  try {
-    await press('#dock-you');
-    for (const n of ['Ben', 'Cy', 'Dot', 'Eli']) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
-    await outside();
-    await sleep(600); // the row comes to rest
-    const r = await page.evaluate(() => {
-      const box = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.right]; };
-      const row = document.getElementById('dock-days');
-      const active = row.querySelector('.day-tab.active');
-      const now = document.getElementById('dock-now');
-      return { row: box(row), active: active && box(active), day: active && active.dataset.day, now: now.hidden ? null : box(now), pill: box(document.querySelector('#dock-you-wrap .hl-pill')), discs: document.querySelectorAll('#dock-you-wrap .hl-faces .avatar').length, fest: box(document.getElementById('dock-fest-link')) };
-    });
-    assert.ok(r.now, 'NOW is live');
-    const inside = (x) => x[0] >= r.row[0] - 1 && x[1] <= r.row[1] + 1;
-    assert.ok(inside(r.active), `the day you are in, whole: ${JSON.stringify(r)}`);
-    assert.ok(inside(r.now), `NOW, whole: ${JSON.stringify(r)}`);
-    assert.ok(r.pill[1] <= r.row[0] && r.row[1] <= r.fest[0], `in a row, no overlap: ${JSON.stringify(r)}`);
-    assert.ok(r.discs < 3, `the pill gave the row its room (${r.discs} discs for four people)`);
-    // The pill is as wide as people-menu.js pillWidth says (the fit is computed from it).
-    const { pillWidth } = await import('../../js/v3/people-menu.js');
-    assert.ok(Math.abs((r.pill[1] - r.pill[0]) - pillWidth(r.discs)) < 1, `pillWidth(${r.discs}) matches the drawn pill (${r.pill[1] - r.pill[0]})`);
-    assert.deepEqual(errors, []);
-  } finally { await ctx.close(); }
-});
+for (const wide of [null, '0.7px']) {
+  test(`Chromium 320${wide ? ', wide glyphs' : ''}, NOW live: four highlighted — the pill keeps the day you are in and NOW whole, and is as wide as pillWidth says`, { skip: chromium ? false : NO_BROWSER }, async () => {
+    const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320, wide });
+    const four = ['Ben', 'Cy', 'Dot', 'Eli'];
+    try {
+      await press('#dock-you');
+      for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
+      await outside();
+      await sleep(600); // the row comes to rest
+      const r = await pillRead(page);
+      assert.ok(r.now, 'NOW is live');
+      assertPillPromise(r, four, `320${wide ? ' wide' : ''}`);
+      await assertPillFull(r, four, `320${wide ? ' wide' : ''}`);
+      const fest = await page.evaluate(() => document.getElementById('dock-fest-link').getBoundingClientRect().left);
+      assert.ok(r.row[1] <= fest + 0.5, `the day row stops before the fest name (${r.row[1]} / ${fest})`);
+      // The fit is computed from pillWidth: it must be the pill as drawn.
+      const { pillWidth } = await import('../../js/v3/people-menu.js');
+      assert.ok(Math.abs(r.pill - pillWidth(r.discs)) < 1, `pillWidth(${r.discs}) matches the drawn pill (${r.pill})`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
 
 test('the phone top has no people row and the search field starts on the gutter; the laptop keeps its row', { skip: chromium ? false : NO_BROWSER }, async () => {
   for (const width of [390, 1280]) {
@@ -408,25 +475,33 @@ test('Chromium 390: a tap on a row while its menu fades out does nothing — Hig
 });
 
 // The pill refits when the day row changes under it (Codex's review of
-// a1612a0): at 320 with NOW live four people fit two discs; when NOW leaves
-// (the festival over, the page shown again) the row has room for three.
-test('Chromium 320: the pill refits when NOW leaves the day row — two discs, then three', { skip: chromium ? false : NO_BROWSER }, async () => {
-  const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320 });
-  try {
-    await press('#dock-you');
-    for (const n of ['Ben', 'Cy', 'Dot', 'Eli']) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
-    await outside();
-    await sleep(500);
-    const discs = () => page.evaluate(() => document.querySelectorAll('#dock-you-wrap .hl-faces .avatar').length);
-    assert.equal(await discs(), 2, 'NOW live: two discs');
-    await page.clock.setFixedTime(new Date('2026-09-29T12:00:00-07:00')); // Tuesday: nothing live
-    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
-    await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
-    await sleep(600);
-    assert.equal(await discs(), 3, 'NOW gone: the row has room for three');
-    // index.html's new-build check asks reg.update() when the page is shown
-    // again, and with the worker blocked (this harness) there is no reg — a
-    // harness artifact, not this build's (PEOPLE-BUILD.md, follow-ups).
-    assert.deepEqual(errors.filter((e) => !/reading 'update'/.test(e)), []);
-  } finally { await ctx.close(); }
-});
+// a1612a0): at 320 with NOW live four people take fewer discs; when NOW
+// leaves (the festival over, the page shown again) the row has more room, and
+// the pill takes it — at the Mac's glyph widths and at Linux's.
+for (const wide of [null, '0.7px']) {
+  test(`Chromium 320${wide ? ', wide glyphs' : ''}: the pill refits when NOW leaves the day row — never fewer discs for more room, and all the room it has`, { skip: chromium ? false : NO_BROWSER }, async () => {
+    const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320, wide });
+    const four = ['Ben', 'Cy', 'Dot', 'Eli'];
+    const label = (w) => `${w}${wide ? ' (wide)' : ''}`;
+    try {
+      await press('#dock-you');
+      for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
+      await outside();
+      await sleep(500);
+      const live = await pillRead(page);
+      assert.ok(live.now, 'NOW is live');
+      assertPillPromise(live, four, label('NOW live'));
+      await assertPillFull(live, four, label('NOW live'));
+      await page.clock.setFixedTime(new Date('2026-09-29T12:00:00-07:00')); // Tuesday: nothing live
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
+      await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
+      await sleep(600);
+      const gone = await pillRead(page);
+      assert.equal(gone.now, null, 'NOW has left the row');
+      assertPillPromise(gone, four, label('NOW gone'));
+      assert.ok(gone.discs >= live.discs, `more room never yields fewer discs (${live.discs} → ${gone.discs})`);
+      await assertPillFull(gone, four, label('NOW gone'));
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

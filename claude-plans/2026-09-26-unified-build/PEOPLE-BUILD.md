@@ -29,6 +29,19 @@ This file is the record if the build dies: read "Where it stands" first.
       `sheet-1280b.png`, `sheet-edges.png`, `sheet-flows.png`; slow motion: `slow-*-390.png`,
       `slow-*-320.png`.
 
+## CI's Linux fonts (2026-09-26, after the handback)
+
+CI's browser job went red on `f9dca00` / `c99a2ae`: two Chromium-320 cases asserted the Mac's disc
+counts, and Linux draws Inter wider, so at 320 the pill fit ONE disc (the bare count "2") where the Mac
+fit two — the app doing exactly what call 13 says. Reproduced here first with the dock's glyphs 0.7px
+wider (now-jump's trick; red with the same `faces: ["2"]` CI printed). The 320 cases now assert the
+rule, not a count, at the Mac's widths and at Linux's: the discs and +n add up to the people
+highlighted, faces first in the crew's order; the day you are in is whole; NOW and its day are whole
+wherever they could be beside the bare avatar; one to three discs; the pill as wide as `pillWidth`
+says; more room never yields fewer discs; and the pill takes the room it has (one more disc would break
+the promise). Both the refit and the cap still fail their tests when removed. The harness now stubs the
+worker's `register()` as now-jump does, so the page's update check no longer throws there.
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line
@@ -47,8 +60,8 @@ This file is the record if the build dies: read "Where it stands" first.
 ## Follow-ups (not blocking)
 
 1. index.html's new-build check calls `reg.update()` on every page show; with the worker blocked (the
-   browser harnesses) there is no `reg`, and it throws. Harness-only, but a `reg &&` would make every
-   test that shows the page again quieter.
+   browser harnesses) there is no `reg`, and it throws. Harness-only (people-menu's browser test now
+   stubs `register()` as now-jump does); a `reg &&` would quiet every other harness too.
 2. How it works: Kevin's row "Tap their name. Switch who you pick as in Settings." is still true but no
    longer where a phone looks first — suggest "Tap your avatar, then their name." (his words to change).
 3. A real-iPhone check of the empty-space tap (call 14): WebKit in Playwright reproduces the missing
