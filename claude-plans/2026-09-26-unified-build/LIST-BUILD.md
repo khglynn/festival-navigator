@@ -23,6 +23,27 @@ are the handoff.*
 - [x] F. MODEL-V4 §3.1 "Since Phase 1" and row 7's picture — `41bb914`. CLAUDE.md NOT edited
       (the harness's instruction file; wording proposed below for the coordinator/Kevin).
 
+## Review round (Sol, and the Our plan session) — `8da4631`, then `origin/main` (v96) merged — `10483f0`
+
+1. **A ring never changes with the view.** The List read every room through
+   `timeBandsOf`, where a printed end wins; the Board's stacks let the next act's
+   start win — so two back-to-back afters with overlapping printed ends rang one at
+   a time on the Board and together in the List. `timeBandsOf` now takes
+   `window: 'stack' | 'printed'`: a declared by-time section keeps 'printed' (as on
+   the Board), every other room gets 'stack', and the festival room's entries bring
+   their own `win` (the grid cell's; for its extras, the window the Board's
+   `venueGroupsOf` gives them). Pinned in `tests/list-view.test.mjs`: a synthetic
+   stacked room with overlapping ends rings the same at 11:30 PM and 12:30 AM in
+   both views (red under the old rule), and every card of Portola and ACL carries
+   the same window in both (today's files have no overlapping afters, which is why
+   the synthetic case matters).
+2. **No line clamp on a row's name** (call 4 said never cut short; the first cut
+   clamped at two). A long party name with people beside it takes three lines at
+   320 and only its row grows — frame `p-long-name-320`; a CSS guard test.
+3. Merged `origin/main` at `dc31b7b` (v96, with `ccde52a` and `e4cba91`): no
+   conflicts. Node suite at UTC, Tokyo and the night clock: 1114 pass, the stamp
+   the one fail (not stamped, by instruction). `npm run test:browser`: 236 / 236.
+
 ## Results (merged head, 2026-09-26 ~5 AM PT)
 
 - `npm test` at UTC, `TZ=Asia/Tokyo` and the night clock (`NIGHT_CLOCK=2026-09-27T04:30:00Z`):
