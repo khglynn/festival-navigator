@@ -16,14 +16,13 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 9:40 AM): gated at 23bbcf2 with `live/people` 58e75fe
-  and main's #56 merged in, the menu's "Our plan ›" row filled (unit
-  1203/1205 at three clocks, browser 288/289, Codex clean after the data
-  re-pin's three fixes and a load-proof flick test); head sent to the
-  coordinator for the combined preview.
-  Held off production until Kevin answers "when should it reach friends?"
-  (recommended: ACL) — and a new call: a Late night during festival hours
-  sends the route across town and back (model log, open question 7).
+  `OUR-PLAN-BUILD.md`; 10:30 AM): last gated at 23bbcf2. Kevin answered the
+  review page: ship as soon as the gate is clean, even Sunday, after the
+  people menu. Building his round now: the route never goes back to a site
+  it left (hidden rooms included), the Show menu's filters reach NOW and the
+  plan, floating cards like the welcome sit where the NOW card sits, and big
+  titles mean "most of us" only. Then the full gate, Codex, a walker, and
+  the head goes to the coordinator; merge `live/people` again when told.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
