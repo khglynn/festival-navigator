@@ -298,7 +298,30 @@ test('a fallback close is a guess: it draws a concert\'s window but pulls no sta
   // set ends by it, so the bill tightens.
   const known = planRun({ night: 'Sat', doors: '9 PM', members, profile: hall({ close: { default: '12 AM' } }) });
   assert.deepEqual(known.times.map((t) => t.time), ['9:30 PM', '10 PM', '10:30 PM']);
-  // And a fallback never lets the closer start inside the window's last half hour.
-  const late = planRun({ night: 'Sat', doors: '10 PM', members: [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }, { name: 'c', seq: 3 }, { name: 'd', seq: 4 }], profile: hall() });
-  assert.ok(late.times.at(-1).min <= 24 * 60 - 30, 'the closer starts by 11:30 PM under a 12 AM fallback');
+  // A bill that runs past the fallback is laid exactly as if the fallback were
+  // not there — first act at doors + gap, a support slot apiece — and the
+  // fallback, wrong for this night, is not written: no close at all rather
+  // than a window that cuts the closer off. (Review of 09d0bbe: the fallback
+  // was still pulling this bill to 10 PM, 10:30, 11 and 11:30.)
+  const four = [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }, { name: 'c', seq: 3 }, { name: 'd', seq: 4 }];
+  const late = planRun({ night: 'Sat', doors: '10 PM', members: four, profile: hall() });
+  const unbounded = planRun({ night: 'Sat', doors: '10 PM', members: four, profile: { ...hall(), kind: 'outdoor', supportSetMin: 45 } });
+  assert.deepEqual(late.times.map((t) => t.time), ['11 PM', '11:45 PM', '12:30 AM', '1:15 AM']);
+  assert.deepEqual(late.times.map((t) => t.time), unbounded.times.map((t) => t.time), 'the same bill a room with no close at all gets');
+  assert.deepEqual([late.close, late.closeApprox, late.closeSource], [null, false, null]);
+});
+
+test('a guessed close the plan no longer has is taken off the room; a printed one is never touched', () => {
+  const four = (extra) => ['a', 'b', 'c', 'd'].map((name, i) => dated(name, '2026-10-03', 'Hall', { doors: '10 PM', order: { seq: i + 1, of: 4, source: SRC, confirmed: false }, ...extra }));
+  // Written by the old rule: the hall fallback squeezed into the window.
+  const f = lateFest(...four({ close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)' }));
+  const reg = { venues: { Hall: hall() } };
+  applyPlans(planFestival(f, reg));
+  assert.ok(f.artists.every((a) => a.close === undefined && a.closeApprox === undefined && a.closeSource === undefined));
+  assert.deepEqual(f.artists.map((a) => a.time), ['11 PM', '11:45 PM', '12:30 AM', '1:15 AM']);
+  assert.equal(applyPlans(planFestival(f, reg)), 0, 're-runs to the same bytes');
+  // A close a page printed is the venue's word: it caps, and it stays.
+  const g = lateFest(...four({ close: '2 AM' }));
+  applyPlans(planFestival(g, reg));
+  assert.ok(g.artists.every((a) => a.close === '2 AM' && a.closeApprox === undefined));
 });

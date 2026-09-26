@@ -557,3 +557,36 @@ name + date + venue and let `time` go (a guessed time is designed to move).
 3. `befa69a` — data: registry corrections with sources; posted Show times;
    Stubb's/Scoot curfews and after-show closes; tool-written guesses.
 4. `d7f4748` — tests: the five as-shipped expectations; this log.
+
+---
+
+# Round three (2026-09-26) — the review of 09d0bbe
+
+The coordinator took round two to PR #56, dropped the Regency pin (942df00,
+Portola's Regency rooms now concerts: tonight's Parcels ~10 PM) and merged
+main (09d0bbe). A Sol 6 review found no blocker and three accuracy issues.
+Baseline before this round: `guess-run-times.mjs` on acl-2026 and
+portola-2026 both propose 0 changes (each file is what the tool writes).
+
+## Issue 2 — a fallback close was still scheduling concerts (script)
+
+The review was right. The concert branch capped the closer at "fallback − 30
+min" and laid the openers back from it, so with 10 PM doors, four acts and
+the hall's guessed midnight the bill came out 10 / 10:30 / 11 / 11:30 PM, and
+my own test asserted that. That contradicted the rule it was meant to
+express.
+
+Now only a KNOWN close (printed, evidenced for the night, or the venue's
+registry hours) caps a concert. The kind's fallback moves nobody: the bill is
+laid as if it were not there (11 PM / 11:45 / 12:30 AM / 1:15 AM, the same
+bill a room with no close gets). When that bill's closer would have under
+half an hour inside the fallback window, the fallback is wrong for this night
+and no close is written. `applyPlans` now takes a guessed close off the room
+when the plan has none, so a re-run reproduces the file; a printed or
+evidenced close never takes that path.
+
+Tests: the flagged test now asserts the right behaviour (the four-act bill,
+identical to a closeless room's, and no close written); a new one checks
+that a stale guessed close is removed, the re-run is byte-stable, and a
+printed close is never touched. Moves: none. Both shipped files still
+propose 0 changes, because no real room had its fallback binding.

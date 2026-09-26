@@ -41,7 +41,8 @@
 //     never a target — when it binds, the headliner still plays a full set
 //     and the openers move earlier to fit, never before doors. Only the
 //     venue's word caps (printed, evidenced, its routine hours): the kind's
-//     fallback close is a guess that draws the window and schedules nobody.
+//     fallback close is a guess that draws the window and schedules nobody —
+//     a bill that runs past it gets no close rather than a cut-off window.
 //     A 7 PM-doors
 //     show does not run to midnight: laid back from a 2 AM close, Palace got
 //     12:30 AM behind 7 PM doors (ACL, 2026-09-26).
@@ -147,13 +148,16 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     // first act's start) or doors + gap; each act after it by the support
     // slot; the close caps the headliner — who still plays a full set, the
     // openers moving earlier to fit, never before doors.
-    // A known close is a curfew the headliner's full set ends by; the kind's
-    // fallback is itself a guess, so it only keeps the closer inside the
-    // window it draws (a 9:30 PM-doors DJ night is not three half-hour sets
-    // because a hall "usually" shuts at midnight).
+    // Only a KNOWN close is a curfew the headliner's full set ends by. The
+    // kind's fallback is itself a guess and moves nobody: the bill is laid
+    // as if it were not there, and when that bill runs past it the fallback
+    // is simply wrong for this night and no close is written (below). (A
+    // 9:30 PM-doors DJ night is not three half-hour sets because a hall
+    // "usually" shuts at midnight; review of 09d0bbe caught the fallback
+    // still pulling a 10 PM-doors, four-act bill to 10 PM.)
     const first = fixed[0] !== null ? fixed[0] : D + gap;
     let last = first + S * (n - 1);
-    if (Number.isFinite(C)) last = Math.min(last, known ? C - H : C - MIN_SET);
+    if (Number.isFinite(C) && known) last = Math.min(last, C - H);
     const open = fixed[0] !== null ? fixed[0] : Math.max(D, Math.min(first, last - S * (n - 1)));
     last = Math.max(last, open + (n - 1) * MIN_SET);
     starts = n === 1 ? [open] : members.map((_, i) => open + ((last - open) * i) / (n - 1));
@@ -202,6 +206,12 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
       }
     }
     rounded.push(m);
+  }
+  // A concert's fallback close only draws a window around the bill; a bill
+  // whose closer would get less than half an hour inside it gets no close
+  // at all rather than a window that cuts it off.
+  if (shape === 'concert' && !known && Number.isFinite(C) && rounded[n - 1] + MIN_SET > C) {
+    outClose = null; outApprox = false; outSource = null;
   }
   const times = members.map((mem, i) => {
     const time = mem.posted ? mem.time : clockOf(rounded[i]);
@@ -284,6 +294,10 @@ export function applyPlans(plans) {
         if (m.close !== plan.close || (m.closeApprox === true) !== plan.closeApprox) changed += 1;
         m.close = plan.close;
         if (plan.closeApprox) { m.closeApprox = true; m.closeSource = plan.closeSource; } else { delete m.closeApprox; delete m.closeSource; }
+      } else if (m.closeApprox === true) {
+        // No close this time: a close we guessed before goes (a printed or
+        // evidenced one never reaches here — the plan keeps those).
+        delete m.close; delete m.closeApprox; delete m.closeSource; changed += 1;
       }
     }
   }
