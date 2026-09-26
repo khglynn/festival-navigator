@@ -583,7 +583,7 @@ test('the people filter dims in a stack and in a billed list — every card stay
   assert.deepEqual(cards.filter((c) => !c.classList.contains('dim')).map((c) => c.dataset.artist), ['Channel Tres'],
     'what Nhu picked is lit; everything else is dimmed, not gone');
   const folsom = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom');
-  assert.ok(folsom.querySelector('.venue-grid'), 'a room nobody picked in keeps its stacks');
+  assert.ok(folsom.querySelector('.venue-grid, .time-list'), 'a room nobody picked in keeps its stacks (or its time list, v94)');
   assert.ok([...folsom.querySelectorAll('.card')].every((c) => c.classList.contains('dim')));
   assert.equal(root.querySelector('.section-empty'), null, 'no "No picks here" block anywhere');
   // A billed list (a lineup day's card grid) is the same rule.
