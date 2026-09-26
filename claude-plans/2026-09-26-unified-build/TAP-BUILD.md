@@ -312,4 +312,9 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   Gate on 9b865e6: `npm test` 1145/1146 at all three clocks (1 skip), `test:browser` 279/279,
   validate-festivals 0 errors. One Chromium keys-up case failed once in a full-file local run and not in
   2 full-file reruns or 6 parallel runs (typing into the composer); watching it on CI.
+  CI: 9b865e6 green on both jobs. f9726bc (the log) red once on v97's list-view "menu bar" case in Linux
+  WebKit: the glyph read its closed grey 450ms after the tap — the same class as this morning's (a fixed
+  sleep outrun by a loaded runner; the .12s colour transition had not started). That case now waits for
+  the menu to be open and its transitions to run out before reading. Not the hand: the menu door's click
+  never asks clickHand, and the change there only writes data-hand-by on the page.
 

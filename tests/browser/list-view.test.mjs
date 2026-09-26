@@ -120,6 +120,11 @@ for (const [name, get, width] of ENGINES) {
       assert.notEqual(closed, await brandRgb(page), 'grey while closed');
       await press(page, phone, door);
       await sleep(450);
+      // Read the colour once the menu is open and its .12s colour transition
+      // has run: Linux WebKit on a loaded CI runner read the closed grey after
+      // this same 450ms (run 36253819310, 2026-09-26).
+      await page.waitForFunction((d) => document.querySelector(d).getAttribute('aria-expanded') === 'true', door, { timeout: 4000 });
+      await motionDone(page, { within: wrap }); // the door and its menu
       assert.equal(await rgb(page, `${door} .menu-glyph`), await brandRgb(page), 'brand while the menu is open');
       assert.notEqual(await rgb(page, `${door} .menu-glyph`), await festRgb(page), 'never the festival accent');
       const row = await page.evaluate((w) => {
