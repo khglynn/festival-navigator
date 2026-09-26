@@ -30,6 +30,33 @@ export function gearIcon(size = 12) {
   return svg;
 }
 
+// The menu bar's line glyphs (Phase 1, 2026-09-26 — Kevin: "an icon to the
+// right of fest name that's a 3 line hamburger menu icon … a clear 'this
+// opens a menu' affordance", and "I like the icon ones" for Board · List).
+// One family: a 12-unit box, strokes at 1.4 with round caps, currentColor
+// (each place's stylesheet colours it) — the gear's own manner, drawn in
+// lines. MENU is also written into index.html's two fest links (the static
+// shell paints before any module runs); a test holds the two the same.
+export const GLYPHS = {
+  menu: 'M1.5 2.75h9M1.5 6h9M1.5 9.25h9',
+  board: 'M1.5 1.5v9M6 1.5v5M10.5 1.5v7', // stage columns, of different lengths
+  list: 'M1.5 2.5h9M1.5 6h9M1.5 9.5h9', // rows
+};
+export function lineGlyph(kind, size = 12, className = 'glyph') {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 12 12');
+  svg.setAttribute('width', String(size)); svg.setAttribute('height', String(size));
+  svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.4'); svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', GLYPHS[kind]);
+  svg.appendChild(path);
+  return svg;
+}
+
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
   if (css) n.style.cssText = css;

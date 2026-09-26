@@ -13,7 +13,7 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, gearIcon } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, gearIcon, lineGlyph } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
@@ -355,7 +355,8 @@ function openAddFestival(actions) {
 
 // ---- HOW IT WORKS (21i) -------------------------------------------------------------
 // The dock's fest link, the way the person reading this sees it — the WHOLE
-// component (`.fest-link`: the name in Anton, and the sync dot beside it), not
+// component (`.fest-link`: the sync dot, the name in Anton, the menu's three
+// lines — the menu bar, Phase 1), not
 // a redrawing of part of it. It was the name alone in one row and the
 // name-plus-dot in another, five rows apart and in two different faces
 // (Kevin, 2026-09-17); one row, one component, both facts. The label is the
@@ -376,12 +377,10 @@ function festLinkDemo() {
   link.style.setProperty('--fest', 'var(--brand)');
   const n = el('span', 'font-size: 11px;', "ACL '26");
   n.className = 'fest-name';
-  // The caret the real one wears while it opens a menu (v93).
-  const caret = el('span');
-  caret.className = 'menu-caret';
   const dot = el('span');
   dot.className = 'sync-dot';
-  link.append(n, caret, dot);
+  // The three lines the real one wears while it opens a menu (Phase 1).
+  link.append(dot, n, lineGlyph('menu', 12, 'menu-glyph'));
   return link;
 }
 
@@ -473,7 +472,7 @@ function openHowItWorks(actions) {
   }, '~ a guessed start time and artist order.', 'Based on limited intel.'));
 
   // 7-9. The dock: the fest link (the show menu, MODEL-V4 §3.1 — the real
-  // component, caret and dot), then the dot's own row (v93, Kevin: every row
+  // component: the dot, the name, the menu's three lines), then the dot's own row (v93, Kevin: every row
   // leads with the feature, and the dot's colours are a fact of their own, so
   // they no longer ride on the menu's row — drawn as the real dot, in its
   // three states), and the gear.

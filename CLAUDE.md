@@ -158,6 +158,27 @@ Non-inferable facts only (the code answers everything else — read it).
   try. The suite carries receiver-strict and throwing-getter stubs now, but
   the defence with teeth is a real-browser walk (a Sonnet teammate, real
   pointer input, never `element.click()`) before any promote.
+- **Browser tests have two input traps that pass on a Mac and fail on CI**
+  (both 2026-09-26): under `page.clock` the long-press timer runs late on a
+  big wall, so hold until the zoom stands, as `holdOpen` in
+  `tests/browser/zoom-chips-contract.test.mjs` does (newer tests had copied
+  a fixed 650 ms hold from older ones instead); and a CDP touch flick leaves a
+  fling, so a quick tap after it only stops the coast (Chromium on Linux
+  drops that click). End the drag with the finger still, as
+  `tests/browser/guest-tap-route.test.mjs` does. To chase a CI-only flake,
+  log every input in a copy of the test, throttle the CPU (CDP
+  `Emulation.setCPUThrottlingRate`) and bisect across builds on a quiet
+  machine; another agent's browser run alongside gave false results.
+- **Browser history is shared state the app cannot fully own** (2026-09-26).
+  Entries older builds wrote live on friends' phones, two visits to one URL
+  are two real places, a native link bypasses the router, and "skip the
+  dead entry" can step out of the app. So a menu or popover takes no entry
+  of its own: the Show menu has none, and v93 spent four review rounds on
+  Back bugs giving it one before cutting it. Layers Back must close
+  (Settings and its drills, the note sheets) ride one designed model,
+  `js/v3/router.js`, and the join shelf keeps its own entry; anything new
+  that Back must close joins the router with those four cases as its
+  tests, not a patch mid-release.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies images
@@ -272,6 +293,18 @@ Non-inferable facts only (the code answers everything else — read it).
   saying its own place; the same card, the same now window except that a
   party's printed end wins, the same doors. On a phone it keeps the shell's
   two columns and never scrolls sideways (a time list is read across).
+- **The List is a VIEW the reader picks, not a presentation the data picks**
+  (Phase 1 of the unified build, 2026-09-26): the Show menu's Board · List
+  row, per phone per festival (`fn_view_v1_<fid>`), `&view=list` in a share
+  link, never in the crew doc. In the List every room is a time list of rows
+  (`.card.row` — the same card on a grid; `--list-w`, the 560px reading
+  column from 720 up): the grid and afters on hours, a declared by-time
+  section on its own ladder, and a ring never changes with the view (stacked
+  rooms keep the Board's next-start rule). **What is over folds**
+  (`js/v3/wall.js` pastOf / foldPast): over = the ring can never light again,
+  judged at a held clock (`ctx.pastAt`: boot, resume, the festival day
+  turning — never the tick), folded cards are not in the DOM, and a reveal is
+  page memory only.
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
   time** (the model doc is
   `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is

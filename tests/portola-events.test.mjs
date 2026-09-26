@@ -359,6 +359,10 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
   renderWall(root, {
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
+    // The week's shape, not the hour: a week before Portola, whenever this
+    // runs — on a festival day the days that are over wait behind one line
+    // (the past, Phase 1), and this is about all four.
+    now: new Date('2026-09-19T12:00:00-07:00'),
   });
   // The days are THU FRI SAT SUN, and the run renders as one stack under its
   // venue on Sunday. Data-driven on purpose — the order, the times and which

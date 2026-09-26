@@ -339,6 +339,15 @@ html { touch-action: manipulation; }
  * lines up with the rooms' names above it. */
 .sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
 .sort-pop .settings .gear { display: block; }
+/* The view row (Phase 1): Board · List, one row between the rooms and
+ * Settings — the rooms above it are WHAT is on the wall, this row is HOW it
+ * is laid out. Two bare glyph-and-word choices (Kevin: "I like the icon
+ * ones"; no pill, no track), starting in the check column so the words line
+ * up with the rooms'. The chosen one wears brand, as a checked room does. */
+.sort-pop .view-row { display: flex; align-items: center; gap: 2px; }
+.sort-pop .view-row [role="option"] { flex: 1 1 0; width: auto; min-width: 0; color: var(--text-secondary); }
+.sort-pop .view-row [role="option"][aria-selected="true"] { color: rgb(var(--brand)); }
+.sort-pop .view-row .glyph { flex: none; display: block; }
 /* The dock is fixed to the bottom of the phone, so a popover it carries opens
  * UPWARD — downward is off the screen. The rail's is at the top of the page
  * and keeps the default. One rule, on the one bottom-anchored wrap. The
@@ -527,14 +536,20 @@ button.room-head { cursor: pointer; }
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--dock); border-top: 1px solid var(--hairline);
-  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
-  /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
-   * and the row's two gaps give exactly that back — so the D1 frames hold
-   * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
-   * at the edge), and ACL's long name still leaves the day you are in whole
-   * at 320 where Linux and Android draw Inter wide. The row's edge fades
-   * keep the air the eye reads between the parts. */
-  display: flex; align-items: center; gap: 10px;
+  /* The sides are the wall's own gutter (--sp-gutter, 14px on every phone),
+   * not 16: the dock's avatar and fest name now line up with the room heads'
+   * and the cards' edges above them, and the 4px it returns go to the day row
+   * — the menu bar's three lines cost it about 11px (Phase 1, 2026-09-26). */
+  padding: 9px var(--sp-gutter) calc(9px + env(safe-area-inset-bottom));
+  /* 9px between the avatar, the day row and the fest link: the fest link's
+   * menu glyph (the three lines) costs the day row about 11px, and the
+   * dock gives it back — the gutter above returns 4, the fest link's own
+   * gap 2, these two gaps 2 (v93 had already taken them from 14 to 10) — so
+   * the day-row frames hold (390 FRI SAT NOW SUN, 320 SAT NOW) and ACL's
+   * long name still leaves the day you are in whole at 320 with Linux-wide
+   * glyphs (tests/browser/now-jump.test.mjs). The row's edge fades keep the
+   * air the eye reads between the parts. */
+  display: flex; align-items: center; gap: 9px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
 
@@ -697,24 +712,27 @@ button.room-head { cursor: pointer; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 /* Shared between dock and day rail (one component, two positions). */
-.fest-link { display: inline-flex; align-items: center; gap: 6px; background: none;
+.fest-link { display: inline-flex; align-items: center; gap: 5px; background: none;
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
-/* A button that opens a menu says so, quietly (v93, Kevin): a small caret
- * right after its words, pointing the way the menu opens — up from the dock,
- * down from the rail (`.down`). ONE class for every such button: the fest
- * name now, the avatar's Highlight menu next. It is part of the button (no
- * hit target of its own), in the secondary grey, drawn to the height of the
- * name's capitals, and only there while the button really opens a menu — a
- * one-room fest's name goes straight to Settings, and says nothing. Its
- * negative margins keep it close to the words it belongs to, and cost the day
- * row beside it as little room as they can. */
-.menu-caret { display: inline-block; flex: none; width: 5px; height: 5px; margin: 0 -1px 0 -3px;
-              border: solid var(--text-secondary); border-width: 1.5px 0 0 1.5px;
-              transform: translateY(1.5px) rotate(45deg); }
-.menu-caret.down { transform: translateY(-1.5px) rotate(225deg); }
-button:not([aria-haspopup]) > .menu-caret { display: none; }
+/* The menu bar (Phase 1, 2026-09-26 — Kevin: "an icon to the right of fest
+ * name that's a 3 line hamburger menu icon and then move the dot to the left.
+ * That's a clear 'this opens a menu' affordance"). The fest link reads
+ * `● PORTOLA '26 ☰`: the sync dot leads (the app's state, read first) and the
+ * three lines close it as the thing that opens. They replace v93's caret.
+ * Drawn in the Board · List glyphs' family (tools.js GLYPHS: a 12-unit box,
+ * 1.4 strokes, round caps) at 13px, in the body colour at .72 — a touch
+ * brighter than the old caret so it reads as a control (Kevin kept the grey
+ * as drawn). While the menu is open they turn `--brand`, the menu's own
+ * "chosen" colour — never `--fest`: the name keeps the accent, the glyph is
+ * chrome. Part of the button (no hit target of its own), and only there while
+ * the button really opens a menu — a fest with nothing to choose goes straight
+ * to Settings and says nothing. */
+.fest-link .menu-glyph { flex: none; display: block; color: var(--text-body); opacity: .72;
+                         margin-left: -1px; transition: color .12s ease, opacity .12s ease; }
+.fest-link[aria-expanded="true"] .menu-glyph { color: rgb(var(--brand)); opacity: 1; }
+button:not([aria-haspopup]) > .menu-glyph { display: none; }
 .you-avatar { border: 1.5px solid #fff; background: none; cursor: pointer; padding: 0; }
 /* A guest's "you" (v92): the avatar's place, empty and asking — a dashed
  * ring and a +, in brand (it is about a person, never the festival). It is
@@ -1396,6 +1414,99 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .time-list[data-clock] { padding-inline-start: var(--hour-rail-w); }
   .time-list[data-clock] .band-grid { column-gap: var(--clock-gap); }
 }
+
+/* ---- THE LIST (Phase 1, 2026-09-26) --------------------------------------------
+ * The show menu's Board · List row: in the List every room is a time list of
+ * ROWS (wall.js timeGroups `row`) — one card to a row, the full width of the
+ * column, and one reading flow: every word hangs from the card's left edge
+ * (the name, then "time · PLACE" on one line under it) and the people sit on
+ * its right edge, your meter and then the crew's marks — the corners' own
+ * order, placed as one cluster. Every name down the page starts at the same
+ * x, which is what reads as easy scrolling (Kevin, round five riff: "text
+ * left and right justified the same"). It is still the card: aura, grain,
+ * border, NOW ring, zoom, the − · note · + row — the same DOM, laid out on a
+ * grid instead of centred. The corners stay the card's own children (the fit
+ * and the level motion find them there); they are in the flow here instead of
+ * pinned to the bottom edge, so they can never collide and the fit never has
+ * anything to give way. */
+#wall-root[data-view="list"] { width: 100%; max-width: var(--list-w); margin-inline: auto; }
+.time-list.rows { gap: 0; }
+.time-list.rows .time-band { gap: 0; }
+/* The bands' rhythm: a quiet head sitting on its hairline, and the rows right
+ * under it — an hour reads as one block. The first band tucks up under the
+ * room head (two tall boxes in a row read as a gap). */
+.time-list.rows .band-head { min-height: 30px; align-items: flex-end; padding-bottom: 7px; box-sizing: border-box; }
+@media (pointer: coarse) { .time-list.rows .band-head { min-height: 38px; } }
+.time-list.rows .band-head .line { margin-bottom: 4.5px; }
+.room > .time-list.rows > .time-band:first-of-type { margin-top: -8px; }
+.time-list.rows .band-grid { grid-template-columns: minmax(0, 1fr); gap: var(--col-gap); }
+/* The row. Every row is one height — the name's line and the meta line — so
+ * a list you scroll keeps an even beat; a card with no time yet still takes
+ * the height (min-height from the same two type tokens) and centres its
+ * name. A name is never cut short: a long one takes the lines it needs —
+ * two, or three with the people beside it at 320 — and only that row grows.
+ * No line clamp (the first cut clamped at two, which cut a party's name in
+ * half the moment enough people picked it; review, 2026-09-26). */
+.card.row {
+  display: grid; padding: 10px 12px 10px 14px; text-align: left;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "name name about who" "time place about who";
+  row-gap: 3px; align-items: center; justify-items: start; align-content: center;
+  min-height: calc(1.2 * var(--fs-card) + 3px + 1.25 * var(--fs-micro));
+}
+.card.row .name { grid-area: name; display: block; font-size: var(--fs-card); line-height: 1.2; max-width: 100%;
+                  min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.card.row .time { grid-area: time; font-size: var(--fs-micro); font-weight: 600; line-height: 1.25; white-space: nowrap; }
+.card.row .place { grid-area: place; justify-self: stretch; align-self: auto; min-width: 0; text-align: left;
+                   font-size: var(--fs-micro); font-weight: 600; line-height: 1.25;
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.row .place .phrase { display: inline; max-width: none; overflow: visible; }
+/* "3:30 – 4:30 PM · CRANE": the dot rides the place, and only after a time. */
+.card.row .time ~ .place::before { content: '·'; display: inline-block; width: 14px; text-align: center; }
+/* A Portola stage is a room inside Pier 80, and says so in small tracked
+ * capitals — the room head's register, never a colour (the accent has four
+ * homes, and a card is not one of them). A section's venue is somewhere in
+ * the city and stays in normal case ("SVN West"). */
+.room[data-room=":fest"] .card.row .place .phrase { text-transform: uppercase; letter-spacing: .1em; font-size: 9px; font-weight: 700; }
+/* The people: one cluster on the right edge, centred on the row. Relative,
+ * not static, so a cancelled card's scrim still sits under the marks (z-index
+ * 1) — and `inset: auto`, because a relative box still honours the pinned
+ * corners' left/right/bottom: they shifted the two clusters into each other,
+ * and the fit's read-back (wall.js cornersClear) took the overlap for a crowd
+ * and gave every mark away. */
+.card.row .corner-about { grid-area: about; position: relative; inset: auto; margin-left: 12px; }
+.card.row .corner-who { grid-area: who; position: relative; inset: auto; margin-left: 6px; }
+
+/* THE PAST (Phase 1, wall.js foldPast): folded by default behind one quiet
+ * line — the app's section micro-label, a caret, the band heads' hairline —
+ * that reads "EARLIER · 7 SETS ⌄" and, tapped, flips in the same spot to
+ * "HIDE EARLIER ⌃". A bare button (the 44px floor comes with it), no chip.
+ * In a List room it heads the time list; whole days over leave one at the
+ * top of the wall. It keeps its whole 44px and OVERLAPS NOTHING: the riff's
+ * prototype pulled the band head up over the line's lower half, and a real
+ * finger on the line's middle hit the band head instead (the frames rig,
+ * 2026-09-26 — `element.click()` never notices). So the line abuts the room
+ * above it (the room's own 9px, given back) and the first band head under it
+ * gives up its empty top instead, which lands the words where the riff's
+ * frames drew them (Kevin approved those) to within a few pixels. */
+.past-line { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 44px; padding: 0; margin: -9px 0 0;
+             background: none; border: 0; cursor: pointer; font-family: var(--font-ui); text-align: left;
+             color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label);
+             text-transform: uppercase; line-height: 1; -webkit-tap-highlight-color: transparent; }
+.past-caret { flex: none; width: 5px; height: 5px; margin: 0 1px; border: solid var(--text-tertiary);
+              border-width: 1.5px 0 0 1.5px; transform: translateY(-1.5px) rotate(225deg); transition: transform .12s ease; }
+.past-line[aria-expanded="true"] .past-caret { transform: translateY(1.5px) rotate(45deg); }
+.past-rule { flex: 1 1 0; min-width: 0; height: 1px; margin-left: 3px;
+             background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+@media (hover: hover) { .past-line:hover { color: var(--text-body); } }
+.past-line:active { opacity: .6; }
+/* (Out-ranks the first band's tuck under the room head: that -8px pulled the
+ * band up over the line's bottom edge, and a tap there hit the band head.) */
+.room > .time-list.rows.has-past > .time-band:first-of-type { margin-top: 0; }
+.time-list.rows > .past-line + .time-band > .band-head { min-height: 20px; }
+/* The days line at the top of the wall abuts the first day's head (a note
+ * door): the wall's 13px gap is given back, never more. */
+#wall-root > .past-line { margin: -10px 0 -13px; }
 
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
  * one piece — the venue's window, then the order as a door to the poster. */
