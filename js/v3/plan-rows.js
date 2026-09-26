@@ -277,6 +277,87 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
   return list;
 }
 
+// ---- the day as words (the Share, 2026-09-26) --------------------------------------
+// What the open plan's Share hands the share sheet (plan-shelf.js), in Kevin's
+// shape (his comment on the design round's review page):
+//
+//   Our crew's main picks for Sat Portola, now till end of day
+//
+//   Pier Stage for Dog Blood @ now till 10:15pm
+//   Ship Tent for Jamie xx @ 10:30pm
+//
+//   Full rundown: https://fest.kevinhg.com/f/portola-2026#g=…&plan=open
+//
+// At most five: "our top picks overall across all locations based on applied
+// filters". The candidates are the day's stops and their or-lines still to
+// come (a fork is a real second door: it clears the bar too), the rooms the
+// Show menu hides already left out (the plan's rule 8), and with a highlight
+// on, only the highlighted people's (hasAny, the rows' own dim). The five with
+// the most of us are kept and read in time order. Times as people type them
+// ("5:40pm", "~1:30am") and plain punctuation (Kevin: "those en dashes … we
+// can type simpler"). Artists, places and times only: no one's name leaves
+// the phone, and no count either (his shape has none).
+const typed = (min) => quietClock(min).replace(' ', '').toLowerCase();
+const andList = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+
+// A stop or a fork as "Location for Title": a set's (or a party's) act; a
+// room's headliners, unless the room is named for the one act in it.
+function placeForTitle(stop, picks) {
+  const where = whereOf(stop);
+  if (kindOf(stop) !== 'room') {
+    const act = actsOf(stop)[0];
+    return act && act.name !== where ? `${where} for ${act.name}` : where;
+  }
+  const acts = headlinersOf({ ...stop, people: stop.people || [] }, picks).map((h) => h.name);
+  return !acts.length || (acts.length === 1 && acts[0] === where) ? where : `${where} for ${andList(acts)}`;
+}
+
+// The five (`limit`), in time order: { line, from, count } each.
+export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], limit = 5 } = {}) {
+  if (!route) return [];
+  // One line a place (a set, a room on its night, a party): a room the route
+  // comes back to, or that is another stop's or-line later on, is still the
+  // one room, at the first time it is ours, counted at its biggest.
+  const byPlace = new Map();
+  const add = (s) => {
+    if (nowMin != null && s.to <= nowMin) return;
+    if (!hasAny(s, highlight)) return;
+    const key = (s.place && s.place.id) || stopKey(s);
+    const had = byPlace.get(key);
+    if (!had) { byPlace.set(key, { stop: s, count: s.count, most: s.tier === 'most' }); return; }
+    if (s.from < had.stop.from) had.stop = s;
+    had.count = Math.max(had.count, s.count);
+    had.most = had.most || s.tier === 'most';
+  };
+  for (const it of route.items) {
+    if (it.kind !== 'stop') continue;
+    add(it);
+    for (const f of it.forks || []) if (f.count >= plan.bar) add(f);
+  }
+  return [...byPlace.values()]
+    .sort((a, b) => b.count - a.count || b.most - a.most || a.stop.from - b.stop.from)
+    .slice(0, limit)
+    .sort((a, b) => a.stop.from - b.stop.from)
+    .map(({ stop, count }) => {
+      const live = nowMin != null && stop.from <= nowMin;
+      const till = live ? tillOf(stop) : null;
+      const when = live ? `now${till != null ? ` till ${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
+      return { line: `${placeForTitle(stop, ctx.picks)} @ ${when}`, from: stop.from, count };
+    });
+}
+
+// `day`: the night as the head names it ("Sat", or "Sat Oct 4" where two
+// nights share a weekday); `today`: the plan is tonight's, so the list runs
+// from now; `link`: the crew link that opens on the plan.
+export function planText(route, { ctx, plan, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
+  const head = `Our crew's main picks for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
+  const parts = [head];
+  const picks = planPicks(route, { ctx, plan, nowMin, highlight });
+  if (picks.length) parts.push(picks.map((x) => x.line).join('\n'));
+  if (link) parts.push(`Full rundown: ${link}`);
+  return parts.join('\n\n');
+}
+
 // The open plan's head, in the wall's head grammar: `SAT OUR PICKS`, then its
 // sub. (The wall's roomHead is private to wall.js and is a door to notes;
 // this one opens nothing, so it is the div form of the same look.)
