@@ -56,3 +56,9 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 6. **Order of the unified build:** "release in the order that makes the most sense for the quality of the build" — `claude-plans/2026-09-26-unified-build/PLAN.md` (+ REVIEW-1.md), not the festival calendar. Kevin: "It's okay to take your time and do more not less."
 7. **Reading errors:** PostHog project 627900 — `POSTHOG_API_KEY` in ~/.env reads; `POSTHOG_API_KEY_FESTNAV` (also in the Keychain as `posthog-festnav-hogwrite`) has hog_function:write for the Slack alerts.
 
+
+## Kevin's calls, 2026-09-26 (after midnight, chat)
+
+8. **People menu (unified build, after the shelf primitive):** the left twin of Show — avatar pill → Highlight menu (crew multi-select, Our plan row, Pick as someone else, + Add someone). "+ Add someone" opens a shelf with the crew link first (Copy / Share), then a name, then other fests. Full text in the unified PLAN.md ("Kevin's calls after the plan", item 2).
+9. **Menus announce themselves (v93):** a small caret after the fest name says it opens a menu; How it works stays feature-first (what it does, then how) — no "tap the …" rows, and the box is not rethought. The gear is an SVG, never the ⚙ glyph (iOS can draw it as an emoji).
+10. **Ticket doors show the price, never the seller:** "Just tix if we don't know price or Tix $69" — because "some of these events are expensive". Info doors lose the site name too, so the two read alike (flag it back if Kevin wants `Info @ DoTheBay` kept). Label + a one-time price check (Portola Sat/Sun, ACL Late nights; sold-out shows lose their Tix door) on `data/tix-prices`: `TIX-PRICES-BRIEF.md` beside this file. Rides the next release after it lands.
