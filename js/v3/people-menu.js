@@ -21,7 +21,7 @@
 // This module only draws: the rows, the pill, and the slot's motion. What a
 // highlight IS (viewer-side, sessionStorage per fest per tab — filters.js),
 // and what each door does, is app.js's. createElement only (XSS rule).
-import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE } from './motion.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE } from './motion.js';
 
 const node = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -222,19 +222,30 @@ export function markRects(pop, names) {
 }
 
 // ---- the pill ------------------------------------------------------------------------
-// Up to three faces, overlapping: past three, two faces and a +n (the
-// welcome card's count, solid — dashed means "add"), so the pill is never
-// wider than three.
+// Up to three discs, overlapping: past the cap, the faces that fit and a +n
+// for the rest (the welcome card's count, solid — dashed means "add"). The
+// cap is three where the dock has the room, fewer where a third (or second)
+// disc would take the day you are in or NOW out of the day row — at 320 with
+// NOW live, three discs push NOW out; ACL's long name leaves room for one
+// (app.js pillCap measures it; PEOPLE-BUILD.md). One disc for several
+// people is their count, bare.
 export const PILL_FACES = 3;
-export function pillFaces(people) {
-  if (people.length <= PILL_FACES) return { faces: people, more: 0 };
-  return { faces: people.slice(0, PILL_FACES - 1), more: people.length - (PILL_FACES - 1) };
+export function pillFaces(people, cap = PILL_FACES) {
+  const k = Math.max(1, Math.min(PILL_FACES, cap));
+  if (people.length <= k) return { faces: people, more: 0 };
+  return { faces: people.slice(0, k - 1), more: people.length - (k - 1) };
 }
+// The pill's width with `discs` discs, from v3.css: 3.5px padding each side,
+// 20px discs overlapping 6px, the ✕'s 20px and its 1px. The browser contract
+// (tests/browser/people-menu.test.mjs) holds this to the drawn width.
+export const pillWidth = (discs) => 7 + 20 + 14 * (Math.max(1, discs) - 1) + 21;
 
 export function ensurePill(wrap, { onFaces, onClear } = {}) {
   let pill = wrap.querySelector(':scope > .hl-pill');
   if (pill) return pill;
   pill = node('span', 'hl-pill');
+  const bg = node('span', 'hl-bg'); // the body, clipped as it opens (v3.css)
+  bg.setAttribute('aria-hidden', 'true');
   const faces = node('button', 'hl-faces');
   faces.type = 'button';
   faces.setAttribute('aria-haspopup', 'listbox');
@@ -244,7 +255,7 @@ export function ensurePill(wrap, { onFaces, onClear } = {}) {
   x.setAttribute('aria-label', PEOPLE_WORDS.clear);
   faces.addEventListener('click', () => onFaces && onFaces());
   x.addEventListener('click', () => onClear && onClear());
-  pill.append(faces, x);
+  pill.append(bg, faces, x);
   // After the avatar, before the menu: the menu stays the wrap's last child.
   const you = wrap.querySelector(':scope > .you-avatar');
   if (you) you.after(pill); else wrap.prepend(pill);
@@ -252,9 +263,9 @@ export function ensurePill(wrap, { onFaces, onClear } = {}) {
 }
 
 // `people`: [{ name, bg, stroke }] — the highlighted, in the crew's order.
-function paintFaces(pill, people) {
+function paintFaces(pill, people, cap) {
   const faces = pill.querySelector('.hl-faces');
-  const { faces: shown, more } = pillFaces(people);
+  const { faces: shown, more } = pillFaces(people, cap);
   const have = new Map([...faces.querySelectorAll('.avatar[data-name]')].map((a) => [a.dataset.name, a]));
   const kids = [];
   for (const p of shown) {
@@ -268,7 +279,7 @@ function paintFaces(pill, people) {
   }
   if (more) {
     const m = faces.querySelector('.avatar.more') || node('span', 'avatar more');
-    m.textContent = `+${more}`;
+    m.textContent = shown.length ? `+${more}` : String(more);
     m.setAttribute('aria-hidden', 'true');
     kids.push(m);
   }
@@ -285,7 +296,7 @@ function paintFaces(pill, people) {
 // `sources`: Map name → a rect the faces travel FROM (the menu's marks on a
 // close); without one a new face grows where it lands. `animate` is the
 // caller's canAnimate. The storyboard (PEOPLE-BUILD.md §C, D, F) in order.
-export function setSlot(wrap, { pill: want, people = [], sources = null, animate = false }) {
+export function setSlot(wrap, { pill: want, people = [], cap = PILL_FACES, sources = null, animate = false }) {
   const you = wrap.querySelector(':scope > .you-avatar');
   const pill = wrap.querySelector(':scope > .hl-pill');
   if (!you || !pill) return false;
@@ -313,7 +324,7 @@ export function setSlot(wrap, { pill: want, people = [], sources = null, animate
     return g;
   };
   const leaving = was && !want ? ghostOf(pill) : !was && want ? ghostOf(you) : null;
-  if (want) paintFaces(pill, people);
+  if (want) paintFaces(pill, people, cap);
   // Focus follows the door that is still there (a keyboard on the ✕ or the
   // faces lands on the avatar, and the other way round).
   const focusIn = (el) => el && el.contains(document.activeElement);
@@ -333,9 +344,11 @@ export function setSlot(wrap, { pill: want, people = [], sources = null, animate
     // to its full width, from the left; the faces travelling in; the ✕ last.
     const pw = pill.getBoundingClientRect().width;
     const fromW = was ? wasW : Math.min(pw, you.offsetWidth || 26);
+    // Its right edge moves in step with the day row's tabs (app.js slideTabs:
+    // CASCADE, the arrival curve), so the two never overlap and never part.
     if (Math.abs(pw - fromW) >= 0.5) {
-      pill.animate([{ clipPath: `inset(0 ${pw - fromW}px 0 0 round 999px)` }, { clipPath: 'inset(0 0 0 0 round 999px)' }],
-        { duration: GROW_MS, easing: EASE_ARRIVE });
+      pill.querySelector('.hl-bg').animate([{ clipPath: `inset(0 ${pw - fromW}px 0 0 round 999px)` }, { clipPath: 'inset(0 0 0 0 round 999px)' }],
+        { duration: CASCADE_MS, easing: EASE_ARRIVE });
     }
     [...pill.querySelectorAll('.hl-faces .avatar')].forEach((a, i) => {
       const key = a.dataset.name || '+';
@@ -359,25 +372,34 @@ export function setSlot(wrap, { pill: want, people = [], sources = null, animate
     }
     if (leaving) {
       // The letter steps back where it stood as the pill opens over it.
+      // Gone before the first face lands on it.
       const a = leaving.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }],
-        { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+        { duration: OUT_MS * 0.7, easing: EASE_LEAVE, fill: 'forwards' });
       a.onfinish = gone(leaving);
       a.oncancel = gone(leaving);
     }
   } else if (leaving) {
     // The pill closes into the slot's circle, its faces shrinking toward it,
     // and your letter grows back a beat later.
+    // Its right edge closes in step with the tabs coming back (slideTabs'
+    // way out: CASCADE, the surface curve); it fades over the second half.
     const lw = leaving.getBoundingClientRect().width;
     const toW = you.offsetWidth || 26;
-    const a = leaving.animate([
-      { clipPath: 'inset(0 0 0 0 round 999px)', opacity: 1 },
-      { clipPath: `inset(0 ${Math.max(0, lw - toW)}px 0 0 round 999px)`, opacity: 0 },
-    ], { duration: OUT_MS + STAGGER_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    const a = leaving.querySelector('.hl-bg').animate([
+      { clipPath: 'inset(0 0 0 0 round 999px)' },
+      { clipPath: `inset(0 ${Math.max(0, lw - toW)}px 0 0 round 999px)` },
+    ], { duration: CASCADE_MS, easing: EASE_SURFACE, fill: 'forwards' });
     a.onfinish = gone(leaving);
     a.oncancel = gone(leaving);
-    for (const f of leaving.querySelectorAll('.hl-faces .avatar')) {
-      f.animate([{ transform: 'none' }, { transform: 'translateX(-4px) scale(.4)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
-    }
+    // The ✕ goes first (the tabs are coming for its place), the faces shrink
+    // toward the circle as it closes, and the body fades at the end.
+    leaving.querySelector('.hl-x').animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-6px)' }],
+      { duration: OUT_MS / 2, easing: EASE_LEAVE, fill: 'forwards' });
+    leaving.querySelectorAll('.hl-faces .avatar').forEach((f, i) => f.animate(
+      [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-4 - i * 6}px) scale(.4)` }],
+      { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }));
+    leaving.querySelector('.hl-bg').animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0 }],
+      { duration: CASCADE_MS, easing: 'linear', fill: 'forwards' });
     you.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }],
       { duration: GROW_MS, delay: STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' });
   }

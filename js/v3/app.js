@@ -58,7 +58,7 @@ configureReports({
 });
 import { createSortControl } from './sort-control.js';
 // The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
-import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS } from './people-menu.js';
+import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
 import { passesPeople } from './filters.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -2051,12 +2051,36 @@ function paintSlots({ sources = null } = {}) {
     const animate = !!wrap.dataset.slot && wrap.offsetParent !== null && canAnimate(wrap, ctx);
     const before = animate && row ? tabLefts(row) : null;
     const edges = row ? edgesOf(row) : [];
-    const changed = setSlot(wrap, { pill: faces.length > 0 && !highlightOpenIn(wrap), people: faces, sources, animate });
+    const cap = pillCap(wrap, row, faces.length);
+    const changed = setSlot(wrap, { pill: faces.length > 0 && !highlightOpenIn(wrap), people: faces, cap, sources, animate });
     if (changed && row) {
       restDayRow(row);
       if (before) slideTabs(row, before, edges, { out: !faces.length || highlightOpenIn(wrap) });
     }
   }
+}
+
+// How many discs the pill may hold (design §2: "up to three"): as many as
+// leave the day row its promise (wall.js restingLeft, rules 1-2) — the day
+// you are in whole, and while something is live NOW whole beside the day it
+// follows. At 320 with NOW live a third disc pushes NOW out (measured: 92px
+// of row for SAT · NOW's 101), so two; ACL's long name leaves room for one.
+// Where NOW cannot be whole even beside the bare avatar (ACL at 320 today),
+// only the day you are in is promised. The laptop's rail has room.
+function pillCap(wrap, row, n) {
+  if (n <= 1 || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
+  const slot = wrap.getBoundingClientRect().width;
+  const room = row.clientWidth + slot; // the row and the slot share this width
+  const tabs = [...row.children].filter((t) => !t.hidden);
+  const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
+  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
+  const focus = [active, nowAt >= 0 ? tabs[nowAt] : null, nowAt > 0 ? tabs[nowAt - 1] : null].filter(Boolean);
+  const span = (list) => (list.length ? Math.max(...list.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...list.map((t) => t.offsetLeft)) : 0);
+  const avatar = wrap.querySelector(':scope > .you-avatar');
+  const bare = (avatar && avatar.offsetWidth) || 26;
+  const need = span(focus) <= room - bare ? span(focus) : span(active ? [active] : []);
+  for (let k = PILL_FACES; k > 1; k -= 1) if (pillWidth(k) + need <= room) return k;
+  return 1;
 }
 
 function openHighlight(wrap) {
