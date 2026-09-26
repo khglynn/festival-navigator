@@ -282,3 +282,20 @@ rebase: the only conflict is adjacent import lines at the top of `app.js`,
 and `wallPlace`/`restorePlace` should then also carry v91's sideways stack
 rows (`.stack-scroll`, keyed by v91's exported `stackRowKey`) so "back where
 you were" covers the afters rows on a phone too.
+
+**~10:20 PM — rebased onto main after v91 landed (91d6ad3).** One conflict,
+the adjacent import lines at the top of `app.js` (v91's `stackRowKey`, v92's
+filters/motion names) — merged by hand. The rebase delta is exactly v91's
+files. `service-worker.js` merged clean: v91's `festival-nav-v91` + its stamp,
+plus v92's `welcome.js` in APP_CORE (the stamp is now stale — the
+orchestrator's to run). Then:
+1. "Back where you were" carries v91's sideways stack rows too
+   (`wallPlace`/`restorePlace`, keyed by wall.js's exported `stackRowKey`,
+   the repaint boundary's own key). Walked: an afters row at scrollLeft 38 on
+   a 390 phone, tap a card in it, Just looking → 38, page Y kept.
+2. v91's new `tests/browser/stack-row.test.mjs` set `fn_coach_v1`; it now
+   sets `fn_welcome_v1` like the rest.
+3. On the rebased branch: full `npm test` 960/961 (the stamp only; a temporary
+   `--keep` restamp passes app-shell-complete and sw-stamp, reverted);
+   `npm run test:browser` 191/191.
+

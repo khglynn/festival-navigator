@@ -407,7 +407,11 @@ function wallPlace() {
     const key = s.dataset.sync || '*';
     if (!lefts.has(key)) lefts.set(key, s.scrollLeft);
   }
-  return { y: window.scrollY || window.pageYOffset || 0, lefts };
+  // A phone's clocked stack rows scroll sideways too (v91), each named by
+  // where it stands (wall.js stackRowKey) — the repaint boundary's own key.
+  const rows = new Map();
+  for (const s of document.querySelectorAll('#wall-root .stack-scroll')) rows.set(stackRowKey(s), s.scrollLeft);
+  return { y: window.scrollY || window.pageYOffset || 0, lefts, rows };
 }
 
 function restorePlace(place) {
@@ -415,6 +419,10 @@ function restorePlace(place) {
   for (const s of document.querySelectorAll('#wall-root .times-scroll')) {
     if (isStripScroller(s)) continue;
     const left = place.lefts.get(s.dataset.sync || '*');
+    if (left != null && s.scrollLeft !== left) s.scrollLeft = left;
+  }
+  for (const s of document.querySelectorAll('#wall-root .stack-scroll')) {
+    const left = place.rows.get(stackRowKey(s));
     if (left != null && s.scrollLeft !== left) s.scrollLeft = left;
   }
   window.scrollTo({ top: place.y, behavior: 'auto' });

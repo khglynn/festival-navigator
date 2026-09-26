@@ -415,6 +415,42 @@ await scenario('390 11 storage blocked: the getters throw, and a guest still get
   await ctx.close();
 });
 
+await scenario('390 12 a phone afters row (v91) scrolled sideways comes back where it was', async () => {
+  resetDocs(); writes.length = 0;
+  const { ctx, page, errors } = await phone({ init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  const found = await page.evaluate(() => {
+    const row = [...document.querySelectorAll('#wall-root .stack-scroll')].find((r) => r.scrollWidth > r.clientWidth + 20);
+    if (!row) return null;
+    row.scrollIntoView({ block: 'center' });
+    row.scrollLeft = 90;
+    const card = row.querySelector('.card[data-artist]');
+    row.dataset.walk = '1';
+    return { rows: document.querySelectorAll('#wall-root .stack-scroll').length, artist: card && card.dataset.artist };
+  });
+  note(`stack rows: ${JSON.stringify(found)}`);
+  if (!found || !found.artist) { note('no scrollable stack row on this wall/clock — skipped'); await ctx.close(); return; }
+  await sleep(300);
+  const before = await page.evaluate(() => ({ y: Math.round(scrollY), left: Math.round(document.querySelector('[data-walk]').scrollLeft) }));
+  const card = page.locator('[data-walk] .card[data-artist]').first();
+  // tap() scrolls a card into view first: read the page where the finger lands.
+  await page.evaluate(() => document.addEventListener('pointerdown', () => { window.__yAtTap = Math.round(scrollY); }, { capture: true, once: true }));
+  await card.tap();
+  before.y = await page.evaluate(() => window.__yAtTap);
+  await page.waitForSelector('#screen-join', { state: 'visible' });
+  await page.locator('#join-look').tap();
+  await page.waitForSelector('#screen-app', { state: 'visible' });
+  await sleep(300);
+  const after = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#wall-root .stack-scroll')];
+    return { y: Math.round(scrollY), lefts: rows.map((r) => Math.round(r.scrollLeft)).filter(Boolean) };
+  });
+  note(`row before ${JSON.stringify(before)}; after Just looking ${JSON.stringify(after)} (row kept: ${after.lefts.includes(before.left)}, page kept: ${after.y === before.y})`);
+  await shot(page, '390-19-stack-row-kept.png');
+  note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(OUT, 'walk.txt'), report.join('\n') + '\n');
