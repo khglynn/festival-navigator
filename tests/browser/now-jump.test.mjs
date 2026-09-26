@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -22,7 +22,7 @@ const browser = await launchBrowser();
 // NOW is for a phone in a field, so the landings run in WebKit too (the
 // iPhone's engine: no scrollend, its own smooth scroll) where it is installed.
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: those cases skip */ }
+webkit = await launchWebkit();
 test.after(async () => { if (browser) await browser.close(); if (webkit) await webkit.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
 const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx playwright install webkit)';
@@ -181,7 +181,18 @@ const restedOn = async (page, day, door = 'dock') => {
   }
 };
 const highlight = async (page, name) => {
-  await page.locator('#person-chips .person-chip', { hasText: name }).first().click();
+  const chip = page.locator('#person-chips .person-chip', { hasText: name }).first();
+  if (await chip.isVisible()) {
+    await chip.click();
+  } else {
+    // A phone has no people row (the people menu, 2026-09-26): the avatar —
+    // or, with someone already highlighted, the pill's faces — opens
+    // Highlight; a row toggles them; the avatar again puts it away.
+    const door = (await page.locator('#dock-you').isVisible()) ? '#dock-you' : '#dock-you-wrap .hl-faces';
+    await page.locator(door).click();
+    await page.locator(`#dock-you-wrap .hl-pop [data-person="${name}"]`).click();
+    await page.locator('#dock-you').click();
+  }
   await sleep(400);
 };
 

@@ -22,7 +22,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import jpeg from 'jpeg-js';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -31,11 +31,8 @@ const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
 let webkit = null;
 let devices = {};
-try {
-  const pw = await import('playwright');
-  devices = pw.devices;
-  webkit = await pw.webkit.launch({ headless: true });
-} catch { /* not installed: that engine skips */ }
+devices = (await import('playwright')).devices;
+webkit = await launchWebkit(); // CI installs WebKit and requires it (tests/helpers/browser.mjs)
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 
 const FID = 'portola-2026';
@@ -169,6 +166,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await tapAt(page, await row.boundingBox());
       await page.waitForSelector('.import-sheet[data-import="choose"]', { timeout: 4000 });
       assert.equal(await page.locator('.import-sheet .sheet-title').textContent(), 'FROM THE PORTOLA APP');
+      assert.equal(await page.locator('.import-sheet .grabber').count(), 0, 'no grabber (Kevin, 2026-09-26): its ✕, Escape, Back and the dimmed wall close it');
       assert.equal(await page.locator('.import-sheet .imp-foot').isHidden(), true, 'nothing to add yet, so no button');
 
       // Hold the reader so the "reading" state is on screen for a moment.

@@ -989,7 +989,20 @@ export function hookGlobalErrors() {
 // the engine's own word for the follow's animation, so a rule that froze it
 // would show here as 'none'. Unknown is null, never a guess.
 function motionFacts() {
-  const facts = { reducedMotion: null, lowPower: null, stripRoute: 'none', stripAnimation: null };
+  const facts = { reducedMotion: null, lowPower: null, stripRoute: 'none', stripAnimation: null, hand: null, handBy: null };
+  // The hand behind the last press, key or click — 'finger' (a tap opens a
+  // card's shelf), 'mouse' or 'keyboard' (a click or Enter picks), or
+  // 'assistive' (a click with no pointer and no key of its own — VoiceOver,
+  // Switch Control — which opens the shelf too) — and what decided the last
+  // click's: 'type' (the click's own pointerType), 'press' (the pointer press
+  // it answered: WebKit types a finger's click "mouse"), 'key', or 'none' — as
+  // the zoom module says them on the page (card-facts.js sayHand, the tap
+  // change, 2026-09-26). Null until the first press.
+  try {
+    const d = window.document.documentElement.dataset;
+    facts.hand = d.hand || null;
+    facts.handBy = d.handBy || null;
+  } catch { /* no document */ }
   try { facts.reducedMotion = !!window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* no media queries */ }
   try { facts.lowPower = window.document.body.classList.contains('low-power'); } catch { /* no body yet */ }
   try {

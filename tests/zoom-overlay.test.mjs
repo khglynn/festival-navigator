@@ -148,21 +148,18 @@ test('taps while zoomed cycle 1 → 2 → 3 → 4 → 0 and your chip follows', 
   assert.equal(zoom.zoomedCard(), document.querySelector('#wall-root .card'), 'the zoom never left');
 });
 
-test('a hold on touch: the lift and its own click cannot pick; the NEXT tap does', () => {
+test('a zoom is live from its first frame: no source deafens it (the hold and its arming went with the tap change)', () => {
+  // A finger never grows a zoom since 2026-09-26 (its tap opens the card's
+  // shelf), so the 'touch' source and its lift-arming are gone: every zoom
+  // left — a mouse's, a key's — takes its first press.
   const ctx = makeCtx();
   const card = mountCard(ctx);
-  zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, source: 'touch' });
+  zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, source: 'keyboard' });
   const grown = document.querySelector('#zoom-layer .zoom-card');
-  assert.equal(grown.style.pointerEvents, 'none', 'deaf while the holding finger is down');
-  document.dispatchEvent(new dom.window.Event('pointerup', { bubbles: true }));
-  assert.equal(grown.style.pointerEvents, 'none', 'still deaf through the lift — arming on pointerup let the lift\'s own click pick (phone walk, 2026-08-30)');
-  // The lift's synthetic click (it passes through the deaf overlay to the
-  // resting card, whose longPressed swallow eats it in production).
-  document.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-  assert.equal(ctx.taps.length, 0, 'the lift picked nothing');
-  assert.equal(grown.style.pointerEvents, '', 'armed after the lift click has passed');
+  assert.equal(grown.style.pointerEvents, '', 'never deaf');
   click(grown);
-  assert.deepEqual(ctx.taps, ['GRiZ'], 'the next tap picks — one grammar on both surfaces');
+  assert.deepEqual(ctx.taps, ['GRiZ'], 'the first press picks — one grammar on both surfaces');
+  zoom.unzoom({ instant: true });
 });
 
 test('unzoom removes the overlay and restores the card; the snapshot survives a repaint', () => {

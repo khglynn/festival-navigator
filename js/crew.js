@@ -136,7 +136,7 @@ const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
 // The one line an invite carries beside its link (v92): the chat bubble says
 // what this is before anyone opens it — the cheapest fix for "it's not clear
 // what this is" (design brief §6, Codex's wording, trimmed). Both invite
-// shares send it: the share moment and Settings' Share invite.
+// shares send it: the Invite sheet and Settings' Share invite.
 export function inviteText(festName) {
   const fest = festName ? ` for ${festName}` : '';
   return `Come see what we’ve picked${fest}. You can just look, or add yourself and pick with us.`;

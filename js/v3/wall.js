@@ -13,7 +13,7 @@ import { dayLabelParts } from '../time.js';
 import { aboutCorner, fitCorners, GIVE_WAY, CLEAR } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
-import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
+import { factsFor, timeRange, fingerHand, clickHand } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { BY_TIME, sectionLayoutOf, timeBandsOf, areaOf } from './events.js'; // the list by time (v94) — its own line, like isCancelled's
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
@@ -88,7 +88,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     // grown block bubbles here too, and the browser then activates the button
     // — a pick and an open from one keypress (Codex gate, 2026-08-29).
     if (e.target !== el) return;
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el, opts.occ || null, 'keyboard'); }
   });
   // Stash render opts on the node so refreshCard can reproduce this exact
   // render — a single-card refresh must preserve every invariant the full
@@ -169,53 +169,34 @@ export function renderCard(artistName, ctx, opts = {}) {
     openNotes: ctx.onOpenNotes ? () => ctx.onOpenNotes(artistName, opts.occ || null) : null,
   });
 
-  // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
-  // 2026-08-29 round): the grown card carries the notes chip, so the sheet
-  // stays one tap away.
-  // Digitizer jitter fires pointermove even on a still finger, so cancel only
-  // past a real movement threshold (10px) — a genuine scroll-drag cancels,
-  // a held finger does not (Codex P3 trail, finding 1).
-  if (ctx.onPeek) {
-    let pressTimer = null;
-    let longPressed = false;
-    let startX = 0, startY = 0;
-    el.addEventListener('pointerdown', (e) => {
-      // A finger (or a pen) holds; a mouse hovers. A held mouse button used
-      // to arm this too and open a touch-style zoom — one that ignores
-      // hover-out and swallows its next click (found 2026-09-02).
-      if (e.pointerType === 'mouse') return;
-      longPressed = false;
-      startX = e.clientX; startY = e.clientY;
-      // If a poll repaint detached this node mid-press, the new node owns the
-      // gesture — a fire from the orphan would zoom a card that is gone.
-      pressTimer = setTimeout(() => {
-        // isConnected covers repaint detachment; offsetParent covers a screen
-        // change hiding the wall mid-press (audit 10.2) — a zoom must never
-        // pop over Settings or the landing after the fact.
-        if (!el.isConnected || el.offsetParent === null) return;
-        longPressed = true;
-        ctx.onPeek(artistName, el, opts.occ || null);
-      }, 500);
+  // A finger's HOLD is a slow tap (the tap change, 2026-09-26 — the
+  // long-press that grew a zoom is gone): iOS sends the click on release and
+  // the tap opens the shelf. An engine that turns the hold into a context menu
+  // instead (Android Chrome, Chromium's touch emulation) sends no click, so
+  // its `contextmenu` from a finger opens the same shelf (ctx.onHold, which
+  // also eats a click that may still follow). A mouse's right-click keeps its
+  // menu. `-webkit-touch-callout: none` on .card keeps iOS's callout away.
+  if (ctx.onHold) {
+    el.addEventListener('contextmenu', (e) => {
+      if (!fingerHand()) return;
+      // A poll repaint can detach this node mid-hold, and a screen change can
+      // hide the wall: a shelf must never open over Settings after the fact.
+      if (!el.isConnected || el.offsetParent === null) return;
+      e.preventDefault();
+      ctx.onHold(artistName, el, opts.occ || null);
     });
-    const cancel = () => clearTimeout(pressTimer);
-    el.addEventListener('pointerup', cancel);
-    el.addEventListener('pointerleave', cancel);
-    el.addEventListener('pointercancel', cancel);
-    el.addEventListener('pointermove', (e) => {
-      if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) cancel();
-    });
-    el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); longPressed = false; } }, true);
   }
 
   el.addEventListener('click', (e) => {
     // Belt over the chips' own stopPropagation (the research's Ant Design
     // lesson): a real button inside the card (the notes chip) is its own
     // control, never a pick. Everything else on the face — the name, the
-    // time, the marks, the Spotify badge — is the card, and a tap on the card
-    // means pick. (The 2026-08-29 version excluded a whole grown block here,
-    // which is how a zoomed card stopped taking picks.)
+    // time, the marks, the Spotify badge — is the card, and a press on the
+    // card means what the hand says (app.js handleTap): a click or a key
+    // picks, a finger opens the shelf. (The 2026-08-29 version excluded a
+    // whole grown block here, which is how a zoomed card stopped taking picks.)
     if (e.target !== el && e.target.closest && e.target.closest('button')) return;
-    ctx.onTap(artistName, el, opts.occ || null);
+    ctx.onTap(artistName, el, opts.occ || null, clickHand(e));
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   watchFit(el);

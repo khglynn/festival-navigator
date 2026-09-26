@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -26,7 +26,7 @@ const browser = await launchBrowser();
 // WebKit, where installed, for the geometry: iPhones are WebKit, and a grid
 // sized to its content inside an overflow box is exactly where engines differ.
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that case skips */ }
+webkit = await launchWebkit();
 test.after(async () => { if (browser) await browser.close(); if (webkit) await webkit.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
 
@@ -261,25 +261,23 @@ const cardIn = (page, artist) => page.evaluate(([sel, a]) => {
   const r = el.getBoundingClientRect(), clip = row.getBoundingClientRect();
   return { x: (Math.max(r.left, clip.left) + Math.min(r.right, clip.right)) / 2, y: r.top + r.height / 2, left: r.left, right: r.right };
 }, [AFTERS, artist]);
-async function holdZoom(ctx, page, at) {
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-  // Held until the card grows, as a finger does (the long-press timer can run
-  // late under the fixed clock on a big wall — zoom-chips-contract).
-  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 5000 });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await sleep(700);
-  const z = await page.evaluate(() => {
-    const r = document.querySelector('#zoom-layer .zoom-slot.shown').getBoundingClientRect();
-    return { artist: document.querySelector('#wall-root .card.zoom-source')?.dataset.artist, left: r.left, right: r.right, top: r.top, bottom: r.bottom, vw: innerWidth };
-  });
-  await cdp.detach();
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('#zoom-layer .zoom-slot.shown'), null, { timeout: 5000 });
+// A finger's tap on a card: its shelf (the tap change, 2026-09-26 — a finger
+// grows no zoom). Returns whose shelf it was, then takes it down with Back.
+async function tapOpen(ctx, page, at) {
+  await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
+  await page.waitForSelector('#artist-sheet .sheet-card', { timeout: 5000 });
+  await sleep(500);
+  const z = await page.evaluate(() => ({
+    artist: document.querySelector('#artist-sheet .sheet-card .f-name')?.textContent,
+    zooms: document.querySelectorAll('#zoom-layer .zoom-slot.shown').length,
+  }));
+  await page.goBack();
+  await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 5000 });
+  await sleep(200);
   return z;
 }
 
-test('390px, real touch: a sideways swipe carries SAT AFTERS\' lead away and moves nothing else; a thumb going down the page is the page\'s; the zoom opens over the edge card before and after', { skip }, async () => {
+test('390px, real touch: a sideways swipe carries SAT AFTERS\' lead away and moves nothing else; a thumb going down the page is the page\'s; a tap opens the edge card\'s shelf before and after', { skip }, async () => {
   const { ctx, page } = await open(390);
   try {
     const cdp = await ctx.newCDPSession(page);
@@ -288,12 +286,12 @@ test('390px, real touch: a sideways swipe carries SAT AFTERS\' lead away and mov
     const rest = await state(page);
     assert.deepEqual([rest.row, rest.folsom, rest.sat, rest.sun], [0, 0, 0, 0], 'at rest, every row and timetable at its start');
 
-    // The right-hand card runs off the screen at rest; its zoom does not.
+    // The right-hand card runs off the screen at rest; a tap on what shows of it opens it.
     const edge = await cardIn(page, 'Chloé Caillet');
     assert.ok(edge.right > 390, `the right-hand card runs off the edge at rest (${edge.right})`);
-    let z = await holdZoom(ctx, page, edge);
-    assert.equal(z.artist, 'Chloé Caillet');
-    assert.ok(z.left >= 7.5 && z.right <= z.vw - 7.5, `the zoom stands on the screen (${z.left}..${z.right})`);
+    let z = await tapOpen(ctx, page, edge);
+    assert.equal(z.artist, 'Chloé Caillet', 'its shelf');
+    assert.equal(z.zooms, 0, 'and no zoom');
 
     // Sideways, on the row: the lead scrolls away and only the lead.
     const first = await cardIn(page, 'Velvet Trip');
@@ -302,9 +300,8 @@ test('390px, real touch: a sideways swipe carries SAT AFTERS\' lead away and mov
     assert.equal(swiped.row, 38, 'SAT AFTERS scrolled to its end: the lead is gone');
     assert.ok(Math.abs(swiped.y - rest.y) <= 1, `the page did not move (${rest.y} -> ${swiped.y})`);
     assert.deepEqual([swiped.folsom, swiped.sat, swiped.sun, swiped.strip], [0, 0, 0, 0], 'no other row, no timetable, and not the stage strip');
-    z = await holdZoom(ctx, page, await cardIn(page, 'Chloé Caillet'));
-    assert.equal(z.artist, 'Chloé Caillet', 'the zoom still opens on the card after the swipe');
-    assert.ok(z.left >= 7.5 && z.right <= z.vw - 7.5, `and stands on the screen (${z.left}..${z.right})`);
+    z = await tapOpen(ctx, page, await cardIn(page, 'Chloé Caillet'));
+    assert.equal(z.artist, 'Chloé Caillet', 'a tap still opens the card after the swipe');
 
     // Down the page, started on a stack card, with a thumb's drift: the page
     // takes it — the row never does.
@@ -346,7 +343,7 @@ test('390, real touch: a row swiped sideways stays swiped when a crew-mate\'s pi
   }
 });
 
-test('390, real touch: a hold on a card in the row\'s last line — the right-hand one, just above the dock — opens the zoom on screen', { skip }, async () => {
+test('390, real touch: a tap on a card in the row\'s last line — the right-hand one, just above the dock — opens its shelf', { skip }, async () => {
   const { ctx, page } = await open(390);
   try {
     // The row's last line of venues (two across), its right-hand venue, and
@@ -356,7 +353,7 @@ test('390, real touch: a hold on a card in the row\'s last line — the right-ha
       const right = groups[groups.length % 2 ? groups.length - 2 : groups.length - 1];
       return [...right.querySelectorAll('.card')].pop().dataset.artist;
     }, AFTERS);
-    // Its bottom 16px above the dock: the zoom has a floor to clear.
+    // Its bottom 16px above the dock: the tap lands on the card, not the dock.
     await page.evaluate(([sel, a]) => {
       const card = [...document.querySelector(sel).querySelectorAll('.card')].find((c) => c.dataset.artist === a);
       const dock = document.getElementById('dock').getBoundingClientRect().top;
@@ -365,11 +362,9 @@ test('390, real touch: a hold on a card in the row\'s last line — the right-ha
     await sleep(300);
     const at = await cardIn(page, artist);
     assert.ok(at.right > 390, `the right-hand card, running off the screen at rest (${artist}: ${at.left}..${at.right})`);
-    const z = await holdZoom(ctx, page, at);
-    const dockTop = await page.evaluate(() => document.getElementById('dock').getBoundingClientRect().top);
-    assert.equal(z.artist, artist, `the zoom is ${artist}'s`);
-    assert.ok(z.left >= 7.5 && z.right <= z.vw - 7.5, `across, on the screen (${z.left}..${z.right})`);
-    assert.ok(z.top >= 0 && z.bottom <= dockTop - 7.5, `and clear of the dock (${z.top}..${z.bottom}, dock at ${dockTop})`);
+    const z = await tapOpen(ctx, page, at);
+    assert.equal(z.artist, artist, `the shelf is ${artist}'s`);
+    assert.equal(z.zooms, 0, 'and no zoom grew (a mouse\'s zoom by the dock: zoom-chrome-contract)');
   } finally {
     await ctx.close();
   }

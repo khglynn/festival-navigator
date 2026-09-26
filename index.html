@@ -203,8 +203,7 @@
           </button>
         </header>
         <div class="toolbar">
-          <span id="person-chips" style="display: inline-flex; gap: 5px; flex-wrap: wrap;"></span>
-          <span class="toolbar-divider"></span>
+          <span id="person-chips"></span>
           <span class="search-pill" style="flex: 1; min-width: 140px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2.5"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
             <input id="search-input" placeholder="Search…" aria-label="Search artists">
@@ -216,7 +215,12 @@
              avatar, day tabs, then sync dot · fest name · the menu's three
              lines (unified, Kevin note 1.1; the menu bar, Phase 1) -->
         <div class="day-rail" id="day-rail">
-          <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
+          <!-- The avatar opens the people menu (2026-09-26), the twin of the
+               fest name's Show menu: app.js hangs its popover in this wrap,
+               and while a highlight is on the slot is the pill (people-menu.js). -->
+          <span class="sort-wrap you-wrap" id="rail-you-wrap">
+            <button class="avatar you you-avatar" id="rail-you" aria-label="Highlight people’s picks" aria-haspopup="listbox" aria-expanded="false"></button>
+          </span>
           <!-- NOW (2026-09-24): the jump to what is playing, while something
                is (app.js paintNowTabs / jumpToNow). Not a day: the scrollspy
                never lights it. It waits here, hidden; while something is live
@@ -241,7 +245,9 @@
 
       <!-- Mobile dock (atlas 21c) -->
       <div class="dock" id="dock">
-        <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
+        <span class="sort-wrap you-wrap" id="dock-you-wrap"><!-- the people menu's door (see the rail's) -->
+          <button class="avatar you you-avatar" id="dock-you" aria-label="Highlight people’s picks" aria-haspopup="listbox" aria-expanded="false"></button>
+        </span>
         <button class="now-tab" id="dock-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
         <span class="days" id="dock-days"></span>
         <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">

@@ -176,9 +176,9 @@ test('Settings → How it works says Kevin\u2019s rows, word for word and in his
   const rows = [
     ['Highlight a friend\u2019s picks.', 'Tap their name. Switch who you pick as in Settings.'],
     ['Invite your people.', 'Tap + Invite someone, or share the crew link \u2014 anyone who opens it is in, no account needed.'],
-    ['Add your color to an artist.', 'Tap it. Your bars fill each tap. 4 taps = must see.'],
+    ['Add your color to an artist.', 'Tap it, then +. Each + fills a bar. 4 = must see.'],
     ['Everyone else\u2019s picks land on the card.', 'Ticks are picks; a letter is a must.'],
-    ['Details and notes.', 'Hold the card. Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
+    ['Details and notes.', 'Open the card. Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
     ['~ a guessed start time and artist order.', 'Based on limited intel.'],
     ['Show or hide parts of the week.', 'Tap the fest name.'],
     ['Sync, at a glance.', 'Green dot = synced. Gray = offline (still works); red = something\u2019s wrong.'],

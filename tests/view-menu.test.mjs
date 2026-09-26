@@ -119,7 +119,13 @@ test('the invite link carries the List, and says so', async () => {
   assert.match(box.value, /&view=list$/, 'last, after the rest');
   assert.match($('screen-settings').textContent, /Opens as a list — what you’re showing now\./);
   dom.window.history.back();
-  await settle(40);
+  // Wait for the traversal to land, not a fixed 40 ms: it came late once
+  // under the night clock on a loaded machine (Sol, 2026-09-26), and the
+  // next test's tap on the fest name then met a Back still on its way.
+  for (let t = 0; $('screen-app').style.display !== '' || ((dom.window.history.state || {}).layers || []).length; t += 5) {
+    if (t > 3000) assert.fail('still waiting for Back to leave Settings');
+    await settle(5);
+  }
   assert.equal($('screen-app').style.display, '');
 });
 

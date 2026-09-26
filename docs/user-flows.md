@@ -50,7 +50,8 @@ back to one crew-named "tap to open" row.
    exists yet. After that, the me link knows who you are and go creates
    boards directly.
 3. Each picked fest becomes its own board (its own single-fest circle, just
-   you). ONE fest picked → straight onto its wall + the share moment. SEVERAL
+   you). ONE fest picked → straight onto its wall + the Invite sheet, titled
+   for the moment ("ONE LINK MAKES IT A CREW"). SEVERAL
    → land on the festival list with all rows present, toast invites adding
    people per fest. A mid-batch failure reports what made it and what didn't.
 4. Deliberate multi-fest circles (the same people doing another fest) are NOT
@@ -60,12 +61,21 @@ from generated crew names; selection survives entering the name step.
 
 ## F2b · Invite people on a fest (+ Invite someone)
 
-1. Wall → **+ Invite someone** → type a name, or one-tap a chip under "From your other
-   fests" (active people from every other circle this device knows, deduped,
-   minus you and existing members).
-2. Success mints the person's claim link (&me=) — placeholder until opened.
+1. Wall → your avatar → **+ Invite someone** (a laptop's people row has the
+   same + Invite someone; so does Settings → CREW) → ONE sheet (2026-09-26),
+   in Kevin's order: the crew link first (Copy / Share), then "Or add a
+   friend" (by name — "You pick for them; the crew sees where they're
+   going."), then one-tap chips under "From your other fests" (active people
+   from every other circle this device knows, deduped, minus you and existing
+   members). The sheet a new crew opens on is the same one, titled for the
+   moment.
+2. Adding by name is complete as it stands (2026-09-26): a friend the crew
+   picks for may never open the app. Success ("MO IS IN") mints their claim
+   link (&me=) for if they ever want to pick — opening it makes the picks
+   theirs.
 3. Settings → CREW → tapping a member chip shows their link with a
-   linked-vs-placeholder line (pid = claimed; no pid = waiting for its human).
+   linked-vs-picked-for line (pid = claimed; no pid = the same "if they ever
+   want to pick" sentence the sheet says).
 **Expected:** recurring people are one tap, never retyped; the two links keep
 their jobs distinct (circle link = joins the cluster; name link = becomes
 that person).
@@ -228,10 +238,14 @@ legible (D3); empty state may hint at the hold but never as the only path.
 
 ## F9 · Day navigation
 
-1. Mobile: bottom dock — You chip (jump to top), day tabs (scrollspy-active),
-   fest name (the show menu, or Settings on a one-room fest — F5.7).
-2. Desktop: sticky day rail under the toolbar with the same tabs + jump to
-   top; scrollspy highlights the day in view.
+1. Mobile: bottom dock — your avatar (the people menu: Highlight, Pick as
+   someone else, + Invite someone; a guest's dashed + ends in Join the crew;
+   with a highlight on it is the pill — faces and a ✕), day tabs
+   (scrollspy-active), fest name (the show menu, or Settings on a one-room
+   fest — F5.7). Jump to top retired (2026-09-26).
+2. Desktop: sticky day rail under the toolbar with the same avatar (its menu
+   drops down) and tabs; scrollspy highlights the day in view. The people
+   row stays at the top of a laptop's wall; a phone has none.
 3. A dated section's tab sits at the end, labelled by the section
    (LATE NIGHTS). It never joins the day axis and is never split.
 **Expected:** every viewport has day navigation; dock hides while typing in

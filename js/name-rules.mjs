@@ -13,6 +13,11 @@ export const NAME_LIMITS = {
   crewName: 40,
 };
 
+// The crew's people cap — active members — shared the same way: the server
+// enforces it (api/_lib/crew-shared.mjs LIMITS.activePeople reads this), and a
+// local-only add (offline, Stay offline) checks it before promising a link.
+export const ACTIVE_PEOPLE_MAX = 24;
+
 // Keys that would rebind an object's prototype through bracket-assign merges.
 export const FORBIDDEN_NAME_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
