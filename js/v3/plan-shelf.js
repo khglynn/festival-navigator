@@ -45,6 +45,7 @@ let earlierOpen = false;
 let nightId = '';    // `${fid}|${route id}` of the day the rows are drawn for
 let drag = null;
 let leaving = null;  // { timer } while the shelf drops out of sight
+let arrival = null;  // the arrival's animation, while it plays
 let quietUntil = 0;  // the click that follows a drag or a peek tap is not a second tap
 
 export const planShelf = () => el;
@@ -165,8 +166,8 @@ function measure() {
   const grabH = grab.offsetHeight;
   const rowTop = row ? row.offsetTop - listEl.scrollTop : 0;
   const who = row ? row.querySelector('.plan-who') : null;
-  const pad = row ? parseFloat(getComputedStyle(row).paddingBottom) || 0 : 0;
-  const rowH = !row ? 0 : who ? Math.min(who.offsetTop - 1, who.offsetTop - (parseFloat(getComputedStyle(who).marginTop) || 0) + pad) : row.offsetHeight;
+  const pad = row ? parseFloat(window.getComputedStyle(row).paddingBottom) || 0 : 0;
+  const rowH = !row ? 0 : who ? Math.min(who.offsetTop - 1, who.offsetTop - (parseFloat(window.getComputedStyle(who).marginTop) || 0) + pad) : row.offsetHeight;
   geo = { H, peekH: Math.min(H, grabH + rowH), shift: headEl.offsetHeight + rowTop };
   el.dataset.peekH = String(geo.peekH);
 }
@@ -209,8 +210,10 @@ function arrive() {
   apply(0);
   settleState();
   if (canAnimate(el, ctxRef)) {
-    el.animate([{ transform: `translateY(${geo.H}px)` }, { transform: el.style.transform }],
+    const a = el.animate([{ transform: `translateY(${geo.H}px)` }, { transform: el.style.transform }],
       { duration: GROW_MS, easing: EASE_ARRIVE });
+    arrival = a;
+    a.onfinish = () => { if (arrival === a) arrival = null; };
   }
 }
 
@@ -227,6 +230,17 @@ function leave({ instant = false } = {}) {
   };
   if (instant || !geo || !canAnimate(el, ctxRef)) { done(); return; }
   if (leaving) return;
+  // Leaving while it is still arriving (the welcome card mounts in the same
+  // task as the first paint): it goes back the way it came, from wherever it
+  // has got to — and if no frame has shown it yet, that is nowhere, at once.
+  const back = arrival && arrival.playState === 'running' ? arrival : null;
+  if (back) {
+    arrival = null;
+    leaving = { timer: setTimeout(done, GROW_MS + 50) };
+    back.onfinish = done;
+    back.reverse();
+    return;
+  }
   const from = el.style.transform;
   el.style.transform = `translateY(${geo.H}px)`;
   const a = el.animate([{ transform: from }, { transform: el.style.transform }], { duration: OUT_MS, easing: EASE_LEAVE });
@@ -237,7 +251,8 @@ function cancelLeave() {
   if (!leaving) return;
   clearTimeout(leaving.timer);
   leaving = null;
-  if (el) el.getAnimations().forEach((x) => x.cancel());
+  arrival = null;
+  if (el) el.getAnimations().forEach((x) => { x.onfinish = null; x.cancel(); });
 }
 
 // A new answer on a plan that is showing (a tick, a pick, a friend's pick):

@@ -1056,8 +1056,16 @@ const isoAfter = (iso) => {
 // disagree across a minute (the tab reads whether the peek says NOW). Called
 // from every repaint (renderDayNav), a pick (refreshArtistCards), the minute
 // tick and an empty NOW tap.
+// The plan rides on the wall and never takes it down: a throw in it is
+// recorded, the peek goes away, and the NOW tab paints as it did before Our
+// plan existed.
 function paintPlan(date = ctx.now || new Date()) {
-  if ($('screen-app').style.display !== 'none') paintPlanShelf($('screen-app'), ctx, planAnswer(date));
+  if ($('screen-app').style.display !== 'none') {
+    try { paintPlanShelf($('screen-app'), ctx, planAnswer(date)); } catch (e) {
+      record('plan:paint', e);
+      try { hidePlanShelf({ instant: true }); } catch { /* already gone */ }
+    }
+  }
   paintNowTabs(date);
 }
 
@@ -3938,9 +3946,10 @@ export function init() {
   // picks offer — and rises when it has gone (one thing at a time down there).
   // Both mount into #screen-app and leave by being removed, so their coming
   // and going is the whole signal.
-  if (typeof MutationObserver === 'function') {
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (typeof Observer === 'function') {
     const isCard = (n) => n.nodeType === 1 && n.classList.contains('bring-offer');
-    new MutationObserver((records) => {
+    new Observer((records) => {
       if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isCard))) paintPlan();
     }).observe($('screen-app'), { childList: true });
   }
