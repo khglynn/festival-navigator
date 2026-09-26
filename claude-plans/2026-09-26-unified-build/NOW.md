@@ -16,13 +16,12 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 12:45 PM): gated at 673123d and sent; now renamed for
-  Kevin — people read "Our picks" and "5 picked" (his call after a friend's
-  "my picks aren't my plans"), live/people 117c833 merged; that round's gate
-  and its SHA next. Then the Share design round (the plan open in a link, the
-  text for group chats, a quicker crew link), frames to the coordinator, no
-  build until Kevin picks; the draft waits on `live/plan-share`. One product
-  call banked: a tap on a card grown inside the plan.
+  `OUR-PLAN-BUILD.md`; 12:35 PM PT): renamed for Kevin — "Our picks", "5
+  picked" — and gated at 06f0eb9 (live/people 117c833 in), sent. The Share
+  design round is out: frames and five calls on a review page (link in
+  `share-design/DESIGN.md` on `live/plan-share`), my picks marked; no build
+  until Kevin answers. One product call banked: a tap on a card grown inside
+  the plan.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
