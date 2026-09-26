@@ -1381,6 +1381,18 @@ function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
 // (desktop) — the show menu's door. One builder, because the wall names that
 // door when everything is hidden and must say exactly what is written on it.
 export const festLinkLabel = (fest) => `${String(fest.name || '').toUpperCase()} ${fest.year || ''}`.trim();
+// The phone dock's words for the same door. A city season drops its city —
+// the header above already says "AUSTIN WINTER" — so the dock reads
+// "WINTER '27" and its months keep room beside the season chevrons
+// (2026-09-25: the full name left one month tab visible at 390). Everything
+// else reads as festLinkLabel.
+export const dockLinkLabel = (fest) => {
+  if (!isSeason(fest)) return festLinkLabel(fest);
+  const city = String(fest.location || '').split(',')[0].trim();
+  const name = String(fest.name || '');
+  const own = city && name.toLowerCase().startsWith(`${city.toLowerCase()} `) ? name.slice(city.length + 1) : name;
+  return `${own.toUpperCase()} ${fest.year || ''}`.trim();
+};
 
 // Everything hidden (a real-engine walk, 2026-09-23): the show menu unchecked
 // every room, so the week has no day and the dock no tab — right by the 09-17
@@ -1396,7 +1408,7 @@ function allHiddenNotice(root, fest, { parts = 'parts' } = {}) {
   const hint = mk('p', 'hint');
   const name = festLinkLabel(fest);
   hint.append(
-    mk('span', 'on-phone', `Tap ${name} below to bring ${parts} back.`),
+    mk('span', 'on-phone', `Tap ${dockLinkLabel(fest)} below to bring ${parts} back.`),
     mk('span', 'on-desk', `Click ${name} up top to bring ${parts} back.`),
   );
   n.append(mk('p', 'lead', 'Everything\u2019s hidden.'), hint);

@@ -9,9 +9,9 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, LOCATION_KEY } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, dockLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, LOCATION_KEY } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle, saveFolded } from './filters.js';
-import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
+import { OUT_MS, CASCADE_MS, STAGGER_MS, GROW_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow, seasonsHead, appendPairs, laterSeasonsFold } from './tools.js';
@@ -21,7 +21,7 @@ import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
-import { isSeason, seasonLine, seasonLead, seasonIsOver } from './events.js'; // a city season (2026-09-25)
+import { isSeason, seasonLine, seasonLead, seasonIsOver, seasonNeighbours } from './events.js'; // a city season (2026-09-25)
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
 // hooks it earlier still, from a module script of its own; this second call
@@ -376,16 +376,51 @@ function applyLocalPick(artist, person, level) {
 function applyFestTheme() {
   const fest = state.fest();
   document.body.style.setProperty('--fest', fest.accent || '192, 132, 252');
+  // A city season's chrome (the chevrons' fixed ends): CSS reads this class.
+  document.body.classList.toggle('is-season', isSeason(fest));
   $('fest-name').textContent = fest.name.toUpperCase();
   $('fest-year').textContent = fest.year || '';
   $('fest-sub').replaceChildren(festPlaceLine(fest)); // the venue is a door to the map when the fest file knows where it is
   // Dock (mobile bottom) and day rail (desktop top) carry the same fest
   // name + sync dot — one component vocabulary, two positions (note 1.1).
-  $('dock-fest-name').textContent = festLinkLabel(fest);
+  $('dock-fest-name').textContent = dockLinkLabel(fest);
   $('rail-fest-name').textContent = festLinkLabel(fest);
+  holdSeasonNameWidth(fest);
   document.title = `${fest.name} — Festival Navigator`;
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
+
+// On a city season the name at the end of the dock and the rail is as wide
+// as the widest of the city's seasons ("AUSTIN WINTER '27"), so turning from
+// Fall to Winter never shoves the › chevron beside it (Kevin: the chevrons
+// "stay put"). Measured on the live element, one label at a time; a festival
+// gets its natural width back.
+function holdSeasonNameWidth(fest) {
+  for (const [id, label] of [['dock-fest-name', dockLinkLabel], ['rail-fest-name', festLinkLabel]]) {
+    const el = $(id);
+    if (!el) continue;
+    el.style.minWidth = '';
+    if (!isSeason(fest) || !el.getClientRects().length) continue;
+    const mine = el.textContent;
+    let widest = 0;
+    for (const r of FESTIVAL_INDEX.filter((x) => x.kind === 'season' && (x.location || '') === (fest.location || ''))) {
+      el.textContent = label(r);
+      widest = Math.max(widest, el.getBoundingClientRect().width);
+    }
+    el.textContent = mine;
+    if (widest) el.style.minWidth = `${Math.ceil(widest)}px`;
+  }
+}
+// The display face can land after the first paint, and every width changes
+// with it: measure again then (a fallback face's width held the › 32px off).
+try {
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { const f = state.fest && state.fest(); if (f) holdSeasonNameWidth(f); }, () => {});
+    if (typeof document.fonts.addEventListener === 'function') {
+      document.fonts.addEventListener('loadingdone', () => { const f = state.fest && state.fest(); if (f) holdSeasonNameWidth(f); });
+    }
+  }
+} catch { /* a font set that cannot be asked keeps the first measure */ }
 
 // A member chip has ONE job (2026-08-29): TAP = the people filter (design
 // option A, 2026-08-27) — the wall shows only what that person picked; tap
@@ -980,7 +1015,9 @@ function renderDayNav() {
     const has = tabs.some((t) => t.kind === 'yours');
     const had = !!yoursPainted.get(ctx.fid);
     yoursPainted.set(ctx.fid, has);
-    if (has !== had) queueMicrotask(() => yoursMoves([dock, rail], before, had));
+    // A season arriving by the chevrons brings its YOURS with the page turn;
+    // only a YOURS that changes under a season you are on arrives on its own.
+    if (has !== had && !seasonStep) queueMicrotask(() => yoursMoves([dock, rail], before, had));
   }
   for (const day of tabs) {
     const at = day.anchor || day.key;
@@ -998,6 +1035,142 @@ function renderDayNav() {
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
   paintNowTabs();
+  paintSeasonSteps();
+}
+
+// ---- a season's previous / next (Kevin, 2026-09-25) --------------------------------
+// "a next season, previous season thing … little chevron style to the left and
+// right of our months list … And then we can just slide over into the next
+// season. That would be sick with a nice little transition." The storyboard:
+// claude-plans/2026-09-25-season-v0/SLIDE-STORYBOARD.md. The chevrons walk the
+// city's seasons in date order (events.js seasonNeighbours — every season,
+// tucked or over); a festival never shows them.
+const SEASON_STEPS = [['dock-season-prev', -1], ['dock-season-next', 1], ['rail-season-prev', -1], ['rail-season-next', 1]];
+let seasonStep = null; // the slide in flight: { pending } — a tap during it is remembered
+function paintSeasonSteps() {
+  const fest = state.fest();
+  const on = !!fest && isSeason(fest);
+  const { prev, next } = on ? seasonNeighbours(FESTIVAL_INDEX, fest.id) : { prev: null, next: null };
+  for (const [id, dir] of SEASON_STEPS) {
+    const b = $(id);
+    if (!b) continue;
+    b.hidden = !on;
+    const to = dir < 0 ? prev : next;
+    const was = !b.classList.contains('none');
+    b.classList.toggle('none', !to);
+    if (to) {
+      const label = `${dir < 0 ? 'Previous' : 'Next'} season: ${to.name} ${to.year || ''}`.trim();
+      b.setAttribute('aria-label', label);
+      b.title = label;
+      b.tabIndex = 0;
+      // A chevron that gains somewhere to go arrives with the beat.
+      if (on && !was && canAnimate(b, ctx)) b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: CASCADE_MS, delay: STAGGER_MS * 3, easing: EASE_ARRIVE, fill: 'backwards' });
+    } else {
+      b.removeAttribute('aria-label');
+      b.removeAttribute('title');
+      b.tabIndex = -1; // nothing there: out of the tab order as well as out of sight
+    }
+  }
+}
+// Prefetch the neighbours once a season is on screen, so a turn never waits
+// on the network (the file is in memory by the time a thumb reaches ›).
+function prefetchSeasonNeighbours() {
+  const fest = state.fest();
+  if (!fest || !isSeason(fest)) return;
+  const { prev, next } = seasonNeighbours(FESTIVAL_INDEX, fest.id);
+  for (const r of [prev, next]) if (r) loadFestival(r.id).catch(() => { /* offline: the tap will say so */ });
+}
+// The pieces the page turn moves (SLIDE-STORYBOARD.md): the wall, the month
+// rows, and the season's name wherever it is written.
+const slidePieces = () => ({
+  wall: [$('wall-root')],
+  tabs: [$('dock-days'), $('rail-days')].filter(Boolean),
+  name: [document.querySelector('.app-header .title'), $('fest-sub'), $('dock-fest-name'), $('rail-fest-name')].filter(Boolean),
+});
+const animations = (els, frames, opts) => els.filter((el) => el.getClientRects().length).map((el) => el.animate(frames, opts));
+// Wait for a set of animations to finish. The one reason to stop waiting
+// early is a page that stops drawing (a hidden tab never finishes an
+// animation) — never a clock, which cut the exit short under DevTools'
+// slow motion and would on a phone dropping frames.
+const settle = (anims) => new Promise((resolve) => {
+  let done = false;
+  const end = () => { if (done) return; done = true; document.removeEventListener('visibilitychange', onHide); resolve(); };
+  const onHide = () => { if (document.visibilityState === 'hidden') end(); };
+  if (document.visibilityState === 'hidden') { end(); return; }
+  document.addEventListener('visibilitychange', onHide);
+  Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(end);
+});
+async function stepSeason(dir) {
+  if (seasonStep) { seasonStep.pending = dir; return; } // the last tap wins, after this turn lands
+  const fest = state.fest();
+  if (!fest || !isSeason(fest)) return;
+  const { prev, next } = seasonNeighbours(FESTIVAL_INDEX, fest.id);
+  const to = dir < 0 ? prev : next;
+  if (!to) return;
+  seasonStep = { pending: 0 };
+  try {
+    // The file first, with nothing moving: a turn is never half a page.
+    try { await loadFestival(to.id); }
+    catch {
+      showToast($('toast-root'), 'Can’t open that season offline yet — it loads once you’re back online.');
+      return;
+    }
+    unzoom({ instant: true, why: 'season step' });
+    closeShowMenu({ instant: true });
+    const moves = canAnimate($('wall-root'), ctx);
+    const p = slidePieces();
+    const s = dir; // +1: the page leaves left, the next comes from the right
+    let outs = [];
+    if (moves) {
+      const leave = (els, dx) => animations(els, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-s * dx}px)` }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+      outs = [...leave(p.wall, 28), ...leave(p.tabs, 16), ...leave(p.name, 8)];
+      await settle(outs);
+    }
+    // The swap: one task, nothing visible (the OUT animations hold their last
+    // frame until the IN ones exist). The accent changes here, where nothing
+    // wearing it can be seen.
+    const atTop = window.scrollY < 4;
+    state.setActiveFestivalId(to.id);
+    state.ensureFestivalState(to.id);
+    state.setCurrentDay(null);
+    ctx.query = '';
+    const searchBox = $('search-input');
+    if (searchBox) searchBox.value = '';
+    if (ctx.meName && spotify.isConnected() && spotify.libraryMap()) {
+      try { if (spotify.applyAffinityToCrew(ctx.meName, [...spotify.artistNamesOf(state.fest())]) > 0) sync.scheduleSync(); }
+      catch { /* stale map — "Read it again" in Settings is the recovery */ }
+    }
+    applyFestTheme();
+    repaintWall();
+    landSeason(atTop);
+    if (moves) {
+      const arrive = (els, dx, opts) => animations(els, [{ opacity: 0, transform: `translateX(${s * dx}px)` }, { opacity: 1, transform: 'none' }], { easing: EASE_ARRIVE, fill: 'backwards', ...opts });
+      const ins = [
+        ...arrive(p.wall, 36, { duration: GROW_MS + 40 }),
+        ...arrive(p.tabs, 20, { duration: CASCADE_MS + 60, delay: STAGGER_MS }),
+        ...arrive(p.name, 8, { duration: CASCADE_MS, delay: STAGGER_MS * 2 }),
+      ];
+      for (const a of outs) a.cancel();
+      await settle(ins);
+    }
+    sync.pollSync();
+    maybeOfferBringPicks(); // a season switch is entering that season here, like any festival switch
+  } finally {
+    const pending = seasonStep ? seasonStep.pending : 0;
+    seasonStep = null;
+    if (pending) stepSeason(pending);
+  }
+}
+// Where a turned-to season lands (SLIDE-STORYBOARD.md): its first month (today,
+// its first month ahead, or its start) at the top of what you see — the page
+// turns where you were reading, under YOURS when there is one — and from the
+// top of the page, at the top: the turn stays a turn in place.
+function landSeason(atTop) {
+  const month = document.querySelector('#wall-root .day-block[data-kind="month"]');
+  if (atTop || !month) window.scrollTo({ top: 0, behavior: 'auto' });
+  else landOnDay(month);
+  // The open has happened for today: a later close of Settings must not yank.
+  rememberScrolled(dayOfScrollKey(ctx.fid, new Date(), state.fest().timezone || null));
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -1330,6 +1503,7 @@ function repaintWall() {
   }
   renderDayNav();
   paintShowMenus();
+  prefetchSeasonNeighbours();
   positionNowMarks($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
@@ -3136,6 +3310,7 @@ export function init() {
   $('dock-you').addEventListener('click', jumpTop);
   $('rail-you').addEventListener('click', jumpTop);
   for (const id of NOW_TABS) $(id).addEventListener('click', jumpToNow);
+  for (const [id, dir] of SEASON_STEPS) { const b = $(id); if (b) b.addEventListener('click', () => stepSeason(dir)); }
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   // The fest name opens the show menu when the fest has rooms to choose
