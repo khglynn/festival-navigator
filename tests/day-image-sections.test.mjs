@@ -165,9 +165,11 @@ test('a dated section exports with its dates: ACL Late nights, as shipped', () =
     const jess = late.filter((a) => a.name === 'Jess Williamson');
     assert.equal(jess.length, 2, 'she really does play two of them, a week apart');
     // Read from the file: the venues are the file's bytes, apostrophe and all.
+    // Both starts are posted (Stubb's printed 8 PM show, the Continental Club's
+    // printed 10 PM), so the row ends on the clock with no tilde.
     assert.deepEqual(rows.filter((r) => r.name === 'Jess Williamson').map((r) => r.time),
-      [`Thu · Oct 1 · ${jess[0].venue}`, `Thu · Oct 8 · ${jess[1].venue}`],
-      'each row names its own night, then the room');
+      [`Thu · Oct 1 · ${jess[0].venue} · 8 PM`, `Thu · Oct 8 · ${jess[1].venue} · 10 PM`],
+      'each row names its own night, then the room, then when');
     assert.ok(rows.every((r) => /^[A-Z][a-z]{2} · [A-Z][a-z]{2} \d+ · /.test(r.time)), 'every row leads with its date');
   } finally {
     state.setActiveFestivalId('portola-2026');

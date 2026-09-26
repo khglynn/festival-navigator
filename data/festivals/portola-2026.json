@@ -274,7 +274,7 @@
       "stage": "Thu · Regency Ballroom",
       "night": "Thu",
       "venue": "Regency Ballroom",
-      "time": "10:30 PM",
+      "time": "9:30 PM",
       "approx": true,
       "doors": "7 PM",
       "order": {
@@ -283,13 +283,13 @@
         "source": "https://www.axs.com/events/1570048/soulwax-tickets",
         "confirmed": false
       },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Black Rave Culture",
@@ -428,12 +428,9 @@
       "stage": "Fri · Regency Ballroom",
       "night": "Fri",
       "venue": "Regency Ballroom",
-      "time": "10:30 PM",
+      "time": "9:30 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 3,
         "of": 3,
@@ -447,7 +444,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Jyoty",
@@ -455,12 +455,9 @@
       "stage": "Fri · Regency Ballroom",
       "night": "Fri",
       "venue": "Regency Ballroom",
-      "time": "9:15 PM",
+      "time": "8:45 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 3,
@@ -474,7 +471,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Gelli Haha",
@@ -485,9 +485,6 @@
       "time": "8 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 3,
@@ -501,7 +498,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Six Sex",
@@ -518,9 +518,6 @@
         "source": "https://www.eventim.us/event/six-sex/702210",
         "confirmed": false
       },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"
@@ -528,7 +525,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Neil Frances",
@@ -721,12 +721,9 @@
       "stage": "Sat · Regency Ballroom",
       "night": "Sat",
       "venue": "Regency Ballroom",
-      "time": "10:45 PM",
+      "time": "10 PM",
       "approx": true,
       "doors": "9 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 2,
@@ -736,7 +733,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Velvet Trip",
@@ -746,9 +746,6 @@
       "venue": "Regency Ballroom",
       "time": "9:15 PM",
       "doors": "9 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 2,
@@ -758,7 +755,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Groove Armada",
@@ -2296,15 +2296,15 @@
         "source": "https://www.axs.com/events/1570048/soulwax-tickets",
         "confirmed": false
       },
-      "time": "9:15 PM",
+      "time": "8:45 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Rory Phillips",
@@ -2321,13 +2321,13 @@
       },
       "time": "8 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "B0yg1rl",
@@ -2344,9 +2344,6 @@
       },
       "time": "9:45 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"
@@ -2354,7 +2351,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Femme Jatale b2b erika",
@@ -2371,9 +2371,6 @@
       },
       "time": "9 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"
@@ -2381,7 +2378,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Strawbry",

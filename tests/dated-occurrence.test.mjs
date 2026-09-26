@@ -99,8 +99,10 @@ test('the shipped file really does bill one artist on two nights in two rooms', 
 test('occOf carries the date and the venue, so two late nights are two occurrences', () => {
   const a = occOf(JESS_1);
   const b = occOf(JESS_8);
-  assert.deepEqual(a, { day: 'Late nights', stage: null, time: null, weekend: null, date: '2026-10-01', venue: 'Stubb\'s' });
-  assert.deepEqual(b, { day: 'Late nights', stage: null, time: null, weekend: null, date: '2026-10-08', venue: 'The Continental Club' });
+  // Each night carries its own start as well (posted since 2026-09-26: Stubb's
+  // opener at its printed 8 PM show, the Continental Club's printed 10 PM).
+  assert.deepEqual(a, { day: 'Late nights', stage: null, time: '8 PM', weekend: null, date: '2026-10-01', venue: 'Stubb\'s' });
+  assert.deepEqual(b, { day: 'Late nights', stage: null, time: '10 PM', weekend: null, date: '2026-10-08', venue: 'The Continental Club' });
   assert.notEqual(JSON.stringify(a), JSON.stringify(b), 'the identity the wall writes into data-occ differs');
   assert.notEqual(JSON.stringify(occOf(BUNT_2)), JSON.stringify(occOf(BUNT_9)));
 });
@@ -137,20 +139,25 @@ test('factsFor tells each late night its own truth: the right venue, the right d
   const ctx = ctxFor('acl-2026');
   state.setActiveFestivalId('acl-2026');
   const one = facts.factsFor('Jess Williamson', ctx, occOf(JESS_1));
-  assert.equal(one.when, 'Thu · Oct 1 · Doors 7 PM');
+  // The room's window (MODEL-V3 §5): Stubb's outdoor show is over by the 10 PM
+  // after-show indoors — an evidenced guess, so the close wears the tilde.
+  assert.equal(one.when, 'Thu · Oct 1 · Runs 7 PM – ~10 PM');
   assert.equal(one.where, 'Stubb\'s');
   assert.equal(one.mapUrl, acl.venues['Stubb\'s']);
   const two = facts.factsFor('Jess Williamson', ctx, occOf(JESS_8));
-  assert.equal(two.when, 'Thu · Oct 8 · Doors 9:30 PM');
+  assert.equal(two.when, 'Thu · Oct 8 · Runs 9 PM – 11:30 PM', 'a printed window: no tilde');
   assert.equal(two.where, 'The Continental Club');
   assert.equal(two.mapUrl, acl.venues['The Continental Club']);
   assert.notEqual(one.where, two.where, 'the whole point: one card can never print the other room');
 
   const b2 = facts.factsFor('BUNT.', ctx, occOf(BUNT_2));
   const b9 = facts.factsFor('BUNT.', ctx, occOf(BUNT_9));
-  assert.equal(b2.when, 'Fri · Oct 2 · Doors 9 PM');
+  // Emo's publishes no close, so its window is a guess: the hall's midnight,
+  // stretched to BUNT.'s planned set (10:45 PM + 90). The Concourse prints its
+  // 9 PM – 2 AM on the night's own ticket page.
+  assert.equal(b2.when, 'Fri · Oct 2 · Runs 9 PM – ~12:15 AM');
   assert.equal(b2.where, 'Emo\'s');
-  assert.equal(b9.when, 'Fri · Oct 9 · Doors 9 PM');
+  assert.equal(b9.when, 'Fri · Oct 9 · Runs 9 PM – 2 AM');
   assert.equal(b9.where, 'The Concourse Project');
 });
 
@@ -176,7 +183,7 @@ test('the artist sheet\'s header for a dated occurrence shows the venue as a map
   const ctx = ctxFor('acl-2026');
   state.setActiveFestivalId('acl-2026');
   const header = facts.sheetCard(facts.factsFor('Jess Williamson', ctx, occOf(JESS_8)), { onClose: () => {}, notesChip: false });
-  assert.equal(header.querySelector('.f-sub').textContent, 'Thu · Oct 8 · Doors 9:30 PM');
+  assert.equal(header.querySelector('.f-sub').textContent, 'Thu · Oct 8 · Runs 9 PM – 11:30 PM');
   const door = header.querySelector('a.f-where');
   assert.ok(door, 'the venue is a door, not a missing line');
   assert.equal(door.textContent, 'The Continental Club');
