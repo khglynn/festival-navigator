@@ -495,6 +495,30 @@ await scenario('390 13 recording: a guest lands, the card arrives, taps an artis
   note(`recording: ${mp4} (${dur.toFixed(1)} s from the wall's first paint); writes ${JSON.stringify(writes)}; errors ${JSON.stringify(errors)}`);
 });
 
+await scenario('390 14 a guest sends nothing — the rig logs every request that is not a read', async () => {
+  resetDocs(); writes.length = 0;
+  // The hardest case: this phone once picked as Kevin in this crew, and that
+  // pick never left (it is still queued). Now nobody's name is on the phone.
+  const leftover = { fn: ([t, f]) => {
+    try { localStorage.setItem(`fn_crew_pending_v3_${t}`, JSON.stringify({ festivals: { [f]: { selections: { Robyn: { Kevin: 1 } } } } })); } catch {}
+  }, arg: [T.crew, FID] };
+  const { ctx, page, errors } = await phone({ init: leftover });
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  await page.waitForSelector('#welcome-card', { timeout: 5000 });
+  await page.locator('#welcome-card .bring-actions button').first().tap(); // Look around
+  await page.locator('#wall-root .card[data-artist="Tove Lo"]').first().tap();
+  await page.waitForSelector('#screen-join', { state: 'visible' });
+  await page.locator('#join-look').tap();
+  await page.waitForSelector('#screen-app', { state: 'visible' });
+  await sleep(2600); // past the 1.2 s push debounce, and a poll's worth
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); // the unload beacon path (sendBeacon is real here)
+  await sleep(800);
+  const queued = await page.evaluate((t) => localStorage.getItem(`fn_crew_pending_v3_${t}`), T.crew);
+  note(`guest zero writes: request log ${JSON.stringify(writes)} (${writes.length} writes); the earlier owner's pick still queued: ${queued && queued.includes('"Kevin":1')}; dot "${await page.locator('#dock .sync-dot').getAttribute('class')}"`);
+  note(`errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(OUT, 'walk.txt'), report.join('\n') + '\n');

@@ -35,6 +35,10 @@ const MINE = 'firstopentest_mine_01234'; // a personal link lands here
 const ACLONLY = 'firstopentest_aclon_0123'; // no picks, no stamp, one festival that is not the catalog default
 const OLDV3 = 'firstopentest_oldv3_0123'; // a legacy doc that still needs its one-shot migration
 const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+const LEFTOVER = 'firstopentest_left_01234'; // an earlier owner's edit still queued on this phone
+const NOROW = 'firstopentest_norow_0123'; // the link's festival is not in the crew's doc
+const SLOW = 'firstopentest_slow_01234'; // a join that takes its time on one bar
+const MIGR = 'firstopentest_migr_01234'; // a legacy crew whose update fails, then lands
 
 const crewDoc = (people, selections = {}, meta = { name: 'The Test Crew', inviteFestId: FID }) => ({
   v: 4, meta, spotify: {}, affinity: {}, people, festivals: { [FID]: { selections } },
@@ -48,7 +52,12 @@ const SERVER = {
   [MINE]: crewDoc({ Kevin: { colorIndex: 0 }, Drew: { colorIndex: 2 } }),
   [ACLONLY]: { v: 4, meta: { name: 'ACL Crew' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'acl-2026': { selections: {} } } },
   [OLDV3]: { ...crewDoc({ Kevin: { colorIndex: 0 } }, { Robyn: { Kevin: 2 } }), v: 3 },
+  [LEFTOVER]: crewDoc({ Kevin: { colorIndex: 0 } }, { Soulwax: { Kevin: 2 } }),
+  [NOROW]: { v: 4, meta: { name: 'No Row Crew' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: {} },
+  [SLOW]: crewDoc({ Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 } }, { 'Dog Blood': { Maya: 2 } }),
+  [MIGR]: { ...crewDoc({ Kevin: { colorIndex: 0 } }, { 'Dog Blood': { Kevin: 1 } }), v: 3 },
 };
+let migrateOk = false; // MIGR's one-shot update fails until a test says the network is back
 
 const writes = []; // every non-GET request, as `METHOD path?t=… body`
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -66,8 +75,15 @@ async function network(url, opts = {}) {
     return json({ token: 'personfirstopen_token_0123', id: 'pid_firstopen_01', doc: { v: 1, name: sent.name || 'Sam', crews: (sent.data || {}).crews || {} } });
   }
   if (u.startsWith('/api/crew?')) {
-    const t = new URL(u, 'https://x').searchParams.get('t');
+    const q = new URL(u, 'https://x').searchParams;
+    const t = q.get('t');
     if (!SERVER[t]) return json({ error: 'Crew not found' }, 404);
+    if (q.get('op') === 'migrate') {
+      if (!migrateOk) return json({ error: 'unreachable' }, 503);
+      SERVER[t] = { ...SERVER[t], v: 4 };
+      return json(SERVER[t]);
+    }
+    if (method !== 'GET' && t === SLOW) await new Promise((r) => setTimeout(r, 400));
     if (method !== 'GET') SERVER[t] = deepMerge(SERVER[t], JSON.parse(opts.body).data || {});
     return json(SERVER[t]);
   }
@@ -86,11 +102,6 @@ const welcome = () => document.getElementById('welcome-card');
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((b) => b.textContent === label);
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
-// Writes that carry anything. sync.js pushes the ACTIVE crew's pending
-// changes when a debounce scheduled on the previous crew fires after a switch
-// — with nothing pending that is `{data: {}}`, which the merge leaves exactly
-// as it was (pre-existing, and not a guest's doing). The law is about content.
-const contentWrites = (t) => crewWrites(t).filter((w) => /[?&]op=/.test(w.url) || Object.keys((w.body && w.body.data) || {}).length > 0);
 async function open(hash) {
   location.hash = hash;
   await settle(120);
@@ -306,7 +317,7 @@ test('a guest with no festival in the link or the crew lands where the crew is �
   assert.deepEqual(shown(), ['screen-app']);
   assert.equal(state.activeFestivalId, 'acl-2026');
   assert.equal(state.pendingChanges.festivals, undefined, 'no festival membership queued');
-  assert.deepEqual(contentWrites(ACLONLY), [], 'nothing written into the crew');
+  assert.deepEqual(crewWrites(ACLONLY), [], 'nothing sent to the crew at all');
   // And a tap asks in that festival's name, not a stamp's or a default's.
   document.querySelector('#wall-root .card[data-artist]').click();
   assert.deepEqual(shown(), ['screen-join']);
@@ -320,7 +331,7 @@ test('a guest never asks for a legacy crew’s one-shot migration — that is a 
   await settle(80);
   assert.deepEqual(shown(), ['screen-app']);
   assert.equal(crew.me(OLDV3), null);
-  assert.deepEqual(contentWrites(OLDV3), [], 'no op=migrate from a guest');
+  assert.deepEqual(crewWrites(OLDV3), [], 'no op=migrate from a guest');
   assert.equal(document.getElementById('migration-banner'), null, 'and no "picks unlock in a moment" for someone with no picks');
 });
 
@@ -333,5 +344,73 @@ test('history cannot open a member-only drill for a guest: it lands on Settings 
   assert.equal(document.querySelector('#settings-subview textarea'), null, 'no bulk paste box');
   dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate', { state: { layers: [] } }));
   await settle(20);
-  assert.deepEqual(contentWrites(OLDV3), []);
+  assert.deepEqual(crewWrites(OLDV3), []);
+});
+
+test('a guest never sends: an earlier owner’s queued edit stays queued, untouched, and nothing leaves', async () => {
+  // This phone was Kevin's in this crew once; his last pick never went out.
+  const queued = JSON.stringify({ festivals: { [FID]: { selections: { Robyn: { Kevin: 1 } } } } });
+  localStorage.setItem(`fn_crew_pending_v3_${LEFTOVER}`, queued);
+  await open(`#g=${LEFTOVER}&f=${FID}`);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(crew.me(LEFTOVER), null, 'a guest');
+  const sync = await import('../js/sync.js');
+  await settle(1500); // past the push debounce
+  await sync.pushSync(); // and asked outright
+  assert.equal(sync.flushOnHide(), false, 'the unload beacon sends nothing either');
+  assert.equal(await sync.requestMigration(), false, 'nor the one-shot update');
+  assert.deepEqual(crewWrites(LEFTOVER), [], 'no POST, not even an empty one');
+  assert.equal(localStorage.getItem(`fn_crew_pending_v3_${LEFTOVER}`), queued, 'Kevin’s edit is still queued, for Kevin');
+  assert.equal(sync.syncState(), 'online', 'reading is not "syncing" and not a fault');
+});
+
+test('a guest on a crew without the link’s festival row renders it and records nothing — even after a poll', async () => {
+  await open(`#g=${NOROW}&f=${FID}`);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(state.activeFestivalId, FID);
+  const sync = await import('../js/sync.js');
+  await sync.pollSync(); // applyRemoteDoc re-ensures the festival on every poll
+  assert.equal(state.pendingChanges.festivals, undefined, 'no festival row queued');
+  assert.equal(localStorage.getItem(`fn_crew_pending_v3_${NOROW}`), null);
+  await settle(1500);
+  assert.deepEqual(crewWrites(NOROW), []);
+});
+
+test('one answer at a time: a slow join is not overtaken by a tap on someone else’s name', async () => {
+  await open(`#g=${SLOW}&f=${FID}`);
+  cardOf('Robyn').click();
+  assert.equal($('join-for').textContent, 'Pick Robyn as…');
+  $('join-name-input').value = 'Sam';
+  $('join-add-btn').click(); // the POST takes 400 ms
+  await settle(20);
+  const kevin = [...$('join-people').querySelectorAll('button')].find((b) => /Kevin/.test(b.textContent));
+  assert.equal(kevin.disabled, true, 'every other answer waits');
+  assert.equal($('join-look').disabled, true);
+  kevin.click();
+  $('join-add-btn').click();
+  await settle(700);
+  assert.equal(crew.me(SLOW), 'Sam', 'the answer that was given');
+  const robyn = state.crewDoc.festivals[FID].selections.Robyn || {};
+  assert.equal(robyn.Sam, 1, 'Robyn is Sam’s first pick');
+  assert.equal(robyn.Kevin, undefined, 'and never Kevin’s');
+  assert.equal(crewWrites(SLOW).filter((w) => w.body && w.body.data && w.body.data.people && w.body.data.people.Sam && w.body.data.people.Sam.colorIndex !== undefined).length, 1, 'one join');
+});
+
+test('the promised pick waits for a legacy crew’s update — kept, not dropped — and lands when it does', async () => {
+  await open(`#g=${MIGR}&f=${FID}`);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.deepEqual(crewWrites(MIGR), [], 'a guest never asks for the update');
+  cardOf('Robyn').click();
+  $('join-name-input').value = 'Tia';
+  $('join-add-btn').click();
+  await settle(200);
+  assert.equal(crew.me(MIGR), 'Tia');
+  assert.ok(crewWrites(MIGR).some((w) => /op=migrate/.test(w.url)), 'the member asks for the update — and it fails');
+  assert.ok(document.getElementById('migration-banner'), 'picks are locked, and the wall says so');
+  assert.equal((state.crewDoc.festivals[FID].selections.Robyn || {}).Tia, undefined, 'not yet');
+  migrateOk = true;
+  document.querySelector('#migration-banner button').click(); // "Try now"
+  await settle(120);
+  assert.equal(document.getElementById('migration-banner'), null, 'unlocked');
+  assert.equal(state.crewDoc.festivals[FID].selections.Robyn.Tia, 1, 'and Robyn is Tia’s, as promised');
 });

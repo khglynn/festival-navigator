@@ -346,3 +346,60 @@ finger) → "Pick Fcukers as…" → Look around → back on the wall. Made by t
 walk's `390 13` scenario (Playwright video + ffmpeg). Note for the motion
 review: with six faces the buttons land ~0.84 s after mount, about a quarter
 second after the card itself — the "beat between arrivals" as designed.
+
+**~12:10 AM Sat — Codex Sol 6 review (xhigh) on 40a2a47: two blockers, two
+should-fixes, a nit; CI red in the Tokyo pass. All fixed, with tests.**
+1. **Blocker — a guest could POST to the crew.** Fixed at the source with one
+   rule: `state.mayWrite()` (app.js sets it: "this phone holds a name in the
+   active crew"; the default lets everyone write, so members and every
+   pre-v92 caller are unchanged). `sync.js` asks it before every send —
+   `pushSync`, the `pagehide` beacon (`flushOnHide`), `requestMigration` —
+   and `pollSync` neither shows "syncing" for nor re-arms a push of a queue it
+   will not send. `state.ensureFestivalState` renders a missing festival row
+   for a guest and queues nothing — it runs on activation AND on every poll
+   (`applyRemoteDoc`), so both are covered. A guest reads (polls, sees the
+   crew move) and sends nothing: an earlier owner's queued edit stays queued,
+   untouched; no row; no empty merge. Tests: an earlier owner's `Robyn.Kevin:
+   1` stays queued and nothing leaves (push, beacon, migration all asked
+   outright); a crew without the link's festival row queues nothing even
+   after a poll. Mutation check: removing the send gate and the row guard
+   turns three tests red.
+   **Why CI's Tokyo pass and not local:** not the time zone. Reopening Sam's
+   crew (a member with a queued edit) debounced a push 1.2 s out; the test
+   then walks through four crews ~200 ms apart, and the debounced push fires
+   on whichever crew is active THEN, sending that crew's queue. Traced on
+   40a2a47: locally it lands on the ACL crew (`{}`), on CI's timing it landed
+   on the personal-link guest crew. The gate is read when the push fires, so
+   a guest crew never sends whoever scheduled it — the fix, not the test.
+   (Pre-existing and member-side, NOT changed: that debounced push sends the
+   crew-now-active's queue rather than the scheduling crew's; the first
+   crew's edit stays queued until it is reopened, so nothing is lost. After
+   Portola: bind a scheduled push to its crew.)
+2. **Blocker — an in-flight join could give the first pick to someone else.**
+   The join screen takes one answer at a time: while one settles, every
+   other door on it (the name rows, Join, the field, Look around) is disabled
+   and a flag ignores anything that gets through. The waiting question is
+   taken by the answer that consumes it (`takeQuestion`) and given back if
+   the server refuses the join; `finishJoin` makes the pick only for the name
+   that answer set. Test: Join as Sam slowed to 400 ms, Kevin's row tapped
+   meanwhile → Kevin's row is disabled, Sam is in, `Robyn.Sam: 1`, no Kevin
+   pick, one join. Mutation check: removing the lock turns it red.
+3. **Should-fix — a failed migration lost the promised pick.** The pick is
+   kept (`waitingPick`) until it can be made, and made when the update lands
+   — the three places `migrationPending` goes false now call
+   `applyWaitingPick()`. Test: a v3 crew, update fails, the banner shows, no
+   pick; the network comes back, "Try now" → unlocked and `Robyn.Tia: 1`.
+4. **Should-fix — a member taking their own name got the welcome.** Only a
+   NEW name (the join POST, or its offline branch) enters with `joined:
+   true`; tapping or typing an existing name never does. Tests: Drew's
+   personal link → tap Drew → no card; a new name "Ana" → the card, member
+   words.
+5. Nit — the extra blank line at the end of `first-open-show.test.mjs`;
+   `git diff --check` is clean.
+Verified: full `npm test` in UTC, `TZ=Asia/Tokyo`, and
+`NIGHT_CLOCK=2026-09-27T04:30:00Z` — 964 pass each, the stamp the only
+failure (yours); `npm run test:browser` 191/191; the walk: the new `390 14`
+(an earlier owner's pick queued, welcome, tap → join → Look around, 2.6 s
+wait, `pagehide` with a real `sendBeacon`) — **the rig's request log shows 0
+writes**, the old pick still queued, the dot online; guest at 390/320: 0
+writes; join as Sam: today's four writes only; members: no card.

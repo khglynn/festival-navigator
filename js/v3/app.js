@@ -72,6 +72,16 @@ import { getLS } from '../util.js';
 
 const $ = (id) => document.getElementById(id);
 
+// Who may write into the crew on screen (v92): a phone that holds a name in
+// it. A guest reads — polls, sees the crew move — and never writes: no
+// festival row queued, nothing sent, and any edits already queued on this
+// phone (an earlier owner's) left untouched for their owner (state.js
+// mayWrite; sync.js asks it before every send).
+state.setWritePolicy(() => {
+  const token = state.getCrewToken();
+  return !!(token && crew.me(token));
+});
+
 // ---- view context ---------------------------------------------------------------
 const ctx = {
   fid: null,
@@ -442,20 +452,34 @@ function askToJoin(artist = null) {
 }
 
 // After a join from the wall: back where they were standing, and the artist
-// they tapped becomes their pick through the ordinary pick path — only where
-// that is still true (same crew and festival, picks writable, the card still
-// on the wall) and only from nothing: someone who tapped their own name in
-// already has a level there, and a tap would move it.
-function finishJoin(token) {
-  const p = pendingJoin;
-  pendingJoin = null;
-  if (!p || p.token !== token || state.getCrewToken() !== token || !ctx.meName) return;
-  if (p.fid !== ctx.fid) return;
-  restorePlace(p.place);
-  if (!p.artist || ctx.migrationPending) return;
-  if (!document.querySelector(`#wall-root .card[data-artist="${CSS.escape(p.artist)}"]`)) return;
-  if (((ctx.picks[p.artist] || {})[ctx.meName] || 0) > 0) return;
-  handleTap(p.artist);
+// they tapped becomes their pick. `claim` is the question this join answered
+// (taken by the answer that consumed it — renderJoin), and `name` the name
+// that answer set: the pick is only ever made for that person.
+function finishJoin(token, claim, name) {
+  if (!claim || claim.token !== token || state.getCrewToken() !== token || ctx.meName !== name) return;
+  if (claim.fid !== ctx.fid) return;
+  restorePlace(claim.place);
+  if (!claim.artist) return;
+  waitingPick = { token, fid: claim.fid, artist: claim.artist, name };
+  applyWaitingPick();
+}
+
+// The pick a guest's tap promised, made the moment it can be: at once after
+// the join, or when a legacy crew's one-shot update lands (picks are locked
+// until then) — kept, never dropped for being early (review, 2026-09-25).
+// Only for the person, crew and festival it was promised to, only onto a card
+// still on the wall, and only from nothing: someone who tapped their own name
+// in already has a level there, and a tap would move it. Through the ordinary
+// pick path.
+let waitingPick = null; // { token, fid, artist, name }
+function applyWaitingPick() {
+  const w = waitingPick;
+  if (!w || ctx.migrationPending) return;
+  waitingPick = null;
+  if (state.getCrewToken() !== w.token || ctx.fid !== w.fid || ctx.meName !== w.name) return;
+  if (!document.querySelector(`#wall-root .card[data-artist="${CSS.escape(w.artist)}"]`)) return;
+  if (((ctx.picks[w.artist] || {})[ctx.meName] || 0) > 0) return;
+  handleTap(w.artist);
 }
 
 // "Look around" (the join screen's way back): onto the wall as a guest. From the wall (a tap, the +,
@@ -1361,7 +1385,7 @@ function updateMigrationBanner() {
       await sync.requestMigration();
       ctx.migrationPending = model.needsMigration(state.crewDoc);
       retry.disabled = false;
-      if (!ctx.migrationPending) repaintWall();
+      if (!ctx.migrationPending) { repaintWall(); applyWaitingPick(); }
       else updateMigrationBanner();
     });
     bar.append(msg, retry);
@@ -2502,12 +2526,31 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     look.textContent = WORDS.look; // the welcome card's words for looking (welcome.js)
     look.onclick = () => lookAround(token, doc);
   }
+  // One answer at a time (review, 2026-09-25). While an answer is settling
+  // (a join's POST on one bar of signal), every other door on this screen is
+  // off — a second answer could otherwise take the waiting pick for someone
+  // else. The waiting question goes to the answer that takes it
+  // (takeQuestion), and a join the server refuses gives it back.
+  let answering = false;
+  const doors = () => [...$('join-people').querySelectorAll('button'), $('join-add-btn'), $('join-look'), $('join-name-input')].filter(Boolean);
+  const hold = (on) => { answering = on; for (const d of doors()) d.disabled = on; };
+  hold(false);
+  const takeQuestion = () => { const q = pendingJoin; pendingJoin = null; return q; };
   // Never throws into the join's own error path: a failed pick after a good
   // join must not be mistaken for a failed join (the offline branch below
   // would record the person a second time).
-  const entered = (entering) => Promise.resolve(entering).then(() => {
-    try { finishJoin(token); } catch (e) { record('join:finish', e); }
+  const entered = (entering, claim, name) => Promise.resolve(entering).then(() => {
+    try { finishJoin(token, claim, name); } catch (e) { record('join:finish', e); }
   });
+  // A name already in the crew, tapped or typed: a member taking their own
+  // name — never new here, so never the welcome (review: members never get it).
+  const claimName = (name) => {
+    if (answering) return;
+    hold(true);
+    const claim = takeQuestion();
+    crew.setMe(token, name);
+    entered(enterApp(token, doc), claim, name).finally(() => hold(false));
+  };
   // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
   // crew is who with. Fest context comes from the link's &f= or the doc stamp.
   // A guest asked from the wall: the festival they are looking at (v92).
@@ -2555,10 +2598,11 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       hint.textContent = 'this link is yours';
       row.appendChild(hint);
     }
-    row.addEventListener('click', () => { crew.setMe(token, name); entered(enterApp(token, doc, undefined, undefined, { joined: true })); });
+    row.addEventListener('click', () => claimName(name));
     list.appendChild(row);
   }
   $('join-add-btn').onclick = async () => {
+    if (answering) return;
     const name = $('join-name-input').value.trim();
     const status = $('join-status');
     // Same rule the server enforces (FLOW-5): the form answers, never a 400.
@@ -2569,13 +2613,11 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     // "drew" typing in must claim Drew, never fork a second member.
     const existingEntry = Object.entries(doc.people || {})
       .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && p && !p.removed);
-    if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc, undefined, undefined, { joined: true })); return; }
-    const btn = $('join-add-btn');
-    btn.disabled = true;
-    // The answer decides where this goes: "Look around" waits for it (a join
-    // the server already took would land anyway, minus the waiting pick).
-    const lookBtn = $('join-look');
-    if (lookBtn) lookBtn.disabled = true;
+    if (existingEntry) { claimName(existingEntry[0]); return; }
+    // The answer decides where this goes: every door waits for it, "Look
+    // around" included (a join the server already took would land anyway).
+    hold(true);
+    const claim = takeQuestion();
     status.textContent = '';
     status.appendChild(eqLoader('Finding your people…'));
     const taken = Object.values(doc.people || {})
@@ -2599,23 +2641,24 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         status.textContent = errorText(body, 'The crew service hiccuped — give it a second and tap Join again.');
-        btn.disabled = false;
+        pendingJoin = claim; // no join: the question is still open
         return;
       }
       const merged = await res.json();
       crew.setMe(token, name);
-      await entered(enterApp(token, merged, undefined, undefined, { joined: true }));
+      // A name new to the crew: someone new here, who gets the welcome.
+      await entered(enterApp(token, merged, undefined, undefined, { joined: true }), claim, name);
     } catch {
       // Network failure: offline-first join, sync catches up (old behavior).
+      // The name is set first, so the crew is theirs to write to from here.
+      crew.setMe(token, name);
       state.activateCrew(token, doc, festHint);
       state.recordPerson(name, person);
-      crew.setMe(token, name);
-      entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true }));
+      entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true }), claim, name);
       sync.scheduleSync();
     } finally {
       delete document.body.dataset.busy;
-      btn.disabled = false;
-      if (lookBtn) lookBtn.disabled = false;
+      hold(false);
     }
   };
 }
@@ -2719,7 +2762,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       sync.requestMigration().then(() => {
         if (!current() || state.getCrewToken() !== token) return;
         ctx.migrationPending = model.needsMigration(state.crewDoc);
-        if (!ctx.migrationPending) repaintWall();
+        if (!ctx.migrationPending) { repaintWall(); applyWaitingPick(); }
       });
     }
   } else if (model.needsMigration(state.crewDoc) && crew.me(token)) {
@@ -3278,7 +3321,7 @@ export function init() {
     if (ctx.migrationPending && navigator.onLine) {
       if (await sync.requestMigration()) {
         ctx.migrationPending = model.needsMigration(state.crewDoc);
-        if (!ctx.migrationPending) repaintWall();
+        if (!ctx.migrationPending) { repaintWall(); applyWaitingPick(); }
       }
     }
     sync.pollSync();

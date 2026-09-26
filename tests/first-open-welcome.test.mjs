@@ -2,8 +2,8 @@
 // that have already connected to a person in the fest should just go to now /
 // the top / their filter selected"). A phone that recognizes you lands exactly
 // as it did in v91 — no card, and the bring-your-picks offer asks at once. A
-// member who has just joined through the join screen is new: the card, in a
-// member's words, and the offer waits for it.
+// member taking their own name on the join screen is not new either. Someone
+// who has just joined under a NEW name is: the card, in a member's words.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -22,6 +22,7 @@ const HERE = 'firstopenwelc_here_01234';
 const ROSS = 'firstopenwelc_ross_01234';
 const KNOWN = 'firstopenwelc_known_0123';
 const DREW = 'firstopenwelc_drew_01234';
+const NEWC = 'firstopenwelc_newc_01234';
 const PID = 'pid_firstopen_welc';
 const PERSON = { token: 'personfirstwelc_token_0123', id: PID, name: 'Kevin', crews: {} };
 const crewDoc = (people, selections = {}) => ({
@@ -32,6 +33,7 @@ const DOCS = {
   [HERE]: crewDoc({ Kevin: { colorIndex: 0, pid: PID }, Nhu: { colorIndex: 1 } }, { Prospa: { Nhu: 3 } }),
   [KNOWN]: crewDoc({ Maya: { colorIndex: 3 }, Nhu: { colorIndex: 1 } }, { Robyn: { Maya: 2 } }),
   [DREW]: crewDoc({ Kevin: { colorIndex: 0 }, Drew: { colorIndex: 2 } }, { Robyn: { Kevin: 2 } }),
+  [NEWC]: crewDoc({ Kevin: { colorIndex: 0 } }, { Robyn: { Kevin: 2 } }),
 };
 const ROSS_DOC = crewDoc({ Kev: { colorIndex: 0, pid: PID }, Ross: { colorIndex: 3 } }, { Soulwax: { Kev: 1 }, Kettama: { Kev: 4 } });
 
@@ -43,8 +45,14 @@ async function network(url, opts = {}) {
   if (u.startsWith('/api/festival-add?')) return json({ festivals: [] });
   if (u === '/api/person') return json({ id: PID, doc: { v: 1, name: 'Kevin', crews: {} } });
   if (u.startsWith('/api/crew?')) {
-    if ((opts.method || 'GET') !== 'GET') return json({ error: 'not in this test' }, 503);
     const t = new URL(u, 'https://x').searchParams.get('t');
+    if ((opts.method || 'GET') !== 'GET') {
+      // Only NEWC takes a join here; everything else stays pending.
+      if (t !== NEWC) return json({ error: 'not in this test' }, 503);
+      const people = (JSON.parse(opts.body).data || {}).people || {};
+      DOCS[NEWC] = { ...DOCS[NEWC], people: { ...DOCS[NEWC].people, ...people } };
+      return json(DOCS[NEWC]);
+    }
     return DOCS[t] ? json(DOCS[t]) : json({ error: 'Crew not found' }, 404);
   }
   return json({ error: 'not in this test' }, 503);
@@ -86,14 +94,26 @@ test('a phone that knows its name lands with no card either', async () => {
   assert.equal($('dock-you').textContent, 'M');
 });
 
-test('someone who has just joined is new: the card, in a member’s words, with no door to join', async () => {
+test('a member taking their own name on the join screen is not new: no card', async () => {
   await open(`#g=${DREW}&f=${FID}&me=Drew`);
   assert.notEqual($('screen-join').style.display, 'none', 'a personal link asks first');
   const drew = [...$('join-people').querySelectorAll('button')].find((b) => /Drew/.test(b.textContent));
   drew.click();
   await settle(160);
+  assert.equal($('dock-you').textContent, 'D');
+  assert.equal(welcome(), null, 'members never get the card');
+  assert.equal(localStorage.getItem('fn_welcome_v1'), null);
+});
+
+test('someone who has just joined under a new name is new: the card, in a member’s words, with no door to join', async () => {
+  await open(`#g=${NEWC}&f=${FID}&me=Zed`); // a personal link for a name not in the crew: the join screen asks
+  assert.notEqual($('screen-join').style.display, 'none');
+  $('join-name-input').value = 'Ana';
+  $('join-add-btn').click();
+  await settle(200);
+  assert.equal($('dock-you').textContent, 'A');
   const box = welcome();
-  assert.ok(box, 'the welcome, for the newly joined');
+  assert.ok(box, 'the welcome, for someone new');
   assert.match(box.querySelector('.bring-sub').textContent, /Tap any artist to add yours\.$/);
   assert.ok(buttonNamed(box, 'Got it') && buttonNamed(box, 'How it works'));
   assert.equal(buttonNamed(box, 'Pick shows'), undefined, 'already joined: no door to join');

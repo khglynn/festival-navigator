@@ -167,4 +167,3 @@ test('a phone that has shown the festival is never re-folded by a link — showi
   assert.equal(localStorage.getItem(FOLD), null);
   assert.doesNotMatch(toast(), /Opened on/);
 });
-
