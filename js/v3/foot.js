@@ -21,6 +21,7 @@
 //                 welcome, the bring-your-picks offer — as --offer-top, its
 //                 top edge's distance from the window's bottom. The Spotify
 //                 pill stands above it (v3.css), phone and laptop alike.
+//                 measureFoot() runs it too: the card stands on the floor.
 //
 // Above 720px the dock is display:none and the laptop's plan lives in the
 // corner: footTop() is null there and the two variables go back to the
@@ -47,6 +48,14 @@ export function footTop() {
 }
 
 export function measureFoot() {
+  floor();
+  // The card that waits above the dock stands on --foot-h, so every change to
+  // the floor (a late font, the dock's own content, a rotation) re-measures
+  // it too (Sol, 2026-09-26: the dock's resize path had left it stale).
+  measureOffer();
+}
+
+function floor() {
   const root = document.documentElement.style;
   const dock = document.getElementById('dock');
   const plan = document.getElementById('plan');

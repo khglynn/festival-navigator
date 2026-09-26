@@ -4666,7 +4666,6 @@ export function init() {
       measureStickyChrome();
       refitPlanShelf();
       measureFoot();
-      measureOffer();
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -4698,7 +4697,7 @@ export function init() {
   // Both mount into #screen-app and leave by being removed, so their coming
   // and going is the whole signal. The Spotify pill stands above the card
   // (foot.js measureOffer): on its arrival, whenever its size changes (its
-  // text changes after an answer), and on a resize (below).
+  // text changes after an answer), and whenever the floor is measured.
   let offerSize = null;
   const watchOffer = () => {
     if (offerSize) { offerSize.disconnect(); offerSize = null; }
