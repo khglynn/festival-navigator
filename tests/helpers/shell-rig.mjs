@@ -93,3 +93,20 @@ function pinClock(iso) {
 
 // Resolve every pending microtask and short timer the boot chain queued.
 export const settle = (ms = 20) => new Promise((r) => setTimeout(r, ms));
+
+// Wait for what the page does in its own time — polled, never one fixed sleep.
+// A history traversal in jsdom is two tasks (the traversal, then its
+// popstate, each a 0 ms timer the first one schedules), so a thread blocked
+// past a fixed settle — a loaded CI runner, a night-clock repaint — woke to
+// find the settle's timer due BEFORE the popstate's and read the page
+// mid-traversal (Sol 6's night-clock run, 2026-09-26; reproduced by starving
+// the test's own thread, 60 ms of every 85). Resolves true once `cond()`
+// holds, false after ~`timeout` ms; the caller's assertion says what failed.
+// Counted in steps, not by the clock: the night clock moves Date.
+export async function settleUntil(cond, { timeout = 3000, step = 10 } = {}) {
+  for (let i = 0; i * step < timeout; i++) {
+    if (cond()) return true;
+    await settle(step);
+  }
+  return !!cond();
+}

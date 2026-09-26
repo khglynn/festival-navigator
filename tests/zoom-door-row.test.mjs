@@ -1,16 +1,18 @@
 // A member's zoom door row (v92 — Kevin, 2026-09-25): − · note · + along the
 // grown card's floor. + raises the level through picked 1–3 to must and stops;
 // − lowers it toward not picked and stops; a door with nowhere to go is
-// disabled, never hidden. The note door does what the notes chip did. A tap
+// disabled, never hidden. The note door does what the notes chip did. A click
 // on a RESTING card still cycles exactly as in v91 — the row is the zoom's
-// precise control, not a new meaning for the tap. The real shell, opened by a
-// real hold (a finger's pointerdown held past 500 ms, then the lift).
+// precise control. The real shell, the zoom grown by a mouse's hover (since
+// the tap change, 2026-09-26, a finger never grows a zoom: its tap opens the
+// card's shelf, tests/tap-shelf.test.mjs, whose − · + are the same doors).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -55,23 +57,17 @@ const doors = () => [...zoomCard().querySelectorAll('.f-step-row > *')];
 const minus = () => zoomCard().querySelector('.f-step.minus');
 const plus = () => zoomCard().querySelector('.f-step.plus');
 const level = (artist) => (state.crewDoc.festivals[FID].selections[artist] || {}).Kevin || 0;
-const pointer = (el, type, pointerType = 'touch') => el.dispatchEvent(new window.PointerEvent(type, { bubbles: true, pointerType }));
-// A real hold: jsdom lays nothing out, so the card is given the offsetParent a
-// laid-out card has (wall.js checks it so a hold never zooms a hidden wall).
-async function hold(artist) {
+// A real hover: a mouse's pointerenter, then the intent delay (card-facts.js ZOOM_IN_MS).
+async function hover(artist) {
   const el = cardOf(artist);
-  Object.defineProperty(el, 'offsetParent', { configurable: true, get: () => document.body });
-  pointer(el, 'pointerdown');
-  await settle(540);
-  pointer(el, 'pointerup');
-  el.click(); // the lift's click, which the hold swallows
-  await settle(10);
-  assert.ok(zoomCard(), `${artist} grew under the hold`);
+  el.dispatchEvent(new window.PointerEvent('pointerenter', { pointerType: 'mouse', clientX: 40, clientY: 40 }));
+  await settle(260);
+  assert.ok(zoomCard(), `${artist} grew under the hover`);
   assert.equal(zoom.zoomedCard(), cardOf(artist));
 }
 
-test('a hold opens the zoom with − · note · + along its floor; at nothing picked, − has nowhere to go', async () => {
-  await hold('Robyn');
+test('a hover opens the zoom with − · note · + along its floor; at nothing picked, − has nowhere to go', async () => {
+  await hover('Robyn');
   assert.deepEqual(doors().map((d) => d.textContent), ['−', '+ note', '+']);
   assert.equal(zoomCard().lastElementChild.classList.contains('f-step-row'), true, 'the row is the card’s floor');
   assert.equal(minus().disabled, true, 'nothing to lower');
@@ -149,8 +145,8 @@ test('the note door opens the notes, as the chip did', async () => {
   assert.equal(zoomCard(), null, 'and no zoom grew there');
 });
 
-test('a tap on a RESTING card still cycles, as in v91 — including must back to nothing', async () => {
-  const tap = () => { const c = cardOf('Robyn'); pointer(c, 'pointerdown', 'mouse'); c.click(); };
+test('a click on a RESTING card still cycles, as in v91 — including must back to nothing', async () => {
+  const tap = () => { pointerClick(window, cardOf('Robyn'), 'mouse'); };
   tap();
   assert.equal(level('Robyn'), 1, 'a click picks — it does not open the zoom');
   tap(); tap(); tap();

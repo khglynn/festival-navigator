@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -124,64 +124,94 @@ test('a door a pick just slid under the pointer picks instead of opening a tab',
 });
 
 // The v88 walk (2026-09-25), in the real app rather than the gallery: a door
-// takes focus on its own mousedown, and when a settle-window tap turns it into
-// a pick, the pick's refresh rebuilds the door row. The focused door vanished,
-// focusout read that as "focus left the zoom", and the zoom closed mid-pick.
-// The gallery case above never saw it (no crew, no resting-card focus). A
-// pinned clock keeps Date.now() inside the settle beat for every tap.
-test('in the app, a door tapped just after a pick picks and the zoom stays open', { skip }, async () => {
+// takes focus on its own mousedown, and when a settle-window press turns it
+// into a pick, the pick's refresh rebuilds the door row. The focused door
+// vanished, focusout read that as "focus left the zoom", and the zoom closed
+// mid-pick. Since the tap change (2026-09-26) a finger grows no zoom, so the
+// settle beat is a mouse's (and a key's): driven here by a real mouse. The
+// finger's twin is the shelf's — its doors are doors from the first frame.
+// A pinned clock keeps Date.now() inside the settle beat for every press.
+async function openApp({ width, touch }) {
   const { randomBytes } = await import('node:crypto');
   const FID = 'portola-2026';
   const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+  const ctx = await browser.newContext({ viewport: { width, height: 844 }, hasTouch: touch, isMobile: touch, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+  await ctx.addInitScript(([t, f]) => {
+    localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Doors' }]));
+    localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+    localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+    localStorage.setItem('fn_welcome_v1', '1');
+    localStorage.setItem('fn_tap_news_v1', '1');
+  }, [CREW, FID]);
+  const doc = { v: 4, meta: { name: 'Doors', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+  await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
+    ? r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })
+    : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
+  await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+  await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+  const page = await ctx.newPage();
+  await page.clock.setFixedTime(new Date('2026-09-26T22:30:00-07:00'));
+  await page.goto(`${server.origin}/#g=${CREW}`, { waitUntil: 'load' });
+  await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+  const at = await page.evaluate(() => {
+    const el = document.querySelector('#wall-root .card[data-artist="Boys Noize"]');
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 24) };
+  });
+  const centre = (sel) => page.evaluate((q) => {
+    const r = document.querySelector(q).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, sel);
+  const level = () => page.evaluate(async () => ((await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections['Boys Noize'] || {}).Kevin || 0);
+  return { ctx, page, at, centre, level };
+}
+
+test('in the app, a door clicked just after a pick picks and the zoom stays open', { skip }, async () => {
+  const { ctx, page, at, centre } = await openApp({ width: 390, touch: false });
   try {
-    await ctx.addInitScript(([t, f]) => {
-      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Doors' }]));
-      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_welcome_v1', '1');
-    }, [CREW, FID]);
-    const doc = { v: 4, meta: { name: 'Doors', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
-    await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-    await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
-      ? r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })
-      : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
-    await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-    await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
-    const page = await ctx.newPage();
-    await page.clock.setFixedTime(new Date('2026-09-26T22:30:00-07:00'));
-    await page.goto(`${server.origin}/#g=${CREW}`, { waitUntil: 'load' });
-    await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
-    const at = await page.evaluate(() => {
-      const el = document.querySelector('#wall-root .card[data-artist="Boys Noize"]');
-      el.scrollIntoView({ block: 'center' });
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
-    const cdp = await ctx.newCDPSession(page); // a real held finger: Playwright's tap cannot hold
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [at] });
-    for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await cdp.detach().catch(() => {});
+    await page.mouse.move(at.x - 30, at.y - 30);
+    await page.mouse.move(at.x, at.y, { steps: 5 });
     await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
     await sleep(700);
-    const centre = (sel) => page.evaluate((s) => {
-      const r = document.querySelector(s).getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    }, sel);
     const label = () => page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Boys Noize"]').getAttribute('aria-label'));
     const open = () => page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot.shown'));
     const n = await centre('#zoom-layer .zoom-slot.shown .f-name');
-    await page.touchscreen.tap(n.x, n.y);
+    await page.mouse.click(n.x, n.y);
     await sleep(300);
     const afterPick = await label();
     assert.equal(await open(), true, 'a pick on the zoom keeps it open');
     const d = await centre('#zoom-layer .zoom-slot.shown .f-links a.f-link');
-    await page.touchscreen.tap(d.x, d.y);
+    let opened = false;
+    page.on('popup', (p) => { opened = true; p.close().catch(() => {}); });
+    await page.mouse.click(d.x, d.y);
     await sleep(300);
-    assert.notEqual(await label(), afterPick, 'the door tap picked');
+    assert.equal(opened, false, 'no tab opened');
+    assert.notEqual(await label(), afterPick, 'the door click picked');
     assert.equal(await open(), true, 'and the zoom is still open');
     const journal = await page.evaluate(() => import('/js/errlog.js').then((m) => m.recent()));
     assert.deepEqual(journal.filter((e) => e.kind === 'zoom-close-after-click'), [], 'nothing closed the zoom');
+  } finally { await ctx.close(); }
+});
+
+test('on the shelf a finger opens, a door is a door from the first frame: Tix opens its page right after a +, and picks nothing', { skip }, async () => {
+  const { ctx, page, at, centre, level } = await openApp({ width: 390, touch: true });
+  try {
+    await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
+    await page.waitForSelector('#artist-sheet .sheet-card .f-links a.f-link', { timeout: 4000 });
+    await sleep(500);
+    await motionDone(page, { within: '#artist-sheet' });
+    const plus = await centre('#artist-sheet .sheet-card .f-step.plus');
+    await page.touchscreen.tap(Math.round(plus.x), Math.round(plus.y));
+    await sleep(60); // well inside what was the zoom's settle beat
+    assert.equal(await level(), 1, '+ picked');
+    const d = await centre('#artist-sheet .sheet-card .f-links a.f-link');
+    const popup = page.waitForEvent('popup', { timeout: 3000 });
+    await page.touchscreen.tap(Math.round(d.x), Math.round(d.y));
+    await (await popup).close();
+    await sleep(200);
+    assert.equal(await level(), 1, 'the door opened its page and picked nothing');
+    assert.equal(await page.locator('#artist-sheet .sheet-card').count(), 1, 'the shelf is still up');
   } finally { await ctx.close(); }
 });

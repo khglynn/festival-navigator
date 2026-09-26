@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,11 +91,7 @@ const shelf = () => document.querySelector('.join-shelf');
 const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) => b.dataset.name === name);
 const shelfGo = () => shelf().querySelector('.js-go');
 const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
-const clickCard = (artist) => {
-  const c = cardOf(artist);
-  c.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-  c.click();
-};
+const clickCard = (artist) => { pointerClick(shell.dom.window, cardOf(artist), 'mouse'); };
 
 await settle(160);
 
@@ -103,11 +100,14 @@ test('a member whose storage reads start failing after the wall painted keeps th
   const getItem = localStorage.getItem;
   localStorage.getItem = () => { throw new Error('SecurityError: storage went away'); };
   try {
-    cardOf('Soulwax').click();
+    // A mouse's clicks, press and all (clickCard): since the tap change a
+    // click with no press of its own is an assistive activation, which opens
+    // the card rather than picking — this case is about picking.
+    clickCard('Soulwax');
     assert.equal(crew.me(MEMBER), 'Kevin', 'a failed read answers with the name this page knows');
     assert.equal($('dock-you').textContent, 'K', 'still Kevin on the wall after the repaint');
     assert.ok(!$('dock-you').classList.contains('guest'), 'never turned into a guest');
-    cardOf('Soulwax').click(); // and keeps picking: the second tap is a 2
+    clickCard('Soulwax'); // and keeps picking: the second click is a 2
     assert.deepEqual(shownScreens(), ['screen-app'], 'no join screen');
     await settle(1500); // past the push debounce
     const sent = crewWrites(MEMBER).filter((w) => w.body && w.body.data && w.body.data.festivals);

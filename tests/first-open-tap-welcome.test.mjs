@@ -1,12 +1,15 @@
 // Touching the wall is engaging (v92, the guest shelf round): a guest's tap on
 // a card takes the welcome card down — its words have done their job — and
-// opens the card. A file of its own, because the welcome shows once per page.
+// opens the card's shelf (the tap change, 2026-09-26). A file of its own,
+// because the welcome shows once per page. (A member's first tap does the
+// same: app.js handleTap asks nobody's name before taking it down.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -32,15 +35,16 @@ const shell = await bootShell({ url: `https://fest.kevinhg.com/#g=${CREW}&f=${FI
 test.after(() => shell.close());
 await settle(160);
 
-test('a guest’s finger tap on a card takes the welcome down and opens the card', async () => {
+test('a guest’s finger tap on a card takes the welcome down and opens the card’s shelf', async () => {
   assert.ok(document.getElementById('welcome-card'), 'the welcome is up');
   const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
-  card.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
-  card.click();
+  pointerClick(shell.dom.window, card, 'touch');
   await settle(20);
   assert.equal(document.getElementById('welcome-card'), null, 'its words have done their job');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'read, on this phone');
-  assert.ok(document.querySelector('#zoom-layer .zoom-card .f-step-row'), 'the card is open, its − · note · + along the floor');
+  const sheet = document.getElementById('artist-sheet');
+  assert.ok(sheet && sheet.querySelector('.sheet-card .f-step-row'), 'the card is open on its shelf, − · meter · + along the floor');
+  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom');
   assert.equal(document.querySelector('.join-shelf'), null, 'nothing asked: a tap looks');
   assert.deepEqual(writes, []);
 });

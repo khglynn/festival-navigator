@@ -1,23 +1,25 @@
 // A finger leaves a ghost of a mouse where it lifted — in a real browser
 // (2026-09-23; the rule and its history: tests/zoom-touch-ghost.test.mjs).
 //
-// WebKit does it on its own: a touch tap on a card, then — when the pick
-// swaps a fresh card in under the finger — trusted mouse-type pointerover /
-// pointerenter at that spot, and hover intent used to grow the card you had
-// just tapped. Chromium never sends them, so on Chromium (the browser CI
-// has) this drives the same events through the real input layer: a touch
-// tap, then a trusted mouse move to the exact lift point. When Playwright's
-// WebKit is installed the phenomenon itself runs too, with nothing but a
-// touch tap; without it that half skips (CI installs Chromium only).
+// WebKit does it on its own: a touch tap, then — when the page changes under
+// the finger — trusted mouse-type pointerover / pointerenter at that spot,
+// and hover intent used to grow the card you had just tapped. Since the tap
+// change (2026-09-26) a finger's tap opens the card's SHELF, and the shelf
+// closing uncovers the wall right under the spot: exactly where a ghost would
+// grow a zoom. Chromium never sends the ghosts, so there this drives the same
+// events through the real input layer: a touch tap, then a trusted mouse move
+// to the exact lift point. WebKit runs the phenomenon itself, with nothing but
+// touch taps (CI installs WebKit since U0).
 //
-// Against gallery.html, which renders the production modules with the real
-// tap cycle and no network.
+// Against gallery.html, which renders the production modules with the
+// shipping route (a finger opens the shelf) and no network. The same laws on
+// the real app: tests/browser/tap-shelf-contract.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OPEN_MS = 700; // ZOOM_IN_MS (200) + the bloom, with room for a slow engine
@@ -26,7 +28,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const browser = await launchBrowser();
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that half skips */ }
+webkit = await launchWebkit();
 test.after(async () => {
   if (browser) await browser.close();
   if (webkit) await webkit.close();
@@ -64,16 +66,24 @@ const levelOf = (page, artist) => page.evaluate((a) => {
   return m ? Number(m.dataset.level) : 0;
 }, artist);
 
-test('Chromium: a mouse event at the spot a finger just lifted from grows nothing; a mouse that moves off it hovers as ever', { skip }, async () => {
+const shelfOf = (page) => page.evaluate(() => document.querySelector('#artist-sheet .sheet-card .f-name')?.textContent || null);
+const closeShelf = async (page) => {
+  await page.touchscreen.tap(195, 30); // the dimmed wall
+  await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
+};
+
+test('Chromium: a tap opens the shelf; once it closes, a mouse event at the spot the finger lifted grows nothing; a mouse that moves off it hovers as ever', { skip }, async () => {
   const { ctx, page } = await openGallery(browser);
   try {
     const t = await target(page);
     assert.ok(t, 'a card on screen to tap');
     const before = await levelOf(page, t.artist);
     await page.touchscreen.tap(t.x, t.y);
-    await sleep(120);
-    assert.equal(await levelOf(page, t.artist), before + 1, 'the tap picked');
-    // What WebKit sends by itself after that tap: mouse-type events AT the lift point.
+    await page.waitForFunction(() => !!document.getElementById('artist-sheet'), null, { timeout: 4000 });
+    assert.equal(await shelfOf(page), t.artist, 'the tap opened the card’s shelf');
+    assert.equal(await levelOf(page, t.artist), before, 'and picked nothing');
+    await closeShelf(page);
+    // What WebKit sends by itself after a tap: mouse-type events AT the lift point.
     await page.mouse.move(t.x, t.y);
     await sleep(OPEN_MS);
     assert.deepEqual(await zoomState(page), { shown: 0, source: null }, 'the ghost at the lift point grew nothing');
@@ -86,7 +96,7 @@ test('Chromium: a mouse event at the spot a finger just lifted from grows nothin
   } finally { await ctx.close(); }
 });
 
-test('WebKit: touch taps on a card pick it and nothing grows — not it, not a card that scrolls under the spot', { skip: skip || (webkit ? false : 'Playwright WebKit is not installed (npx playwright install webkit)') }, async () => {
+test('WebKit: touch taps open the shelf and + steps inside it; nothing grows — not the tapped card, not a card that scrolls under the spot', { skip: skip || (webkit ? false : 'Playwright WebKit is not installed (npx playwright install webkit)') }, async () => {
   const { ctx, page } = await openGallery(webkit, { isMobile: true });
   try {
     const t = await target(page);
@@ -94,8 +104,15 @@ test('WebKit: touch taps on a card pick it and nothing grows — not it, not a c
     const before = await levelOf(page, t.artist);
     for (let i = 1; i <= 2; i++) {
       await page.touchscreen.tap(t.x, t.y);
-      await sleep(OPEN_MS + 300);
-      assert.equal(await levelOf(page, t.artist), (before + i) % 5, `tap ${i} picked`);
+      await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card .f-step.plus'), null, { timeout: 4000 });
+      await sleep(400);
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-rise
+      const plus = await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox();
+      await page.touchscreen.tap(plus.x + plus.width / 2, plus.y + plus.height / 2);
+      await sleep(400);
+      await closeShelf(page);
+      await sleep(OPEN_MS);
+      assert.equal(await levelOf(page, t.artist), Math.min(4, before + i), `tap ${i}: + picked on the shelf`);
       assert.deepEqual(await zoomState(page), { shown: 0, source: null }, `tap ${i}: the tapped card stayed resting`);
     }
     // Scroll a different card under the spot the finger lifted from.

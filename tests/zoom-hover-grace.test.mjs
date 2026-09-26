@@ -239,7 +239,9 @@ test('an instant restore under a hand that is still ON the card stays', () => {
   }
 });
 
-test('a touch restore never asks where the mouse is', () => {
+// (A finger grows no zoom since the tap change, 2026-09-26; the zoom a repaint
+// restores that is not a mouse's is a key's.)
+test('a keyboard restore never asks where the mouse is', () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
   const realEFP = document.elementFromPoint;
@@ -247,8 +249,8 @@ test('a touch restore never asks where the mouse is', () => {
   try {
     feedMouse(40, 40);
     document.elementFromPoint = () => { asked += 1; return document.body; };
-    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC, instant: true, source: 'touch' });
-    assert.ok(slot(), 'a held finger is not a mouse that wandered off');
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC, instant: true, source: 'keyboard' });
+    assert.ok(slot(), 'a key\'s zoom is not a mouse that wandered off');
     assert.equal(asked, 0, 'and the probe is gated on source === mouse, so it never even ran');
   } finally {
     document.elementFromPoint = realEFP;

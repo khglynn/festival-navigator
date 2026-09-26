@@ -4,8 +4,11 @@
 // Jatale b2b erika's own entry: doors, a guessed window, the unconfirmed
 // order door, the venue's map door, Tix and Info — with someone at every
 // level, notes and a Spotify pill, and then its second set under a bill long
-// enough for two lines. At 390 and 320 by a real hold (touch), at 1280 by a
-// real hover, it measures what the eye would check:
+// enough for two lines. At 390, 320 (touch screens) and 1280, grown by a real
+// mouse hover — since the tap change (2026-09-26) a finger never grows a zoom
+// (its tap opens the card's shelf, tests/browser/tap-shelf-contract.test.mjs),
+// so the zoom is a mouse's or a key's, on any width — it measures what the
+// eye would check:
 //   nothing clipped: every row inside the grown card, the card inside the
 //   screen with its 8px margins;
 //   nothing overlapping: no two rows share a pixel;
@@ -56,8 +59,8 @@ async function openGallery({ w, h, touch }, { holdFont = false } = {}) {
   return { ctx, page, errors, releaseFont };
 }
 
-// A real hold (touch) or a real hover (mouse) on the card, centred on screen.
-async function grow(ctx, page, artist, touch) {
+// A real hover (a mouse coming to rest) on the card, centred on screen.
+async function grow(ctx, page, artist) {
   const at = await page.evaluate((a) => {
     const el = document.querySelector(`#zoom-row-crowded .card[data-artist="${a}"]`);
     el.scrollIntoView({ block: 'center', inline: 'center' });
@@ -65,19 +68,8 @@ async function grow(ctx, page, artist, touch) {
     return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
   }, artist);
   await sleep(250);
-  if (touch) {
-    const cdp = await ctx.newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-    await sleep(650);
-    // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
-    // says why: under page.clock the long-press timer can run late on a big
-    // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
-    for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  } else {
-    await page.mouse.move(at.x - 40, at.y - 40);
-    await page.mouse.move(at.x, at.y, { steps: 6 });
-  }
+  await page.mouse.move(at.x - 40, at.y - 40);
+  await page.mouse.move(at.x, at.y, { steps: 6 });
   await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
   await sleep(800); // the bloom and its cascade have landed
 }
@@ -147,7 +139,7 @@ for (const size of SIZES) {
     const { ctx, page, errors } = await openGallery(size);
     try {
       for (const artist of CARDS) {
-        await grow(ctx, page, artist, size.touch);
+        await grow(ctx, page, artist);
         const m = await measure(page);
         const at = `${size.w} ${artist}: ${JSON.stringify(m)}`;
         // It really is the crowded case.
@@ -217,7 +209,7 @@ test('390: + and − step the level with the zoom standing; must stops the +', {
   const { ctx, page, errors } = await openGallery(SIZES[0]);
   try {
     const artist = CARDS[0];
-    await grow(ctx, page, artist, true);
+    await grow(ctx, page, artist);
     const level = () => page.evaluate(async (a) => {
       const st = await import('/js/state.js');
       return (st.crewDoc.festivals['gallery-zoom-fest'].selections[a] || {}).Kevin || 0;
@@ -230,9 +222,9 @@ test('390: + and − step the level with the zoom standing; must stops the +', {
     const tapDoor = async (sel) => {
       const was = await rowAt();
       const b = await page.locator(`#zoom-layer .zoom-slot.shown .f-step-row > ${sel}`).boundingBox();
-      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
       await sleep(450);
-      assert.deepEqual(await rowAt(), was, `the doors did not move under the finger (${sel})`);
+      assert.deepEqual(await rowAt(), was, `the doors did not move under the hand (${sel})`);
     };
     assert.equal(await level(), 1);
     await tapDoor('.f-step.plus');
@@ -264,14 +256,8 @@ for (const size of [SIZES[0], SIZES[1]]) {
         return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
       }, artist);
       await sleep(250);
-      const cdp = await ctx.newCDPSession(page);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-      await sleep(650);
-      // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
-      // says why: under page.clock the long-press timer can run late on a big
-      // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
-      for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.mouse.move(at.x - 40, at.y - 40);
+      await page.mouse.move(at.x, at.y, { steps: 6 });
       await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
       await sleep(800);
       const rowAt = () => page.evaluate(() => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown .f-step-row > *')]
@@ -279,16 +265,16 @@ for (const size of [SIZES[0], SIZES[1]]) {
       const who = () => page.evaluate(() => document.querySelectorAll('#zoom-layer .zoom-slot.shown .f-who .f-pill').length);
       const was = await rowAt();
       const chipsBefore = await who();
-      // One place, tapped three times without moving: + + −.
+      // One place, clicked twice without moving: + +.
       const plus = was[2];
       const x = (plus[0] + plus[2]) / 2, y = (plus[1] + plus[3]) / 2;
-      await page.touchscreen.tap(x, y); await sleep(450);
+      await page.mouse.click(x, y); await sleep(450);
       assert.ok(await who() > chipsBefore, 'the pick added your chip to the who-row');
       assert.deepEqual(await rowAt(), was, 'the doors stayed put through the chip arriving');
-      await page.touchscreen.tap(x, y); await sleep(450);
+      await page.mouse.click(x, y); await sleep(450);
       assert.deepEqual(await rowAt(), was, 'and through the second +');
       const level = await page.evaluate(async (a) => ((await import('/js/state.js')).crewDoc.festivals['gallery-zoom-fest'].selections[a] || {}).Kevin || 0, artist);
-      assert.equal(level, 2, 'both taps landed on +');
+      assert.equal(level, 2, 'both clicks landed on +');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -320,22 +306,16 @@ const assertPairsHonest = (s, at) => {
     assert.equal(p.overflow, false, `${p.cls}: nothing runs past its column — ${at}`);
   }
 };
+// A key's zoom (focus after a real key press): it stands through a resize and
+// a late font, where a mouse's would read the page moving as the hand leaving.
 async function holdOpen(ctx, page, artist = CARDS[0]) {
-  const at = await page.evaluate((a) => {
+  await page.evaluate((a) => {
     const el = document.querySelector(`#zoom-row-crowded .card[data-artist="${a}"]`);
     el.scrollIntoView({ block: 'center', inline: 'start' });
-    const r = el.getBoundingClientRect();
-    return { x: Math.round(r.left + Math.min(r.width / 2, 60)), y: Math.round(r.top + r.height / 2) };
   }, artist);
   await sleep(250);
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-  await sleep(650);
-  // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
-  // says why: under page.clock the long-press timer can run late on a big
-  // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
-  for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.keyboard.press('Escape'); // a real key: the zoom module now believes the keyboard is driving
+  await page.focus(`#zoom-row-crowded .card[data-artist="${artist}"]`);
   await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
   await sleep(800);
 }
