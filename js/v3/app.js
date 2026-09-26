@@ -945,7 +945,7 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace 
   });
   shelf = showJoinShelf({
     artist, intent, people, offline, ctx, opener,
-    onLook: () => { pendingJoin = null; popShelfEntry(); },
+    onLook: () => { pendingJoin = null; popShelfEntry(); planAfterShelf(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
   });
@@ -977,8 +977,13 @@ function leaveShelf(via = 'escape') {
   shelf.leave();
   pendingJoin = null;
   if (via !== 'back') popShelfEntry();
+  planAfterShelf();
   return true;
 }
+// A plan link's wish waited behind the join shelf (openPlanForLink): the
+// shelf left without a join, so the plan the link came for opens now, as
+// the shelf goes down. Nothing else repaints the plan at this moment.
+function planAfterShelf() { if (planOpenFor) paintPlan(); }
 // The shelf's history entry, popped by its own ways out (Look around, the
 // wall, the handle) so Back never lands on a dead step. After a join, the
 // entry is already the wall's (enterApp rewrote it) and is left alone.
@@ -1379,15 +1384,22 @@ function paintPlan(date = ctx.now || new Date()) {
 // newcomer's once the welcome card has gone and the peek has risen. A paint
 // that finds nothing to open with nothing in the way (the festival's over,
 // or no stop left today or tomorrow) drops the wish: a plan that turns up
-// later is not what the link opened on. While a card is up, a search is on,
-// or the festival is still loading, it waits.
-let planOpenFor = null;
+// later is not what the link opened on. While a card is up, the join shelf
+// is asking, a search is on, or the festival is still loading, it waits.
+// The wish is for the link's festival: a phone that keeps this crew on
+// another one lands there (the saved festival wins, state.activateCrew) and
+// the wish goes — that festival's plan is not what the link was about.
+let planOpenFor = null; // { token, fest } while a link's wish is pending
 function openPlanForLink(answer) {
   if (!planOpenFor) return;
-  if (planOpenFor !== state.getCrewToken()) { planOpenFor = null; return; }
+  if (planOpenFor.token !== state.getCrewToken() || planOpenFor.fest !== state.activeFestivalId) { planOpenFor = null; return; }
   // The welcome is decided before the wall's first paint and mounts after
   // it: a peek that rose in between is about to step aside for the card.
   if (welcomeDue()) return;
+  // "Pick shows" on the welcome card: the card is read and gone, and the
+  // join shelf is asking. The plan opens once it has its answer — after the
+  // join's own welcome, or as soon as the shelf is left (planAfterShelf).
+  if (joinShelf()) return;
   if (planHere()) {
     planOpenFor = null;
     if (!planIsOpen()) openPlan();
@@ -2249,19 +2261,30 @@ function shareLinkRow() {
     said.textContent = text;
     timer = setTimeout(() => { said.textContent = SHARE_ROW_WORDS(); }, 1800);
   };
+  // The menu stays up under the share sheet and goes once the sheet has its
+  // answer, sent or dismissed; a sheet the browser refused copies instead and
+  // says so in the menu, like a browser with no sheet at all. A new build
+  // waits for either (index.html quiet): the share takes the menu's own busy
+  // mark for its length, so the menu going early cannot drop the guard, and
+  // hands it back to a menu still up.
+  const done = () => { if (openMenu && openMenu.pop.contains(row)) closeShowMenu(); };
   row.addEventListener('click', async () => {
     const link = inviteLink();
     stampInviteFest();
-    if (canShare()) {
-      closeShowMenu();
-      const mine = !document.body.dataset.busy;
-      if (mine) document.body.dataset.busy = 'crew-share'; // a new build waits for the sheet (index.html quiet)
-      try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); }
-      catch { /* dismissed, or refused: the invite sheet still has the link */ }
-      finally { if (mine && document.body.dataset.busy === 'crew-share') delete document.body.dataset.busy; }
-      return;
+    const mine = !document.body.dataset.busy || document.body.dataset.busy === 'show-menu';
+    if (mine) document.body.dataset.busy = 'crew-share';
+    try {
+      if (canShare()) {
+        try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); done(); return; }
+        catch (e) { if (e && e.name === 'AbortError') { done(); return; } }
+      }
+      try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
+    } finally {
+      if (mine && document.body.dataset.busy === 'crew-share') {
+        if (openMenu) document.body.dataset.busy = 'show-menu';
+        else delete document.body.dataset.busy;
+      }
     }
-    try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
   });
   return row;
 }
@@ -4221,7 +4244,8 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // A link that opens on Our picks: the wish belongs to this crew, and it
   // outlives a join's re-entry (a guest who joins from the welcome card
   // still came for the plan). Any other crew's entry ends it.
-  planOpenFor = pendingPlanOpen ? token : planOpenFor === token ? token : null;
+  planOpenFor = pendingPlanOpen && pendingFestHint ? { token, fest: pendingFestHint }
+    : planOpenFor && planOpenFor.token === token ? planOpenFor : null;
   pendingPlanOpen = false;
   const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);

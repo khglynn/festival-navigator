@@ -2097,7 +2097,10 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
  * opensLine): the rows' quiet grey, on the left, wrapping before the button moves. */
 .plan-foot .opens { flex: 1 1 auto; min-width: 0; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.35; }
 .plan-foot .opens:empty { display: none; }
-.plan-share { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; font-size: 13px; padding: 0 16px 0 14px; } /* 44 on a finger (the floor) */
+.plan-share { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 0 16px 0 14px; }
+/* A pill of its own height for a mouse; a finger keeps the 44px floor, which
+ * a class rule here would out-rank if it were not kept off coarse pointers. */
+@media not all and (pointer: coarse) { .plan-share { min-height: 36px; } }
 .plan-share svg { width: 13px; height: 13px; flex: none; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */

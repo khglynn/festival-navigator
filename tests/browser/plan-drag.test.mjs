@@ -163,6 +163,19 @@ async function drag(page, from, dy, { steps = 12, stepMs = 16, holdMs = 250 } = 
   return mid;
 }
 
+// A hand for the window's catches: the mouse (both engines), or in Chromium
+// a real finger — CDP touch events, so the page gets a finger's pointer and
+// its touch gesture, what an iPhone sends. The finger rests still before it
+// lifts, so no fling rides the release (CLAUDE.md, the browser input traps).
+async function handOf(page, kind) {
+  if (kind === 'mouse') {
+    return { down: async (x, y) => { await page.mouse.move(x, y); await page.mouse.down(); }, move: (x, y) => page.mouse.move(x, y), up: () => page.mouse.up() };
+  }
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
+  return { down: (x, y) => touch('touchStart', [{ x, y }]), move: (x, y) => touch('touchMove', [{ x, y }]), up: async () => { await sleep(250); await touch('touchEnd', []); } };
+}
+
 // A flick, and a check that the page really received one (2026-09-26). The
 // shelf reads a flick from its events' times: the speed over its last moves,
 // and none at all if the hand stopped more than STILL_MS before letting go.
@@ -488,7 +501,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // The arrival is caught through the guest's Look around: the peek rises as
   // the welcome card goes, held here early in its run (the curve is quick
   // there), well below its place.
-  test(`${name}: a touch during the peek's arrival keeps the window where it is — and a drag carries it from there`, { skip }, async () => {
+  for (const kind of name === 'Chromium' ? ['mouse', 'finger'] : ['mouse']) {
+  const by = kind === 'finger' ? ' (a finger)' : '';
+  test(`${name}${by}: a hand on the peek during its arrival keeps the window where it is — and a drag carries it from there`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { guest: true });
     try {
       await holdSettles(page, 0.15);
@@ -501,15 +516,15 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(held.planTop > rest + 8, `the arrival is held below the window's place (the case under test): ${JSON.stringify({ rest, held })}`);
       const g = await grabAt(page);
       assert.ok(g.y < held.dockTop - 4, `the grabber is in sight above the dock: ${JSON.stringify({ g, dockTop: held.dockTop })}`);
-      await page.mouse.move(g.x, g.y);
-      await page.mouse.down();
+      const hand = await handOf(page, kind);
+      await hand.down(g.x, g.y);
       const caught = await geometry(page);
-      assert.ok(Math.abs(caught.planTop - held.planTop) <= 1, `a touch leaves the window where it was: ${JSON.stringify({ held: held.planTop, caught: caught.planTop })}`);
-      for (let k = 1; k <= 8; k++) { await page.mouse.move(g.x, g.y - 40 * (k / 8)); await sleep(16); }
+      assert.ok(Math.abs(caught.planTop - held.planTop) <= 1, `a hand leaves the window where it was: ${JSON.stringify({ held: held.planTop, caught: caught.planTop })}`);
+      for (let k = 1; k <= 8; k++) { await hand.move(g.x, g.y - 40 * (k / 8)); await sleep(16); }
       await sleep(120);
       const dragged = await geometry(page);
       assert.ok(Math.abs(dragged.planTop - (held.planTop - 40)) <= 2, `and the drag moves it from there: ${JSON.stringify({ held: held.planTop, dragged: dragged.planTop })}`);
-      await page.mouse.up();
+      await hand.up();
       await settled(page);
       const end = await geometry(page);
       assert.equal(end.state, 'peek', 'a short drag goes back to the peek');
@@ -522,7 +537,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // Soulwax: a 71.6px row to a 66.7px one) slides the window down to its new
   // place. Grabbed mid-slide, it stays a peek: no head fading in, no path
   // drawn above and below the row.
-  test(`${name}: a grab during a redraw's slide keeps it a peek, where it is`, { skip }, async () => {
+  test(`${name}${by}: a grab during a redraw's slide keeps it a peek, where it is`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get());
     try {
       const before = await geometry(page);
@@ -536,8 +551,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(mid.peekH < before.peekH - 2, `the peek got shorter (the case under test): ${JSON.stringify({ before: before.peekH, after: mid.peekH })}`);
       assert.ok(Math.abs(mid.planTop - rest) > 1, `and the window is held on its way there: ${JSON.stringify({ rest, mid: mid.planTop })}`);
       const g = await grabAt(page);
-      await page.mouse.move(g.x, g.y);
-      await page.mouse.down();
+      const hand = await handOf(page, kind);
+      await hand.down(g.x, g.y);
       const caught = await page.evaluate(() => {
         const el = document.getElementById('plan');
         return { top: el.getBoundingClientRect().top, opening: el.classList.contains('opening'), head: el.querySelector('.plan-head').style.opacity };
@@ -545,8 +560,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(Math.abs(caught.top - mid.planTop) <= 1, `the window stays where it is: ${JSON.stringify({ mid: mid.planTop, caught })}`);
       assert.equal(caught.opening, false, 'not a sliver of an opened plan');
       assert.equal(caught.head, '0', 'its head stays out');
-      await page.mouse.move(g.x, g.y + 20, { steps: 4 });
-      await page.mouse.up();
+      for (let k = 1; k <= 4; k++) { await hand.move(g.x, g.y + 20 * (k / 4)); await sleep(16); }
+      await hand.up();
       await settled(page);
       const end = await geometry(page);
       assert.equal(end.state, 'peek');
@@ -558,6 +573,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); }
   });
+  }
 
   test(`${name}, Reduce Motion: the settle after a drag is instant; the drag itself still follows the finger`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { reduced: true });

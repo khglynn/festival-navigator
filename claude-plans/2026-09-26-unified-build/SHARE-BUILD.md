@@ -92,3 +92,24 @@ PR and merges; this branch is never stamped here.
    files pass alone at 0 and 700. Node 1254 of 1257, the SW stamp the only red (the
    coordinator stamps). CI on fc86005: the browser job green on Linux, WebKit included;
    checks red only on the stamp. Sol and a Sonnet walker are running.
+10. **Sol's round** (gpt-6-sol high, on edb30b8; six findings, all real, all fixed):
+    a. A plan link could open the wrong festival: a phone that keeps the crew on
+       another festival lands there (the saved festival wins over a link's `&f=`), and
+       that festival's plan opened. The wish is now `{ token, fest }` and goes when the
+       festival differs; the landing itself keeps the app's rule.
+    b. "Pick shows" on the welcome card let the plan open under the join shelf and spend
+       the wish. It now waits while the shelf asks and opens when the shelf is left
+       (`planAfterShelf`); after a join it waits for the join's own welcome.
+    c. Copy was outside the reload guard: the busy mark now covers the whole share or
+       copy, in the plan and in the menu (which takes the menu's own mark for its length
+       and hands it back).
+    d. The Share pill was 36px under a finger: the class rule out-ranked the 44px floor.
+       Its own height is kept off coarse pointers now.
+    e. A crew-link share the browser refused did nothing and said nothing. The menu now
+       stays up under the sheet, goes once the sheet answers, and a refusal copies and
+       says "Copied ✓" in the menu.
+    f. The two catch tests said "touch" and drove a mouse. They drive both now: the mouse
+       in both engines, and in Chromium a real finger (CDP touch, a still finger before
+       it lifts). The finger versions fail on the shelf before the lift.
+    New browser tests: another festival's link, the join shelf, the refused sheet, the
+    floor at 390 coarse and 1280 fine. Each fails on fc86005 and passes now.

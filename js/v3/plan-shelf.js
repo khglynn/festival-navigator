@@ -757,16 +757,19 @@ async function sharePlan() {
     ctx: ctxRef, plan: data.plan, nowMin: data.nowMin, highlight: data.highlight || [],
     fest: data.fest || '', day: data.day || '', today: !!data.peek.today, link: data.linkOf ? data.linkOf() : '',
   });
-  if (canShare()) {
-    // A new build waits while the sheet is up (index.html quiet): the words
-    // are handed over already, but a reload would take the plan from under it.
-    const mine = !document.body.dataset.busy;
-    if (mine) document.body.dataset.busy = 'plan-share';
-    try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } finally {
-      if (mine && document.body.dataset.busy === 'plan-share') delete document.body.dataset.busy;
+  // A new build waits while the sheet is up or the copy is on its way
+  // (index.html quiet): a reload would take the plan, and the words, from
+  // under either.
+  const mine = !document.body.dataset.busy;
+  if (mine) document.body.dataset.busy = 'plan-share';
+  try {
+    if (canShare()) {
+      try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
+    try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
+  } finally {
+    if (mine && document.body.dataset.busy === 'plan-share') delete document.body.dataset.busy;
   }
-  try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
 }
 const shareLabel = () => `${canShare() ? 'Share' : 'Copy'} ${PLAN_NAME.toLowerCase()}`; // "Share our picks"
 function sayOnShare(words) {
