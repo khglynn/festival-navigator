@@ -556,4 +556,4 @@ name + date + venue and let `time` go (a guessed time is designed to move).
    schedules nobody (+1 test).
 3. `befa69a` — data: registry corrections with sources; posted Show times;
    Stubb's/Scoot curfews and after-show closes; tool-written guesses.
-4. (this commit) — tests: the five as-shipped expectations; this log.
+4. `d7f4748` — tests: the five as-shipped expectations; this log.
