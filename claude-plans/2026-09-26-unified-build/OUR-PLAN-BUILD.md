@@ -482,3 +482,40 @@ came as comments, not saved choices:
 
 Build after v101 lands, from main: the Share build takes these, plus the arrival/redraw
 catch banked above.
+
+## One more Linux WebKit red: the peek 23 px above the dock (2026-09-26, ~2:00 PM)
+
+After eeba75d (2b14fdf merged and re-stamped), one of two browser runs on the same head
+failed the WebKit peek test (run 36270686657): `planTop 704.95, dockTop 799,
+rowBottom 776`, with nothing running. The other run passed.
+
+1. **Cause: the test read a state no frame paints.** Plan-drag's `openPhone` never
+   waited for the web fonts; every other browser suite waits for `fonts.ready` and then
+   sleeps. When Inter lands, the shelf grows from 563.05 to 590.05 px and the peek from
+   67.05 to 71.05 px, so its offset must go from 496 to 519. The shelf's ResizeObserver
+   refits it in the next frame, before that frame paints. A read in between (the test's
+   `evaluate`) forces the new face's layout early and sees the new height under the old
+   offset: exactly 704.95 and 776. A loaded runner draws frames late, so the window is
+   wide there.
+2. **Evidence (a Mac, WebKit):** a Node-side loop of reads as the font landed caught
+   those exact numbers (`H 590.05`, `translateY(496px)`) two to four times per landing.
+   A second ResizeObserver, made after the shelf's so that it runs after it in the same
+   frame (the state that frame paints), saw the row on the dock every time. After
+   `fonts.ready` plus one whole frame, the same loop caught nothing. `--dock-h` and the strut
+   were ruled out: the dock stayed 45 px, and the row's own height was right.
+3. **Fix, in the test:** `fontsIn(page)` in `tests/helpers/browser.mjs` (the fonts in,
+   then one whole frame). `openPhone` waits for it in every case but the late font's. The peek
+   test asserts it reads the real face, and `geometry()` now reports the window's height,
+   peek, offset, `--dock-h` and font status, so another red names the stale number.
+4. **What a phone can see, banked for the Share build:** a font that lands during the
+   240 ms arrival. The refit waits for the arrival to finish, so its last frames head for
+   the old rest, 23 px high, and then the window drops in one frame. This happens only on
+   a first visit on a slow network (the service worker keeps the fonts after that). It is
+   the arrival case of the catch banked above: a refit during an arrival retargets the
+   lift instead of waiting and snapping. Test it with a font held until mid-arrival.
+5. **Sol's review** agreed with the diagnosis and found no path that leaves the gap on
+   screen while nothing moves. Two changes came from it: the test now checks Inter's own
+   face (a font set reads "loaded" even after a face fails), and the helper's comment
+   stops claiming more than it shows. Its third point, that browsers without
+   ResizeObserver never refit, cannot happen: the app's modules use `?.` and `??`, and
+   every engine that parses those has ResizeObserver.

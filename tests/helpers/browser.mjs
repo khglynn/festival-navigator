@@ -34,6 +34,24 @@ export async function motionDone(page, { within = null, timeout = 6000 } = {}) {
   }, within, { timeout, polling: 'raf' });
 }
 
+// The page's fonts in, and one whole frame run between two animation-frame
+// callbacks: the page as a person sees it. A web font's arrival resizes boxes,
+// and the ResizeObservers that answer it (Our plan's refit) run in the next
+// frame, after its animation-frame callbacks and before it paints. A read in
+// between (a test's evaluate) forces the new face's layout early and finds the
+// old answer on it. While nothing moves, no frame paints that state. A loaded
+// runner draws frames late, so that window is wide there: the peek read 23px
+// above the dock on CI (run 36270686657). A Mac reading in a tight loop as
+// the font landed caught the same numbers, while an observer inside the frame
+// saw the row on the dock every time (2026-09-26). (A font landing during the
+// plan's arrival is a different case: the refit waits for the motion, and that
+// frame is painted. It is banked for the Share build.)
+export async function fontsIn(page) {
+  await page.evaluate(() => document.fonts.ready.then(() => new Promise((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => done()));
+  })));
+}
+
 // A Mac stand-in for that loaded runner (2026-09-26): every Web Animation the
 // page starts holds its first frame for `ms` before it runs, the way Linux
 // WebKit on CI left Our picks' panel at its corner-card start 700ms after a
