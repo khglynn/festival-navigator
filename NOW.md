@@ -1,20 +1,20 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-26 5:50 AM PT (v96 live; v97 List in release) · mode: live**
+**last-updated: 2026-09-26 6:50 AM PT (v97 live) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v96, from `main`** (PR #53, merged 2026-09-26 5:36 AM PT) on fest /
-  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS (festival-nav-v96 /
-  7117a248): NOW as a tab in the day row, the Show menu as a popover that
-  stays open across ticks (no history entry), "+ Invite someone", import
-  picks from the Portola app's exported images, and link previews from the
-  address bar (the wall's address keeps its festival: `/f/<id>#g=…`).
-  Earlier tonight: v92 (guest first open), v94 (Folsom by time), v95 (ticket
-  doors say the price). What each carries and how it was checked: the LEDGER.
+- **v97, from `main`** (PR #54, merged 2026-09-26 6:42 AM PT) on fest /
+  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS (festival-nav-v97 /
+  07ca84c4): the List view (Board · List in the Show menu, per phone per
+  festival, `&view=list` in a link and in the address), the past folded
+  behind EARLIER, and the menu bar `dot · FEST '26 · ☰`. v96 (5:36 AM) brought
+  NOW into the day row, the menu popover, Invite someone, the Portola-app
+  import and link previews. What each release carries and how it was checked:
+  the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), each saying what the error means in plain words.
 
@@ -26,15 +26,16 @@ LEDGER beside it, the build's cursor in
 `claude-plans/2026-09-26-unified-build/NOW.md`. A release ships on CI green
 + a Sol 6 review + an independent real-browser walk + prod smoke.
 
-1. **v97 — List view + the folded past + the menu bar** (`live/list`,
-   stamped festival-nav-v97): gating now — Sol's re-review of the review
-   round, an independent walk, CI, then merge and smoke.
-2. **The tap change** (`live/tap`): a phone tap opens the notes shelf with
-   full controls; desktop keeps hover. Ships ALONE, only after Kevin tries
-   it on his iPhone from a preview link, with its rollback written down.
-3. **Our plan** (`live/plan`, a sibling session): the peek above the dock
-   and the day plan; it hands a gated head to the coordinator to release.
-4. **People menu + Invite sheet** (crew link first) — next build after v97.
+1. **The tap change** (`live/tap`): a phone tap opens the notes shelf with
+   full controls; desktop keeps hover. Sol's review round in progress
+   (VoiceOver's double-tap, the composer over the iOS keyboard). Ships ALONE,
+   only after Kevin tries it on his iPhone from a preview link.
+2. **People menu + Invite sheet** (`live/people`, building): the avatar opens
+   a Highlight menu, the twin of Show; one Invite sheet with the crew link first.
+3. **Our plan** (`live/plan`, a sibling session): the peek above the dock and
+   the day plan; it hands a gated head to the coordinator to release.
+4. **ACL prep** (`data/acl-prep`): Late nights times (doors only today) from
+   printed pages and the venue registry, never a guess later than the show.
 
 ## Open with Kevin
 
