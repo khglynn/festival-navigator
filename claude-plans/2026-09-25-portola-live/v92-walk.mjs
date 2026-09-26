@@ -387,6 +387,31 @@ await scenario('390 10 tonight, real clock: a friend opens the link on Friday ni
   await ctx.close();
 });
 
+await scenario('390 11 storage blocked: the getters throw, and a guest still gets in', async () => {
+  resetDocs(); writes.length = 0;
+  // Chrome with site data blocked: touching window.localStorage/sessionStorage
+  // itself raises SecurityError (CLAUDE.md, 2026-08-27).
+  const blocked = { fn: () => {
+    for (const k of ['localStorage', 'sessionStorage']) {
+      Object.defineProperty(window, k, { configurable: true, get() { throw new DOMException('blocked', 'SecurityError'); } });
+    }
+  }, arg: null };
+  const { ctx, page, errors } = await phone({ init: blocked });
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  note(`blocked: wall visible ${await visible(page, '#screen-app')}; welcome ${await page.locator('#welcome-card').count()}`);
+  await page.locator('#welcome-card button', { hasText: 'Got it' }).tap();
+  await sleep(300);
+  note(`blocked: after Got it card gone ${!(await page.locator('#welcome-card').count())}`);
+  await page.locator('#wall-root .card[data-artist="Robyn"]').first().tap();
+  await page.waitForSelector('#screen-join', { state: 'visible' });
+  await page.locator('#join-look').tap();
+  await page.waitForSelector('#screen-app', { state: 'visible' });
+  await sleep(200);
+  note(`blocked: tap → join → Just looking ok; welcome back? ${await page.locator('#welcome-card').count()}; toast "${await page.locator('#toast-root').textContent()}"`);
+  note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(OUT, 'walk.txt'), report.join('\n') + '\n');
