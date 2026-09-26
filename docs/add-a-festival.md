@@ -335,10 +335,17 @@ combined card eats the crew's picks.
   run in descending print. Record it as `order` with `confirmed: false` until
   the venue posts it.
 - **The clocks are `node scripts/guess-run-times.mjs <id>`** — one rule, a
-  dry-run diff, `--write` to record. For every room with an `order` it lays
-  the bill from `doors` to the close (the printed close; else one a listing
-  printed for that night, `closeApprox` with its https `closeSource`; else the
-  venue's routine close from `data/venues/index.json`) and marks each guess
-  `approx: true`. A set with a time and no `approx` is posted and never
-  touched, so re-run it whenever a room or the registry changes. A show with
-  no `time` at all is fine — it is a card with no clock in its venue's stack.
+  dry-run diff, `--write` to record. A room is a venue on one `night`, or on
+  one `date` in a dated section. For every room with an `order` — and every
+  one-act room that already has a time — it lays the bill from `doors`
+  against the close (the printed close; else one a listing printed for that
+  night, `closeApprox` with its https `closeSource`; else the venue's routine
+  close from `data/venues/index.json`) and marks each guess `approx: true`.
+  How it lays the bill depends on the room: a club night runs back from the
+  close, a concert (a hall or outdoor venue — the registry's `kind`, or its
+  `shape`) runs forward from the first act and treats the close as a curfew,
+  because a guess later than the show makes a friend miss it. A set with a
+  time and no `approx` is posted, never touched, and a fixed point the
+  guesses around it respect — so re-run it whenever a room or the registry
+  changes. A show with no `time` at all is fine — it is a card with no clock
+  in its venue's stack.

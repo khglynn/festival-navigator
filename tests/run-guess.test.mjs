@@ -156,3 +156,133 @@ test('re-runnable: a routine close the guesser wrote is re-read from the registr
   assert.equal(kept.plan.closeSource, listing);
   assert.ok(g.artists.every((a) => a.close === '3 AM' && a.closeSource === listing), 'written back unchanged');
 });
+
+// ---- rooms keyed by DATE, a run of one, and the concert shape (2026-09-26) ------------
+// ACL's Late nights is a dated section (MODEL-V4 §6: `date`, never `night`), so
+// runsOf() used to find no rooms in it at all and round one laid its times with
+// a throwaway script — a guess nobody could reproduce. And a hall laid back from
+// a midnight close put a headliner at 12:30 AM behind 7 PM doors.
+import { runsOf, weekdayOfIso } from '../scripts/guess-run-times.mjs';
+
+const dated = (name, date, venue, extra = {}) => ({ name, day: 'Late nights', date, venue, doors: '9 PM', ...extra });
+const lateFest = (...artists) => ({ id: 'x', days: { Friday: { stages: {} } }, artists });
+
+test('a dated section groups by date + venue: the same room a week apart is two rooms, and each reads its own weekday', () => {
+  assert.equal(weekdayOfIso('2026-10-02'), 'Fri');
+  assert.equal(weekdayOfIso('2026-09-29'), 'Tue');
+  const f = lateFest(
+    dated('BUNT.', '2026-10-02', "Emo's", { order: { seq: 2, of: 2, source: SRC, confirmed: false } }),
+    dated('Sarah Pederzani', '2026-10-02', "Emo's", { order: { seq: 1, of: 2, source: SRC, confirmed: false } }),
+    dated('BUNT.', '2026-10-09', 'The Concourse Project', { order: { seq: 2, of: 2, source: SRC, confirmed: false } }),
+    dated('DJ Bad Apple', '2026-10-09', 'The Concourse Project', { order: { seq: 1, of: 2, source: SRC, confirmed: false } }),
+  );
+  const runs = runsOf(f);
+  assert.deepEqual(runs.map((r) => [r.date, r.night, r.venue, r.members.map((m) => m.name)]), [
+    ['2026-10-02', 'Fri', "Emo's", ['Sarah Pederzani', 'BUNT.']],
+    ['2026-10-09', 'Fri', 'The Concourse Project', ['DJ Bad Apple', 'BUNT.']],
+  ]);
+  // The weekday reaches the registry's by-weekday close.
+  const reg = { venues: { "Emo's": { kind: 'club', close: { default: '2 AM', byWeekday: { Fri: '1 AM' } }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null } } };
+  const [emos] = planFestival(f, reg);
+  assert.equal(emos.plan.close, '1 AM');
+  assert.equal(emos.plan.closeSource, "venue's Fri close");
+});
+
+test('a room of one act with a clock is a run of one — re-laid, never numbered; a timeless one stays timeless; an unnumbered pair is not guessed', () => {
+  const f = lateFest(
+    // Claire Rosinkranz's guess, written by hand in round one: the tool re-lays it.
+    dated('Claire Rosinkranz', '2026-10-10', '3TEN', { doors: '8 PM', time: '9:30 PM', approx: true }),
+    // A room with no clock at all is TIME TBA (MODEL-V3 §5) — Portola's Boys Noize.
+    dated('Boys Noize', '2026-10-03', 'Garage', { close: '2 AM' }),
+    dated('a', '2026-10-05', 'Room'),
+    dated('b', '2026-10-05', 'Room'),
+  );
+  const runs = runsOf(f);
+  assert.deepEqual(runs.map((r) => r.members.map((m) => m.name)), [['Claire Rosinkranz']], 'the unnumbered pair says nothing about who is on when');
+  applyPlans(planFestival(f, { venues: { '3TEN': { kind: 'hall', close: { default: null }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null } } }));
+  const [claire, boys] = f.artists;
+  assert.deepEqual([claire.time, claire.approx, claire.order], ['9 PM', true, undefined], 'doors + the venue gap, and still no order');
+  assert.equal(boys.time, undefined);
+  assert.equal(f.artists[2].time, undefined);
+});
+
+test('the registry can pin a room\'s shape: a hall held on the club shape runs back from its close', () => {
+  const members = [{ name: 'Rory Phillips', seq: 1 }, { name: 'LAIMA', seq: 2 }, { name: 'Soulwax', seq: 3 }];
+  const concert = planRun({ night: 'Thu', doors: '7 PM', members, profile: hall() });
+  const pinned = planRun({ night: 'Thu', doors: '7 PM', members, profile: hall({ shape: 'club' }) });
+  assert.equal(concert.shape, 'concert');
+  assert.deepEqual(concert.times.map((t) => t.time), ['8 PM', '8:45 PM', '9:30 PM']);
+  assert.equal(pinned.shape, 'club');
+  assert.deepEqual(pinned.times.map((t) => t.time), ['8 PM', '9:15 PM', '10:30 PM'], 'Portola\'s Regency Thursday as it shipped');
+});
+
+test('a by-time section has no rooms: its parties are never laid as a run', () => {
+  const f = { id: 'x', days: { Friday: { stages: {} } }, dayMeta: { Folsom: { layout: 'by-time' } }, artists: [
+    { name: 'Party', day: 'Folsom', night: 'Sat', venue: 'Somewhere', doors: '10 PM' },
+  ] };
+  assert.deepEqual(runsOf(f), []);
+});
+
+const hall = (over = {}) => ({ kind: 'hall', close: { default: null }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null, ...over });
+
+test('a concert bill follows its posted opener by the support slot — 7 PM doors does not put the headliner at 12:30 AM', () => {
+  // Emo's, Oct 1: Doors 7 / Show 8, The 4411 opening for Palace. Laid back from
+  // a 2 AM club close, the old rule put Palace at 12:30 AM.
+  const plan = planRun({ night: 'Thu', doors: '7 PM', members: [{ name: 'The 4411', seq: 1, time: '8 PM', posted: true }, { name: 'Palace', seq: 2 }], profile: hall() });
+  assert.deepEqual(plan.times.map((t) => t.time), ['8 PM', '8:45 PM']);
+  assert.equal(plan.close, '12 AM', 'the window still closes somewhere: the hall default, with its tilde');
+  assert.equal(plan.closeApprox, true);
+  // The same room laid as a club night runs back from the close — the shape
+  // that is right for a DJ night and wrong for a concert.
+  const club = planRun({ night: 'Thu', doors: '7 PM', close: '2 AM', members: [{ name: 'The 4411', seq: 1, time: '8 PM', posted: true }, { name: 'Palace', seq: 2 }], profile: { ...hall(), kind: 'club' } });
+  assert.equal(club.times[1].time, '12:30 AM');
+});
+
+test('a curfew caps a concert: the headliner still plays a full set, and the openers move earlier to fit — never before doors', () => {
+  // Stubb's amphitheater, Oct 3: Doors 8, the indoor after-show opens at 11, so
+  // the outdoor show is over by 11. Parcels plays 90 minutes and ends there.
+  const parcels = planRun({ night: 'Sat', doors: '8 PM', close: '11 PM', closeApprox: true, closeSource: 'https://example.test/after-show', members: [{ name: 'Velvet Trip', seq: 1 }, { name: 'Parcels', seq: 2 }], profile: { ...hall(), kind: 'outdoor', supportSetMin: null } });
+  assert.deepEqual(parcels.times.map((t) => t.time), ['8:30 PM', '9:30 PM'], 'Parcels at close − 90; Velvet Trip a support slot ahead, earlier than doors + 60');
+  // A curfew so tight the opener would go on before doors: it opens at doors.
+  const tight = planRun({ night: 'Tue', doors: '7 PM', close: '9 PM', members: [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }], profile: { ...hall(), kind: 'outdoor' } });
+  assert.equal(tight.times[0].time, '7 PM');
+  assert.equal(tight.times[1].time, '7:30 PM', 'thirty minutes at least, even when the curfew wants the headliner sooner');
+});
+
+test('a posted set is a fixed point: a guess never lands on or past the posted set that follows it', () => {
+  // Devil May Care, Oct 2: Doors 10, Rebecca Black posted at 11:45 PM (her own
+  // ticket page), Bambi opening. A 105-minute registry gap — read off the
+  // headliner's printed start — put Bambi's guess ON 11:45 PM.
+  const members = [{ name: 'Bambi', seq: 1 }, { name: 'Rebecca Black', seq: 2, time: '11:45 PM', posted: true }];
+  const bad = planRun({ night: 'Fri', doors: '10 PM', close: '2 AM', members, profile: { kind: 'bar', close: { default: '12 AM' }, doorsToFirstActMin: 105, headlinerSetMin: 135, supportSetMin: null } });
+  assert.deepEqual(bad.times.map((t) => t.time), ['11:15 PM', '11:45 PM'], 'held a half hour ahead of the posted set');
+  assert.deepEqual(bad.warnings, []);
+  // With the gap read as what it is (the headliner's start, not the first
+  // act's), the bar default puts Bambi half an hour after doors — the time
+  // round one set by hand, now reproduced by the tool.
+  const good = planRun({ night: 'Fri', doors: '10 PM', close: '2 AM', members, profile: { kind: 'bar', close: { default: '12 AM' }, doorsToFirstActMin: null, headlinerSetMin: 135, supportSetMin: null } });
+  assert.deepEqual(good.times.map((t) => t.time), ['10:30 PM', '11:45 PM']);
+});
+
+test('a club night keeps running back from the close: a two-hour headliner at a 2 AM room goes on at midnight', () => {
+  // The Concourse Project: 9 PM – 2 AM printed on each night's ticket page;
+  // headliners "go on at midnight unless otherwise stated".
+  const plan = planRun({ night: 'Fri', doors: '9 PM', close: '2 AM', members: [{ name: 'Riot Ten', seq: 1, time: '9 PM', posted: true }, { name: 'Elephante', seq: 2 }, { name: 'Steve Aoki', seq: 3 }], profile: { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: 0, headlinerSetMin: 120, supportSetMin: null } });
+  assert.deepEqual(plan.times.map((t) => t.time), ['9 PM', '10:30 PM', '12 AM']);
+});
+
+test('dated rooms write back and re-run to the same bytes', () => {
+  const f = lateFest(
+    dated('Total Wife', '2026-09-29', 'Mohawk Austin', { doors: '7 PM', time: '8 PM', order: { seq: 1, of: 2, source: SRC, confirmed: false } }),
+    dated('Fcukers', '2026-09-29', 'Mohawk Austin', { doors: '7 PM', order: { seq: 2, of: 2, source: SRC, confirmed: false } }),
+  );
+  const reg = { venues: { 'Mohawk Austin': hall({ close: { default: '12 AM' } }) } };
+  applyPlans(planFestival(f, reg));
+  assert.deepEqual(f.artists.map((a) => [a.name, a.time, a.approx, a.close, a.closeApprox]), [
+    ['Total Wife', '8 PM', undefined, '12 AM', true],
+    ['Fcukers', '8:45 PM', true, '12 AM', true],
+  ]);
+  const once = clone(f);
+  assert.equal(applyPlans(planFestival(f, reg)), 0, 'nothing left to change');
+  assert.deepEqual(f, once);
+});

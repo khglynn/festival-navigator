@@ -256,3 +256,80 @@ states an end time, would do it; general "festival hours" should not).
 
 Every diff scanned for `#g=<token>` before staging (`git diff --cached | grep
 -oE '#g=[A-Za-z0-9_-]{10,}'`) — clean both times.
+
+---
+
+# Round two (2026-09-26) — no guess later than the show, the tool groups by date, the suite green
+
+Following `ACL-PREP-ROUND2.md`. Worked in the same worktree/branch. Order of
+work differs from the brief's numbering on purpose: the tool first (step A),
+because every re-run below needs it; then the data (step B); then the tests
+(step C).
+
+## Step A — the tool (`scripts/guess-run-times.mjs`)
+
+**What was wrong, beyond the brief's gap.** Three things, not one:
+
+1. `runsOf()` keyed rooms by `night|venue`, so a dated section (Late nights)
+   produced zero rooms — the gap round one reported.
+2. It only took entries with an `order`, and the validator forbids an order
+   on a one-act room, so even with dates it could never reproduce the 8
+   single-act guesses round one wrote (Villanelle, Night Tapes, Suki, Ryan
+   Beatty, War on Drugs, Rodrigo y Gabriela, Noga Erez, Claire Rosinkranz).
+3. The deeper one, and the actual cause of the dangerous guesses: `planRun`
+   laid EVERY room back from its close (closer = close − headliner set). That
+   is right for a club night that runs to the close, and wrong for a concert
+   bill, which ends when its headliner does. With a 2 AM fallback close it put
+   Palace at 12:30 AM behind 7 PM doors; fixing only the registry's closes
+   would not have fixed it, because one venue hosts 7 PM and 9 PM doors shows
+   and a single close cannot serve both.
+
+**What changed.**
+
+- A room = one section, one `night` or one `date`, one venue — read with the
+  app's own `nightOf` / `dateOf` / `venueOf` (events.js), so the tool and the
+  wall cannot disagree. A dated room reads the registry's by-weekday close
+  through the weekday of its date. By-time sections (Folsom) have no rooms.
+- A room of one act that already has a time is a run of one (re-laid, never
+  numbered). A timeless room stays timeless (MODEL-V3 §5, TIME TBA) — that is
+  what keeps Portola's Boys Noize (doors, a printed close, no time) from
+  getting a 10:15 PM guess on a re-run.
+- Two shapes, chosen by the registry's new optional `shape`, else by `kind`
+  (club/bar → club, hall/outdoor → concert):
+  - **club**: unchanged — first act at doors + gap, closer ends at the close.
+  - **concert**: the first act at its posted time (a posted opener IS the first
+    act) or doors + gap; each act after it by the support slot; the close is a
+    CAP — when it binds (a curfew), the headliner still plays a full set and
+    the openers move earlier, never before doors. This is the shape that errs
+    early.
+- A posted set is a fixed point for every shape: a guess never lands on or
+  past a posted set that follows it (k guesses before it sit at least k half
+  hours ahead). This is the Bambi collision, now impossible by construction;
+  the plan prints a warning if posted sets leave no room.
+
+**Disagreeing with the brief, gently:** it framed the tool gap as grouping
+only. Grouping alone would have made the tool reproduce round one's late
+guesses faithfully. The shape rule is the fix for section 1 of the brief.
+
+**Portola stays byte-identical, on purpose.** Portola is live today (Sat Sep
+26) and not in this round's scope. Its three Regency Ballroom rooms are `hall`,
+so the concert shape would move them (Thu Soulwax 10:30 → 9:30 PM, Fri Channel
+Tres 10:30 → 9:30 PM, **Sat Parcels 10:45 → 10 PM — tonight**). I pinned
+Regency's registry entry to `"shape": "club"` with a dated note so
+`tests/portola-events.test.mjs` ("the guessed times are DERIVED") keeps holding
+Portola to exactly what the tool writes. Dry run of `portola-2026` before and
+after the change: identical plans. **Whether tonight's Parcels guess should move
+earlier is a live, friend-facing call for Kevin** — flagged in the report.
+
+**Tests** (`tests/run-guess.test.mjs`, 10 new, all 14 old ones unchanged and
+green): date + venue grouping and weekday close; run of one vs timeless vs
+unnumbered pair; by-time sections skipped; concert follows its posted opener
+(Palace 8:45 PM, where the club shape gives 12:30 AM); a curfew caps a concert
+and pulls the opener earlier but never before doors; the posted fixed point
+(Bambi at 11:15 PM with round one's 105-minute gap, 10:30 PM once the gap is
+read correctly); a club night with a 2-hour headliner at a 2 AM room → 12 AM;
+the shape pin; dated rooms write back and re-run to the same bytes.
+
+Docs kept true: the tool paragraph in `docs/add-a-festival.md` and the README
+script line (both describe the tool; a scope note, since the brief listed
+data + script + tests).
