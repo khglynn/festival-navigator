@@ -219,7 +219,6 @@ test('the wall: a by-time section is a time list on each of its nights, the othe
   const list = fri.querySelector('.time-list');
   assert.equal(list.dataset.iso, '2026-09-25', 'the list knows its date — the now marks key on it');
   assert.equal(list.dataset.tz, 'America/Los_Angeles');
-  assert.equal(list.dataset.clock, undefined, 'Friday has no timetable above it');
   assert.ok(roomOf(root, 'Friday', 'Afters').querySelector('.venue-grid'), 'FRI AFTERS is still venue stacks');
   assert.deepEqual(bandsOf(fri), [
     ['Daytime', [['Tea Dance', '3 – 8 PM\nVenue A · SoMa']]],
@@ -254,7 +253,7 @@ test('the wall: a by-time section is a time list on each of its nights, the othe
   assert.ok(roomOf(root, 'Friday', 'Afters').querySelector('.card[data-artist="Both Rooms"]'),
     'a show billed to both sections is in the afters stacks too');
   const sat = roomOf(root, 'Saturday', 'Parties').querySelector('.time-list');
-  assert.equal(sat.dataset.clock, 'day', 'under Saturday\'s timetable the list is told so (v3.css steps it in from 720 up)');
+  assert.equal(sat.dataset.clock, undefined, 'under Saturday\'s timetable too the list is not told: the wall\'s one edge places it (v3.css #wall-root, 2026-09-26)');
   assert.deepEqual(bandsOf(roomOf(root, 'Saturday', 'Parties')), [['9 PM', [['Sat Only', '9 PM – 2 AM\nVenue A']]]]);
 });
 

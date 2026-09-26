@@ -110,13 +110,23 @@
    * content, and stacks only where the screen is narrower. */
   --zoom-col: 300px;
   --col-w: calc((100vw - 2 * var(--sp-gutter) - var(--col-gap)) / 2);
-  /* The CLOCK's geometry (a festival day's timetable): the hour rail at its
-   * left and the gap between its tracks. Named because a card stack under a
-   * clock borrows both to line its columns up with the clock's (v3.css
-   * `.venue-grid[data-clock]`, Kevin at Portola, 2026-09-25) — the rail, the
-   * stage strip's spacer and the stacks read one number each. */
+  /* The CLOCK's geometry (a festival day's timetable): the hour rail — THE
+   * GUTTER, the only thing that ever stands left of the wall's edge, and
+   * only times stand in it — and the gap between its tracks. The rail, the
+   * stage strip's spacer, a phone's stack row (its lead space, v91) and every
+   * card column's gap from 720 up read one number each. */
   --hour-rail-w: 40px;
   --clock-gap: 4px;
+  /* THE WALL'S LEFT EDGE (Kevin, 2026-09-26: "alignment straight down the
+   * left with the cards and titles"): how far in from the shell's edge every
+   * room head, stage and venue head, card column, band head and the EARLIER
+   * line starts on the Board, whatever the room is — a clock, stacks, by
+   * time, a day with no clock at all. From 720 up it is the gutter's width,
+   * so the times stand left of it and nothing else does (v3.css
+   * `#wall-root`). On a phone it is the shell's edge: the shell holds exactly
+   * two `--col-w` columns, so a room stepped in would lose one — the clock
+   * and the stacks under it carry the gutter themselves (v91). */
+  --wall-edge: 0px;
   /* THE LIST's one reading column (Phase 1, 2026-09-26). In the List a card
    * is a ROW — the name and its time on the left, the people on the right —
    * so it is not a card column and `--col-w` is not its width: on a phone a
@@ -133,10 +143,10 @@
 /* From 720 the wall is not two-across any more, so the column stops being a
  * fraction of the screen and becomes the width it has always resolved to —
  * the same 176px floor `.wall-grid` uses. The timetable stops stretching to
- * fill the window (it stays a horizontal scroller) and the stacks lay their
- * columns out from the left. */
+ * fill the window (it stays a horizontal scroller), the stacks lay their
+ * columns out from the left, and the wall's edge steps in by the gutter. */
 @media (min-width: 720px) {
-  :root { --col-gap: 7px; --col-w: 176px; }
+  :root { --col-gap: 7px; --col-w: 176px; --wall-edge: var(--hour-rail-w); }
 }
 
 /* The one "wide" breakpoint (1100): shell widens, everything else is fluid. */
