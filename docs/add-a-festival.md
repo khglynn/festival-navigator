@@ -1,7 +1,8 @@
 # Adding a festival
 
-*Updated 2026-09-23 — a cancelled act keeps its entry and says so
-(`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
+*Updated 2026-09-25 — a section can read by time (`layout: "by-time"` in its
+`dayMeta`, below) and a card can say its part of town (`area`). 2026-09-23 — a
+cancelled act keeps its entry and says so (`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
 `date`; one rule for guessed times; doors go in `doors`.*
 
 Two files, one command:
@@ -251,6 +252,48 @@ by the section's label:
 A dated entry renders under its date, not under the section label, so one
 artist playing two nights is two cards and one pick. Only the same name on
 the same date is a duplicate.
+
+### How a section reads — by venue or by time (v94, 2026-09-25)
+
+A section's cards stack under the room they happen in (below). That is right
+when a night is a handful of rooms, each with a run of acts: Portola's afters.
+It is wrong when a night is many one-party rooms: Folsom weekend is 68
+parties in 39 venues, and only two or three rooms host more than one party a
+night. So a section can say, **once, in its own `dayMeta` entry**, that it
+reads by time:
+
+```json
+"dayMeta": { "Folsom": { "date": "Sep 25-27", "layout": "by-time" } }
+```
+
+| `layout` | What the wall draws for each night of the section |
+|---|---|
+| `by-venue` (the default; leaving it off means this) | A stack of cards under each venue, in play order. |
+| `by-time` | The night's cards in start order, wrapping across the one card column (two on a phone), under fixed bands: DAYTIME (before 5 PM), EVENING (5–9), 9 PM, 10 PM, LATE (11 PM to 2 AM), AFTER-HOURS (2 AM on), then TIME TBA for a card with no clock. Each card says its own place under its time: `9 PM – 3 AM` / `Public Works · Mission`. |
+
+It is the section's choice, not each entry's: one declaration cannot
+disagree with itself. The validator errors on a value that is not a layout,
+on a grid day (that's a timetable), on a combined label like `Afters & Folsom`
+(declare it on each part), on a label no entry plays under, and on a
+festival with no grid (no sections). A by-time entry with neither `time` nor
+`doors` gets a warning: it shows last, under TIME TBA.
+
+What a by-time entry carries is what any section entry carries, plus one
+optional field:
+
+| Field | What |
+|---|---|
+| `area` | The part of town, `"SoMa"`, `"Castro"` (≤ 40 chars). The card says it after the venue, because no venue head sits above a by-time card. |
+
+Keep `venue` short, the name a person would say ("Power Exchange"), with the
+street address in `venues{}` as the map link. A party that starts after
+midnight belongs to the night before, so its `night` is that night (3 AM
+Sunday is Saturday's `"Sat"`, `"3 AM"`), and it shows under that night's
+AFTER-HOURS. A printed end (`"9 PM - 3 AM"`) is when the card's now ring goes
+out. Without one, the ring lasts an hour, or until the room's `close` when the
+entry has one, and the card then reads `9:30 PM – ~2 AM` with `closeApprox`.
+The rule below about a room with two shows needing a running order does not
+apply here: two parties in one venue on one night are two parties, not a run.
 
 **A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
 2026-09-01). The wall draws every room as a vertical run — stacked in the time

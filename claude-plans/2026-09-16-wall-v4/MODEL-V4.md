@@ -26,6 +26,9 @@ almost everything starts at 8 or 10 PM — you pick one door and stay. So:
 
 ## 1. Two presentations, one rule
 
+*(2026-09-25: a third, declared by the data rather than inferred from it —
+a section can read BY TIME; §3e.)*
+
 **Stage columns × time only where the festival publishes a stage grid
 (`fest.days[day].stages`). Everything else is a stack of artist cards under
 the place it happens, in play order.** Data still decides — but by its
@@ -382,6 +385,65 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
   dot, in a faint ring; where even that leaves less than one day, the fest
   name gives way with an ellipsis.
 - **How it works** gets no row, as the now line and the now mark get none.
+
+## 3e. A section can read by time, 2026-09-25 (v94)
+
+Folsom weekend: 68 verified public parties, Fri Sep 25 to Mon Sep 28, in 39
+venues. On any night only two or three rooms host more than one (The Stud,
+SF Eagle; Powerhouse three on Sunday), so §1.2's stacks would be 18 to 20
+one-card columns a night. Ten parties start in Saturday's 9 PM hour and
+sixteen run at once on Friday, so a clock would pile up on a phone. Kevin
+(2026-09-25) chose "cards sorted by time that wrap responsively, closer to
+our seasonal view". Build log:
+`claude-plans/2026-09-25-portola-live/v94-BUILD.md`.
+
+- **Declared, never inferred.** §1's law holds: the data picks the
+  presentation, and a threshold never does. The section's own `dayMeta`
+  entry says it once: `"Folsom": { "date": "Sep 25-27", "layout":
+  "by-time" }`. `by-venue` is the default and is what every section without
+  the field gets. One declaration per section means a section cannot disagree
+  with itself; a field on every entry could, which is why that shape was not
+  chosen. The validator (`festival-rules.mjs checkLayouts`) errors on a
+  value that is not a layout, and on a declaration that lands nowhere: a grid
+  day, a combined label, a label no entry plays under, or a festival with no
+  grid.
+- **The shape.** `wall.js timeGroups`, from `events.js timeBandsOf`:
+  `.time-list[data-iso][data-tz] > .time-band[data-band] > .band-head +
+  .band-grid > .card`. For each night: cards in start order (a set's time,
+  else its room's doors), a cancelled party last in its band, file order for
+  a tie. The bands are fixed on the festival-day clock: DAYTIME (9 AM to 5
+  PM), EVENING (5 to 9), 9 PM, 10 PM, LATE (11 PM to 2 AM, bar close),
+  AFTER-HOURS (2 AM on), TIME TBA (no clock). A band with nothing in it is
+  not drawn, and a night with nothing in the section draws no room, so the
+  count never changes the presentation. A small-hours start is the night
+  before's (Kevin, 2026-09-25), and shows in its AFTER-HOURS.
+- **The card is the card.** `renderCard` with a two-line time label: the
+  printed range, or the start running to the room's `close` (`9:30 PM –
+  ~2 AM`), or `Doors 10 PM`, then the place, `Public Works · Mission` (the
+  venue, then `area`, the new optional field). Picks, the zoom and its
+  Tix/Info doors, the − · note · + row, notes, crew marks, the dim and NOW
+  all behave as they do in a stack. That's because the members come from
+  `venueGroupsOf` itself: the same occurrence, the same now window, with one
+  change. A party's printed end is where its ring goes out; in a run, an act
+  lasts until the next act starts. The room head is still the door to
+  `<iso>|<section>`. The fold, the show menu and `&show=` address the section
+  by its key, as before. The day image lists it in the same order
+  (`tools.js`).
+- **Geometry.** The one track, `--col-w`, wraps: two across on a phone, as
+  many as fit from 720 up. Row and column gaps are both `--col-gap`, and
+  cards in a row share a height. Under a day's timetable from 720 up
+  (`data-clock="day"`) the list steps in by the hour rail and takes the
+  clock's gap, so its columns sit under the clock's. **On a phone it does not
+  step in or scroll sideways** the way a clocked stack row does (v91). A
+  stack is read down, one room at a time; a time list is read across, the
+  9:30 party beside the 9 PM one. The sideways row parks the right-hand card
+  38px off screen, which would clip half of every pair, so the phone keeps
+  the shell's two full columns under the list's own head.
+- **Not shared with the season view** (`origin/seasons/view`, unmerged): its
+  grid stretches (`.wall-grid`, `1fr`), which breaks `--col-w` beside a
+  timetable, and it groups by week. The card and the two-line label are
+  already shared. If the season view moves to `--col-w`, `timeGroups` is the
+  shape to adopt.
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
