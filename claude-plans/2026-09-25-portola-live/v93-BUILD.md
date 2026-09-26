@@ -234,3 +234,22 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   Escape (before: 281 → 678 at 390, 267 → 707 at 1280). The contract taps with a real pointer
   once the menu has settled: `page.click()` retried during the menu's grow and each retry
   scrolled the page 100px to reveal the row, which is Playwright's doing, not a person's.
+- **Every Back does something after the menu's screen went** (c18e9b3, Sol 6's re-review of
+  7332366): `router.forget` rewrote only the current entry, so a 404 with the menu up left two
+  same-URL entries and a Back between them that changed nothing, and a crew opened over the
+  menu left an entry that reopened a menu on Back. Now the 404 takes the menu's entry back
+  first (`offWall` → `leaveShowMenu`), then opens the fest list; every menu's entry carries
+  an id; only the open menu and the one Back just put away (its wall still up) are alive —
+  any other entry naming a menu opens nothing (`arrivedAt`), is stepped past onto the wall's
+  own entry when arrived on from another URL (the hashchange handler), and while the page
+  stands on one (a boot in place, a refresh with the menu up, a Forward onto it) the Back
+  that would stop on the same-URL wall entry goes on one more. What it costs: a Forward onto
+  a dead entry shows nothing (one press; the next Forward goes on) — a Back never does.
+  Proof: `tests/browser/show-menu-history.test.mjs`, WebKit and Chromium, address + screen
+  after each press; 8/10 fail on df8ed87 (the ordinary Back/Forward/Back case passes both
+  ways and stays as the guard).
+- **Docs** (user-flows F2 item 7, MODEL-V4 §3.1): the tick keeps your place; a tap outside on
+  a card only closes the menu, on a control it closes it and acts (the docs still said it
+  "does nothing else", stale since the tap replay); the dead-entry rule.
+- **Not done: the merge of main (3b2640a) into live/v93** — the command was refused by the
+  session's permission classifier ("Modify Shared Resources"); left for the coordinator.

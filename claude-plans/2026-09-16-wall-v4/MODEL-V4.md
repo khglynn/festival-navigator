@@ -220,12 +220,16 @@ out is quick.
 
 **Since v93 (Kevin, 2026-09-25):** the menu stays up while you choose — a
 row tap toggles its room, the wall changes behind it, and the menu waits
-for the next. It closes on a tap or click outside it (which does nothing
-else: it never reaches the card underneath), on Escape, on the fest name
-again, and on Back — it holds a history entry of its own (the router's
-`menu:` layer) that each way out takes back, and that Settings takes over,
-so history ends as the menu found it. `Settings` wears the header's gear in
-the check column.
+for the next. The card or room head at the top of what you see stays where
+it was on screen through every tick (the next one after it, if it left with
+the room). It closes on a tap or click outside it (on a card that is all it
+does — never a pick; on a control, the control acts too), on Escape, on the
+fest name again, and on Back — it holds a history entry of its own (the
+router's `menu:` layer, carrying the menu's id) that each way out takes
+back, and that Settings takes over, so history ends as the menu found it.
+When its screen goes with the menu up (a crew deleted on the server, a crew
+opened over it), that entry opens nothing and never costs a Back.
+`Settings` wears the header's gear in the check column.
 
 **Since the ship round (2026-09-17):**
 - **A hidden part renders nothing.** No header, no quiet label, no whisper,
