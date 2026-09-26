@@ -17,8 +17,58 @@ are the handoff.*
 - [x] merged `origin/live/v93` (now v96: the import, `wallUrl`, the Linux day-row test fixes) — `bf8dfa6`;
       one conflict (two imports side by side in wall.js). Node suite green at UTC, Tokyo and the
       night clock except the stamp; `npm run test:browser` 235/235.
-- [ ] E2. frames for every state at 390 / 320 / 1280, looked at
-- [ ] F. docs that must move with the code (docs-truth), three clocks + browser suite
+- [x] E2. frames for every state at 390 / 320 / 1280, looked at — 44 frames in `list-shots/`
+      (git-ignored), rendered by `list-rig.mjs` over this worktree's own code, no page errors,
+      every write refused (44 boot pings to /api/person, all 503)
+- [x] F. MODEL-V4 §3.1 "Since Phase 1" and row 7's picture — `41bb914`. CLAUDE.md NOT edited
+      (the harness's instruction file; wording proposed below for the coordinator/Kevin).
+
+## Results (merged head, 2026-09-26 ~5 AM PT)
+
+- `npm test` at UTC, `TZ=Asia/Tokyo` and the night clock (`NIGHT_CLOCK=2026-09-27T04:30:00Z`):
+  1108 pass, 1 fail each — the service-worker stamp, by instruction (not stamped).
+- `npm run test:browser` (Chromium + WebKit on this Mac): 235 / 235.
+- The five browser files my first cut broke passed 88/88 on the branch base (checked in a scratch
+  worktree of `aba41c3`), so every one of those 17 reds was mine; each was fixed at its cause (the
+  gallery's and one contract's clocks; the dock's width for the three lines).
+
+## Frames (`list-shots/`, re-render: `node claude-plans/2026-09-26-unified-build/list-rig.mjs [prefix]`)
+
+Portola, Saturday 4:15 PM PT, at 390 / 320 / 1280 each: `p-sat-top-*` (days line + the folded
+room), `p-sat-portola-*`, `p-sat-portola-open-*` (HIDE EARLIER), `p-days-open-*`,
+`p-sat-afters-*`, `p-sat-folsom-*`, `p-sun-portola-*`, `p-menu-open-*`, `p-board-top-*`.
+Plus `p-dock-closed-390/320`, `p-dock-open-390`, `p-zoom-row-390` (a finger's hold),
+`p-zoom-row-1280` (hover), `p-now-landing-390`, `p-930pm-afters-390` (rings at night),
+`p-6am-sun-390` (the rollover). ACL, first Saturday 8 PM CDT at 390 / 320 / 1280:
+`acl-sat-grid-*`, `acl-late-night-*`; `acl-menu-open-390`; second Friday 3 PM:
+`acl-board-top-390`, `acl-list-top-w2-390` ("EARLIER · FRI 2 · SAT 3 · SUN 4").
+Earlier iterations are set aside in `list-shots/earlier-iterations/`.
+
+## Proposed CLAUDE.md wording (not applied — the coordinator's or Kevin's call)
+
+> **The List is a VIEW the reader picks, not a presentation the data picks** (Phase 1,
+> 2026-09-26): the show menu's Board · List row, per phone per festival
+> (`fn_view_v1_<fid>`), `&view=list` in a share link, never in the crew doc. In the List
+> every room is a time list of rows (`.card.row`, the same card on a grid; `--list-w`, the
+> 560px reading column from 720 up) — the grid and afters on hours, a declared by-time
+> section on its own ladder. **What is over folds** (`js/v3/wall.js` pastOf / foldPast):
+> over = the ring can never light again, judged at a held clock (`ctx.pastAt`: boot,
+> resume, the festival day turning — never the tick), folded cards are not in the DOM,
+> and a reveal is page memory only.
+
+## Follow-ups (not built; none blocks this release)
+
+1. How it works row 7: Kevin's words still say "Show or hide parts of the week." —
+   suggested: "Show or hide parts of the week, as a board or a list."
+2. The gallery has no List or fold section (its wall judges its past before the week so
+   its contracts keep every day); the frames rig and `tests/browser/list-view.test.mjs`
+   cover the states meanwhile.
+3. Late nights' past dates fold room by room in the List; they could fold as days inside
+   the Late nights block.
+4. The Board's in-room cut (m's grid mask) — deliberately not built (call 2).
+5. The production now line inside a time list (round five's critic): not built; the rings
+   read cleanly in the frames (`p-930pm-afters-390`), dense daytime Folsom bands are the
+   heaviest case (8 rings) and read the same as the Board's.
 
 ## The build, in one screen
 
