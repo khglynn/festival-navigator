@@ -78,7 +78,7 @@
       body { margin: 0; background: var(--page); color: var(--text-body);
              font-family: var(--font-ui); min-height: 100vh; }
       .shell { max-width: var(--shell-max); margin: 0 auto;
-               padding: 16px var(--sp-gutter) calc(84px + env(safe-area-inset-bottom)); }
+               padding: 16px var(--sp-gutter) calc(var(--foot-h, calc(45px + env(safe-area-inset-bottom))) + 39px); }
       @media (min-width: 720px) { .shell { padding: 22px var(--sp-gutter) 40px; } }
       .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       .app-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

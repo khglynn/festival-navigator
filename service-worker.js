@@ -59,6 +59,10 @@ const APP_CORE = [
   '/js/v3/now.js',
   '/js/v3/events.js',
   '/js/v3/motion.js',
+  '/js/v3/plan.js',
+  '/js/v3/plan-rows.js',
+  '/js/v3/plan-shelf.js',
+  '/js/v3/foot.js',
   '/data/festivals/index.json',
 ];
 // Every module app.js imports (transitively) must be listed above, or an

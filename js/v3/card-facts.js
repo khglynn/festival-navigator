@@ -18,6 +18,7 @@ import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
+import { footTop } from './foot.js'; // Our plan: the zoom's floor is the dock or the peek on it
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -825,17 +826,14 @@ function insetFor(r0, r1) {
   return `inset(${t}px ${r}px ${b}px ${l}px round ${RADIUS}px)`;
 }
 
-// The phone dock's top edge while it is showing (under 720px; display:none
-// above it, and on the screens that hide it), else null. The one piece of
-// bottom chrome a zoom has to clear: the zoom layer sits over the dock, so a
-// card grown near the bottom hung across it (Kevin, 2026-09-24, a narrow
-// desktop window under a mouse: "keep this from happening easily").
-function dockTop() {
-  const dock = document.getElementById('dock');
-  if (!dock || !dock.getClientRects().length) return null;
-  const t = dock.getBoundingClientRect().top;
-  return t > 0 && t < window.innerHeight ? t : null;
-}
+// The top edge of the phone's bottom chrome while it is showing (under 720px;
+// display:none above it, and on the screens that hide it), else null. The one
+// piece of bottom chrome a zoom has to clear: the zoom layer sits over the
+// dock, so a card grown near the bottom hung across it (Kevin, 2026-09-24, a
+// narrow desktop window under a mouse: "keep this from happening easily").
+// Our plan (2026-09-26): the peek stands on the dock, so the floor is the
+// higher of the two — foot.js footTop reads both.
+const dockTop = footTop;
 
 // The sticky chrome ABOVE a card, as the zoom layer sees it: the lowest
 // bottom edge on screen of the desktop day rail (≥720, sticky at the top)

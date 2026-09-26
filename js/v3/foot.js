@@ -1,0 +1,57 @@
+// The bottom of the phone screen, as everything that has to clear it reads it
+// (Our plan, 2026-09-26).
+//
+// The dock used to be the only thing down there, and four literals guessed its
+// height (84px of shell padding, 64 for the companions and the toast, 70 for
+// the Spotify pill) while two readers measured it (seenBand, the zoom's
+// floor). Our plan's peek now sits on the dock's top edge, so "the dock's top"
+// is no longer the floor. Two answers, one home:
+//
+//   footTop()     a real box: the top of whatever is at the bottom right now —
+//                 the dock, or the plan above it (peek or open, mid-drag
+//                 included). The zoom's floor and NOW's seen band read this.
+//                 Real boxes, never tokens (card-facts.js chromeCeiling).
+//   measureFoot() the RESTING height of that chrome — the dock plus the peek,
+//                 never the open plan (which covers the wall; it is not a floor
+//                 for the page's padding) — written to :root as --foot-h, and
+//                 the dock's own height as --dock-h (the plan stands on it).
+//                 CSS reads these: the shell's bottom padding, the toast, the
+//                 Spotify pill.
+//
+// Above 720px the dock is display:none and the laptop's plan lives in the
+// corner: footTop() is null there and the two variables go back to the
+// tokens' values (v3-tokens.css).
+const ids = ['dock', 'plan'];
+
+const shown = (el) => !!el && el.getClientRects().length > 0;
+
+export function footTop() {
+  const vh = window.innerHeight;
+  let top = null;
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (!shown(el)) continue;
+    const t = el.getBoundingClientRect().top;
+    if (t > 0 && t < vh && (top === null || t < top)) top = t;
+  }
+  return top;
+}
+
+export function measureFoot() {
+  const root = document.documentElement.style;
+  const dock = document.getElementById('dock');
+  const plan = document.getElementById('plan');
+  // The search field hides the dock while it has focus; the page keeps the
+  // padding it had, or its end would jump under the keyboard at every focus.
+  if (dock && dock.classList.contains('hidden')) return;
+  // No dock (a laptop, or a screen without one): the tokens' own values stand,
+  // which is where every reader was before this file existed — so a toast on a
+  // laptop still sits where it always sat.
+  if (!shown(dock)) { root.removeProperty('--dock-h'); root.removeProperty('--foot-h'); return; }
+  const dockH = Math.round(dock.getBoundingClientRect().height);
+  // The plan says how tall its peek is (plan-shelf.js writes data-peek-h on
+  // every paint); an open plan still counts as its peek here.
+  const peekH = shown(plan) ? Number(plan.dataset.peekH) || 0 : 0;
+  root.setProperty('--dock-h', `${dockH}px`);
+  root.setProperty('--foot-h', `${dockH + peekH}px`);
+}

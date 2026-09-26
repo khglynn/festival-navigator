@@ -128,6 +128,27 @@
    * Settings are 560 on a laptop) — about a phone and a half. Kevin approved
    * the empty sides as the intended cost (round five riff, 2026-09-26). */
   --list-w: 560px;
+  /* OUR PLAN (2026-09-26, round three's row — Kevin: "the artist leads …
+   * NOW / NEXT to the left of the number of people"). One row, four columns,
+   * everywhere the plan appears (the phone's peek and day plan, the laptop's
+   * corner card and panel): the node on the path, what and where, when, how
+   * many of us. And the ONE second-line style: the place under the artist and
+   * the time under NOW / NEXT are the same type ("same size for place and
+   * time"), so a row has exactly two text sizes. */
+  --plan-nw: 16px;
+  --plan-ww: 72px;
+  --plan-cw: 48px;
+  --plan-gap: 10px;
+  --plan-line: 600 12px/1.3 var(--font-ui);
+  /* The bottom of the phone screen, measured (js/v3/foot.js writes both on
+   * :root): the dock's own height, and the dock plus Our plan's peek at rest.
+   * These are the values before the first measure — the dock is 45px plus the
+   * phone's home-indicator inset. */
+  --dock-h: calc(45px + env(safe-area-inset-bottom, 0px));
+  --foot-h: calc(45px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 359px) {
+  :root { --plan-ww: 64px; --plan-cw: 44px; --plan-gap: 8px; }
 }
 
 /* From 720 the wall is not two-across any more, so the column stops being a
