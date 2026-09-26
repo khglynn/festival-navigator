@@ -2039,6 +2039,11 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
  * are drawn outside the node column and must not be cut. */
 .plan-shelf .plan-list { overflow: hidden; margin: 0 -8px; padding: 0 8px 14px; }
 .plan-shelf .plan-list.scrolls { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+/* The open plan's last line: its Share (DESIGN ROUND, live/plan-share). Under
+ * the rows, never in the head — the laptop's head is a button of its own. */
+.plan-foot { flex: none; display: flex; justify-content: flex-end; padding: 9px 0 12px; border-top: 1px solid var(--hairline); }
+.plan-share { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 0 16px 0 14px; }
+.plan-share svg { width: 13px; height: 13px; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */
 #screen-app.searching .plan-shelf { display: none; }

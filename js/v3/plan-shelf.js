@@ -125,7 +125,7 @@ function glyph(path) {
 }
 const chevron = (up) => glyph(up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
 // The system's share mark (an arrow out of a tray), and two sheets for a copy.
-const SHARE_MARK = 'M6 7.2V1.6M3.9 3.7 6 1.6l2.1 2.1M4.2 5.4H3.1v5.1h5.8V5.4H7.8';
+const SHARE_MARK = 'M6 7.4V1.3M3.9 3.4 6 1.3l2.1 2.1M4.3 4.9H2.6v5.8h6.8V4.9H7.7';
 const COPY_MARK = 'M4.3 4.3h5.2v6.2H4.3zM7.7 4.3V2.5H2.5v6.2h1.8';
 
 function build(host) {
@@ -711,13 +711,13 @@ function toggleEarlier() {
 // and says so on the button.
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
-  const text = planText(data.route, { ctx: ctxRef, plan: data.plan, fest: data.fest, day: data.day });
+  const text = planText(data.route, { ctx: ctxRef, plan: data.plan, nowMin: data.nowMin, fest: data.fest, day: data.day });
   if (typeof navigator.share === 'function') {
     try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
   }
   try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Could not copy'); }
 }
-const shareLabel = () => (typeof navigator.share === 'function' ? 'Share this plan' : 'Copy this plan');
+const shareLabel = () => (typeof navigator.share === 'function' ? `Share ${PLAN_NAME.toLowerCase()}` : `Copy ${PLAN_NAME.toLowerCase()}`);
 function sayOnShare(words) {
   clearTimeout(shareTimer);
   shareWords.textContent = words;

@@ -275,43 +275,82 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
   return list;
 }
 
-// ---- the day as words ------------------------------------------------------------
-// What the open plan's Share hands the share sheet (plan-shelf.js): the whole
-// night, in the rows' own words, one line a stop — the start, what and where,
-// how many of us — its "or" under it, and a scattered stretch as the rows say
-// it. Plain text for a group chat:
-//
-//   Our plan · Portola · Sat Sep 26
-//   5:40 PM  Tove Lo · Pier Stage — 5 of us
-//     or Jamie xx · Ship Tent — 3 of us
-//   7 PM  Scattered till 8:15 PM
-//
-// Counts, never names (nobody is named beyond what the crew already sees),
-// and never a link: the crew's link is its key. The highlight is a view and
-// changes nothing here — the plan is the crew's.
-export function planText(route, { ctx, plan, fest = '', day = '' } = {}) {
-  const lines = [[PLAN_NAME, fest, day].filter(Boolean).join(' · ')];
-  if (!route) return lines[0];
-  const whatWhere = (stop) => {
+// ---- the day as words (DESIGN ROUND, 2026-09-26 — not for release) -----------------
+// What the open plan's Share would hand the share sheet: the rows' own facts,
+// then words for a group chat in plain punctuation (Kevin: "those en dashes …
+// we can type simpler"). planEntries is the facts; the three styles are the
+// design round's candidates (claude-plans/2026-09-26-unified-build/share-design).
+// Counts, never names; never a link inside the text (the link, if one goes,
+// rides beside it as the share's url). The highlight is a view and changes
+// nothing here. What is over is left out, as the rows fold it under Earlier.
+export function planEntries(route, { ctx, plan, nowMin = null } = {}) {
+  if (!route) return [];
+  const lead = (stop) => {
     if (kindOf(stop) === 'set') {
       const act = actsOf(stop)[0];
-      return act ? `${act.name} · ${whereOf(stop)}` : whereOf(stop);
+      return { name: act ? act.name : whereOf(stop), where: act ? whereOf(stop) : '' };
     }
-    // A room's headliners, unless the room is named for the one act in it.
+    // A room leads with the room; its acts are the place line, unless the
+    // room is named for the one act in it.
     const acts = headlinersOf({ ...stop, people: stop.people || [] }, ctx.picks).map((h) => h.name);
     const room = whereOf(stop);
-    return !acts.length || (acts.length === 1 && acts[0] === room) ? room : `${room} · ${acts.join(' → ')}`;
+    return { name: room, where: !acts.length || (acts.length === 1 && acts[0] === room) ? '' : acts.join(', ') };
   };
+  const out = [];
   for (const it of route.items) {
-    if (it.kind === 'scattered') { lines.push(`${quietClock(it.from)}  Scattered till ${quietClock(it.to)}`); continue; }
-    lines.push(`${approxOf(it, ctx.picks) ? '~' : ''}${quietClock(it.from)}  ${whatWhere(it)} — ${it.count} of us`);
-    const f = forkFor(it, plan.bar, null);
-    if (f) {
-      const later = f.from >= it.from + 30 ? `, from ${quietClock(f.from)}` : '';
-      lines.push(`  or ${whatWhere(f)}${later} — ${f.count} of us`);
-    }
+    if (nowMin != null && it.to <= nowMin) continue;
+    if (it.kind === 'scattered') { out.push({ kind: 'scattered', from: it.from, to: it.to }); continue; }
+    const now = nowMin != null && it.from <= nowMin;
+    const f = forkFor(it, plan.bar, now ? nowMin : null);
+    out.push({
+      kind: 'stop', from: it.from, till: tillOf(it), now, approx: approxOf(it, ctx.picks), count: it.count, ...lead(it),
+      or: f ? { ...lead(f), count: f.count, from: f.from, later: f.from >= it.from + 30 } : null,
+    });
   }
-  return lines.join('\n');
+  return out;
+}
+
+// "5:40pm", "9pm", "~1:30am": how people type a time.
+const typed = (min, approx = false) => `${approx ? '~' : ''}${quietClock(min).replace(' ', '').toLowerCase()}`;
+const placed = (e, open = ' (', close = ')') => (e.where ? `${e.name}${open}${e.where}${close}` : e.name);
+
+export const PLAN_TEXT_STYLES = {
+  // A · one line a stop, the "or" indented under it.
+  lines(entries, { fest, day }) {
+    const out = [`${fest}, ${day}: ${PLAN_NAME.toLowerCase()}`];
+    for (const e of entries) {
+      if (e.kind === 'scattered') { out.push(`${typed(e.from)}-${typed(e.to)} scattered`); continue; }
+      const when = e.now ? `now till ${typed(e.till)}` : typed(e.from, e.approx);
+      out.push(`${when} ${placed(e)}, ${e.count} picked`);
+      if (e.or) out.push(`   or ${placed(e.or)}${e.or.later ? ` from ${typed(e.or.from)}` : ''}, ${e.or.count}`);
+    }
+    return out.join('\n');
+  },
+  // B · one paragraph, stops apart by slashes (Kevin's sketch).
+  slashes(entries, { fest, day }) {
+    const parts = entries.map((e) => {
+      if (e.kind === 'scattered') return `${typed(e.from)} scattered`;
+      const when = e.now ? 'now' : typed(e.from, e.approx);
+      const or = e.or ? `, or ${placed(e.or)}, ${e.or.count} picked` : '';
+      return `${when} ${placed(e)}, ${e.count} picked${or}`;
+    });
+    return `${day.split(' ')[0]}, ${fest}: ${parts.join(' / ')}`;
+  },
+  // C · now and next, one message: the "where are you?" answer.
+  nowNext(entries, { fest }) {
+    const stops = entries.filter((e) => e.kind === 'stop');
+    if (!stops.length) return `${fest}: nothing picked for the rest of the day`;
+    const [first, ...rest] = stops;
+    const head = first.now
+      ? `Now: ${placed(first)} till ${typed(first.till)}, ${first.count} picked.`
+      : `First: ${placed(first)} ${typed(first.from, first.approx)}, ${first.count} picked.`;
+    const then = rest.slice(0, 2).map((e) => `${placed(e)} ${typed(e.from, e.approx)}, ${e.count} picked`);
+    return then.length ? `${head} ${first.now ? 'Next' : 'Then'}: ${then.join(', then ')}.` : head;
+  },
+};
+
+export function planText(route, { ctx, plan, nowMin = null, fest = '', day = '', style = 'lines' } = {}) {
+  return PLAN_TEXT_STYLES[style](planEntries(route, { ctx, plan, nowMin }), { fest, day });
 }
 
 // The open plan's head, in the wall's head grammar: `SAT OUR PICKS`, then its

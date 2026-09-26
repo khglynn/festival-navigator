@@ -1,0 +1,324 @@
+<title>Sharing Our Picks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Dark first, like the app it reviews: the night ground and the brand violet. */
+:root{
+  --ground:#0e0b17; --surface:#171225; --raise:#1f1830; --line:#2b2342; --ink:#edeaf4; --body:#c6c1d6; --muted:#958dae;
+  --brand:#c084fc; --brand-ink:#1a0f2c; --brand-soft:rgba(192,132,252,.14); --live:#e9d5ff;
+  --display:"Anton","Impact","Arial Narrow",sans-serif; --text:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --ground:#f6f4fa; --surface:#ffffff; --raise:#f0ecf7; --line:#e0d9ec; --ink:#1c1530; --body:#3b3352; --muted:#6a6184;
+  --brand:#7a3dcc; --brand-ink:#ffffff; --brand-soft:rgba(122,61,204,.10); --live:#5b21b6; color-scheme:light}}
+:root[data-theme="light"]{
+  --ground:#f6f4fa; --surface:#ffffff; --raise:#f0ecf7; --line:#e0d9ec; --ink:#1c1530; --body:#3b3352; --muted:#6a6184;
+  --brand:#7a3dcc; --brand-ink:#ffffff; --brand-soft:rgba(122,61,204,.10); --live:#5b21b6; color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--body);font:16.5px/1.55 var(--text);margin:0;padding-inline:18px;padding-block:28px 72px;
+  font-variant-numeric:tabular-nums}
+.col{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+.wide{max-width:1120px;margin:0 auto;width:100%}
+p{margin:0;max-width:66ch} a{color:var(--brand)} strong{color:var(--ink);font-weight:600}
+:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:4px}
+
+/* The app's room head: one Anton line and a small sub beside it. */
+.head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.head .name{font:400 26px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
+.head .name b{font-weight:400;color:var(--brand)}
+.head .sub{font:600 11.5px/1.2 var(--text);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.hero .name{font-size:clamp(40px,9vw,64px)}
+.hero{display:flex;flex-direction:column;gap:16px}
+.lede{font-size:18.5px;color:var(--ink);max-width:62ch}
+section{display:flex;flex-direction:column;gap:16px}
+.note{color:var(--muted);font-size:15px}
+ol.note{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* Kevin's call, as the plan draws a day: a rail with nodes. */
+.rail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rail>li{position:relative;display:grid;grid-template-columns:22px 1fr;gap:12px;padding:0 0 14px}
+.rail>li::before{content:"";position:absolute;left:10px;top:14px;bottom:-4px;width:2px;background:var(--line)}
+.rail>li:last-child::before{display:none}
+.node{width:12px;height:12px;border-radius:50%;margin:6px 0 0 5px;border:2px solid var(--brand);background:var(--brand);position:relative;z-index:1}
+.node.hollow{background:var(--ground)}
+.rail .t{color:var(--ink);font-weight:600}
+.rail .d{color:var(--muted);font-size:15px}
+
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.status>div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.status .k{font:600 11px/1.2 var(--text);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.status .v{color:var(--ink);font-weight:600}
+.status .v.wait{color:var(--muted);font-weight:500}
+
+/* Frames: phones in a row that scrolls sideways on a phone; laptops full width. */
+.strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.strip.fixed{grid-auto-columns:minmax(210px,300px);justify-content:start}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;scroll-snap-align:start;min-width:0}
+figure img,figure video{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#0e0b17}
+figcaption{font-size:14px;line-height:1.4;color:var(--muted)}
+figcaption b{display:block;color:var(--ink);font-weight:600;font-size:14.5px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.desks{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:900px){.desks.two{grid-template-columns:1fr 1fr}}
+.motion{display:grid;grid-template-columns:minmax(180px,300px) 1fr;gap:18px;align-items:start}
+@media (max-width:640px){.motion{grid-template-columns:1fr}.motion figure:first-child{max-width:300px}.pair{grid-template-columns:1fr}}
+
+/* Your calls: the same rail; the options are bare rings, no boxes. */
+.calls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.call{position:relative;display:grid;grid-template-columns:22px 1fr;gap:12px;padding-bottom:26px}
+.call::before{content:"";position:absolute;left:10px;top:16px;bottom:0;width:2px;background:var(--line)}
+.call:last-child::before{display:none}
+.call .node{background:var(--ground);transition:background .18s ease}
+.call.answered .node{background:var(--brand)}
+.call .q{color:var(--ink);font-weight:600;font-size:17px;line-height:1.35;max-width:62ch}
+.call .why{color:var(--muted);font-size:15px;margin-top:4px}
+.opts{display:flex;flex-direction:column;gap:2px;margin-top:10px}
+.opt{display:flex;align-items:baseline;gap:10px;background:none;border:0;padding:8px 2px;font:inherit;font-size:15.5px;color:var(--body);
+  text-align:left;cursor:pointer;border-radius:6px;min-height:44px}
+.opt .ring{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transform:translateY(2px);transition:border-color .15s,background .15s}
+.opt:hover .ring{border-color:var(--brand)}
+.opt[aria-pressed="true"]{color:var(--ink)}
+.opt[aria-pressed="true"] .ring{border-color:var(--brand);background:var(--brand);box-shadow:inset 0 0 0 2px var(--ground)}
+.opt .pick{font:600 10.5px/1 var(--text);letter-spacing:.1em;text-transform:uppercase;color:var(--brand);margin-left:4px;white-space:nowrap}
+.call textarea{margin-top:6px}
+textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:9px 11px;min-height:44px;resize:vertical}
+textarea::placeholder{color:var(--muted)}
+.saved{font-size:12.5px;color:var(--muted);min-height:1em;margin-top:4px}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.copy{font:600 15px var(--text);background:var(--brand);color:var(--brand-ink);border:0;border-radius:999px;padding:11px 18px;cursor:pointer;min-height:44px}
+#answers{display:block;white-space:pre-wrap;font:13.5px/1.5 ui-monospace,Menlo,monospace;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink)}
+code{font:.9em ui-monospace,Menlo,monospace;color:var(--ink)}
+footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="col">
+  <header class="hero">
+    <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, afternoon · a design round, nothing built to ship</span></div>
+    <div class="head"><span class="name">Sharing <b>our picks</b></span></div>
+    <p class="lede">You asked whether the plan’s Share is different from a normal share link. It is both: the day written out in plain words for the group chat, and under it the crew link, which opens the app on Our picks the way a shared List opens as a List.</p>
+    <p>Below are the three things you asked for, drawn by the real app on the real Portola lineup with a made-up crew of nine: the link that opens on Our picks, the text for a group chat, and a quicker way to the crew link from anywhere. Five calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page, and I build what they say.</p>
+  </header>
+
+  <section>
+    <div class="head"><span class="name">1 · The link <b>opens on our picks</b></span><span class="sub">phone 390</span></div>
+    <p>With the plan open, “Share our picks” sits at its foot. The link it sends is the crew link with one addition, <code>&amp;plan=open</code>, which travels the way <code>&amp;view=list</code> and the room filters already do. The app reads it once when the link opens and writes it nowhere: not into the crew, not into the address bar. A reload or a later visit opens the wall as usual, and a Back never lands on it. Shares from anywhere else carry the view only; the plan opens only from its own Share.</p>
+    <p>A friend already in the crew sees the plan open on arrival. A newcomer sees the welcome card first; the plan opens when they close it, so two things never arrive at once. That card still says “the crew’s plan”, a line for the coordinator’s copy pass.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip fixed">
+    <figure><img src="1a-sender-open-390.jpg" alt="The sender's phone: Our picks open at 9:40 PM, Dog Blood NOW with its card grown, and Share our picks at the foot"><figcaption><b>You, sharing</b>Share our picks at the foot of the plan</figcaption></figure>
+    <figure><img src="1b-friend-welcome-390.jpg" alt="A newcomer opening the link: the welcome card above the dock, no plan yet"><figcaption><b>A newcomer opens it</b>the welcome card first</figcaption></figure>
+    <figure><img src="1c-friend-open-390.jpg" alt="The newcomer after Look around: Our picks open on the same night"><figcaption><b>After Look around</b>Our picks opens on its own</figcaption></figure>
+  </div>
+</div>
+<div class="col" style="margin-top:22px">
+  <section>
+    <div class="head"><span class="name">The same <b>on a laptop</b></span><span class="sub">1280</span></div>
+    <p>The panel carries the same foot. A newcomer’s welcome card sits bottom-right, where the corner card would be; when it goes, the panel opens.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="desks">
+    <figure><img src="1d-sender-open-1280.jpg" alt="The laptop with the Our picks panel open and Share our picks at its foot"><figcaption><b>You, sharing</b>the panel’s foot</figcaption></figure>
+    <figure><img src="1e-friend-welcome-1280.jpg" alt="A newcomer on a laptop: the welcome card bottom-right, no panel yet"><figcaption><b>A newcomer opens it</b>the welcome card first</figcaption></figure>
+    <figure><img src="1f-friend-open-1280.jpg" alt="The newcomer's laptop after Look around: the Our picks panel open"><figcaption><b>After Look around</b>the panel opens</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:52px">
+  <section>
+    <div class="head"><span class="name">2 · The day <b>as text</b></span><span class="sub">three formats · plain punctuation</span></div>
+    <p>Commas, parentheses and a tilde for a guessed time; no dashes, no arrows, no names of people, only artists, places, times and how many picked. The words come from the plan’s own rows, so the text can never disagree with the app. These are drawings of a chat, labelled as such: the bubble is exactly what the share sheet receives, and the card under it is the link’s preview.</p>
+    <p><strong>A</strong> puts one stop on a line with its “or” under it, like the plan. Sent before the day starts it lists the whole day; once the day is under way it drops what is over and leads with “now till 10:15pm”. <strong>B</strong> is the same words run together with slashes, 780 characters that are hard to scan. <strong>C</strong> is short but tells only the next two stops.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip fixed">
+    <figure><img src="2a-text-lines-390.jpg" alt="Format A sent at 11 AM: Portola, Sat Sep 26: our picks, then one stop a line from 2:40pm Gelli Haha (Pier Stage), 4 picked, through ~1:30am The Great Northern, each or-line indented under its stop"><figcaption><b>A · one line a stop</b>sent at 11 AM, the whole day</figcaption></figure>
+    <figure><img src="2d-text-lines-night-390.jpg" alt="Format A sent at 9:40 PM: now till 10:15pm Dog Blood (Pier Stage), 8 picked, then Soulwax, Public Works and The Great Northern with their or-lines"><figcaption><b>A · at 9:40 PM</b>what is over drops off</figcaption></figure>
+    <figure><img src="2b-text-slashes-390.jpg" alt="Format B: the whole day in one paragraph separated by slashes"><figcaption><b>B · one paragraph</b>sent at 11 AM</figcaption></figure>
+    <figure><img src="2c-text-nownext-390.jpg" alt="Format C at 9:40 PM: Now: Dog Blood (Pier Stage) till 10:15pm, 8 picked. Next: Soulwax, then Public Works"><figcaption><b>C · now and next</b>sent at 9:40 PM</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:52px">
+  <section>
+    <div class="head"><span class="name">3 · A quicker <b>crew link</b></span><span class="sub">three placements</span></div>
+    <p>Today the crew link is three taps away: your avatar, + Invite someone, then Share the link on the invite sheet. Each drawing below puts one row or mark in the real menus with their own styles, so it looks the way it would ship. Every one goes straight to the share sheet (or copies, with “Copied ✓”, where there is none) and carries what you are looking at: the rooms you have on and Board or List.</p>
+    <p><strong>A</strong>, a row in the Show menu, is two taps from anywhere: the fest name, then the row. <strong>B</strong>, a row in the people menu, sits right under + Invite someone, which already leads to the same link. <strong>C</strong>, a mark in the day rail, is one tap, and it only fits on a laptop: on the phone it pushed THU off the dock.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip fixed">
+    <figure><img src="3a-show-menu-390.jpg" alt="A: the Show menu open from the fest name, with a Share the crew link row above Settings"><figcaption><b>A · the Show menu</b>fest name, then the row</figcaption></figure>
+    <figure><img src="3b-people-menu-390.jpg" alt="B: the people menu with Share the crew link under + Invite someone"><figcaption><b>B · the people menu</b>under + Invite someone</figcaption></figure>
+    <figure><img src="3c-fest-name-390.jpg" alt="C on a phone: a share mark in the dock, with THU pushed off the left"><figcaption><b>C · a mark in the dock</b>THU no longer fits</figcaption></figure>
+  </div>
+</div>
+<div class="wide" style="margin-top:22px">
+  <div class="desks two">
+    <figure><img src="3a-show-menu-1280-crop.jpg" alt="A on a laptop: the Show menu under PORTOLA '26 with Share the crew link above Settings"><figcaption><b>A · laptop</b>the Show menu under the fest name</figcaption></figure>
+    <figure><img src="3b-people-menu-1280-crop.jpg" alt="B on a laptop: the people menu with Share the crew link as its last row"><figcaption><b>B · laptop</b>the people menu’s last row</figcaption></figure>
+  </div>
+  <figure style="margin-top:22px"><img src="3c-fest-name-1280-crop.jpg" alt="C on a laptop: a share mark in the day rail after SUN"><figcaption><b>C · laptop</b>a mark in the day rail, always on screen</figcaption></figure>
+</div>
+
+<div class="col" style="margin-top:52px">
+  <section>
+    <div class="head"><span class="name">Your calls</span><span class="sub">5 · tap to answer · saved here</span></div>
+    <p class="note">None of this is built to ship. When your answers are in, I build it with its tests, run the full gate and an independent review, and hand it to the release.</p>
+    <ol class="calls" id="calls"></ol>
+    <div>
+      <label for="note-extra" class="q" style="display:block;color:var(--ink);font-weight:600;margin-bottom:6px">Anything else</label>
+      <textarea id="note-extra" placeholder="Optional"></textarea>
+      <div class="saved" id="saved-extra"></div>
+    </div>
+    <div class="bar"><button class="copy" id="copy" type="button">Copy my answers</button><span class="saved" id="copy-status"></span></div>
+    <code id="answers" hidden></code>
+  </section>
+
+  <section>
+    <div class="head"><span class="name">Where it stands</span></div>
+    <ol class="rail">
+      <li><span class="node"></span><div><div class="t">“Our picks” and “5 picked” are in</div><div class="d">Your naming call is built and gated on branch live/plan, and waits for the release with Our picks.</div></div></li>
+      <li><span class="node hollow"></span><div><div class="t">The Share you see here runs on a draft</div><div class="d">Branch live/plan-share, kept apart so nothing ships before you pick.</div></div></li>
+      <li><span class="node hollow"></span><div><div class="t">Then: build, gate, release</div><div class="d">Its own small release after Our picks, with tests that hold the text word for word.</div></div></li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Frames are rendered by the production app over the real festival data, with a made-up crew of nine and every write refused. Nothing touched production or a real crew.</p>
+    <p>Design notes: <a href="https://github.com/khglynn/festival-navigator/blob/live/plan-share/claude-plans/2026-09-26-unified-build/share-design/DESIGN.md">DESIGN.md on live/plan-share</a>.</p>
+  </footer>
+</div>
+
+<script>
+const CALLS = [
+  { id: 'sh-sends', q: 'What the plan’s Share sends',
+    why: 'The text is for reading in the chat without opening anything; the link card under it opens the app on the same plan. The link is the crew link, so anyone in that chat who taps it can pick with the crew, as with any invite today. If the plan will go to chats beyond the crew, text only is the safer choice.',
+    options: [{ key: 'both', label: 'The text and the link that opens on Our picks', pick: true }, { key: 'text', label: 'The text only' }, { key: 'link', label: 'The link only' }] },
+  { id: 'sh-open', q: 'A friend who opens that link lands on Our picks, open.',
+    why: 'Someone already in the crew sees it open straight away. A newcomer sees the welcome card first, and the plan opens when the card goes.',
+    options: [{ key: 'as-drawn', label: 'As drawn: welcome card first for a newcomer', pick: true }, { key: 'over', label: 'Open the plan even for a newcomer, card after' }, { key: 'peek', label: 'Just the peek: the link doesn’t open it' }] },
+  { id: 'sh-text', q: 'The text’s format',
+    why: 'A reads like the plan and trims itself as the day goes. B is hard to scan. C tells only two stops.',
+    options: [{ key: 'a', label: 'A · one line a stop', pick: true }, { key: 'b', label: 'B · one paragraph with slashes' }, { key: 'c', label: 'C · now and next' }] },
+  { id: 'sh-where', q: 'Where the plan’s Share sits',
+    why: 'The foot is the same on phone and laptop and in thumb reach at the end of the day’s list. The laptop’s head is itself a button (it opens and closes the panel), so a button can’t sit inside it. Where there is no share sheet (Firefox, some laptops) it reads “Copy our picks” and copies the text with the link as its last line.',
+    options: [{ key: 'foot', label: '“Share our picks” at the plan’s foot', pick: true }, { key: 'head', label: 'A share mark in the plan’s head, beside ✕' }] },
+  { id: 'sh-crew', q: 'A quicker way to the crew link',
+    why: 'A is two taps from anywhere. B repeats + Invite someone one row below it. C is one tap but fits only on a laptop.',
+    options: [{ key: 'show', label: 'A · a row in the Show menu', pick: true }, { key: 'people', label: 'B · a row in the people menu' }, { key: 'rail', label: 'C · a mark in the day rail (laptop only)' }, { key: 'ab', label: 'Both A and B' }] },
+];
+const COLLECTION = 'decisions';
+const state = {};
+let db = null;
+const list = document.getElementById('calls');
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+function render() {
+  list.textContent = '';
+  for (const c of CALLS) {
+    const s = state[c.id] || {};
+    const li = el('li', 'call' + (s.choice ? ' answered' : ''));
+    li.dataset.call = c.id;
+    const body = el('div');
+    body.append(el('div', 'q', c.q));
+    if (c.why) body.append(el('div', 'why', c.why));
+    const opts = el('div', 'opts');
+    opts.setAttribute('role', 'group');
+    opts.setAttribute('aria-label', c.q);
+    for (const o of c.options) {
+      const b = el('button', 'opt');
+      b.type = 'button';
+      b.dataset.key = o.key;
+      b.setAttribute('aria-pressed', String(s.choice === o.key));
+      b.append(el('span', 'ring'), el('span', null, o.label));
+      if (o.pick) b.append(el('span', 'pick', 'my pick'));
+      b.addEventListener('click', () => choose(c.id, o.key));
+      opts.append(b);
+    }
+    const ta = el('textarea');
+    ta.id = 'note-' + c.id;
+    ta.placeholder = 'Optional note';
+    ta.setAttribute('aria-label', 'Note: ' + c.q);
+    ta.value = s.note || '';
+    let t;
+    ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => note(c.id, ta.value), 800); });
+    ta.addEventListener('change', () => { clearTimeout(t); note(c.id, ta.value); });
+    const saved = el('div', 'saved', s.label || '');
+    saved.id = 'saved-' + c.id;
+    body.append(opts, ta, saved);
+    li.append(el('span', 'node'), body);
+    list.append(li);
+  }
+}
+async function save(id) {
+  const s = state[id] || {};
+  const lab = document.getElementById('saved-' + id);
+  if (!db) { if (lab) lab.textContent = 'Not saved on the page — use Copy my answers'; return; }
+  try {
+    await db.doc(COLLECTION + '/' + id).set({ choice: s.choice || null, note: s.note || '', at: new Date().toISOString() });
+    s.label = 'Saved';
+  } catch (e) { s.label = 'Couldn’t save — use Copy my answers'; }
+  if (lab) lab.textContent = s.label;
+}
+function choose(id, key) {
+  state[id] = { ...(state[id] || {}), choice: key };
+  const li = list.querySelector(`[data-call="${id}"]`);
+  if (li) {
+    li.classList.add('answered');
+    li.querySelectorAll('.opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.key === key)));
+  }
+  save(id);
+}
+function note(id, v) { state[id] = { ...(state[id] || {}), note: v.trim() }; save(id); }
+function answersText() {
+  const lines = CALLS.map((c) => {
+    const s = state[c.id] || {};
+    const o = c.options.find((x) => x.key === s.choice);
+    return `${c.id}: ${o ? o.label : '(no answer)'}${s.note ? ' — ' + s.note : ''}`;
+  });
+  const extra = (state.extra || {}).note;
+  if (extra) lines.push('else — ' + extra);
+  return lines.join('\n');
+}
+document.getElementById('copy').addEventListener('click', async () => {
+  const t = answersText();
+  const out = document.getElementById('answers');
+  out.textContent = t; out.hidden = false;
+  const st = document.getElementById('copy-status');
+  try { await navigator.clipboard.writeText(t); st.textContent = 'Copied'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(out); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); st.textContent = 'Selected — copy it with your keyboard'; }
+});
+const extra = document.getElementById('note-extra');
+let te;
+extra.addEventListener('input', () => { clearTimeout(te); te = setTimeout(() => note('extra', extra.value), 800); });
+extra.addEventListener('change', () => { clearTimeout(te); note('extra', extra.value); });
+render();
+
+(async () => {
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+  if (!db) return;
+  try {
+    const local = { ...state };
+    const snap = await db.collection(COLLECTION).get();
+    const seen = new Set();
+    for (const d of snap.docs) {
+      seen.add(d.id);
+      const v = d.data() || {};
+      state[d.id] = { choice: v.choice || undefined, note: v.note || '', label: (v.choice || v.note) ? 'Saved' : '' };
+    }
+    for (const id of Object.keys(local)) if (!seen.has(id)) { state[id] = local[id]; save(id); }
+    const ae = document.activeElement;
+    if (!(ae && ae.tagName === 'TEXTAREA')) render();
+    if (state.extra && !extra.value) extra.value = state.extra.note || '';
+  } catch (e) { /* the page still works: Copy my answers */ }
+})();
+</script>
