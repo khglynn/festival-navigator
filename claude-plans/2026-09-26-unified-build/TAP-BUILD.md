@@ -152,3 +152,12 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   conflict, v3.css's tail (both sides appended; kept both). The merge brought the import sheet; its review
   cards spread the wall's ctx, so they would have inherited the hold door — nulled there and on the day
   image's render (e399e00). import-flow now launches WebKit through the shared, required launcher.
+- **08:20** Post-merge gate: unit 1074/1075 at all three clocks (only the stamp); browser 244/244 locally;
+  CI (run 36240512643, WebKit installed) browser job GREEN — the WebKit tap contract passes on Linux (the
+  plan's merge gate) — and checks red only on the unstamped SW stamp.
+- **08:30** Found while the walk ran: focus now returns to the card after a pick on the shelf replaced it
+  (cf11041); the walk's item 1 found the +'s box 6px narrower at must (MUST is wider than the bars) — the
+  row's middle is a fixed 72px now and the contract holds x as well as y (3845da7); the shelf's box rose
+  on the overshoot curve and lifted its bottom ~25px off the screen for a few frames — it rises on the
+  surface curve now, measured at 0px in both engines, and the join shelf rises the same way (c3980b2,
+  a3517c2). An Opus reviewer is reading the diff in parallel.
