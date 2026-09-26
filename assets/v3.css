@@ -2018,6 +2018,9 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-row.or .plan-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
 .plan-row.or .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
 .plan-row.earlier .plan-what .nm, .plan-row.scattered .plan-what .nm { font: var(--plan-line); color: var(--text-tertiary); }
+/* The floor makes the Earlier line taller than its words: centre all three. */
+.plan-row.earlier { align-items: center; }
+.plan-row.earlier .plan-node { align-self: center; margin-top: 0; }
 .plan-row.earlier .plan-what .nm { text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; font-weight: 700; }
 .plan-row.earlier .plan-what .nm b { color: var(--text-secondary); font-weight: 700; }
 .plan-row.scattered .plan-what .nm { font-style: italic; }
@@ -2067,6 +2070,8 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
                               box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--plan-bg, var(--dock)); }
 .plan-row.dropin .plan-node::after { content: ''; position: absolute; inset: 2px; border-radius: inherit; background: var(--drop-bg, none); opacity: .8; }
 .plan-row.dropin .plan-n b { font-size: 14px; color: var(--text-body); }
+.plan-row.dropin .plan-what { grid-column: 2 / 4; } /* no time of its own: the window rides on the line */
+.plan-row.dropin .plan-n { grid-column: 4; }
 .plan-row.scattered.drift .plan-what .nm { font-style: normal; }
 .plan-row.scattered.drift .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
 .plan-row.scattered.drift .plan-n b { font-size: 14px; color: var(--text-body); }

@@ -123,18 +123,20 @@ function whenEl({ tag = null, text = '', soft = false }) {
 }
 
 // How many a row counts: "5 picked" for the crew; under a highlight of a few
-// (rule 10) "2 of 3"; nothing for a highlight of one — every row is theirs.
+// (rule 10) "2 of 3"; nothing when every stop must hold all of them (one
+// person, or a pair at "two is together") — the count would never change.
+const countless = (plan) => !!(plan && plan.group && plan.bar >= plan.group.length);
 function countEl(n, plan = null) {
   const c = mk('span', 'plan-n');
   const g = plan && plan.group;
-  if (g && g.length === 1) return c;
+  if (countless(plan)) return c;
   if (g) { c.append(mk('b', null, String(n)), `of ${g.length}`); return c; }
   c.append(mk('b', null, String(n)), 'picked');
   return c;
 }
 const countWords = (n, plan) => {
   const g = plan && plan.group;
-  if (g && g.length === 1) return '';
+  if (countless(plan)) return '';
   return g ? `${n} of ${g.length}` : `${n} picked`;
 };
 // Rule 10: under a highlight of a few, the rows say WHO — on the place line
@@ -173,7 +175,9 @@ export function stopRow(stop, opts) {
   const start = `${approxOf(stop, ctx.picks) ? '~' : ''}${quietClock(stop.from)}`;
   const text = tag === 'now' ? `till ${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
   const what = whatEl(stop, { ctx, plan, also, nightLabelOf });
-  if (faces && stop.tier === 'most' && !grow) what.appendChild(whoEl(stop.people || [], ctx));
+  // Under a highlight the place line names who instead (rule 10): a face per
+  // row would say it twice, and for a highlight of one it is always them.
+  if (faces && stop.tier === 'most' && !grow && !(plan && plan.group)) what.appendChild(whoEl(stop.people || [], ctx));
   r.append(nodeEl(actFor(stop, ctx.picks), ctx), what, whenEl({ tag, text }), countEl(count, plan));
   r.setAttribute('aria-label', rowWords(stop, { ctx, tag, count, text, plan }));
   r.setAttribute('aria-expanded', grow ? 'true' : 'false');
@@ -231,10 +235,12 @@ function scatteredRow(it, plan = null, meName = null) {
   r.dataset.stop = `scattered|${it.nightId || ''}|${it.from}`;
   const w = mk('span', 'plan-what');
   if (it.dropIn) {
+    // The next row's time says when it ends; "till" here only truncated it.
     const nm = mk('span', 'nm', 'Between sets');
-    nm.append(mk('span', 'pl-inline', ` · ${whereOf(it.dropIn)} till ${quietClock(it.to)}`));
+    nm.append(mk('span', 'pl-inline', ` · ${whereOf(it.dropIn)}`));
     w.appendChild(nm);
     r.append(mk('span', 'plan-node'), w, whenEl({ text: quietClock(it.from), soft: true }), countEl(it.dropIn.count, plan));
+    r.setAttribute('aria-label', [`Between sets, ${whereOf(it.dropIn)} from ${quietClock(it.from)}`, countWords(it.dropIn.count, plan)].filter(Boolean).join(', '));
     return r;
   }
   w.appendChild(mk('span', 'nm', `Scattered till ${quietClock(it.to)}`));
@@ -245,6 +251,13 @@ function scatteredRow(it, plan = null, meName = null) {
 // Rule 9's quiet line, once a night: a drop-in room, its whole window, and
 // how many picked it. Not a stop — no node on the path, never the peek's row,
 // never grown — the room the afternoon happens around ("drop in till 9:45 PM").
+// "3:30 – 10:30 PM", "11 AM – 3 PM": the start drops its AM/PM when the end shares it.
+function spanStart(from, to) {
+  const a = quietClock(from);
+  const b = quietClock(to);
+  const tail = (t) => (t.match(/\s?[AP]M$/) || [''])[0];
+  return tail(a) && tail(a) === tail(b) ? a.slice(0, -tail(a).length) : a;
+}
 function dropInRow(d, { ctx, plan, nowMin = null }) {
   const r = mk('div', 'plan-row dropin');
   r.dataset.stop = `dropin|${stopKey(d)}`;
@@ -253,9 +266,15 @@ function dropInRow(d, { ctx, plan, nowMin = null }) {
   const name = act ? act.name : whereOf(d);
   // One line, the or line's size: the room's name, then what it is — you drop
   // in until it closes (a room at a venue says the venue after the name).
+  // It is the day's, not a time in the day's order: its window rides on the
+  // line ("drop in 3:30 – 10:30 PM", once open "drop in till 9:45 PM") and the
+  // time column stays empty, so a line leading the day never reads as a row
+  // sorted out of order above an 11 AM stop.
   const nm = mk('span', 'nm', name);
   const where = kindOf(d) === 'set' || whereOf(d) === name ? '' : ` · ${whereOf(d)}`;
-  nm.append(mk('span', 'pl-inline', `${where} · drop in till ${quietClock(d.to)}`));
+  const open = Number.isFinite(nowMin) && nowMin >= d.from; // a past night (Infinity) keeps its window
+  const span = open ? `till ${quietClock(d.to)}` : `${spanStart(d.from, d.to)} – ${quietClock(d.to)}`;
+  nm.append(mk('span', 'pl-inline', ` · drop in ${span}${where}`));
   w.append(nm);
   const node = mk('span', 'plan-node');
   node.setAttribute('aria-hidden', 'true');
@@ -263,8 +282,8 @@ function dropInRow(d, { ctx, plan, nowMin = null }) {
     const f = factsFor(act.name, ctx, act.occ || null);
     node.style.setProperty('--drop-bg', f.background);
   }
-  r.append(node, w, whenEl({ text: quietClock(d.from), soft: true }), countEl(d.count, plan));
-  r.setAttribute('aria-label', [`${name}${where}, drop in ${quietClock(d.from)} till ${quietClock(d.to)}`, countWords(d.count, plan)].filter(Boolean).join(', '));
+  r.append(node, w, countEl(d.count, plan)); // the words take the time column too (v3.css)
+  r.setAttribute('aria-label', [`${name}, drop in ${quietClock(d.from)} till ${quietClock(d.to)}${where ? `, ${whereOf(d)}` : ''}`, countWords(d.count, plan)].filter(Boolean).join(', '));
   return r;
 }
 

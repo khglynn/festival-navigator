@@ -281,13 +281,13 @@ test('a keyboard on a stop the minute folds into Earlier: the focus goes to the 
   plan().querySelector('.plan-grab').click();
   assert.equal(tagged().getAttribute('aria-expanded'), 'true', 'open: the NOW card is out');
   const dog = tagged();
-  assert.equal(dog.dataset.stop, 'Pier Stage|1260');
+  assert.equal(dog.dataset.stop, '2026-09-26|Pier Stage|1260');
   dog.focus();
   setClock('2026-09-27T05:20:00Z'); // 10:20 PM: Dog Blood is over
   pickDog(); // a pick repaints the plan on the new clock (the minute tick's path)
   await settle(20);
   assert.equal(plan().dataset.state, 'open');
-  assert.equal(plan().querySelector('.plan-row[data-stop="Pier Stage|1260"]'), null, 'Dog Blood has folded into Earlier');
+  assert.equal(plan().querySelector('.plan-row[data-stop="2026-09-26|Pier Stage|1260"]'), null, 'Dog Blood has folded into Earlier');
   assert.ok(document.activeElement && document.activeElement.classList.contains('earlier'), `the focus is on the Earlier line: ${document.activeElement && document.activeElement.className}`);
   pickDog(4); // round the levels back to none
   setClock(SAT_940);

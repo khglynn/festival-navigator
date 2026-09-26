@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Our picks: three calls</title>
+<meta name="description" content="Design round for Festival Navigator's Our picks shelf, 2026-09-26: Despacio as a drop-in room, the open plan across the days, and the menus while the plan is open.">
+<style>
+  :root {
+    --bg: #f6f5fa; --panel: #ffffff; --ink: #17151f; --ink-2: #4a4658; --ink-3: #777289;
+    --line: #e2dfeb; --brand: #7c4dff; --brand-soft: #efe9ff; --good: #117a53; --shot-bg: #0b0a10;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e0d13; --panel: #17151f; --ink: #f1eff7; --ink-2: #c3bed3; --ink-3: #8f89a3;
+      --line: #2a2735; --brand: #b49bff; --brand-soft: #231d38; --good: #5fd3a5; --shot-bg: #000;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0d13; --panel: #17151f; --ink: #f1eff7; --ink-2: #c3bed3; --ink-3: #8f89a3;
+    --line: #2a2735; --brand: #b49bff; --brand-soft: #231d38; --good: #5fd3a5; --shot-bg: #000;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 6px; letter-spacing: -.01em; }
+  h2 { font-size: 22px; margin: 48px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+  h3 { font-size: 16px; margin: 28px 0 8px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; }
+  p { margin: 8px 0; max-width: 70ch; }
+  .meta { color: var(--ink-3); font-size: 14px; }
+  .calls { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+  .calls li { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .calls b.k { color: var(--brand); margin-right: 6px; }
+  ol.plain { padding-left: 22px; max-width: 72ch; }
+  ol.plain li { margin: 6px 0; }
+  .row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); align-items: start; margin: 12px 0; }
+  .row.wide { grid-template-columns: 1fr; }
+  .row.wide2 { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+  @media (max-width: 480px) { .row.wide2 { grid-template-columns: 1fr; } }
+  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; background: var(--shot-bg); }
+  figcaption { padding: 10px 12px 12px; font-size: 14px; color: var(--ink-2); }
+  figcaption b { color: var(--ink); display: block; font-size: 14px; margin-bottom: 2px; }
+  figcaption code { font-size: 12px; color: var(--ink-3); }
+  .rec { color: var(--good); font-weight: 600; }
+  pre.share { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; }
+  .shares { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .shares h4 { margin: 0 0 6px; font-size: 14px; }
+  .q { list-style: none; padding: 0; display: grid; gap: 10px; }
+  .q li { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  .q .id { font-weight: 700; color: var(--brand); margin-right: 8px; }
+  .q .def { display: block; margin-top: 4px; color: var(--ink-2); font-size: 14px; }
+  .q .def b { color: var(--good); }
+  .note { background: var(--brand-soft); border-radius: 12px; padding: 12px 16px; margin: 16px 0; max-width: 78ch; }
+  a { color: var(--brand); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Our picks: three calls</h1>
+  <p class="meta">Design round, Sat 2026-09-26. Every frame below is the real app code in a headless browser with a made-up crew of nine, where seven picked Despacio (Fay and Gus as a must). No real crew, no database. Branch <code>live/plan-days-design</code>. Reply by number, like "A2: yes" or "C3: bar 1".</p>
+
+  <ul class="calls">
+    <li><b class="k">A.</b> <b>Despacio becomes a room you drop into.</b> The festival file marks it. The plan then only puts someone there when none of their real picks is on. It is never a stop, never an "or", never the NOW. It gets one quiet line a day: "Despacio · drop in till 9:45 PM · 7 picked". Your crew's Saturday goes back to its 12 real stops.</li>
+    <li><b class="k">B.</b> <b>The open plan scrolls through the festival.</b> It opens on today. Keep scrolling and every later day follows under its own day head. Everything already over folds into one Earlier line. The head and the Share follow the day at the top: "Share Sunday's picks".</li>
+    <li><b class="k">C.</b> <b>Menus work while the plan is open, and a highlight filters it.</b> Both menus open over the plan and it re-plans as you change them. Highlight people and the plan is made just for them. A stop is where at least two of them are together, and each row says who ("Crane Stage · you + Hal"). One person gets their own day.</li>
+  </ul>
+
+  <div class="note">Two things I found that change the question. <b>1.</b> Despacio has a third play: the Friday "Pier 80 (loyalty invite)" party, 5–11 PM. A pick counts by name, so today seven people show up as a MOST stop on Friday at an invite-only event. The fix covers it. <b>2.</b> Both menus already close the plan today (the people menu goes through the Show menu's door). Both buttons stay reachable with the plan open.</div>
+
+  <!-- ================================================================ A -->
+  <h2>A. Despacio, a room you drop into</h2>
+  <p>Why it crowds the list: the plan puts each person at their highest pick that is on, and breaks ties toward where more of the crew is. Despacio is on for seven hours, so it wins every tie all afternoon.</p>
+
+  <h3>Saturday 3:15 PM, the open plan</h3>
+  <div class="row">
+    <figure><img src="shots/A0-today-open-315-390.png" alt="Today's model at 3:15 PM"><figcaption><b>Today</b>Despacio is NOW, then comes back as an "or", then twice more as a stop. Gelli Haha, Tricky and Groove Armada are gone.</figcaption></figure>
+    <figure><img src="shots/A1-declared-open-315-390.png" alt="Declared drop-in at 3:15 PM"><figcaption><b class="rec">Recommended: declared</b>One line for Despacio at the top. NOW is Gelli Haha. The route is the same 12 stops the crew had before anyone picked Despacio.</figcaption></figure>
+    <figure><img src="shots/A3-light-open-315-390.png" alt="Lighter touch at 3:15 PM"><figcaption><b>Lighter touch</b>No "or" lines, repeats read "back to Despacio". NOW is still Despacio and the real sets are still missing.</figcaption></figure>
+  </div>
+
+  <h3>Saturday 6:45 PM</h3>
+  <div class="row">
+    <figure><img src="shots/A0-today-open-645-390.png" alt="Today at 6:45 PM"><figcaption><b>Today</b>NOW: Despacio. DJ Shadow, Kettama and Fatboy Slim are not on the route.</figcaption></figure>
+    <figure><img src="shots/A1-declared-open-645-390.png" alt="Declared at 6:45 PM"><figcaption><b class="rec">Recommended</b>NOW: DJ Shadow with its card. Despacio stays one line.</figcaption></figure>
+    <figure><img src="shots/A3-light-open-645-390.png" alt="Lighter touch at 6:45 PM"><figcaption><b>Lighter touch</b>"back to Despacio" twice before Dog Blood.</figcaption></figure>
+  </div>
+
+  <h3>Friday 7 PM, the invite-only Despacio</h3>
+  <div class="row">
+    <figure><img src="shots/A0-today-fri-7pm-390.png" alt="Today on Friday"><figcaption><b>Today</b>NOW: Pier 80 (loyalty invite), 7 picked. It is sold out to every-year passholders.</figcaption></figure>
+    <figure><img src="shots/A1-declared-fri-7pm-390.png" alt="Declared on Friday"><figcaption><b class="rec">Recommended</b>The invite is a quiet line. NEXT: Regency Ballroom.</figcaption></figure>
+    <figure><img src="shots/A2-shape-fri-7pm-390.png" alt="Shape rule on Friday"><figcaption><b>Shape rule</b>"A stage with one set all day" cannot see a party, so Friday is still wrong. It would also catch Lollapalooza's 30-minute Bonus Tracks set.</figcaption></figure>
+  </div>
+
+  <h3>Laptop, 3:15 PM</h3>
+  <div class="row wide2">
+    <figure><img src="shots/A0-today-corner-315-1280.png" alt="Laptop today, corner"><figcaption><b>Today</b>The corner card says Despacio NOW.</figcaption></figure>
+    <figure><img src="shots/A1-declared-corner-315-1280.png" alt="Laptop declared, corner"><figcaption><b class="rec">Recommended</b>The corner says Gelli Haha. The grid is unchanged: Despacio is still one tall card.</figcaption></figure>
+    <figure><img src="shots/A0-today-open-315-1280.png" alt="Laptop today, open"><figcaption><b>Today, open panel</b></figcaption></figure>
+    <figure><img src="shots/A1-declared-open-315-1280.png" alt="Laptop declared, open"><figcaption><b class="rec">Recommended, open panel</b></figcaption></figure>
+  </div>
+  <p>The data check nudges whoever adds a festival: a stage with one set all day asks "is this a room people drift through?" once, and they answer true or false. It never decides for them.</p>
+
+  <!-- ================================================================ B -->
+  <h2>B. The open plan across the days</h2>
+  <div class="row">
+    <figure><img src="shots/B1-days-sat-645-390.png" alt="Lands on today"><figcaption><b>Opens on today</b>Earlier folds Thursday, Friday and today's four stops already over.</figcaption></figure>
+    <figure><img src="shots/B2-days-into-sun-390.png" alt="Scrolling into Sunday"><figcaption><b>Scroll on</b>Sunday follows under its own day head, in the wall's style.</figcaption></figure>
+    <figure><img src="shots/B3-days-sun-top-390.png" alt="Sunday at the top"><figcaption><b>Sunday at the top</b>The head turns to SUN and the button says "Share Sunday's picks".</figcaption></figure>
+    <figure><img src="shots/B4-earlier-open-390.png" alt="Earlier open"><figcaption><b>Earlier, opened</b>"Hide earlier", then the past days dimmed under their heads.</figcaption></figure>
+  </div>
+  <h3>ACL: two weekends, weeknight late shows between</h3>
+  <div class="row">
+    <figure><img src="shots/B7-acl-w2-sat-390.png" alt="ACL second Saturday"><figcaption><b>Second Saturday</b>Nine nights behind fold into "Earlier · Sep 29 – Oct 9".</figcaption></figure>
+    <figure><img src="shots/B8-acl-w1-sun-390.png" alt="ACL weeknights"><figcaption><b>Nights with nothing</b>"MON · TUE, Oct 5 – 6: Nothing picked yet" as one line. Days carry dates.</figcaption></figure>
+    <figure><img src="shots/D5-acl-bare-day-390.png" alt="Share rests on an empty day"><figcaption><b>The Share rests</b>With an empty day at the top it reads "Nothing to share Monday".</figcaption></figure>
+    <figure><img src="shots/B9-acl-w1-sun-oct9-390.png" alt="ACL repeated weekday"><figcaption><b>A repeated weekday</b>The button says "Share Sat Oct 10's picks".</figcaption></figure>
+  </div>
+  <h3>Laptop</h3>
+  <div class="row wide2">
+    <figure><img src="shots/B6-days-sat-1280.png" alt="Laptop, today"><figcaption><b>Opens on today</b></figcaption></figure>
+    <figure><img src="shots/B5-days-sun-1280.png" alt="Laptop, Sunday at the top"><figcaption><b>Sunday at the top</b>The panel scrolls the days; the grid stays on Saturday.</figcaption></figure>
+  </div>
+  <p>With Reduce Motion or Low Power on, the head's turn to the next day is instant.</p>
+
+  <!-- ================================================================ C -->
+  <h2>C. The menus while the plan is open</h2>
+  <h3>The Show menu</h3>
+  <div class="row">
+    <figure><img src="shots/C1-show-menu-over-open-390.png" alt="Show menu over the plan"><figcaption><b>Opens over the plan</b>The plan stays open behind it.</figcaption></figure>
+    <figure><img src="shots/C2-afters-hidden-390.png" alt="Afters hidden"><figcaption><b>Afters hidden</b>The plan re-plans at once. Earlier now reads "Fri" only.</figcaption></figure>
+    <figure><img src="shots/C3-afters-hidden-closed-390.png" alt="Afters hidden, menu closed"><figcaption><b>Menu closed</b>Public Works and the Great Northern are gone from Saturday.</figcaption></figure>
+    <figure><img src="shots/C10-show-menu-over-open-1280.png" alt="Laptop Show menu"><figcaption><b>Laptop</b>Same menu over the open panel.</figcaption></figure>
+  </div>
+  <h3>Highlight people: the plan is made for them</h3>
+  <div class="row">
+    <figure><img src="shots/C4-people-menu-over-open-390.png" alt="People menu over the plan"><figcaption><b>The people menu</b>Opens over the open plan.</figcaption></figure>
+    <figure><img src="shots/C6-just-gus-390.png" alt="Just Gus"><figcaption><b>Just Gus</b>His own day. What he gives up shows as "or" lines. No counts.</figcaption></figure>
+    <figure><img src="shots/C13-pair-390.png" alt="You and Cy"><figcaption><b>You + Cy</b>The four sets you share, and "Between sets · Despacio" where you both drift.</figcaption></figure>
+    <figure><img src="shots/C9-five-390.png" alt="Five people"><figcaption><b>Five of us</b>Smaller stops say who: "Crane Stage · Ben + Eli", 2 of 5.</figcaption></figure>
+  </div>
+  <h3>Three people: how many make a stop?</h3>
+  <div class="row">
+    <figure><img src="shots/C7-three-390.png" alt="Three, two is together"><figcaption><b class="rec">Recommended: two is together</b>A stop is where at least two of you are. Robyn, Dog Blood, Soulwax "you + Hal", and the drift to Despacio between.</figcaption></figure>
+    <figure><img src="shots/C7a-three-bar1-390.png" alt="Three, bar of one"><figcaption><b>The brief's start: one is enough</b>Every lone choice becomes a stop and an "or". Fatboy Slim "with Hal" shows three times.</figcaption></figure>
+    <figure><img src="shots/C8-today-dim-gus-390.png" alt="Today's dim"><figcaption><b>Today: highlight only dims</b>The crew's route with Gus's rows lit. It answers "where is the crew", not "where are we".</figcaption></figure>
+  </div>
+  <div class="row wide2">
+    <figure><img src="shots/C11-three-1280.png" alt="Laptop, three"><figcaption><b>Laptop, three people</b></figcaption></figure>
+    <figure><img src="shots/C12-just-gus-1280.png" alt="Laptop, just Gus"><figcaption><b>Laptop, just Gus</b></figcaption></figure>
+  </div>
+
+  <h3>What the Share hands over</h3>
+  <p>The link is the crew link opening on Our picks. A highlight never goes in a link, because it would carry names, so under a highlight the foot says "Opens on everyone's picks". No names ever leave the phone.</p>
+  <div class="shares">
+    <div><h4>Saturday, whole crew (D1)</h4><pre class="share">Our crew's main picks for Sat Portola, now till end of day
+
+Pier Stage for Robyn @ 7:10pm
+Pier Stage for Dog Blood @ 9pm
+Crane Stage for Soulwax @ 10:15pm
+Public Works for Milli Meng, Chloé Caillet and Fcukers @ ~10:55pm
+The Great Northern for Groove Armada @ ~1:30am
+
+Full rundown: (the crew link)</pre></div>
+    <div><h4>Sunday at the top (D2)</h4><pre class="share">Our crew's main picks for Sun Portola
+
+Folsom St, 8th-13th for Folsom Street Fair @ 11am
+Pier Stage for SG Lewis @ 4:30pm
+Pier Stage for Mochakk @ 5:35pm
+Warehouse for Tiësto @ 6:45pm
+Pier Stage for Swedish House Mafia @ 8:45pm
+
+Full rundown: (the crew link)</pre></div>
+    <div><h4>You, Cy + Hal highlighted (D3)</h4><pre class="share">Our picks for Sat Portola, now till end of day
+
+Pier Stage for Robyn @ 7:10pm
+Pier Stage for Dog Blood @ 9pm
+Crane Stage for Soulwax @ 10:15pm
+
+Full rundown: (the crew link)</pre></div>
+    <div><h4>Just Gus highlighted (D4)</h4><pre class="share">Picks for Sat Portola, now till end of day
+
+Crane Stage for DJ Shadow @ now till 7:10pm
+Warehouse for Kettama @ 7:15pm
+Crane Stage for Fatboy Slim @ 7:55pm
+Warehouse for Prospa @ 9:45pm
+Audio for Emilio @ ~10:30pm
+
+Full rundown: (the crew link)</pre></div>
+  </div>
+
+  <!-- ================================================================ Qs -->
+  <h2>Your calls</h2>
+  <p>Each has my default. "A2: yes" is enough.</p>
+  <ol class="q">
+    <li><span class="id">A1</span>Drop-in rooms are marked in the festival file, never guessed from the schedule.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">A2</span>A must on Despacio still gives way to real sets (it is on for seven hours).<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">A3</span>Despacio is never the peek's NOW, even when nothing else is on. The open plan's line covers it.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">A4</span>The Share leaves Despacio out (it is not a place to meet at a time). The other way: one extra line, "Despacio · drop in all afternoon".<span class="def">Default: <b>leave it out</b>.</span></li>
+    <li><span class="id">A5</span>The Friday Pier 80 invite is marked a drop-in too, and a Despacio pick keeps counting there. Its name can't change without losing picks.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">A6</span>The words: "drop in till 9:45 PM" and "Between sets · Despacio".<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">B1</span>The Share sends the day at the top of the view, and the button names it.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">B2</span>Later days sit under the wall's day heads, and days with nothing fold into one line that says why.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">B3</span>On a laptop the panel scrolls the days the same way, and the corner card stays on today.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">B4</span>With more than three days behind (ACL), Earlier shows a date span instead of every day.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">C1</span>Both menus open over the open plan and re-plan it as you go.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">C2</span>A highlight filters the plan to those people, instead of dimming the crew's plan.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">C3</span>For a group, a stop needs at least two of them together (a quarter for big groups). Or the brief's start: one is enough for two or three people.<span class="def">Default: <b>two is together</b>. Compare the two "three people" frames.</span></li>
+    <li><span class="id">C4</span>Under a highlight, rows name who is there, and the little face stacks are off.<span class="def">Default: <b>yes</b>.</span></li>
+    <li><span class="id">C5</span>The Share under a highlight sends that group's plan with no names ("Our picks", or "Picks" for one person), and says the link opens on everyone's picks.<span class="def">Default: <b>yes</b>.</span></li>
+  </ol>
+  <p class="meta">Design notes, model rules and edge cases: DESIGN.md beside this page on the branch.</p>
+</main>
+</body>
+</html>
