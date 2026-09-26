@@ -189,7 +189,7 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
    5. the about-corner chips — `Details and notes.` / `Hold the card. Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
-   7. the dock's fest link (`.fest-link`: Anton, its menu caret, the sync dot — the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Show or hide parts of the week.` / `Tap the fest name.`
+   7. the dock's fest link (`.fest-link`: the sync dot, Anton, the menu's three lines — the real component (Phase 1, 2026-09-26: the lines replaced v93's caret and the dot moved left); its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Show or hide parts of the week.` / `Tap the fest name.`
    8. the sync dot, in its three states (split from row 7 in v93: a fact of its own) — `Sync, at a glance.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
    9. the gear — `Switch fests and more in Settings.`
    Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component. Eight rows since the ship round (the stage row went with stage solo; nine since v93, when the dot took a row of its own); red means something needs Kevin, not the reader — "just say something's wrong"; and every picture's cell is `min-width: 0; overflow: hidden`, so no label can escape at 390.
@@ -242,6 +242,32 @@ banked for the unified build's shelf primitive
 (`claude-plans/2026-09-25-portola-live/v93-BUILD.md`). `Settings` wears the
 header's gear in the check column; the menu's `Show` is the `.menu-label`
 class.
+
+**Since Phase 1 (2026-09-26 — round five, the full-width riff Kevin approved;
+build log `claude-plans/2026-09-26-unified-build/LIST-BUILD.md`):**
+- **The menu bar.** The fest link reads `● PORTOLA '26 ☰`: the sync dot
+  leads, three lines close it (tools.js `GLYPHS`; body colour at .72, brand
+  while the menu is open, never the accent). They replace v93's caret.
+- **The menu:** the room checks (where there are two or more rooms), a line,
+  one **Board · List** row of bare glyph-and-word choices (where the fest has a
+  clock — wall.js `listOffered`), a line, Settings. No Earlier row. A one-room
+  fest with a clock opens a menu of the view row and Settings.
+- **The view** is per phone per festival (`fn_view_v1_<fid>`, absent = Board),
+  rides a share link as `&view=list` (seeded once, like `&show=`), and is
+  never in the crew doc. **List** reads every room by time, one full-width row
+  to a card (`.card.row`: name, then `time · PLACE`; the people on the right
+  edge) — the festival's grid and a run of afters on HOURS, a section that
+  declared `by-time` (§3e) on its own night ladder — in one 560px column from
+  720 up (`--list-w`). **Board** is the wall above. A switch holds the page by
+  time; the old wall fades, the new one arrives with the fold's beat.
+- **The past folds.** Over = the card's now ring can never light again (its
+  own window on its own night; the 5 AM rollover keeps an after-hours night
+  alive), judged at a held clock (`ctx.pastAt`: boot, resume, the festival
+  day turning — never the tick). Whole days over sit behind one line at the
+  top of the wall in BOTH views ("EARLIER · THU · FRI"); in the List each room
+  folds its own behind "EARLIER · 7 SETS", which flips in place to "HIDE
+  EARLIER". A reveal is page memory only. The Board's in-room cut (the grid
+  masked at the hour) is not built. A festival over end to end folds nothing.
 
 **Since the ship round (2026-09-17):**
 - **A hidden part renders nothing.** No header, no quiet label, no whisper,
