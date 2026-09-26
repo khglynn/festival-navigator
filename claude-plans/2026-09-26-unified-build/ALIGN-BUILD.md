@@ -14,7 +14,10 @@ branch are the handoff.*
 - [x] the edge (CSS) + the wall.js touch + the tests rewritten to the new
       law — `16981ff` (the EARLIER centring rode in the same commit)
 - [x] after frames, looked at; the EARLIER call framed both ways (call 3)
-- [ ] gate: npm test (UTC, Tokyo, night clock), test:browser, CI on the final head
+- [x] gate, local, on `c8d30d5`'s code: `npm test` at UTC, TZ=Asia/Tokyo and the night
+      clock (2026-09-27T04:30Z) — 1137 tests, 1135 pass, the one fail the service-worker
+      stamp (not stamped, by instruction) in all three; `npm run test:browser` 237/237
+- [ ] CI on the final head
 
 ## What is there today (why the edge jumps)
 
@@ -45,7 +48,8 @@ One edge, one rule, on the Board from 720 up:
 - `--hour-rail-w` stays the gutter (the times' column). The clock's wrap puts
   its rail LEFT of the edge, and the edge is smaller than the rail, so the
   times hang into the shell's side padding: that is the "scootch the times
-  left" — the cards gain the difference.
+  left" — the cards gain the difference. *(Superseded before building by
+  call 1: the edge equals the gutter, nothing hangs.)*
 - The stacks and bands take the clock's track gap from 720 up (one track:
   `--col-w` wide, `--clock-gap` apart), so column n sits under column n on any
   day, clock or not.
