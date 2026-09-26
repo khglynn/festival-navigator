@@ -142,7 +142,7 @@ const view = (page, artist, where = null) => page.evaluate(([a, w]) => {
 // to come to rest rather than for a fixed time — under a loaded CI box a
 // glide can outlast any sleep (a 1.1 s sleep flaked once in the full suite).
 const settled = (page) => page.evaluate(() => new Promise((resolve) => {
-  const where = () => scrollY + [...document.querySelectorAll('.times-scroll')].reduce((s, e) => s + e.scrollLeft * 1e-3, 0);
+  const where = () => scrollY + [...document.querySelectorAll('.times-scroll, .stack-scroll')].reduce((s, e) => s + e.scrollLeft * 1e-3, 0);
   let last = NaN, still = 0;
   const t0 = performance.now();
   const step = () => {
@@ -389,7 +389,7 @@ test('320x568, Ross at Despacio (a tall set): the line stays a third of the way 
 // One tap: where the page came to rest, what pulsed (and whether each pulsed
 // card is live, in view, and whose), where the line is, what the toast says.
 // Where the page stands, down and across (every grid's sideways scroll).
-const place = (page) => page.evaluate(() => `${Math.round(scrollY)}|${[...document.querySelectorAll('#wall-root .times-scroll')].map((s) => Math.round(s.scrollLeft)).join(',')}`);
+const place = (page) => page.evaluate(() => `${Math.round(scrollY)}|${[...document.querySelectorAll('#wall-root .times-scroll, #wall-root .stack-scroll')].map((s) => Math.round(s.scrollLeft)).join(',')}`);
 // `pulse`: 'maybe' polls for a pulse and returns as soon as one starts (a
 // line's stop has none, so it waits the whole 1.5 s); 'none' holds a fixed
 // window, for the checks that nothing pulses. Every wait is polled from here
@@ -904,3 +904,79 @@ for (const [fest, width, height, now, expect] of [
     } finally { await ctx.close(); }
   });
 }
+
+// A right-hand afters card on a small phone (review, 2026-09-25). On a phone
+// a clocked stack row scrolls sideways by its lead space (v91), and at rest
+// its right-hand card runs off the screen by it: at 320, Milli Meng's afters
+// card ran to x=344 in a row ending at 306, and NOW landed there with its
+// right 38px — the crew corner included — out of sight. NOW now slides the
+// row just enough to show the card whole: smoothly, or at once under Reduce
+// Motion, like the timetable's own framing; and not at all when it already is.
+const AFTERS_ROW = '#wall-root .day-block[data-day="Saturday"] .room[data-room="Afters"] .stack-scroll';
+const rowView = (page) => page.evaluate((sel) => {
+  const row = document.querySelector(sel);
+  const card = [...row.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Milli Meng');
+  const r = row.getBoundingClientRect(), c = card.getBoundingClientRect();
+  const dock = document.getElementById('dock');
+  const dockTop = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
+  return {
+    row: { left: r.left, right: r.right, scrollLeft: row.scrollLeft, max: row.scrollWidth - row.clientWidth },
+    card: { left: c.left, right: c.right, top: c.top, bottom: c.bottom }, innerWidth, dockTop,
+  };
+}, AFTERS_ROW);
+// Every sideways scroll the app asks of a stack row, as asked.
+const watchRows = (page) => page.evaluate(() => {
+  window.__rowScrolls = [];
+  if (window.__rowWatch) return;
+  window.__rowWatch = true;
+  const was = Element.prototype.scrollTo;
+  Element.prototype.scrollTo = function (...args) {
+    if (this.classList && this.classList.contains('stack-scroll')) window.__rowScrolls.push(args[0]);
+    return was.apply(this, args);
+  };
+});
+for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
+  const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
+  test(`${name}320: Ross highlighted — NOW slides SAT AFTERS just enough that his right-hand card is whole inside its row`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width: 320, height: 568, engine });
+    try {
+      await highlight(page, 'Ross');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(200);
+      const rest = await rowView(page);
+      assert.equal(rest.row.scrollLeft, 0, 'the row at rest');
+      assert.ok(rest.row.max > 30, `the row scrolls by its lead space (${rest.row.max}px)`);
+      assert.ok(rest.card.right > rest.row.right + 30, `at rest his card runs off its row: ${JSON.stringify(rest)}`);
+      await watchRows(page);
+      await tapNow(page, door);
+      const v = await rowView(page);
+      assert.ok(v.card.left >= v.row.left - 0.5 && v.card.right <= v.row.right + 0.5, `the card is whole inside its row: ${JSON.stringify(v)}`);
+      assert.ok(v.card.right <= v.innerWidth, 'and on the screen');
+      assert.ok(Math.abs(v.row.scrollLeft - v.row.max) <= 1, `just enough: the far end of the row (${v.row.scrollLeft} of ${v.row.max})`);
+      assert.ok(v.card.top >= 0 && v.card.bottom <= v.dockTop, `and in view top to bottom: ${JSON.stringify(v)}`);
+      assert.deepEqual(await page.evaluate(() => window.__rowScrolls.map((a) => a.behavior)), ['smooth'], 'one slide, and a glide');
+      // Again, already whole: the row is not asked to move.
+      await page.mouse.move(4, 4);
+      await sleep(900);
+      await page.evaluate(() => { window.__rowScrolls = []; });
+      await tapNow(page, door);
+      assert.deepEqual(await page.evaluate(() => window.__rowScrolls), [], 'a card already whole moves no row');
+    } finally { await ctx.close(); }
+  });
+}
+
+test('320, Reduce Motion: NOW brings the right-hand afters card in at once', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ width: 320, height: 568 });
+  try {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    await watchRows(page);
+    await page.locator(`#${door}-now`).click();
+    await sleep(60);
+    const v = await rowView(page);
+    assert.deepEqual(await page.evaluate(() => window.__rowScrolls.map((a) => a.behavior)), ['auto'], 'no glide');
+    assert.ok(Math.abs(v.row.scrollLeft - v.row.max) <= 1 && v.card.right <= v.row.right + 0.5, `already whole, one frame after the tap: ${JSON.stringify(v)}`);
+  } finally { await ctx.close(); }
+});

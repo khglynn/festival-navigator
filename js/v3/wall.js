@@ -1702,7 +1702,17 @@ export function nowLanding(root, ctx, date = new Date()) {
 // { top, bottom } of what can be seen (under a grid's pinned stage strip for a
 // grid, under the sticky chrome otherwise; above the dock on a phone),
 // scroller(cell) → { el, x, left, width, max } of the grid's own sideways
-// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls) }.
+// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls),
+// and row(card) → the same for a stack card's `.stack-scroll`, plus its
+// `key` (stackRowKey), or null — optional: without it no row slides }.
+//
+// ACROSS, for a stack card (v91): on a phone a clocked stack row scrolls
+// sideways by its lead space, and at rest its right-hand card runs off the
+// screen by it (38px — at 320, Milli Meng's afters card to x=344 in a row
+// ending at 306: review, 2026-09-25). A stop's landing slides each row that
+// holds one of its cards JUST ENOUGH to show them whole (rowSlide), and not
+// at all when they already are. Unlike a grid, a row never splits a stop:
+// its two columns always fit it together at the far end of its scroll.
 export const NOW_PAD = 8;
 export function landingTarget(m, geo) {
   const pad = NOW_PAD;
@@ -1769,6 +1779,33 @@ export function frameSlide(frame) {
   const { sc, lo, hi } = frame;
   return Math.min(sc.max, Math.max(0, (lo + hi) / 2 - sc.width / 2));
 }
+// A stack card's place in its row's sideways scroll, in the row's own
+// coordinates — null for a card in no row, or in a row that does not scroll
+// (a desktop, one venue).
+function rowSpanIn(m, geo) {
+  if (!m.card || m.line || !geo.row) return null;
+  const row = geo.row(m.card);
+  if (!row || !(row.max > 0)) return null;
+  const r = geo.box(m.card);
+  const lo = r.left - row.x + row.left;
+  return { row, lo, hi: lo + (r.right - r.left) };
+}
+// The least slide that puts [lo, hi] wholly inside a row: where it already
+// stands when it does, else just far enough, as far as the row scrolls. No
+// pad: at the far end of its scroll a row's right-hand card ends exactly at
+// its edge, and a pad would ask for a slide the row does not have.
+export function rowSlide(row, lo, hi) {
+  let sl = row.left;
+  if (hi > sl + row.width) sl = hi - row.width;
+  if (lo < sl) sl = lo;
+  return Math.min(row.max, Math.max(0, sl));
+}
+// Whether a card is whole inside its row as the row stands now (a card in
+// no scrolling row always is).
+function wholeAcross(m, geo) {
+  const s = rowSpanIn(m, geo);
+  return !s || (s.lo >= s.row.left - 1 && s.hi <= s.row.left + s.row.width + 1);
+}
 export function nowStops(root, ctx, date, geo) {
   const best = nowLanding(root, ctx, date);
   if (!best) return null;
@@ -1793,30 +1830,48 @@ export function nowStops(root, ctx, date, geo) {
     m.key = keyOf(m);
     m.target = landingTarget(m, geo);
     m.span = spanIn(m, geo);
-    m.x = m.span ? m.span.lo : geo.box(m.card || m.line).left;
+    m.rowSpan = rowSpanIn(m, geo);
+    m.x = m.span ? m.span.lo : m.rowSpan ? m.rowSpan.lo : geo.box(m.card || m.line).left;
   }
   members.sort((a, b) => a.target - b.target || a.x - b.x);
   // Room across: a frame holds its cells side by side with 8px either side.
   const fits = (frame, span) => !frame || (frame.sc.el === span.sc.el
     && Math.max(frame.hi, span.hi) - Math.min(frame.lo, span.lo) <= span.sc.width - 2 * NOW_PAD);
+  // A stack row, the same question with no pad (rowSlide) — and one stop may
+  // hold several rows, each sliding on its own.
+  const fitsRow = (st, rs) => {
+    const f = st.across.get(rs.row.el);
+    return !f || Math.max(f.hi, rs.hi) - Math.min(f.lo, rs.lo) <= rs.row.width;
+  };
+  const takeRow = (st, rs) => {
+    if (!rs) return;
+    const f = st.across.get(rs.row.el);
+    st.across.set(rs.row.el, f ? { ...f, lo: Math.min(f.lo, rs.lo), hi: Math.max(f.hi, rs.hi) } : { ...rs });
+  };
   const stops = [];
   for (const m of members) {
-    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)));
+    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)) && (!m.rowSpan || fitsRow(st, m.rowSpan)));
     if (home) {
       home.members.push(m);
       if (m.span) home.frame = home.frame ? { ...home.frame, lo: Math.min(home.frame.lo, m.span.lo), hi: Math.max(home.frame.hi, m.span.hi) } : { ...m.span };
+      takeRow(home, m.rowSpan);
       continue;
     }
     // A stop of its own. Where a stop already shows it at that height and
     // only its column is out of frame, it lands at the same height — the
     // tap's move is the sideways slide.
-    const beside = m.span ? stops.find((st) => showsAt(m, st.target, geo)) : null;
-    stops.push({ target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null });
+    const beside = m.span || m.rowSpan ? stops.find((st) => showsAt(m, st.target, geo)) : null;
+    const st = { target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null, across: new Map() };
+    takeRow(st, m.rowSpan);
+    stops.push(st);
   }
   for (const st of stops) {
     st.keys = st.members.map((m) => m.key);
     st.x = Math.min(...st.members.map((m) => m.x));
     st.slide = st.frame ? frameSlide(st.frame) : null;
+    // Each row this stop's cards sit in, and the slide that shows them whole.
+    st.rows = [...st.across.values()].map((f) => ({ el: f.row.el, key: f.row.key, slide: rowSlide(f.row, f.lo, f.hi) }));
+    delete st.across;
   }
   stops.sort((a, b) => a.target - b.target || a.x - b.x);
   const bestKey = keyOf(best);
@@ -1893,10 +1948,18 @@ export function nowSaid(plan, stop) {
 //
 // geo adds two readings to nowStops' own: now (the clock `until` is on) and
 // gridLeft(iso) → that day's grid's sideways scroll, or null with no such grid.
+// A landing that framed stack rows keeps them too (v91): cycle.rows is
+// [[stackRowKey, slide], …], read back through geo.rowLeft(key) — a row
+// swiped by hand since makes the next tap fresh, as a grid does; a row that
+// is gone ends the cycle.
 export function stillThere(cycle, geo) {
   if (!cycle) return false;
   if (geo.now < cycle.until) return true;
   if (Math.abs(geo.scrollY - cycle.y) > 4) return false;
+  for (const [key, sl] of cycle.rows || []) {
+    const left = geo.rowLeft ? geo.rowLeft(key) : null;
+    if (left == null || Math.abs(left - sl) > 4) return false;
+  }
   if (cycle.grid == null) return true;
   const left = geo.gridLeft(cycle.grid);
   return left != null && Math.abs(left - cycle.sl) <= 4;
@@ -1910,7 +1973,8 @@ export function stillThere(cycle, geo) {
 // slides to, the key the next tap starts from — else its top member.
 //
 // The one stop, tapped again, stays where the last tap left it — while that
-// landing still shows it (every member, by showsAt). The clock moves a stop
+// landing still shows it (every member, by showsAt, and each stack card
+// whole inside its row, by wholeAcross). The clock moves a stop
 // without moving the page: tap at 3 PM, tap again at 7 PM, and the line has
 // walked four hours down the grid (at 320x568, 198px → 582px, under the dock
 // at 523). The page is exactly where NOW left it, so this was "still there",
@@ -1927,7 +1991,8 @@ export function nowStep(plan, cycle, geo) {
   if (fresh) at = bestAt;
   const stop = stops[at];
   const lead = stop.keys.includes(best.key) ? best : stop.members[0];
-  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo));
+  // Shown means whole: across too, for a card in a stack row (wholeAcross).
+  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo) && wholeAcross(m, geo));
   return { fresh, at, stop, lead, target: stays ? cycle.y : stop.target };
 }
 
@@ -2154,7 +2219,7 @@ function renderExtra(root, ctx, fest, extra) {
 // A stack row's sideways position belongs to that row alone — no other
 // scroller shares it — so it is kept by where the row stands: its day, its
 // room, and which of that room's rows it is.
-function stackRowKey(row) {
+export function stackRowKey(row) {
   const room = row.closest('.room');
   const rows = room ? [...room.querySelectorAll('.stack-scroll')] : [row];
   const day = row.closest('.day-block');
