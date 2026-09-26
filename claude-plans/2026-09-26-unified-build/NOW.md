@@ -16,10 +16,11 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 7:20 AM): phone peek, day plan and laptop panel built.
-  Gate: Codex clean after seven fixes, the re-walk clean on bf50a67 (one WebKit
-  harness miss, explained); last full browser run, then the head goes to the
-  coordinator.
+  `OUR-PLAN-BUILD.md`; 7:40 AM): GATED at 8b3485b and handed to the coordinator
+  (unit 1168/1170 at three clocks, browser 260/261, Codex clean after seven fixes,
+  walk 41/42 with the one red the walker's own). Held off production until Kevin
+  answers "when should it reach friends?" on its review page (recommended: ACL).
+  Next: merge `live/people` when it lands and fill the "Our plan ›" row.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
