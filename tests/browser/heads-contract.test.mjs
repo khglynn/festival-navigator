@@ -127,8 +127,17 @@ test('a tab lands its day\'s first head under the sticky chrome, and the scrolls
     for (const [day, first] of [['Thursday', 'THU AFTERS'], ['Saturday', 'SAT PORTOLA'], ['Friday', 'FRI AFTERS'], ['Sunday', 'SUN PORTOLA']]) {
       await page.click(`#dock-days .day-tab[data-day="${day}"]`);
       await page.waitForFunction((d) => document.querySelector('#dock-days .day-tab.active')?.dataset.day === d, day, { timeout: 8000 });
-      await sleep(700); // the smooth scroll settles
-      const at = await where(day);
+      // The smooth scroll settles. Its length grows with the wall — since the
+      // 2026-09-25 Folsom data a Friday hop is ~2,900px and lands at ~1 s, a
+      // Sunday one ~6,500px at ~1.4 s — so wait for the day to stop moving
+      // (three still reads), never a fixed beat. Where it lands is unchanged.
+      let at = await where(day);
+      for (let still = 0, i = 0; still < 3 && i < 60; i += 1) {
+        await sleep(100);
+        const next = await where(day);
+        still = next.top === at.top ? still + 1 : 0;
+        at = next;
+      }
       assert.equal(at.first, first, `${day}'s first head names the day`);
       assert.ok(at.top >= at.offset - 2 && at.top <= at.offset + 32, `${day} landed at ${at.top}px; the chrome ends at ${at.offset}px`);
       assert.equal(at.active, day, 'and its tab is lit');

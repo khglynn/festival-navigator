@@ -178,6 +178,17 @@ splice gives 0 errors and exactly the 9 shared-room warnings.
    party (from noon) really are on then, so NOW now correctly points at them. Those sub-cases
    now hide Folsom (the render helper's existing `folded` option) and keep every assertion. One
    new assertion covers the new truth: with Folsom showing, a daytime party is NOW's answer.
+3. **Not a count, flagged:** two real-browser tests (CI job `browser`) went red on the longer wall.
+   Both were measuring too early, not catching an app bug. Main's data passes and this branch's
+   failed, locally and in CI, and a trace showed the app does the right thing:
+   a. `tests/browser/heads-contract.test.mjs`: a day tab waited a fixed 700 ms for its smooth
+      scroll. Every tab still lands exactly at the chrome (6px), but a Friday hop is now ~2,900px
+      (~1 s) and a Sunday one ~6,500px (~1.4 s). The test now waits until the day stops moving.
+      The landing check is unchanged.
+   b. `tests/browser/now-jump.test.mjs` (320, Ross): NOW's 460 ms pulse scales the card it lands
+      on. On the longer wall it is still running when the scrolling stops, so the card read 3px
+      past its row mid-pulse. At rest it sits exactly at the row's edge (163–306, row at 38 of 38).
+      The test now measures once the pulse's scale is gone. The assertions are unchanged.
 
 ## Seen in passing, not added (not on the pick list)
 
