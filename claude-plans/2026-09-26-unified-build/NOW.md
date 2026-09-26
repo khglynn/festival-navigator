@@ -1,46 +1,46 @@
 # NOW — the unified build (arc)
 
-**last-updated: 2026-09-26 6:50 AM PT · mode: arc** · plan: `PLAN.md` beside this
+**last-updated: 2026-09-26 3:30 PM PT · mode: arc** · plan: `PLAN.md` beside this
 (+ `REVIEW-1.md`, and Kevin's calls at the top of PLAN.md) · live-ops rules:
 `claude-plans/2026-09-25-portola-live/RUNBOOK.md` · started as an hg-durable-build.
 
 ## Where it stands
 
-- **Phase 1 — List view + menu bar: SHIPPED** as v97 (6:42 AM PT, PR #54;
-  log `LIST-BUILD.md`). Two Sol nits and the Board's in-room fold are LEDGER
-  follow-ups.
-- **Tap change** (`live/tap`, `TAP-BRIEF.md` / `TAP-BUILD.md`): built, walked,
-  Opus-reviewed; Sol found a VoiceOver route, the composer's ride over the iOS
-  keyboard and a one-time-line nit — fixing. Then a preview with a demo crew for
-  Kevin's iPhone; ships alone after his OK.
-- **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
-  (Opus); leaves a slot for Our plan's row.
-- **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; afternoon): shipping as "Our picks" in PR #60 (v101).
-  The Linux WebKit reds (animations started late on a loaded runner, plus one
-  real pop when the window was grabbed mid-settle) and Kevin's peek note were
-  fixed at 2b14fdf. One intermittent red followed: the peek test read the page
-  between a late font and the frame that refits for it, a state no frame
-  paints. Fixed in the test (fonts in before any read); a font landing
-  mid-arrival (one-frame drop, first visit only) is banked for the Share
-  build. Kevin has answered the Share calls (logged in `OUR-PLAN-BUILD.md`):
-  the Share build starts from main after v101.
-- **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
-  `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
-  later than the show and fixes `guess-run-times` for date-keyed sections. The
-  Zilker headliners' ends print nowhere — a code rule, decided separately.
+- **Shipped today** (details and rollback targets in the portola-live LEDGER):
+  Phase 1 List + menu bar as v97 (6:42 AM, `LIST-BUILD.md`); ACL Late nights
+  times as data #56 (8:42 AM, `ACL-PREP-LOG.md`); the tap change as v98
+  (11:05 AM, `TAP-BUILD.md`, after Kevin's iPhone test on a preview); the
+  people menu + Invite sheet as v99 (12:05 PM, `PEOPLE-BUILD.md`); the laptop
+  wall's left edge as v100 (12:17 PM, `ALIGN-BUILD.md`); Our plan, renamed
+  **Our picks**, as v101 (2:37 PM, `OUR-PLAN-BUILD.md`); the Spotify playlist
+  names as v102 (2:56 PM).
+- **v103** (`live/v103`, Opus builder, `V103-BRIEF.md` on that branch):
+  NOW first in the day row and fixed there across days (the one-NOW rule
+  kept); the List filters to highlighted people's picks; the crew playlist
+  searches every picked artist's top songs with a backoff for Spotify's rate
+  limit, and reports artists that got none. Gate: Sol → Sonnet real-input
+  walk → merge main → stamp above main → CI both jobs → merge → smoke.
+- **Share for Our picks** (`live/share`, the sibling session): the text share
+  (≤5 picks, line breaks, "Full rundown:" + a link with `&plan=open`), the
+  welcome card's ✕, "Share the crew link" in the Show menu, and the two
+  touch-timing catches banked from v101. The sibling sends a head gated on CI
+  (Linux WebKit included — its v101 gate was local only and CI found four
+  reds); the coordinator merges main, stamps and releases.
+- **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
+  night and type, `gen.py`); a private Google My Map is being built from them.
+  The in-app version is banked for the reference tab (2027).
 
-## Order (Kevin: "smart dev order please")
+## Order
 
-Before Portola ends (Sun Sep 27): v97 (List), the tap change (after his
-iPhone OK), the people menu + Invite sheet, Our plan — each only on a clean
-gate. After Portola, for ACL (Late nights from Sep 29, Zilker Oct 2): U0 nets
-(the LEDGER's follow-ups) and ACL prep, the shelf primitive with the banked
-numbered-history work (v93-BUILD.md), then a design session for the hour pin
-and the moment lens; add-an-event stays banked (`claude-plans/2026-09-02-add-a-show.md`).
+Before Portola ends (Sun Sep 27): v103, then the Share — each only on a clean
+gate. After Portola, for ACL (Late nights from Sep 29, Zilker Oct 2): the
+LEDGER follow-ups (U0 nets first), the Zilker headliners' ends, the shelf
+primitive with the banked numbered-history work (`v93-BUILD.md`), then a
+design session for the hour pin and the moment lens; add-an-event stays
+banked (`claude-plans/2026-09-02-add-a-show.md`).
 
 ## Next step
 
-Tap: Sol's round → merge main → preview + demo crew → Kevin's iPhone test.
-People and Our plan: gate each as it lands, release in the order they come
-clean. ACL: review round two's rooms before merging the data.
+Read the v103 builder's hand-back → Sol review on its head → walk → release.
+Then the Share head from the sibling → release. Then wrap: worktree cleanup,
+`/save-session`.
