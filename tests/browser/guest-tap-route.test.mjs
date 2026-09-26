@@ -147,6 +147,14 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       if (cdp) {
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: o2.x, y: o2.y }] });
         for (let i = 1; i <= 6; i += 1) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: o2.x, y: o2.y - i * 25 }] });
+        // The finger stops before it lifts, so the drag ends with no fling.
+        // A fling would still be coasting at the quick tap below, and a tap on
+        // a coasting page only stops it (an iPhone does the same; Chromium on
+        // Linux suppresses that tap's click) — that is the platform, not the
+        // swallow this checks. CI caught it twice on 623a50b (2026-09-26).
+        await sleep(120);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: o2.x, y: o2.y - 150 }] });
+        await sleep(40);
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       } else {
         // WebKit has no drag input here: the same press, then the pointercancel a scroll sends.
@@ -157,6 +165,11 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
         }, o2);
       }
       await sleep(80);
+      // The page is still (no fling coasting under the tap), and the tap
+      // still comes well inside the swallow's 700 ms — so if the swallow
+      // outlived the flick's cancel, it would eat this click.
+      const still = await page.evaluate(() => new Promise((res) => { const a = scrollY; requestAnimationFrame(() => requestAnimationFrame(() => res(Math.abs(scrollY - a) < 1))); }));
+      assert.ok(still, 'the page is not coasting when the quick tap comes');
       // A dock control that is itself under its centre: a day tab, or NOW.
       // (The dock's days scroll, so one can sit under NOW; and while the row
       // is still gliding to centre its active day, WebKit takes a tap on it
