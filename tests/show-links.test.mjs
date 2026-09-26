@@ -82,6 +82,20 @@ test('linksOf: nothing insecure, nothing unnamed, and nothing at all for a festi
   assert.equal(linksOf(null), null);
 });
 
+test('linksOf: a price shows only with its checked date and inside 0–2000 — anything else reads a bare "Tix" (a cached file can skip the validator)', () => {
+  const base = { url: 'https://www.axs.com/events/1', at: 'AXS' };
+  const word = (t) => linksOf({ tickets: { ...base, ...t } })[0].text;
+  assert.equal(word({ price: 69, checked: '2026-09-26' }), 'Tix $69');
+  assert.equal(word({ price: 0, checked: '2026-09-26' }), 'Tix free');
+  assert.equal(word({ price: 69 }), 'Tix', 'no checked date');
+  assert.equal(word({ price: 0 }), 'Tix', 'free needs its date too');
+  assert.equal(word({ price: 2001, checked: '2026-09-26' }), 'Tix', 'out of range');
+  assert.equal(word({ price: -5, checked: '2026-09-26' }), 'Tix');
+  assert.equal(word({ price: 19.5, checked: '2026-09-26' }), 'Tix');
+  assert.equal(word({ price: '69', checked: '2026-09-26' }), 'Tix', 'a string is not a price');
+  assert.equal(word({ price: 69, checked: 'yesterday' }), 'Tix');
+});
+
 test('the validator: page and tickets are { url: https, at: a short name }, tickets may add price + checked', () => {
   const doc = (extra) => ({
     id: 'x-2026', name: 'X', year: "'26", dates: 'Sep 1', status: 'lineup', location: 'Austin, TX',

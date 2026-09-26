@@ -653,18 +653,22 @@ export function findEventEntry(fest, name, occ) {
 const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
 // The cheapest ticket on file, in Kevin's words: no price → "Tix", $0 → "Tix
 // free", a whole dollar amount → "Tix $69" (no decimals, no thousands
-// separator). Anything malformed falls back to the bare word rather than
-// showing a broken number — the validator is what actually enforces shape.
-const tixWord = (price) => {
-  if (price === 0) return 'Tix free';
-  if (Number.isInteger(price) && price >= 1) return `Tix $${price}`;
-  return 'Tix';
+// separator). A price shows only with its `checked` date and inside the
+// validator's range — the same shape the validator enforces, held here too
+// because a phone can render a festival file its cache kept (Sol's review,
+// 2026-09-26: a price without its date, or $2001, rendered). Anything else
+// falls back to the bare word rather than a number nobody vouched for.
+const CHECKED_RE = /^\d{4}-\d{2}-\d{2}$/;
+const tixWord = ({ price, checked }) => {
+  if (!Number.isInteger(price) || price < 0 || price > 2000) return 'Tix';
+  if (typeof checked !== 'string' || !CHECKED_RE.test(checked)) return 'Tix';
+  return price === 0 ? 'Tix free' : `Tix $${price}`;
 };
 const linkOf = (l, kind, word) => {
   if (!l || typeof l !== 'object' || !httpsUrl(l.url)) return null;
   const at = typeof l.at === 'string' ? l.at.trim() : '';
   if (!at) return null;
-  const text = kind === 'tix' ? tixWord(l.price) : word;
+  const text = kind === 'tix' ? tixWord(l) : word;
   return { kind, text, url: l.url, at };
 };
 const sameTarget = (a, b) => {
