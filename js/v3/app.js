@@ -9,8 +9,8 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded } from './filters.js';
+import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded, loadView, saveView, viewIsSet, LIST, BOARD } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
@@ -107,6 +107,12 @@ const ctx = {
   // persisted per fest (filters.js) — never in the crew doc. One door writes
   // it: the show menu on the fest name (§3a.2, Kevin 2026-09-17).
   folded: [],
+  // The view (Phase 1, 2026-09-26): 'board' (the wall as it always was) or
+  // 'list' (every room by time, a card to a row). Device-local, persisted per
+  // fest (filters.js loadView) — never in the crew doc. One door writes it:
+  // the Board · List row in the show menu. A fest with no clock has nothing
+  // to list by time, so it is always the board there (wall.js listOffered).
+  view: BOARD,
   now: null, // tests pin the clock; null = new Date() at render
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
@@ -217,6 +223,7 @@ function refreshCtx() {
   // storage and silently reactivate the day they rejoin.
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.folded = loadFolded(ctx.fid);
+  ctx.view = listOffered(state.fest()) ? loadView(ctx.fid) : BOARD;
   ctx.festDates = festDatesOf();
 }
 
@@ -1991,22 +1998,29 @@ async function batchCreateFlow(myName) {
 // A share link carries the sharer's current view: the rooms this phone is
 // showing, as `&show=` beside `g=` (filters.js showOf, crew.js crewLink).
 // Everything showing sends no view at all. Whoever receives it gets it once,
-// on a phone that has never shown this festival (seedShowOnce) — and every
+// on a phone that has never shown this festival (seedViewOnce) — and every
 // place that hands out a link says so in one line, because someone who hid
 // Folsom for themselves would otherwise send it hidden without knowing.
+// The view rides the same link (Phase 1): `&view=list` when this phone reads
+// the wall as a List; Board, the default, sends nothing.
 function shareView() {
   const rooms = roomsOnWall();
   const folded = ctx.folded || [];
   const show = showOf(rooms, folded);
-  return show ? { show, label: showLabel(rooms, folded) } : null;
+  const list = ctx.view === LIST;
+  return show || list ? { show, label: show ? showLabel(rooms, folded) : null, list } : null;
 }
 function inviteLink(meName = null) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null);
+  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null, view && view.list ? LIST : null);
 }
+// "Opens on Portola + Afters, as a list — what you’re showing now." — the
+// rooms, the view, or both; nothing when the link opens on everything as a board.
 function inviteViewLine() {
   const view = shareView();
-  return view ? `Opens on ${view.label} — what you’re showing now.` : '';
+  if (!view) return '';
+  const opens = view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
+  return `${opens} — what you’re showing now.`;
 }
 
 // The first-open extras (v92) — the link's view, the welcome — are never
@@ -2034,18 +2048,29 @@ function festShownBefore(fid) {
   return crew.knownCrews().some((c) => c && c.token && getLS(state.LS.fest(c.token)) === fid);
 }
 
-// Seed THIS phone's fold from a link's view, once per festival: viewer-side
-// by law (filters.js — never the crew doc), never over a fold of its own,
-// never a view that would hide every room, and only rooms this festival file
-// knows. Returns the words for what it opened on, or null when it did nothing.
-function seedShowOnce(fid, slugs) {
-  if (foldIsSet(fid) || showSeeded(fid)) return null;
-  const rooms = roomsOf(state.fest(), ctx);
-  const folded = foldFromShow(rooms, slugs);
-  if (!folded) return null;
-  saveFolded(fid, folded);
+// Seed THIS phone's view from a link's, once per festival: viewer-side by law
+// (filters.js — never the crew doc). Each part on its own: the rooms never
+// over a fold of its own, never a view that would hide every room, and only
+// rooms this festival file knows; the List never over a view of its own, and
+// only on a fest that has a clock to list by. One marker records that the
+// link was applied (a second link never re-seeds). Returns what it opened on
+// — { rooms: 'Folsom' | null, list: bool } — or null when it did nothing.
+function seedViewOnce(fid, { show = null, view = null } = {}) {
+  if (showSeeded(fid)) return null;
+  let rooms = null;
+  if (show && !foldIsSet(fid)) {
+    const all = roomsOf(state.fest(), ctx);
+    const folded = foldFromShow(all, show);
+    if (folded) {
+      saveFolded(fid, folded);
+      rooms = showLabel(all, folded);
+    }
+  }
+  const list = view === LIST && !viewIsSet(fid) && listOffered(state.fest());
+  if (list) saveView(fid, LIST);
+  if (!rooms && !list) return null;
   rememberShowSeeded(fid);
-  return showLabel(rooms, folded);
+  return { rooms, list };
 }
 
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
@@ -3095,8 +3120,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // and only ever for a phone that has never shown the link's festival — read
   // before this entry remembers anything about it.
   const showHint = pendingShowHint;
+  const viewHint = pendingViewHint;
   pendingShowHint = null;
-  const showFor = showHint && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
+  pendingViewHint = null;
+  const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   mergeCustoms(await customs); // crew-private fests join the catalog first
@@ -3189,7 +3216,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   const savedLayers = (history.state && history.state.layers) || null;
   // Seeded BEFORE the first paint, so the wall opens already on the view the
   // link carried — nothing folds away under the person's eyes.
-  const opened = showFor && state.activeFestivalId === showFor ? safely('show-seed', () => seedShowOnce(showFor, showHint)) : null;
+  const opened = showFor && state.activeFestivalId === showFor ? safely('show-seed', () => seedViewOnce(showFor, { show: showHint, view: viewHint })) : null;
   show('screen-app');
   applyFestTheme();
   refreshCtx();
@@ -3223,13 +3250,18 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   });
   // Said once, on arrival, with the one door back to everything (v92). A
   // recognized phone's "Not me" outranks it — the next line replaces it.
-  if (opened) {
+  if (opened && opened.rooms) {
     // Bound to the crew and festival it was said about: a switch inside the
     // toast's six seconds must not unfold another festival's own view.
     const fid = state.activeFestivalId;
-    showActionToast($('toast-root'), `Opened on ${opened}.`, 'Show all', () => {
+    showActionToast($('toast-root'), `Opened on ${opened.rooms}${opened.list ? ', as a list' : ''}.`, 'Show all', () => {
       if (state.getCrewToken() === token && ctx.fid === fid) unfoldAll();
     }, 6000);
+  } else if (opened && opened.list) {
+    // The List alone: said, with no door on the toast — the fest name's menu
+    // is where Board is, one tap away, and a second door would be a second
+    // control for one state.
+    showToast($('toast-root'), 'Opened as a list.');
   }
   if (recognized) welcomeRecognized(token, recognized);
   // After the toasts: the cards step up over them. `holdOffer`: the caller is
@@ -3395,6 +3427,7 @@ let firstBoot = true; // cold start resumes the active crew; later boots don't (
 let pendingFestHint = null; // &f= from the opened invite link, consumed by enterApp
 let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
+let pendingViewHint = null; // &view= — Board or List (Phase 1), consumed by enterApp beside it
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it
@@ -3407,6 +3440,7 @@ export async function boot() {
   pendingFestHint = crew.festFromHash();
   pendingMeHint = crew.meFromHash();
   pendingShowHint = crew.showFromHash();
+  pendingViewHint = crew.viewFromHash();
   pendingJoin = null; // a guest's question belongs to the wall it was asked on
   // sp=1 -> reopen the drill. sp=connect -> reopen it AND continue the connect
   // the person already asked for on the other host.

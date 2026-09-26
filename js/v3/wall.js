@@ -1439,6 +1439,14 @@ function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
   return rooms;
 }
 
+// Whether this festival can be read as a List (Phase 1, 2026-09-26): only
+// where something has a clock to list by — a festival that publishes a stage
+// grid. A lineup (no days at all) is one list already, with no times to put
+// in order, so it has only its board and the menu offers no view there.
+export function listOffered(fest) {
+  return !!(fest && fest.days && Object.keys(fest.days).length);
+}
+
 // The words on the fest link at the end of the dock (phone) and the rail
 // (desktop) — the show menu's door. One builder, because the wall names that
 // door when everything is hidden and must say exactly what is written on it.
