@@ -232,3 +232,21 @@ or glue change. `tests/update-check.test.mjs` has a source guard for it.
 3. The walk rig shows the strip only appears in the not-quiet case; on
    Settings' own page nothing is ever in progress unless a Spotify scan
    runs, so in practice the tap reloads within about a second.
+
+### Wrap-up (2026-09-25, builder)
+
+**Suites.** Full `npm test`: 908 tests, 906 pass, 1 skipped (the
+DATABASE_URL-gated concurrency test, as always), 1 fail — the ASSET_STAMP
+check in `tests/app-shell-complete.test.mjs`, which is expected: cached
+assets changed and the stamp is the orchestrator's step (not run here, per
+the brief). Browser suite run one file at a time
+(`node --test --test-concurrency=1 tests/browser/*.test.mjs`): 180/180.
+
+**One more motion note (item 1, desktop only).** Hiding the festival room
+from the show menu on a desktop now also moves that day's afters 40px left
+at the repaint (their clock left with the room), and showing it again moves
+them back. It lands in the same repaint where the rooms below already jump
+up without animation today, so it is the same class of motion, not a new
+kind; sliding the remaining rooms (a FLIP in app.js toggleFoldFlow) would
+fix both and is not tonight's size. Phones never see it: only the clock's
+own room moves there, and it leaves with the room.

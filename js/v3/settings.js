@@ -799,10 +799,12 @@ export function renderSettings(root, ctx, actions) {
   list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
+  // Which build this phone runs, and the way to a newer one (v90) — beside
+  // Diagnostics, the other row a "still broken?" conversation needs.
+  list.appendChild(updateRow());
   // The crash journal's one door (2026-08-31): a tap copies a shareable dump
   // (build, device, the last 20 recorded errors — never anything private).
   // Exists so "it broke on my phone" can travel as text instead of a video.
-  list.appendChild(updateRow());
   const errCount = recentErrors().length;
   const diagRow = linkRow(errCount ? `Diagnostics · ${errCount} recent error${errCount === 1 ? '' : 's'}` : 'Diagnostics', async () => {
     const t = diagRow.querySelector('.row-title');
