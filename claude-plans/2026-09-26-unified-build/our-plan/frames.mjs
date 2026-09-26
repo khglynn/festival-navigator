@@ -29,6 +29,10 @@ const report = (page) => page.evaluate(() => {
   return {
     shelf: el ? (el.hidden ? 'hidden' : el.dataset.state) : 'none',
     peekH: el ? el.dataset.peekH : null,
+    box: el && !el.hidden ? (() => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; })() : null,
+    side: el ? el.dataset.side || null : null,
+    zoom: (() => { const z = document.querySelector('#zoom-layer .zoom-card, #zoom-layer > *'); if (!z) return null; const r = z.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; })(),
+    railNow: (() => { const t = document.getElementById('rail-now'); return t ? (t.getClientRects().length && !t.hidden ? 'shown' : 'hidden') : 'none'; })(),
     row: row ? row.getAttribute('aria-label') : null,
     footH: getComputedStyle(document.documentElement).getPropertyValue('--foot-h').trim(),
     dockNow: tab ? (tab.getClientRects().length ? tab.textContent.trim() : 'hidden') : 'none',
@@ -65,6 +69,12 @@ const tapRow = async (page, nth) => {
 };
 
 const phone = (id, width, now, run = async () => {}, extra = {}) => ({ id, width, now, run, ...extra });
+const desk = (id, width, height, now, run = async () => {}, extra = {}) => ({ id, width, height, now, run, desktop: true, ...extra });
+const clickCorner = async (page) => {
+  const b = await page.locator('#plan .plan-row.tagged').boundingBox();
+  await page.mouse.click(b.x + b.width * 0.4, b.y + b.height / 2);
+  await sleep(800);
+};
 const FRAMES = [
   phone('P-peek-now-390', 390, SAT_940),
   phone('P-peek-next-390', 390, SAT_11AM),
@@ -81,6 +91,31 @@ const FRAMES = [
   phone('P-two-days-before-390', 390, TUE_NOON),
   phone('P-fri-fork-390', 390, FRI_7PM, openByTap),
   phone('P-welcome-390', 390, SAT_940, async () => {}, { welcome: true }),
+
+  // ---- the laptop: the corner card, its hover, the panel, a zoom beside it ----------
+  desk('D-corner-now-1280', 1280, 800, SAT_940),
+  desk('D-corner-next-1440', 1440, 900, SAT_11AM),
+  desk('D-hover-1280', 1280, 800, SAT_940, async (p) => {
+    const b = await p.locator('#plan .plan-row.tagged').boundingBox();
+    await p.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.5, { steps: 4 });
+    await sleep(400);
+  }),
+  desk('D-open-1280', 1280, 800, SAT_940, clickCorner),
+  desk('D-open-1440', 1440, 900, SAT_11AM, clickCorner),
+  desk('D-open-scrolled-1280', 1280, 800, SAT_940, async (p) => { await p.mouse.wheel(0, 900); await sleep(400); await clickCorner(p); }),
+  desk('D-open-zoom-1280', 1280, 800, SAT_940, async (p) => {
+    await clickCorner(p);
+    // A card the panel sits beside: hover it; its zoom keeps left of the panel.
+    const box = await p.evaluate(() => {
+      const side = document.getElementById('plan').getBoundingClientRect().left;
+      const cards = [...document.querySelectorAll('#wall-root .card')].map((c) => ({ c, r: c.getBoundingClientRect() }))
+        .filter(({ r }) => r.right > side - 120 && r.right < side && r.top > 120 && r.bottom < innerHeight - 40);
+      const hit = cards[0];
+      return hit ? { x: hit.r.left + hit.r.width / 2, y: hit.r.top + hit.r.height / 2 } : null;
+    });
+    if (box) { await p.mouse.move(box.x, box.y, { steps: 5 }); await sleep(1000); }
+  }),
+  desk('D-welcome-1280', 1280, 800, SAT_940, async () => {}, { welcome: true }),
 ];
 
 const only = process.argv.slice(2);

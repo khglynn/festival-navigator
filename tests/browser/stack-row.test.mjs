@@ -327,14 +327,14 @@ test('390, real touch: a hold on a card in the row\'s last line — the right-ha
     // Its bottom 16px above the dock: the zoom has a floor to clear.
     await page.evaluate(([sel, a]) => {
       const card = [...document.querySelector(sel).querySelectorAll('.card')].find((c) => c.dataset.artist === a);
-      const dock = document.getElementById('dock').getBoundingClientRect().top;
+      const dock = Math.min(...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight)); // the dock, or Our plan's peek on it
       window.scrollBy(0, card.getBoundingClientRect().bottom - (dock - 16));
     }, [AFTERS, artist]);
     await sleep(300);
     const at = await cardIn(page, artist);
     assert.ok(at.right > 390, `the right-hand card, running off the screen at rest (${artist}: ${at.left}..${at.right})`);
     const z = await holdZoom(ctx, page, at);
-    const dockTop = await page.evaluate(() => document.getElementById('dock').getBoundingClientRect().top);
+    const dockTop = await page.evaluate(() => Math.min(...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight))); // the dock, or Our plan's peek on it
     assert.equal(z.artist, artist, `the zoom is ${artist}'s`);
     assert.ok(z.left >= 7.5 && z.right <= z.vw - 7.5, `across, on the screen (${z.left}..${z.right})`);
     assert.ok(z.top >= 0 && z.bottom <= dockTop - 7.5, `and clear of the dock (${z.top}..${z.bottom}, dock at ${dockTop})`);

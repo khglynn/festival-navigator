@@ -1105,20 +1105,22 @@ function tickClock(date = new Date()) {
 // just outside the row, and a rebuilt row (every repaint) gets it back in
 // place without a flicker.
 const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
-// ONE NOW (Our plan, 2026-09-26): once the phone's peek carries a NOW row,
-// the dock's NOW tab steps aside — two doors to one moment is one too many.
-// Per door: the laptop's rail keeps its NOW (its plan is the corner card).
-// It stays wherever the plan is not saying NOW (nothing today, a live set
-// that is no stop of ours, a NEXT peek), and while a highlight is on — the
-// tab is then "where is Ross right now", which the crew's plan does not
-// answer (PLAN Q4a and Q4c).
+// ONE NOW (Our plan, 2026-09-26): once the plan carries a NOW row where a
+// person can see it — the phone's peek, the laptop's corner card or panel —
+// the NOW tab beside the day steps aside: two doors to one moment is one too
+// many. (planShowsNow asks whether the plan is on screen, so each door answers
+// for its own layout: the dock under 720, the rail above.) The tab stays
+// wherever the plan is not saying NOW (nothing today, a live set that is no
+// stop of ours, a NEXT peek), and while a highlight is on — the tab is then
+// "where is Ross right now", which the crew's plan does not answer (PLAN Q4a
+// and Q4c).
 function paintNowTabs(date = ctx.now || new Date()) {
   const landing = nowLanding($('wall-root'), ctx, date);
   const at = landing && (landing.card || landing.line);
   const block = at ? at.closest(DAY_ANCHOR) : null;
   const day = landing ? (block ? block.dataset.day : '') : null;
   const planSaysNow = planShowsNow() && !(ctx.filterPeople || []).length;
-  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow && tab === 'dock-now' ? null : day);
+  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow ? null : day);
 }
 // ---- Our plan (2026-09-26 — Kevin's call #5) ----------------------------------
 // Where most of us will be, as a route of stops, from everyone's picks
@@ -1839,6 +1841,7 @@ function closeShowMenu({ instant = false } = {}) {
 
 function openShowMenu(wrap, link, pop) {
   closeShowMenu({ instant: true });
+  closePlan(); // Our plan: the fest name is a way out of the open plan too (SPEC-ui §7)
   settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
   // The bar the menu lives in (the dock, the day rail) is a stacking context:
   // its menu paints at the bar's own level, which put the dock's upward menu

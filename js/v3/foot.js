@@ -20,13 +20,18 @@
 //
 // Above 720px the dock is display:none and the laptop's plan lives in the
 // corner: footTop() is null there and the two variables go back to the
-// tokens' values (v3-tokens.css).
+// tokens' values (v3-tokens.css). What the laptop's open panel bounds is a
+// SIDE: sideLeft() is its left edge while it is open, else null — the zoom's
+// right bound (card-facts.js place).
 const ids = ['dock', 'plan'];
 
 const shown = (el) => !!el && el.getClientRects().length > 0;
 
 export function footTop() {
   const vh = window.innerHeight;
+  // The laptop's plan is a corner card, and then a side panel: neither is a
+  // floor across the wall, and there is no dock to stand on (>=720).
+  if (!shown(document.getElementById('dock'))) return null;
   let top = null;
   for (const id of ids) {
     const el = document.getElementById(id);
@@ -54,4 +59,11 @@ export function measureFoot() {
   const peekH = shown(plan) ? Number(plan.dataset.peekH) || 0 : 0;
   root.setProperty('--dock-h', `${dockH}px`);
   root.setProperty('--foot-h', `${dockH + peekH}px`);
+}
+
+export function sideLeft() {
+  const plan = document.getElementById('plan');
+  if (!plan || plan.dataset.side !== 'open' || !shown(plan)) return null;
+  const l = plan.getBoundingClientRect().left;
+  return l > 0 && l < window.innerWidth ? l : null;
 }

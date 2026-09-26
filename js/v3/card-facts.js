@@ -18,7 +18,7 @@ import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
-import { footTop } from './foot.js'; // Our plan: the zoom's floor is the dock or the peek on it
+import { footTop, sideLeft } from './foot.js'; // Our plan: the zoom's floor is the dock or the peek on it; its right bound the laptop's open panel
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -887,7 +887,10 @@ function place(slot, el, { floorAt = null } = {}) {
   const vw = window.innerWidth;
   let left = Math.round(r0.left + r0.width / 2 - w / 2);
   let top = floorAt !== null && Number.isFinite(floorAt) ? Math.round(floorAt - h) : Math.round(r0.top + r0.height / 2 - h / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - w));
+  // Our plan's open panel on a laptop is a right edge (the wall beside it
+  // stays usable, and so does a zoom on it).
+  const side = sideLeft();
+  left = Math.max(8, Math.min(left, (side !== null ? side : vw) - 8 - w));
   const floor = dockTop();
   const ceiling = chromeCeiling(el);
   if (floor !== null && top + h > floor - 8 && (ceiling !== null || h <= floor - 16)) top = Math.floor(floor - 8 - h);
@@ -1509,8 +1512,8 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled off screen' });
       return;
     }
-    const ceiling = chromeCeiling(z.el), floor = dockTop();
-    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor)) {
+    const ceiling = chromeCeiling(z.el), floor = dockTop(), side = sideLeft(); // side: Our plan's open panel
+    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor) || (side !== null && r.left >= side)) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }

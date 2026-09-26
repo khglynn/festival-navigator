@@ -11,6 +11,16 @@
 // never a second rendering of the same facts (the zoom's law, 2026-08-30) —
 // and nothing on the wall re-lays out while the plan moves.
 //
+// On a laptop (>=720) the same element is the corner card and the side panel:
+// laid out at the panel's size (under the day rail, 400px, to the bottom) and
+// shown through a clip — the card's box in the bottom-right corner, the rows
+// shifted so the tagged row sits under the card's head line — and opening
+// grows the clip out to the panel (SPEC-ui §6). The grabber is that head line
+// there: `OUR PLAN · SAT · 9 OF US` and an Open pill, which cross-fade into
+// the panel's head in the wall's grammar and a Close pill. No drag on a
+// laptop; a click anywhere on the card opens it. No backdrop: the wall stays
+// usable beside the panel, and a zoom keeps left of it (foot.js sideLeft).
+//
 // No history entry (the v93 Show menu's lesson). It closes by a drag down, a
 // tap on the grabber, its ✕ and Escape (app.js); the open state is dropped on
 // pagehide, boot, a crew switch and any other screen. Back does what it does
@@ -24,12 +34,22 @@ const OPEN_AT = 1 / 3;       // released past a third of the way, it opens (and 
 const TAP_SLOP = 6;          // px a finger may wander and still be a tap
 const FLING = 0.45;          // px/ms: a flick decides by its direction, whatever the distance
 const BUSY = 'plan-drag';
+const GAP = 20;              // the laptop card's distance from the window's right and bottom edges
+const RADIUS = 16;           // its corners (the panel's are square)
+// The card is 20px narrower than the panel, and its rows must not reflow as it
+// grows: so the card's box is the panel's, centred — 10px off each side — and
+// the panel is drawn 10px left of the edge, which puts the card 20px in from
+// it. The padding (v3.css, 24px) leaves the card its 14px inside that box.
+const SIDE = GAP / 2;
+const isDesk = () => !!(window.matchMedia && window.matchMedia('(min-width: 720px)').matches);
 
+let frame = null;    // the laptop's shadow and edge follow the clip from here (v3.css .plan-frame)
 let el = null;       // #plan
 let grab = null;     // the grabber (a button: the keyboard's way in and out)
 let body = null;     // head + list, the part the window shifts
 let headEl = null;
 let listEl = null;
+let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
 let ctxRef = null;
 let data = null;     // the last paint's answer (see paintPlanShelf)
 let sig = '';        // what that answer drew, to skip repaints that change nothing
@@ -63,24 +83,58 @@ function mk(tag, cls) {
   return e;
 }
 
+function spanOf(cls, text) {
+  const e = mk('span', cls);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function chevron(up) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('width', '11'); s.setAttribute('height', '11'); s.setAttribute('viewBox', '0 0 12 12');
+  s.setAttribute('aria-hidden', 'true');
+  const d = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  d.setAttribute('d', up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
+  d.setAttribute('fill', 'none'); d.setAttribute('stroke', 'currentColor'); d.setAttribute('stroke-width', '1.7');
+  d.setAttribute('stroke-linecap', 'round'); d.setAttribute('stroke-linejoin', 'round');
+  s.appendChild(d);
+  return s;
+}
+
 function build(host) {
+  frame = mk('div', 'plan-frame');
   el = mk('section', 'plan-shelf');
   el.id = ID;
   el.hidden = true;
   el.setAttribute('aria-label', PLAN_NAME);
   grab = mk('button', 'plan-grab');
   grab.type = 'button';
-  grab.appendChild(mk('span', 'grabber'));
+  // The phone's grabber bar, and the laptop's head line (v3.css shows one).
+  // The laptop's line is spans only — it lives in a button.
+  const line = spanOf('pc-line');
+  const k = spanOf('k', PLAN_NAME.toUpperCase());
+  const c = spanOf('c');
+  line.append(k, ' ', c);
+  const head = spanOf('pc-head room-head');
+  const pill = spanOf('pc-pill');
+  const open = spanOf('pc-open');
+  open.append('Open', chevron(true));
+  const close = spanOf('pc-close');
+  close.append('Close', chevron(false));
+  pill.append(open, close);
+  corner = { line, c, head, open, close };
+  grab.append(spanOf('grabber'), line, head, pill);
   body = mk('div', 'plan-body');
   headEl = mk('div', 'plan-head');
   listEl = mk('div', 'plan-list');
   body.append(headEl, listEl);
   el.append(grab, body);
+  frame.appendChild(el);
   // Before the dock, so the dock (later in the DOM, z30 over this z29) paints
-  // over the part of the plan that waits below its top edge.
+  // over the part of the plan that waits below its top edge. (The frame is
+  // display:contents on a phone: #plan is the box there.)
   const dock = document.getElementById('dock');
-  if (dock && dock.parentElement === host) host.insertBefore(el, dock);
-  else host.appendChild(el);
+  if (dock && dock.parentElement === host) host.insertBefore(frame, dock);
+  else host.appendChild(frame);
   grab.addEventListener('click', (e) => {
     e.preventDefault();
     if (quiet()) return; // the end of a drag is not a tap
@@ -88,6 +142,25 @@ function build(host) {
   });
   el.addEventListener('pointerdown', onDown);
   el.addEventListener('click', onClickPeek, true);
+  // The panel's top follows the day rail's bottom, which moves while the rail
+  // is still under the header (it pins at the top after that).
+  window.addEventListener('scroll', onScroll, { passive: true });
+}
+let scrollQueued = false;
+function onScroll() {
+  if (scrollQueued || !geo || !geo.desk || mode === 'gone' || leaving) return;
+  scrollQueued = true;
+  window.requestAnimationFrame(() => {
+    scrollQueued = false;
+    if (!geo || !geo.desk || mode === 'gone' || leaving || Math.abs(railBottom() - geo.T) < 0.5) return;
+    measure();
+    apply(p);
+  });
+}
+function railBottom() {
+  const rail = document.getElementById('day-rail');
+  if (!rail || !rail.getClientRects().length) return 0;
+  return Math.max(0, Math.min(rail.getBoundingClientRect().bottom, window.innerHeight - 160));
 }
 
 // ---- drawing ------------------------------------------------------------------
@@ -134,6 +207,11 @@ function draw() {
   x.setAttribute('aria-label', 'Close the plan');
   x.addEventListener('click', () => closePlan());
   headEl.append(head, x);
+  // The laptop's head line: the corner's words, and the panel's head (the
+  // same room-head the phone's open plan shows), cross-faded by the window.
+  corner.c.textContent = `· ${a.weekday} · ${a.plan.us.length} of us`.toUpperCase();
+  corner.head.textContent = '';
+  for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
   // The NOW row's card is always grown in the day plan (the approved frame);
   // a tapped row's too. It sits under its row, so the peek's window (the row
   // alone) never includes it.
@@ -161,31 +239,64 @@ function taggedRow() {
 // the peek is the name, the place and the time (the approved peek, which
 // drew no faces) — and slide into view as it opens.
 function measure() {
+  const desk = isDesk();
+  const T = desk ? railBottom() : 0;
+  el.style.top = desk ? `${T}px` : '';
+  // Boxes, not offsets: offsetHeight rounds, and a row 61.1px tall measured as
+  // 61 left a sliver of it behind the dock. A translate moves a box and
+  // never resizes it, and the body's shift moves the row and the body alike,
+  // so these differences hold whatever the window's state.
   const row = taggedRow();
-  const H = el.offsetHeight;
-  const grabH = grab.offsetHeight;
-  const rowTop = row ? row.offsetTop - listEl.scrollTop : 0;
+  const box = (n) => n.getBoundingClientRect();
+  const H = box(el).height;
+  const grabH = box(grab).height;
+  const rb = row ? box(row) : null;
+  const rowTop = rb ? rb.top - box(body).top : 0;
   const who = row ? row.querySelector('.plan-who') : null;
   const pad = row ? parseFloat(window.getComputedStyle(row).paddingBottom) || 0 : 0;
-  const rowH = !row ? 0 : who ? Math.min(who.offsetTop - 1, who.offsetTop - (parseFloat(window.getComputedStyle(who).marginTop) || 0) + pad) : row.offsetHeight;
-  geo = { H, peekH: Math.min(H, grabH + rowH), shift: headEl.offsetHeight + rowTop };
-  el.dataset.peekH = String(geo.peekH);
+  const whoAt = who ? box(who).top - rb.top : 0;
+  const rowH = !row ? 0 : who ? Math.min(whoAt - 1, whoAt - (parseFloat(window.getComputedStyle(who).marginTop) || 0) + pad) : rb.height;
+  geo = { desk, T, H, peekH: Math.min(H, grabH + rowH), cardH: Math.min(H, grabH + rowH + 2), shift: rowTop };
+  // The phone's floor reads the peek's height (foot.js); the laptop's card
+  // is not a floor, and what it moves is the Spotify pill (v3.css).
+  el.dataset.peekH = desk ? '0' : String(geo.peekH);
+  const root = document.documentElement.style;
+  if (desk) root.setProperty('--plan-corner-h', `${geo.cardH + GAP}px`); else root.removeProperty('--plan-corner-h');
 }
 
 // p → the window. Opacity rides the same number: the head and every row but
 // the tagged one fade in as the window opens (they slide in from the edges).
 function apply(q) {
+  if (!geo) measure();
   p = Math.max(0, Math.min(1, q));
-  el.style.transform = `translateY(${(geo.H - geo.peekH) * (1 - p)}px)`;
-  body.style.transform = p === 1 ? 'none' : `translateY(${-geo.shift * (1 - p)}px)`;
+  const k = 1 - p;
+  if (geo.desk) {
+    el.style.transform = `translate(${-SIDE * k}px, ${(geo.H - geo.cardH - GAP) * k}px)`;
+    el.style.clipPath = clipAt(p);
+  } else {
+    el.style.transform = `translateY(${(geo.H - geo.peekH) * k}px)`;
+    el.style.clipPath = '';
+  }
+  body.style.transform = p === 1 ? 'none' : `translateY(${-geo.shift * k}px)`;
   const o = p === 1 ? '' : String(p);
+  const back = p === 0 ? '' : String(k);
   headEl.style.opacity = o;
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.style.opacity = o;
+  corner.line.style.opacity = back;
+  corner.open.style.opacity = back;
+  corner.head.style.opacity = p === 1 ? '1' : String(p);
+  corner.close.style.opacity = p === 1 ? '1' : String(p);
   el.classList.toggle('opening', p > 0 && p < 1);
 }
+// Out of sight below the window's bottom edge, where it arrives from and leaves to.
+const below = () => (geo && geo.desk ? `translate(${-SIDE}px, ${geo.H}px)` : `translateY(${geo.H}px)`);
+// The laptop's window: the card's box in the corner at 0, the whole panel at 1.
+const clipAt = (q) => `inset(0px ${SIDE * (1 - q)}px ${(geo.H - geo.cardH) * (1 - q)}px ${SIDE * (1 - q)}px round ${RADIUS * (1 - q)}px)`;
 
 function settleState() {
   el.dataset.state = mode;
+  frame.dataset.state = mode;
+  if (geo && geo.desk && mode === 'open') el.dataset.side = 'open'; else delete el.dataset.side;
   el.classList.remove('opening');
   // What the peek hides is not there for a keyboard or a screen reader either.
   const peek = mode !== 'open';
@@ -210,7 +321,7 @@ function arrive() {
   apply(0);
   settleState();
   if (canAnimate(el, ctxRef)) {
-    const a = el.animate([{ transform: `translateY(${geo.H}px)` }, { transform: el.style.transform }],
+    const a = el.animate([{ transform: below() }, { transform: el.style.transform }],
       { duration: GROW_MS, easing: EASE_ARRIVE });
     arrival = a;
     a.onfinish = () => { if (arrival === a) arrival = null; };
@@ -226,7 +337,10 @@ function leave({ instant = false } = {}) {
     cancelLeave();
     const f = document.activeElement;
     if (f && el.contains(f)) f.blur();
-    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = ''; measureFoot();
+    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = '';
+    frame.dataset.state = 'gone'; delete el.dataset.side;
+    document.documentElement.style.removeProperty('--plan-corner-h');
+    measureFoot();
   };
   if (instant || !geo || !canAnimate(el, ctxRef)) { done(); return; }
   if (leaving) return;
@@ -242,7 +356,7 @@ function leave({ instant = false } = {}) {
     return;
   }
   const from = el.style.transform;
-  el.style.transform = `translateY(${geo.H}px)`;
+  el.style.transform = below();
   const a = el.animate([{ transform: from }, { transform: el.style.transform }], { duration: OUT_MS, easing: EASE_LEAVE });
   leaving = { timer: setTimeout(done, OUT_MS * 3 + 50) };
   a.onfinish = done;
@@ -321,17 +435,28 @@ export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
 // state at once and the animation plays from where it was — so an animation
 // that never finishes still leaves the right state behind.
 function settleTo(target, { instant = false } = {}) {
-  const from = { el: el.style.transform, body: body.style.transform, p };
+  measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
+  apply(p);
+  const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
   apply(target);
   settleState();
   if (instant || !canAnimate(el, ctxRef) || from.p === target) return;
   const timing = target === 1 ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_LEAVE };
-  el.animate([{ transform: from.el }, { transform: el.style.transform }], timing);
+  el.animate(geo.desk
+    ? [{ transform: from.el, clipPath: from.clip }, { transform: el.style.transform, clipPath: el.style.clipPath }]
+    : [{ transform: from.el }, { transform: el.style.transform }], timing);
   body.animate([{ transform: from.body }, { transform: body.style.transform || 'none' }], timing);
   const fade = [{ opacity: from.p }, { opacity: target }];
+  const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
   headEl.animate(fade, timing);
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.animate(fade, timing);
+  if (geo.desk) {
+    corner.head.animate(fade, timing);
+    corner.close.animate(fade, timing);
+    corner.line.animate(unfade, timing);
+    corner.open.animate(unfade, timing);
+  }
 }
 
 // ---- the drag (storyboard 4) --------------------------------------------------------
@@ -343,6 +468,7 @@ function settleTo(target, { instant = false } = {}) {
 // only if it is free, give it back only if it is ours).
 function onDown(e) {
   if (mode === 'gone' || leaving || e.button > 0 || drag) return;
+  if (geo && geo.desk) return; // a laptop's card is a button: its click opens it (onClickPeek)
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
   if (e.target.closest('.sheet-close')) return;
@@ -383,7 +509,10 @@ function onUp(e) {
   quietUntil = performance.now() + 400;
   const a = d.last[0];
   const b = d.last[d.last.length - 1];
-  const v = b.t > a.t ? (a.y - b.y) / (b.t - a.t) : 0; // up is positive
+  // A hand that stopped before it let go is not flicking, however fast it
+  // got there: the flick is the speed at the moment of release.
+  const still = e.timeStamp - b.t > 80;
+  const v = !still && b.t > a.t ? (a.y - b.y) / (b.t - a.t) : 0; // up is positive
   const open = Math.abs(v) > FLING ? v > 0 : (d.p0 === 1 ? p > 1 - OPEN_AT : p > OPEN_AT);
   settleTo(open ? 1 : 0);
 }
@@ -411,7 +540,11 @@ const quiet = () => performance.now() < quietUntil;
 // reaches a row or a grown card's links.
 function onClickPeek(e) {
   if (grab.contains(e.target) && !quiet()) return;
-  if (mode !== 'open' || quiet()) { e.stopPropagation(); e.preventDefault(); }
+  if (mode !== 'open' || quiet()) {
+    e.stopPropagation(); e.preventDefault();
+    // The laptop's card is one button: a click anywhere on it opens it.
+    if (mode === 'peek' && !leaving && geo && geo.desk && !quiet()) openPlan();
+  }
 }
 
 // ---- inside the open plan ----------------------------------------------------------

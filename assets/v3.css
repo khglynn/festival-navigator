@@ -170,7 +170,7 @@ html { touch-action: manipulation; }
   background: rgba(10, 8, 18, .92); border: 1px solid var(--spotify-stroke);
   color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
 }
-@media (min-width: 720px) { .spot-pill { bottom: 16px; } }
+@media (min-width: 720px) { .spot-pill { bottom: calc(var(--plan-corner-h, 0px) + 16px); } } /* above Our plan's corner card */
 
 /* ---- crew entry: the bring-your-picks offer (2026-09-23) ----------------------
  * One decision, asked once per crew × fest, so it waits above the dock where
@@ -1812,18 +1812,59 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
               background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
               box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }
 .plan-shelf[hidden] { display: none; }
-@media (min-width: 720px) { .plan-shelf { display: none; } }
+/* The frame is the laptop's (below); on a phone it is no box at all. */
+.plan-frame { display: contents; }
 /* The grabber rides the window's top edge and the rows slide under it. */
 .plan-grab { position: relative; z-index: 2; flex: none; display: block; width: 100%; padding: 6px 0 4px;
              background: var(--dock); border: 0; cursor: grab; }
 .plan-grab .grabber { display: block; width: 30px; height: 3px; border-radius: var(--r-pill); background: var(--border-card); margin: 0 auto; }
+.plan-grab .pc-line, .plan-grab .pc-head, .plan-grab .pc-pill { display: none; }
 .plan-body { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; padding: 0 var(--sp-gutter); }
 .plan-head { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 0 6px; flex: none; }
 .plan-head .room-head { flex: 1 1 auto; }
-.plan-shelf .plan-list { overflow: hidden; padding-bottom: 14px; }
+/* The list clips (the window's rows slide under the grabber), so it reaches
+ * 8px past the body's padding on each side: a node's ring and the live glow
+ * are drawn outside the node column and must not be cut. */
+.plan-shelf .plan-list { overflow: hidden; margin: 0 -8px; padding: 0 8px 14px; }
 .plan-shelf .plan-list.scrolls { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */
 #screen-app.searching .plan-shelf { display: none; }
 /* The peek shows its row alone: no path above or below it until it opens. */
 .plan-shelf[data-state="peek"]:not(.opening) .plan-row.tagged::before { display: none; }
+
+/* ---- the laptop: the corner card that grows into the side panel -------------
+ * One element, laid out at the panel's size (under the day rail — its top is
+ * written by plan-shelf.js — 400px, to the bottom) and shown through a clip:
+ * the card's box in the corner, 20px in from the right and bottom edges. The
+ * frame around it carries the edge and the shadow as filters, because a
+ * filter on the parent follows the child's clip where a border or a
+ * box-shadow on the child would be cut by it. No backdrop: the wall stays
+ * usable beside the panel. The approved frames: ours-r2 R3 DT-*. */
+@media (min-width: 720px) {
+  .plan-frame { --plan-edge: var(--border-card); display: block; position: fixed; inset: 0; z-index: 29; pointer-events: none;
+                filter: drop-shadow(0 0 .7px var(--plan-edge)) drop-shadow(0 14px 36px rgba(0, 0, 0, .55));
+                transition: filter .15s ease; }
+  .plan-shelf { left: auto; right: 0; top: 0; bottom: 0; width: 400px; max-height: none; pointer-events: auto;
+                border: 0; border-radius: 0; box-shadow: none; touch-action: auto; transition: translate .15s ease; }
+  /* Hover lifts the card 2px with a brand edge (translate composes with the
+   * window's transform; the panel does not lift). */
+  .plan-frame[data-state="peek"]:hover { --plan-edge: rgba(var(--brand), .6); }
+  .plan-frame[data-state="peek"]:hover > .plan-shelf { translate: 0 -2px; }
+  .plan-grab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px;
+               min-height: 42px; padding: 8px 24px 7px; border-bottom: 1px solid var(--hairline); cursor: pointer;
+               text-align: left; font: inherit; color: inherit; }
+  .plan-grab .grabber { display: none; }
+  .plan-grab .pc-line, .plan-grab .pc-head { display: flex; grid-area: 1 / 1; min-width: 0; align-items: baseline; }
+  .plan-grab .pc-line { gap: 6px; white-space: nowrap; overflow: hidden; }
+  .plan-grab .pc-line .k { color: rgb(var(--brand)); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); }
+  .plan-grab .pc-line .c { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; }
+  .plan-grab .pc-head .line { display: none; }
+  .plan-grab .pc-pill { display: grid; grid-area: 1 / 2; }
+  .plan-grab .pc-pill > span { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+                               height: 26px; padding: 0 10px 0 11px; border-radius: var(--r-pill); border: 1px solid var(--border-input);
+                               color: var(--text-body); font: 700 11.5px var(--font-ui); white-space: nowrap; }
+  .plan-frame[data-state="peek"]:hover .pc-open { border-color: rgba(var(--brand), .7); color: var(--tonal-text); background: rgba(var(--brand), .12); }
+  .plan-body { padding: 0 24px; } /* the card's 14px inside its clip (plan-shelf.js SIDE) */
+  .plan-head { display: none; }
+}
