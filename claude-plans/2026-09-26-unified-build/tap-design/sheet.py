@@ -38,6 +38,7 @@ sheet('phone', [
     [('390-member-unpicked-open', 'nobody picked it'), ('390-member-unpicked-plus1', '+ : card grows UP, row holds'), ('390-member-boysnoize-doors', 'doors out: Tix · Info'), ('390-member-robyn-typing', 'keys up (508 tall)')],
     [('390-guest-robyn-open', 'guest: tap Robyn'), ('390-guest-robyn-thread-end', 'guest: the door in'), ('390-guest-robyn-plus-asks', 'guest + : join shelf'), ('320-member-robyn-open', '320: tap Robyn'), ('320-member-robyn-plus1', '320: +'), ('320-member-boysnoize-doors', '320: doors out')],
 ], 300)
+sheet('alt', [[('390-member-unpicked-plus1', 'CORNERS (shipped): Oskar +'), ('390-ALT-own-line-oskar-plus1', 'ALT own line: Oskar +'), ('390-member-robyn-plus1', 'CORNERS (shipped): Robyn +'), ('390-ALT-own-line-robyn-plus1', 'ALT own line: Robyn +')]], 360)
 sheet('desktop', [[('1280-mouse-robyn-zoom', '1280 mouse: hover grows the zoom'), ('1280-mouse-robyn-shelf', 'its note door: the same shelf'), ('1280-mouse-robyn-shelf-plus1', '+ on the shelf')]], 760)
 sheet('motion', [
     [(f'390-motion-arrive-{i}', f'arrive x10 slow, {i*42}ms') for i in range(8)],

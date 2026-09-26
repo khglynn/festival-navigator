@@ -147,7 +147,9 @@ const shelfInfo = (page) => page.evaluate(() => {
   const r = s.getBoundingClientRect();
   const row = s.querySelector('.f-step-row');
   const rr = row ? row.getBoundingClientRect() : null;
-  return { top: Math.round(r.top), h: Math.round(r.height), rowY: rr ? Math.round(rr.top) : null, meter: s.querySelector('.f-meter')?.dataset.level ?? null, minusOff: !!s.querySelector('.f-step.minus')?.disabled, plusOff: !!s.querySelector('.f-step.plus')?.disabled };
+  const card = s.querySelector('.sheet-card');
+  const you = s.querySelector('.sheet-card .f-who .f-nm.you');
+  return { top: Math.round(r.top), h: Math.round(r.height), cardH: card ? Math.round(card.getBoundingClientRect().height) : null, rowY: rr ? Math.round(rr.top) : null, mine: you ? you.closest('.f-pill').dataset.level : '0', minusOff: !!s.querySelector('.f-step.minus')?.disabled, plusOff: !!s.querySelector('.f-step.plus')?.disabled };
 });
 
 const flows = {
@@ -214,14 +216,20 @@ const flows = {
     say(`  errors: ${errors.length ? errors.join(' | ') : 'none'}`);
     await ctx.close();
   },
-  // The alternative to call 1, for the decision: the bare − and + with nothing between.
+  // The other reading of Kevin's "less tall" (2026-09-26 evening), for the
+  // decision: the bare − and + kept as a line of their own under the facts,
+  // tightened, instead of standing in the corners beside the last line.
   async alt390() {
     const { ctx, page } = await open({ width: 390, height: 844, touch: true });
-    await page.addStyleTag({ content: '.sheet-card .f-step-row > .f-meter { visibility: hidden; }' });
-    await tapCard(page, 'Oskar Med K');
-    await tapIn(page, '#artist-sheet .f-step.plus');
-    await tapIn(page, '#artist-sheet .f-step.plus');
-    await shot(page, `${ENGINE}-390-ALT-no-meter-plus2`);
+    await page.addStyleTag({ content: '.sheet-card.steps > .f-chips.f-step-row { position: static; margin: -3px 0 0; } .sheet-card.steps > .f-chips.f-step-row > .f-step { height: 44px; } .sheet-card.steps > .f-name, .sheet-card.steps > .f-grown { max-width: none; } .sheet-card.steps { padding-bottom: 6px; }' });
+    for (const who of ['Oskar Med K', 'Robyn']) {
+      await tapCard(page, who);
+      await tapIn(page, '#artist-sheet .f-step.plus');
+      say(`  ALT own line, ${who} after +: ${JSON.stringify(await shelfInfo(page))}`);
+      await shot(page, `${ENGINE}-390-ALT-own-line-${who === 'Robyn' ? 'robyn' : 'oskar'}-plus1`);
+      await page.touchscreen.tap(195, 40);
+      await sleep(700);
+    }
     await ctx.close();
   },
   // The rise, measured: the sheet's bottom edge every frame of its arrival —
