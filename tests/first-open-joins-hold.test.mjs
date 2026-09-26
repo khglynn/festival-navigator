@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,12 +91,7 @@ const shelf = () => document.querySelector('.join-shelf');
 const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) => b.dataset.name === name);
 const shelfGo = () => shelf().querySelector('.js-go');
 const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
-const clickCard = (artist) => {
-  const c = cardOf(artist);
-  c.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-  c.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
-  c.click();
-};
+const clickCard = (artist) => { pointerClick(shell.dom.window, cardOf(artist), 'mouse'); };
 
 await settle(160);
 

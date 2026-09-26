@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -105,15 +106,11 @@ const welcome = () => document.getElementById('welcome-card');
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((b) => b.textContent === label);
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
-// The hand behind a press (card-facts.js reads it): a mouse click asks on the
-// shelf; a finger's tap on a resting card opens its zoom first.
-// A press and its lift, as every pointer's click comes (a click answers only a press that lifted — card-facts.js clickHand).
-const press = (el, pointerType) => {
-  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
-  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType }));
-};
-const clickCard = (artist) => { const c = cardOf(artist); press(c, 'mouse'); c.click(); };
-const fingerTap = (el) => { press(el, 'touch'); el.click(); };
+// The hand behind a click (card-facts.js clickHand): a mouse click on a card
+// asks on the join shelf; a finger's tap opens the card's shelf. Each is a
+// press, a lift and the click an engine types for it (helpers/pointer-click).
+const clickCard = (artist) => { pointerClick(shell.dom.window, cardOf(artist), 'mouse'); };
+const fingerTap = (el) => { pointerClick(shell.dom.window, el, 'touch'); };
 // The join shelf.
 const shelf = () => document.querySelector('.join-shelf');
 const shelfLine = () => shelf().querySelector('.js-line').textContent;
@@ -215,8 +212,7 @@ test('a guest’s finger tap on a card opens its shelf — − · meter · + alo
 test('a tap on the dimmed wall only closes the shelf — it never opens the card under it', async () => {
   const back = document.getElementById('sheet-backdrop');
   const closed = popped(); // the dimmed wall closes through history, like Back
-  press(back, 'touch');
-  back.click();
+  pointerClick(shell.dom.window, back, 'touch');
   await closed;
   assert.equal(notesShelf(), null, 'closed');
   assert.equal(shelf(), null, 'and nothing asked');
@@ -429,8 +425,7 @@ test('a guest with no festival in the link or the crew lands where the crew is �
   assert.deepEqual(crewWrites(ACLONLY), [], 'nothing sent to the crew at all');
   // And a tap asks over THIS festival's wall.
   const first = document.querySelector('#wall-root .card[data-artist]');
-  press(first, 'mouse');
-  first.click();
+  pointerClick(shell.dom.window, first, 'mouse');
   await settle(10);
   assert.ok(shelf());
   assert.equal(state.activeFestivalId, 'acl-2026', 'the wall under the shelf is still ACL');

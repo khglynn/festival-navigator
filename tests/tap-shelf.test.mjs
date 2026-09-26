@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick, typedClick, POINTER_IDS } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -56,16 +57,17 @@ const minus = () => row().querySelector('.f-step.minus');
 const plus = () => row().querySelector('.f-step.plus');
 const meter = () => row().querySelector('.f-meter');
 const level = (artist) => (state.crewDoc.festivals[FID].selections[artist] || {}).Kevin || 0;
-const press = (el, pointerType) => el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
-const lift = (el, pointerType) => el.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType }));
-// A tap as an engine sends it: the press, the lift, then the click (WebKit's
-// click after a finger says "mouse" — the hand is the press, never the click).
-async function tap(el, pointerType = 'touch') {
-  press(el, pointerType);
-  lift(el, pointerType);
-  el.click();
+const press = (el, pointerType, pointerId = POINTER_IDS[pointerType]) => el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType, pointerId }));
+const lift = (el, pointerType, pointerId = POINTER_IDS[pointerType]) => el.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType, pointerId }));
+// A tap as an engine sends it: the press, the lift, then the click typed as
+// that engine types it — WebKit (the iPhone, the default here) says "mouse"
+// for the click after a finger, so there the press decides; Chromium says
+// "touch" (helpers/pointer-click.mjs).
+async function tap(el, pointerType = 'touch', engine = 'webkit') {
+  pointerClick(window, el, pointerType, { engine });
   await settle(20);
 }
+const handSaid = () => [document.documentElement.dataset.hand, document.documentElement.dataset.handBy];
 async function closeShelf() {
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
   await settle(60);
@@ -88,7 +90,7 @@ test('a finger’s tap opens the card’s shelf — facts, − · meter · +, th
   assert.ok(shelf().querySelector('.composer textarea'), 'a member writes here');
   assert.equal(level('Robyn'), 0, 'a look writes nothing');
   assert.ok((history.state && history.state.layers || []).some((k) => k.startsWith('sheet:notes:')), 'Back closes it: it has an entry');
-  assert.equal(document.documentElement.dataset.hand, 'finger', 'the page says the hand, for Diagnostics');
+  assert.deepEqual(handSaid(), ['finger', 'press'], 'the page says the hand, and that the press decided it (WebKit typed the click "mouse")');
 });
 
 test('the one-time line, for a friend who picked before: once, never again on this phone', async () => {
@@ -156,7 +158,7 @@ test('a hold is a slow tap: held past the old long-press, the lift’s click ope
   assert.equal(shelf(), null, 'nothing grows while the finger is down');
   assert.equal(document.querySelector('#zoom-layer .zoom-card'), null);
   lift(el, 'touch');
-  el.click();
+  typedClick(window, el, 'mouse'); // WebKit's click for that lift
   await settle(20);
   assert.ok(shelf(), 'the release is a tap');
   assert.equal(level('Robyn'), 0, 'and picks nothing');
@@ -173,7 +175,7 @@ test('a finger’s contextmenu (a hold on Android) opens the shelf, and the lift
   assert.equal(menu.defaultPrevented, true, 'no system menu over the card');
   assert.ok(shelf(), 'the shelf is up while the finger is still down');
   lift(document.getElementById('sheet-backdrop'), 'touch');
-  document.getElementById('sheet-backdrop').click(); // where that engine's click would land
+  typedClick(window, document.getElementById('sheet-backdrop'), 'touch'); // where that engine's click would land
   await settle(40);
   assert.ok(shelf(), 'the click that followed did not close what the hold opened');
   assert.equal(level('Robyn'), 0);
@@ -326,16 +328,20 @@ test('a press that became a scroll answers no click: the next pointerless click 
   document.body.appendChild(b);
   let hand = null;
   b.addEventListener('click', (e) => { hand = clickHand(e); });
-  b.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
-  b.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' }));
-  b.click();
-  assert.equal(hand, 'assistive');
-  b.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-  b.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
-  b.click();
-  assert.equal(hand, 'mouse', 'a click answers the press (and lift) before it');
-  b.click();
-  assert.equal(hand, 'assistive', 'once: a second click has no press of its own');
+  // A "mouse"-typed click (WebKit's after a finger) and an untyped one (an
+  // older engine's) are the two a press decides.
+  for (const type of ['mouse', undefined]) {
+    press(b, 'touch');
+    b.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch', pointerId: POINTER_IDS.touch }));
+    typedClick(window, b, type);
+    assert.equal(hand, 'assistive', `${type}: the cancelled press answers nothing`);
+    press(b, 'mouse');
+    lift(b, 'mouse');
+    typedClick(window, b, type);
+    assert.equal(hand, 'mouse', `${type}: a click answers the press (and lift) before it`);
+    typedClick(window, b, type);
+    assert.equal(hand, 'assistive', `${type}: once — a second click has no press of its own`);
+  }
   b.remove();
 });
 
@@ -408,20 +414,25 @@ test('an abandoned press answers no later click: the assistive activation that f
   const el = cardOf('Robyn');
   // A mouse press on the card that never became a click (dragged off the
   // window, released nowhere the page hears)…
-  el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  press(el, 'mouse');
   await settle(10);
-  // …then VoiceOver's double-tap on the same card: a click, no press of its own.
-  el.click();
-  await settle(20);
-  assert.ok(shelf(), 'the shelf, not a pick: the held press answers nothing');
-  assert.equal(level('Robyn'), before, 'nothing picked unseen');
-  await closeShelf();
+  // …then VoiceOver's double-tap on the same card: a click, no press of its
+  // own — typed '' by today's engines (no press is asked at all), untyped by
+  // an older one (the press is asked, and the held one answers nothing).
+  for (const type of ['', undefined, 'mouse']) {
+    typedClick(window, el, type);
+    await settle(20);
+    assert.ok(shelf(), `${JSON.stringify(type)}: the shelf, not a pick — the held press answers nothing`);
+    assert.equal(level('Robyn'), before, 'nothing picked unseen');
+    await closeShelf();
+  }
+  lift(el, 'mouse'); // let that mouse go
   // A press that DID lift, but long ago, answers nothing either.
-  el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-  el.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+  press(el, 'mouse');
+  lift(el, 'mouse');
   const now = performance.now;
   performance.now = () => now.call(performance) + 5000; // the click comes seconds after that lift
-  try { cardOf('Robyn').click(); } finally { performance.now = now; }
+  try { typedClick(window, cardOf('Robyn'), 'mouse'); } finally { performance.now = now; }
   await settle(20);
   assert.ok(shelf(), 'a stale lift is not this click\'s press');
   assert.equal(level('Robyn'), before);
@@ -434,20 +445,124 @@ test('a press on one card released on another: the click goes to what holds both
   const ra = level('Robyn');
   const rb = level('Dog Blood');
   const { clickHand } = await import('../js/v3/card-facts.js');
-  a.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-  b.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+  press(a, 'mouse');
+  lift(b, 'mouse');
   // The browser sends that click to the nearest thing holding both cards.
   let common = a.parentElement;
   while (common && !common.contains(b)) common = common.parentElement;
   let hand = null;
   const hear = (e) => { hand = clickHand(e); };
   common.addEventListener('click', hear, { once: true });
-  common.click();
+  typedClick(window, common, 'mouse');
   await settle(20);
   assert.equal(hand, 'mouse', 'it is the mouse\'s click (it answers that press)');
   assert.equal(shelf(), null, 'no shelf');
   assert.equal(level('Robyn'), ra, 'the first card: nothing');
   assert.equal(level('Dog Blood'), rb, 'the second card: nothing');
+});
+
+// Sol 6's third review of the hand (2026-09-26): a finger and a mouse down
+// on one card at once are two presses, never one. The finger's lift and click
+// are the finger's — the shelf, nothing picked — however the engine types
+// that click; the mouse's own lift and click, later, are still the mouse's.
+test('a finger and a mouse down together: the finger\'s click opens the shelf, and the mouse\'s click still picks', async () => {
+  for (const engine of ['chromium', 'webkit']) {
+    const el = cardOf('Robyn');
+    const before = level('Robyn');
+    press(el, 'touch');  // the finger lands
+    press(el, 'mouse');  // a mouse button goes down on the same card
+    lift(el, 'touch');   // the finger lifts: its click
+    if (engine === 'chromium') typedClick(window, el, 'touch', POINTER_IDS.touch);
+    else typedClick(window, el, 'mouse', POINTER_IDS.mouse); // WebKit types the finger's click "mouse"
+    await settle(20);
+    assert.ok(shelf(), `${engine}: the finger's click opens the shelf`);
+    assert.equal(level('Robyn'), before, `${engine}: and picks nothing`);
+    assert.deepEqual(handSaid(), ['finger', engine === 'chromium' ? 'type' : 'press'], `${engine}: the finger's, and what said so`);
+    await closeShelf();
+    // The mouse, still down, lets go on the same card: its click is its own.
+    assert.equal(cardOf('Robyn'), el, 'the same card node (nothing was picked)');
+    lift(el, 'mouse');
+    typedClick(window, el, 'mouse', POINTER_IDS.mouse);
+    await settle(20);
+    assert.equal(level('Robyn'), before + 1, `${engine}: the mouse's click picks`);
+    assert.equal(shelf(), null);
+    // Back where the next cases expect Robyn (the cycle: to must, then nothing).
+    for (let i = 0; i < 4; i++) await tap(cardOf('Robyn'), 'mouse');
+    assert.equal(level('Robyn'), before);
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await settle(20);
+  }
+});
+
+test('a finger\'s tap in Chromium says "touch" on its click, and the click decides', async () => {
+  const before = level('Robyn');
+  await tap(cardOf('Robyn'), 'touch', 'chromium');
+  assert.ok(shelf(), 'the shelf');
+  assert.equal(level('Robyn'), before, 'nothing picked');
+  assert.deepEqual(handSaid(), ['finger', 'type']);
+  await closeShelf();
+});
+
+// Each click by what it says, and by the press behind it only where it cannot
+// say: 'touch' and 'pen' are a finger, '' is a key (an Enter or Space on this
+// element, this turn) or an assistive activation; 'mouse' — which WebKit also
+// says after a finger — and no pointerType at all (an engine older than
+// click-as-PointerEvent) are judged by the press they answer.
+test('the hand of every kind of click: by its type, by a key this turn, or by the press it answers', async () => {
+  const { clickHand } = await import('../js/v3/card-facts.js');
+  const b = document.createElement('button');
+  const other = document.createElement('button');
+  document.body.append(b, other);
+  let hand = null;
+  b.addEventListener('click', (e) => { hand = clickHand(e); });
+  const said = (type, id) => { typedClick(window, b, type, id); return [hand, document.documentElement.dataset.handBy]; };
+  const key = (el, k, kind = 'keydown') => el.dispatchEvent(new window.KeyboardEvent(kind, { key: k, bubbles: true, cancelable: true }));
+
+  // The click's own word, where every engine tells the truth.
+  assert.deepEqual(said('touch'), ['finger', 'type']);
+  assert.deepEqual(said('pen'), ['finger', 'type']);
+  assert.deepEqual(said(''), ['assistive', 'type'], 'no pointer, no key: VoiceOver, Switch Control');
+  key(b, 'Enter');
+  assert.deepEqual(said(''), ['keyboard', 'key'], 'Enter\'s own click, in its keydown\'s turn');
+  await settle(5);
+  assert.deepEqual(said(''), ['assistive', 'type'], 'a turn later the key is spent');
+  key(b, ' ');
+  await settle(5);
+  key(b, ' ', 'keyup');
+  assert.deepEqual(said(''), ['keyboard', 'key'], 'Space clicks on its keyup');
+  await settle(5);
+  key(other, 'Enter');
+  assert.deepEqual(said(''), ['assistive', 'type'], 'a key on another element is not this click\'s');
+  await settle(5);
+
+  // 'mouse': the press it answers decides.
+  press(b, 'mouse'); lift(b, 'mouse');
+  assert.deepEqual(said('mouse'), ['mouse', 'press']);
+  press(b, 'touch'); lift(b, 'touch');
+  assert.deepEqual(said('mouse'), ['finger', 'press'], 'WebKit\'s click after a finger');
+  press(b, 'pen'); lift(b, 'pen');
+  assert.deepEqual(said('mouse'), ['finger', 'press'], 'and after a pen');
+  assert.deepEqual(said('mouse'), ['assistive', 'none'], 'no press left to answer: the shelf, the safe side');
+  press(b, 'mouse');
+  assert.deepEqual(said('mouse'), ['assistive', 'none'], 'a press still held answers nothing');
+  lift(b, 'mouse');
+  press(other, 'touch'); lift(other, 'touch');
+  assert.deepEqual(said('mouse'), ['mouse', 'press'], 'the lift that answers is this element\'s, the mouse\'s');
+  press(b, 'mouse'); lift(b, 'mouse');
+  press(b, 'touch'); lift(b, 'touch');
+  assert.deepEqual(said('mouse'), ['finger', 'press'], 'two lifts that could answer: the latest is the click\'s');
+
+  // No pointerType at all (Safari before 18.2): a key this turn, else the press.
+  press(b, 'touch'); lift(b, 'touch');
+  assert.deepEqual(said(undefined), ['finger', 'press']);
+  press(b, 'mouse'); lift(b, 'mouse');
+  assert.deepEqual(said(undefined), ['mouse', 'press']);
+  assert.deepEqual(said(undefined), ['assistive', 'none']);
+  key(b, 'Enter');
+  assert.deepEqual(said(undefined), ['keyboard', 'key']);
+  await settle(5);
+  b.remove();
+  other.remove();
 });
 
 // Sol 6's re-review (2026-09-26): with a tall keyboard on a short screen (an

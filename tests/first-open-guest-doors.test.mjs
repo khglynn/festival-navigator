@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,12 +61,9 @@ const notesShelf = () => { const s = document.getElementById('artist-sheet'); re
 const door = (sel) => notesShelf().querySelector(`.sheet-card .f-step-row > ${sel}`);
 const shelf = () => document.querySelector('.join-shelf');
 const shelfLine = () => shelf().querySelector('.js-line').textContent;
-// A press and its lift, as every pointer's click comes (a click answers only a press that lifted — card-facts.js clickHand).
-const press = (el, pointerType) => {
-  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
-  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType }));
-};
-const fingerTap = (el) => { press(el, 'touch'); el.click(); };
+// A finger's tap as an engine sends it: press, lift, and the click typed as
+// WebKit types it (helpers/pointer-click; card-facts.js clickHand).
+const fingerTap = (el) => { pointerClick(shell.dom.window, el, 'touch'); };
 const layers = () => (history.state && history.state.layers) || [];
 async function openCard(artist) {
   fingerTap(cardOf(artist));

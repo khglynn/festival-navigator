@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -145,12 +146,7 @@ test('the note door opens the notes, as the chip did', async () => {
 });
 
 test('a click on a RESTING card still cycles, as in v91 — including must back to nothing', async () => {
-  const tap = () => {
-    const c = cardOf('Robyn');
-    c.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-    c.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
-    c.click();
-  };
+  const tap = () => { pointerClick(window, cardOf('Robyn'), 'mouse'); };
   tap();
   assert.equal(level('Robyn'), 1, 'a click picks — it does not open the zoom');
   tap(); tap(); tap();

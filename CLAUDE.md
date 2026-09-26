@@ -241,12 +241,16 @@ Non-inferable facts only (the code answers everything else — read it).
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
   Kevin's sequences with real input against gallery.html. What a press on
   a card MEANS asks the same module (`clickHand(e)`, the tap change,
-  2026-09-26), never the click's own pointerType: each click is paired with
-  the press the browser pairs it with (lifted, just now, where the press and
-  the lift both were). A finger opens the card's notes shelf (its facts,
+  2026-09-26), which believes the click's own pointerType where engines tell
+  the truth — 'touch'/'pen' a finger, '' a key this turn or an assistive
+  activation — and never its 'mouse': WebKit types a finger's click "mouse"
+  (every iPhone; WebKit bug 324397), so a 'mouse' click, or one with no
+  pointerType (Safari before 18.2), is judged by the press it answers, per
+  pointer. A finger opens the card's notes shelf (its facts,
   − · your meter · +, the thread — the one place a finger picks); a click
-  with no press of its own (VoiceOver, Switch Control) opens it too; a
-  mouse click or Enter picks. There is no long-press: a hold is a slow tap,
+  with no pointer and no key (VoiceOver, Switch Control) opens it too; a
+  mouse click or Enter picks. Diagnostics says the hand and what decided it
+  (`hand`, `handBy`). There is no long-press: a hold is a slow tap,
   and an engine that turns it into `contextmenu` (Android) opens the same
   shelf. Every sheet rides the iOS keyboard through one helper, notes.js
   `rideKeys`.

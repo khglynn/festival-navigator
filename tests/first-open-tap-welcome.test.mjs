@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -37,9 +38,7 @@ await settle(160);
 test('a guest’s finger tap on a card takes the welcome down and opens the card’s shelf', async () => {
   assert.ok(document.getElementById('welcome-card'), 'the welcome is up');
   const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
-  card.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
-  card.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
-  card.click();
+  pointerClick(shell.dom.window, card, 'touch');
   await settle(20);
   assert.equal(document.getElementById('welcome-card'), null, 'its words have done their job');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'read, on this phone');

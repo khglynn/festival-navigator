@@ -111,6 +111,10 @@ const restingMeter = (page, artist) => page.evaluate((a) => {
   return m ? Number(m.dataset.level) : 0;
 }, artist);
 const tapAt = (page, p) => page.touchscreen.tap(Math.round(p.x), Math.round(p.y));
+// The hand the page says decided the last click, and what decided it
+// (card-facts.js sayHand: 'type' — the click's own pointerType; 'press' — the
+// pointer press it answered; 'key'; 'none').
+const handSaid = (page) => page.evaluate(() => [document.documentElement.dataset.hand, document.documentElement.dataset.handBy]);
 
 for (const [name, get] of ENGINES) {
   test(`${name}: a tap opens the card's shelf; + climbs to must and − back to nothing with the row standing still; the wall and Back close it`, { skip: skipFor(name, get) }, async () => {
@@ -128,10 +132,17 @@ for (const [name, get] of ENGINES) {
       assert.equal(s.notesButton, false, 'no notes button of its own');
       assert.equal(await zoomUp(page), 0, 'no zoom');
       assert.equal(await level(page, 'Oskar Med K'), 0, 'a tap picks nothing');
-      // The tap's click answered the finger's press — never classed as an
-      // unpaired (assistive) activation, which would open the same shelf and
-      // hide a broken pairing (Sol 6's re-review).
-      assert.equal(await page.evaluate(() => document.documentElement.dataset.hand), 'finger', 'the click was the finger\'s');
+      // The tap's click is the finger's — never classed as an unpaired
+      // (assistive) activation, which would open the same shelf and hide a
+      // broken route. Chromium types that click "touch" and it decides;
+      // WebKit types it "mouse" (the iPhone's engine; bug 324397 on a real
+      // iPad), so there the finger's press decides. Named per engine so a
+      // WebKit that starts telling the truth shows up here as 'type'.
+      const said = await handSaid(page);
+      console.log(`  (${name}: the tap's click was classed ${said.join(' by ')})`);
+      assert.equal(said[0], 'finger', 'the click was the finger\'s');
+      if (name.startsWith('Chromium')) assert.equal(said[1], 'type', 'Chromium: the click said "touch" itself');
+      else assert.ok(['press', 'type'].includes(said[1]), `WebKit: by its press, or by a truthful type (${said[1]})`);
 
       const rowY = s.plus.y;
       const plusAt = { x: s.plus.x, y: s.plus.y };
@@ -284,6 +295,7 @@ test('Chromium (a touch screen with a mouse): a finger opens the shelf, the mous
     await page.mouse.click(other.x, other.y);
     await sleep(300);
     assert.equal(await level(page, 'Fcukers'), 1, 'a click on the (grown) card picks');
+    assert.deepEqual(await handSaid(page), ['mouse', 'press'], 'a "mouse" click, and its mouse press says it is one');
     assert.equal(await page.locator('#artist-sheet').count(), 0, 'and opens no shelf');
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
@@ -435,7 +447,7 @@ for (const [name, get] of ENGINES) {
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
       assert.equal((await shelf(page)).name, 'Tove Lo');
       assert.equal(await level(page, 'Tove Lo'), before, 'nothing picked');
-      assert.equal(await page.evaluate(() => document.documentElement.dataset.hand), 'assistive');
+      assert.deepEqual(await handSaid(page), ['assistive', 'type'], 'the click said "" itself: no pointer, and no key');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -533,6 +545,7 @@ for (const [name, get] of ENGINES) {
       await page.mouse.move(b.x, b.y, { steps: 6 });
       await page.mouse.up();
       await sleep(500);
+      assert.deepEqual(await handSaid(page), ['mouse', 'press'], 'the click that went to what holds both was the mouse\'s');
       assert.equal(await page.locator('#artist-sheet').count(), 0, 'no shelf');
       assert.equal(await level(page, 'Tove Lo'), ta, 'the card pressed: nothing');
       assert.equal(await level(page, 'Fcukers'), tb, 'the card released on: nothing');
@@ -546,6 +559,34 @@ for (const [name, get] of ENGINES) {
       await page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Tove Lo"]').click());
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
       assert.equal(await level(page, 'Tove Lo'), ta, 'the shelf, never a pick in that press\'s name');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// Sol 6's third review of the hand (2026-09-26): a finger and a mouse down on
+// one card at once are two presses. With real input: a mouse button held on a
+// card, a finger's tap on it — the finger's click opens the shelf and picks
+// nothing, in both engines (Chromium's click says "touch"; WebKit's says
+// "mouse", and the finger's own press decides) — then the mouse lets go.
+for (const [name, get] of ENGINES) {
+  test(`${name.split(' ')[0]}, a finger and a mouse down together: the finger's tap opens the shelf and picks nothing`, { skip: skipFor(name, get) }, async () => {
+    const { ctx, page, errors } = await memberPhone(get(), { mouse: true });
+    try {
+      const at = await cardAt(page, 'Tove Lo');
+      const before = await level(page, 'Tove Lo');
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.down();           // a mouse button goes down on the card and stays
+      await tapAt(page, at);             // a finger taps the same card
+      await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      const said = await handSaid(page);
+      console.log(`  (${name}: the finger's click was classed ${said.join(' by ')} with the mouse held)`);
+      assert.equal(said[0], 'finger', 'the finger\'s click is the finger\'s');
+      assert.equal((await shelf(page)).name, 'Tove Lo', 'its shelf');
+      assert.equal(await level(page, 'Tove Lo'), before, 'nothing picked');
+      await page.mouse.up();             // the mouse lets go (over the dimmed wall now)
+      await sleep(300);
+      assert.equal(await level(page, 'Tove Lo'), before, 'the mouse\'s release picks nothing either');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

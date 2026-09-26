@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
+import { pointerClick } from './helpers/pointer-click.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -107,9 +108,7 @@ test('closing the shelf gives focus back to what opened it', async () => {
 test('Escape over a join shelf the card’s shelf + opened hands focus back to the card — and grows no zoom there', async () => {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // a finger focuses nothing (iOS)
   const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
-  card.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
-  card.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
-  card.click(); // a guest's finger: the card's shelf (the tap change)
+  pointerClick(window, card, 'touch'); // a guest's finger: the card's shelf (the tap change)
   await settle(10);
   const notes = document.getElementById('artist-sheet');
   assert.ok(notes && !notes.classList.contains('join-shelf'), 'the card’s shelf is up');

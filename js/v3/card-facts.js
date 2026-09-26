@@ -865,36 +865,61 @@ let lastInput = 'pointer';
 // 2026-09-26: "a tap on mobile … shows the notes shelf (with full controls)
 // rather than a zoom with a notes button"); a mouse click or a key picks, as
 // ever. Decided by the hand, never the screen width: an iPad with a mouse
-// behaves like a desktop, and a click after a finger asks this, not its own
-// pointerType (WebKit sends that click as "mouse" — the ghost below).
+// behaves like a desktop. This is the LAST press, for hover and the keyboard
+// route; what each CLICK means is judged per click, below (clickHand).
 let lastPointerType = 'mouse';
 export const fingerHand = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
-// The press behind each CLICK (Sol 6's review of the tap change, 2026-09-26).
-// A click is judged by the pointer press it answers — a touch or pen press
-// is 'finger', a mouse press 'mouse' — never by its own pointerType (WebKit's
-// click after a finger says "mouse"). A click that answers NO press is an
-// assistive activation — VoiceOver's double-tap, Switch Control, Voice
-// Control — 'assistive', and it opens the card's shelf like a finger (the
-// shelf's labelled − · + is a better control than an unlabelled cycle; before
-// this, the tracker's 'mouse' default made it pick unseen). The one exception
-// is the browser's own click for Enter or Space on a native button or link:
-// 'keyboard'. Enter or Space on a CARD picks through its keydown and never
-// clicks. Kept per event: clickHand(e), read by whoever handles that click.
-// A press is { hand, target, up: { target, at } | null }. A click answers it
-// only as the browser pairs them (Sol 6's re-review, 2026-09-26): the press
-// has LIFTED, recently (a mouse's click comes in the lift's own turn; WebKit's
-// synthetic click after a finger comes a moment later), and the click lands
-// where the press and the lift both were — the element, or the ancestor the
-// browser sends a click to when the press and the lift were on different
-// things. Anything else — a press abandoned without a click (a drag off the
-// window, a scrollbar), a press still held — answers nothing, so a later
-// assistive activation is never taken for that old press's hand.
-let pendingPress = null;   // the pointer press no click has answered yet
-const ANSWER_MS = 600;     // a lift older than this answers no click
-const pressAnswers = (p, e) => !!p && !!p.up && performance.now() - p.up.at <= ANSWER_MS
-  && e.target && typeof e.target.contains === 'function'
-  && e.target.contains(p.target) && e.target.contains(p.up.target);
-let keyActivation = false; // an Enter or Space whose click may still come
+// The hand behind each CLICK (the tap change, 2026-09-26; its reviews by Sol 6).
+// A FINGER (or a pen) opens the card's shelf; a MOUSE picks; a KEY's click on
+// a native button or link is the keyboard's; a click with no pointer and no
+// key of its own — VoiceOver's double-tap, Switch Control, Voice Control — is
+// ASSISTIVE and opens the shelf like a finger (the shelf's labelled − · + is
+// the better control, and a pick made unseen is the worst kind).
+//   The click says most of this itself (a PointerEvent since Chrome 92,
+// Firefox 129 and Safari 18.2): 'touch' or 'pen' is a finger, '' is no
+// pointer at all — a key
+// if an Enter or Space on this element led to it in this same turn, otherwise
+// assistive. Those answers are the engine's, not ours to infer.
+//   'mouse' is the one answer an engine gets wrong: WebKit — every iPhone —
+// types the click that follows a finger's tap as "mouse" (measured in
+// Playwright's WebKit, 2026-09-26, and on a real iPad in WebKit bug 324397,
+// 2026-09-16: "every other input event carries pointerType=touch, and only
+// the click and the mouseout that follows it say mouse"). So a 'mouse' click
+// — and a click with no pointerType at all, from an engine older than those
+// (iOS and Safari 18.1 and earlier, Firefox 128 and earlier) — is judged by
+// the pointer press it answers: a press that has LIFTED, within ANSWER_MS,
+// where the click lands on (or holds) both the press and the lift. (Not by
+// pointerId: WebKit's click after a finger carries the MOUSE's id.) Each
+// pointer keeps its own press — a finger and a mouse down together are two
+// presses, never one, and a lift only ever finishes its own pointer's — the
+// latest lift wins, and a click spends the press it answers. A 'mouse' click
+// that answers no press opens the shelf: the safe side, where nothing is
+// written.
+const ANSWER_MS = 600;       // a lift older than this answers no click
+const PRESS_KEEP = 8;        // pointers remembered at once
+const presses = new Map();   // pointerId → { hand, target, up: { target, at } | null }
+const holds = (e, n) => !!n && !!e.target && typeof e.target.contains === 'function' && e.target.contains(n);
+function answeredPress(e) {
+  const now = performance.now();
+  let best = null;
+  for (const [id, p] of presses) {
+    if (p.up && now - p.up.at > ANSWER_MS) { presses.delete(id); continue; }
+    if (p.up && holds(e, p.target) && holds(e, p.up.target) && (!best || p.up.at > best.p.up.at)) best = { id, p };
+  }
+  if (!best) return null;
+  presses.delete(best.id);
+  return best.p.hand;
+}
+let keyTurn = null;          // the element an Enter or Space went to, until the end of that turn
+const keyedHere = (e) => !!keyTurn && (e.target === keyTurn || holds(e, keyTurn));
+function handOf(e) {
+  const t = e.pointerType;
+  if (t === 'touch' || t === 'pen') { presses.delete(e.pointerId); return { hand: 'finger', by: 'type' }; }
+  if (t === '') return keyedHere(e) ? { hand: 'keyboard', by: 'key' } : { hand: 'assistive', by: 'type' };
+  if (t === undefined && keyedHere(e)) return { hand: 'keyboard', by: 'key' };
+  const paired = answeredPress(e);
+  return paired ? { hand: paired, by: 'press' } : { hand: 'assistive', by: 'none' };
+}
 const clickHands = new WeakMap();
 export function clickHand(e) {
   const h = e ? clickHands.get(e) : null;
@@ -903,8 +928,9 @@ export function clickHand(e) {
   // last hand, as before there was a per-click rule.
   return lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse';
 }
-// What Diagnostics says (sayHand, below): the last press's hand, or
-// 'assistive' after a pointerless click.
+// What Diagnostics says (sayHand, below): the hand behind the last press, key
+// or click, and what decided the last click's (data-hand-by: the click's own
+// type, the press it answered, a key, or nothing — the safe side).
 let saidHand = null;
 export const handNow = () => saidHand;
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
@@ -957,42 +983,53 @@ if (typeof document !== 'undefined') {
   // The hand, said on the page for Diagnostics (js/errlog.js reads it, the way
   // it reads the strip's data-follow): the next "my tap picked" report carries
   // its own evidence. Written only when it changes.
-  const sayHand = (said = null) => {
+  const sayHand = (said = null, by = null) => {
     const h = said || (lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse');
     saidHand = h;
     const root = document.documentElement;
-    if (root && root.dataset.hand !== h) root.dataset.hand = h;
+    if (!root) return;
+    if (root.dataset.hand !== h) root.dataset.hand = h;
+    if (by && root.dataset.handBy !== by) root.dataset.handBy = by;
   };
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
     lastPointerType = e.pointerType || 'mouse';
-    pendingPress = { hand: lastPointerType === 'mouse' ? 'mouse' : 'finger', target: e.target, up: null };
+    // A new press on a pointer replaces that pointer's old one (it can never
+    // be answered now); the oldest pointer goes first past a handful.
+    presses.delete(e.pointerId);
+    if (presses.size >= PRESS_KEEP) presses.delete(presses.keys().next().value);
+    presses.set(e.pointerId, { hand: lastPointerType === 'mouse' ? 'mouse' : 'finger', target: e.target, up: null });
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
     sayHand();
   }, { passive: true, capture: true });
   document.addEventListener('pointerup', (e) => {
     if (e.pointerType !== 'mouse') fingerAt(e);
-    if (pendingPress) pendingPress.up = { target: e.target, at: performance.now() };
+    const p = presses.get(e.pointerId); // this pointer's own press, never another's
+    if (p) p.up = { target: e.target, at: performance.now() };
   }, { passive: true, capture: true });
   // A press that became a scroll or a gesture answers no click.
-  document.addEventListener('pointercancel', () => { pendingPress = null; }, { passive: true, capture: true });
+  document.addEventListener('pointercancel', (e) => { presses.delete(e.pointerId); }, { passive: true, capture: true });
+  // Enter clicks a button in its keydown's own turn, Space in its keyup's: the
+  // key names its element for that turn only.
+  const keyed = (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const at = e.target;
+    keyTurn = at;
+    setTimeout(() => { if (keyTurn === at) keyTurn = null; }, 0);
+  };
   document.addEventListener('keydown', (e) => {
     if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) {
       lastInput = 'keyboard';
-      pendingPress = null;
-      keyActivation = e.key === 'Enter' || e.key === ' ';
+      keyed(e);
       sayHand();
     }
   }, { passive: true, capture: true });
-  // Space clicks a button on its keyup; after that, a click is not the key's.
-  document.addEventListener('keyup', () => { if (keyActivation) setTimeout(() => { keyActivation = false; }, 0); }, { passive: true, capture: true });
+  document.addEventListener('keyup', keyed, { passive: true, capture: true });
   document.addEventListener('click', (e) => {
-    const h = pressAnswers(pendingPress, e) ? pendingPress.hand : keyActivation ? 'keyboard' : 'assistive';
-    pendingPress = null; // a click ends whichever press was waiting, answered or not
-    keyActivation = false;
-    clickHands.set(e, h);
-    if (h === 'assistive') sayHand('assistive');
+    const { hand, by } = handOf(e);
+    clickHands.set(e, hand);
+    sayHand(hand, by);
   }, { passive: true, capture: true });
 }
 

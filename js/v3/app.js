@@ -734,14 +734,15 @@ function refreshArtistCards(artistName) {
 // the welcome goes.
 //   A mouse click or a key picks, as it always has: a member cycles
 // (nothing → 1 → 2 → 3 → must → nothing); a guest is asked who they are.
-//   An ASSISTIVE activation — a click with no pointer press and no key of
-// its own: VoiceOver's double-tap, Switch Control — opens the shelf too, on a
+//   An ASSISTIVE activation — a click with no pointer and no key of its
+// own: VoiceOver's double-tap, Switch Control — opens the shelf too, on a
 // phone and a desktop alike (Sol 6's review, 2026-09-26): the shelf's
 // labelled − · + is the better control, and a pick made unseen is the worst
 // kind.
-// `hand` is the press behind this activation (card-facts.js clickHand; the
-// card's own keydown says 'keyboard'), never the click's own pointerType —
-// WebKit sends a finger's click as "mouse".
+// `hand` is what card-facts.js clickHand says of this click (the card's own
+// keydown says 'keyboard'): the click's own pointerType where it can be
+// believed, the press it answers where it cannot — WebKit types a finger's
+// click "mouse".
 function handleTap(artistName, el = null, occ = null, hand = null) {
   const h = hand || (fingerHand() ? 'finger' : 'mouse');
   // Any activation from a card (el) — even a node a repaint replaced between
