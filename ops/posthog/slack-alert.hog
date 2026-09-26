@@ -50,9 +50,18 @@ fun slackTime(prefix, iso) {
 
 // "iPhone · iOS 26 · Safari 26" from PostHog's standard device keys.
 fun deviceLine(pr) {
-  let os := empty(pr.$os) ? null : trim(concat(pr.$os, ' ', toInt(pr.$os_version)))
-  let browser := empty(pr.$browser) ? null : trim(concat(pr.$browser, ' ', toInt(pr.$browser_version)))
-  return joinPresent([pr.$device, os, browser], ' · ')
+  // Error-issue events (kind = $error_tracking_issue_created/_reopened) nest the raw
+  // exception's own properties under exception_props (PostHog copies the whole captured
+  // event there, not spread onto the top level). Survey events never set exception_props,
+  // so this falls through to the plain top-level reads unchanged.
+  let device := pr?.exception_props?.$device ?? pr.$device
+  let osName := pr?.exception_props?.$os ?? pr.$os
+  let osVersion := pr?.exception_props?.$os_version ?? pr.$os_version
+  let browserName := pr?.exception_props?.$browser ?? pr.$browser
+  let browserVersion := pr?.exception_props?.$browser_version ?? pr.$browser_version
+  let os := empty(osName) ? null : trim(concat(osName, ' ', toInt(osVersion)))
+  let browser := empty(browserName) ? null : trim(concat(browserName, ' ', toInt(browserVersion)))
+  return joinPresent([device, os, browser], ' · ')
 }
 
 // "at openZoom · card-facts.js:212": the in-app frame nearest the crash.
@@ -61,7 +70,8 @@ fun deviceLine(pr) {
 // and processed ones (resolved_name/source/line), then falls back to the
 // flattened in-app lists PostHog adds during processing.
 fun topFrame(pr) {
-  let frames := pr?.$exception_list?.[1]?.stacktrace?.frames ?? []
+  // Same exception_props nesting as deviceLine() above.
+  let frames := pr?.exception_props?.$exception_list?.[1]?.stacktrace?.frames ?? pr?.$exception_list?.[1]?.stacktrace?.frames ?? []
   let inApp := arrayFilter(x -> x?.in_app == true, frames)
   let fr := inApp?.[-1] ?? frames?.[-1]
   let fnName := null
@@ -72,8 +82,8 @@ fun topFrame(pr) {
     file := fr.source ?? fr.filename
     lineNo := fr.line ?? fr.lineno
   } else {
-    fnName := pr?.$exception_functions?.[-1]
-    file := pr?.$exception_sources?.[-1]
+    fnName := pr?.exception_props?.$exception_functions?.[-1] ?? pr?.$exception_functions?.[-1]
+    file := pr?.exception_props?.$exception_sources?.[-1] ?? pr?.$exception_sources?.[-1]
   }
   if (fnName == '?' or fnName == '<anonymous>') {
     fnName := null
@@ -117,10 +127,10 @@ fun plainSection(s) {
 if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_reopened' or kind == '$error_tracking_issue_spiking') {
   let reopened := kind == '$error_tracking_issue_reopened'
   let spiking := kind == '$error_tracking_issue_spiking'
-  let boot := props.kind == 'boot'
+  let boot := (props.exception_props?.kind ?? props.kind) == 'boot'
   let icon := spiking ? '📈' : (reopened ? '🔁' : (boot ? '🔴' : '🟠'))
   let verb := spiking ? 'Spiking' : (reopened ? 'Back again' : (boot ? 'App won’t open' : 'New error'))
-  let name := clip(props.name ?? props.$exception_types?.[1] ?? 'Error', 110)
+  let name := clip(props.name ?? props.exception_props?.$exception_types?.[1] ?? props.$exception_types?.[1] ?? 'Error', 110)
 
   blocks := arrayPushBack(blocks, header(concat(icon, ' ', app, ' · ', verb, ': ', name)))
 
@@ -139,7 +149,12 @@ if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_re
   let seen := slackTime(spiking ? 'Detected' : (reopened ? 'Back' : 'Seen'), props.exception_timestamp)
   let firstSeen := reopened ? slackTime('first seen', props.first_seen) : null
   let timeText := joinPresent([seen, firstSeen], ' · ')
-  let facts := joinPresent([props.build, deviceLine(props), props.screen ?? props.$pathname, props.member_name], ' · ')
+  let facts := joinPresent([
+    props.exception_props?.build ?? props.build,
+    deviceLine(props),
+    props.exception_props?.screen ?? props.screen ?? props.$pathname,
+    props.exception_props?.member_name ?? props.member_name
+  ], ' · ')
   let ctx := []
   if (notEmpty(timeText)) {
     ctx := arrayPushBack(ctx, {'type': 'mrkdwn', 'text': timeText})
