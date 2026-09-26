@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { fontsIn, launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const NINE = JSON.parse(readFileSync(path.join(ROOT, 'tests/fixtures/plan-crew-nine.json'), 'utf8'));
@@ -67,6 +67,10 @@ async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 
   await page.waitForSelector(guest ? '#welcome-card' : '#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
   const fontsAtPeek = await page.evaluate(() => document.fonts.status);
   await sleep(900);
+  // Every case but the late font's starts in the real face, once a frame has
+  // answered it (helpers/browser.mjs fontsIn). The peek's own test read the
+  // window between the font and that frame on CI.
+  if (!fontDelayMs) await fontsIn(page);
   await motionDone(page, { within: guest ? '#welcome-card' : '#plan' }); // the peek (or the card) has arrived
   return { ctx, page, errors, fontsAtPeek };
 }
@@ -90,6 +94,13 @@ const geometry = (page) => page.evaluate(() => {
   const r = row.getBoundingClientRect();
   const hit = document.elementFromPoint(r.left + r.width * 0.3, r.top + r.height / 2);
   return {
+    // The window's numbers beside its boxes, so a red says which went stale:
+    // its height against the peek it measured, its offset, the floor it
+    // stands on, and whether the real face had landed.
+    planH: el.getBoundingClientRect().height, peekH: Number(el.dataset.peekH), shift: el.style.transform,
+    // Inter's own face, not the set: a set is "loaded" after a face that failed.
+    dockH: document.documentElement.style.getPropertyValue('--dock-h'),
+    fonts: ([...document.fonts].find((f) => /Inter/.test(f.family)) || {}).status || 'none',
     state: el.dataset.state, planTop: el.getBoundingClientRect().top, dockTop: dock.top,
     rowTop: r.top, rowBottom: r.bottom, hitInRow: !!(hit && row.contains(hit)),
     grabBottom: el.querySelector('.plan-grab').getBoundingClientRect().bottom,
@@ -189,6 +200,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       const g = await geometry(page);
       assert.equal(g.state, 'peek');
+      assert.equal(g.fonts, 'loaded', 'the peek is read in Inter itself (the late font has its own case)');
       // Half a pixel, not one: a 1px allowance once hid the shelf's hairline border
       // pushing the row's last pixel under the dock (and failed only when float
       // error tipped it past 1.0).
