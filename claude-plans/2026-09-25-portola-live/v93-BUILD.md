@@ -178,3 +178,9 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   runs); with `NIGHT_CLOCK` the same. `npm run test:browser` 194/195 — only the pre-existing
   WebKit notes-chip case, fixed on v92's head. The whole walk re-run (40 scenarios, no page
   errors).
+- **Gear glyph** (coordinator): How it works' last row draws the header's own gear SVG instead
+  of "⚙" (iOS can render the glyph as a colour emoji). `gearIcon(size)` moved to
+  `js/v3/tools.js` (already in APP_CORE) and serves the Show menu's Settings row too.
+  `shell-v4` 28/28; shot `how-it-works-390.png`. Standing by: the coordinator rebases onto
+  main once v92 lands, using the "Rebasing onto v92" notes above (note: `gearIcon` now lives
+  in tools.js, so the resolution's app.js hunks are unchanged).
