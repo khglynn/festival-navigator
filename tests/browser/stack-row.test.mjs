@@ -91,8 +91,26 @@ const geometry = (page) => page.evaluate(() => {
       boxLeft: box.getBoundingClientRect().left,
     };
   });
-  const shellLeft = document.querySelector('#wall-root').getBoundingClientRect().left;
-  return { clocks, rows, shellLeft, pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+  // A section read by time (v94, Portola's Folsom): its cards, as the eye
+  // sees them, and its band heads.
+  const lists = [...document.querySelectorAll('#wall-root .time-list')].map((l) => {
+    const cards = [...l.querySelectorAll('.card')].map((c) => c.getBoundingClientRect());
+    return {
+      where: `${l.closest('.day-block').dataset.day} ${l.closest('.room').dataset.room}`,
+      day: l.closest('.day-block').dataset.day,
+      clock: l.dataset.clock || null,
+      cols: [...new Set(cards.map((r) => Math.round(r.left * 2) / 2))].sort((a, b) => a - b),
+      widths: [...new Set(cards.map((r) => Math.round(r.width * 2) / 2))],
+      right: Math.max(...cards.map((r) => r.right)),
+      heads: [...new Set([...l.querySelectorAll('.band-head')].map((h) => Math.round(h.getBoundingClientRect().left * 2) / 2))],
+      most: Math.max(...[...l.querySelectorAll('.band-grid')].map((b) => b.children.length)),
+      inRow: !!l.closest('.stack-scroll'),
+      scrolls: l.scrollWidth - l.clientWidth,
+    };
+  });
+  const shell = document.querySelector('#wall-root').getBoundingClientRect();
+  const shellLeft = shell.left;
+  return { clocks, rows, lists, shellLeft, shellRight: shell.right, pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
 });
 
 const phoneCases = [
@@ -106,7 +124,9 @@ for (const { width, engine, name, skip: why } of phoneCases) {
       const g = await geometry(page);
       assert.equal(g.pageOverflow, 0, 'the page itself never scrolls sideways');
       const clocked = g.rows.filter((r) => r.clock);
-      assert.ok(clocked.length >= 5, `Portola's clocked rows are on the wall (${clocked.length})`);
+      // Saturday's leftovers and the afters on Saturday and Sunday (Folsom
+      // reads by time since v94, below).
+      assert.ok(clocked.length >= 3, `Portola's clocked rows are on the wall (${clocked.length})`);
       // The lead scrolls away by exactly the rail and the clock's gap less the
       // shell's gap: the tokens' own arithmetic (v3-tokens.css).
       const lead = 40 + 4 - 6;
@@ -124,9 +144,23 @@ for (const { width, engine, name, skip: why } of phoneCases) {
           assert.equal(r.scrolls, 0, `${r.where}: one venue fits beside the lead and never scrolls`);
         }
       }
+      // A section read by time (v94) never steps in or scrolls sideways on a
+      // phone, clock or no clock: a time list is read ACROSS, and a sideways
+      // row would park half of every pair off the screen. Two columns at the
+      // one card width, edge to edge in the shell, band heads on its edge.
+      assert.ok(g.lists.length >= 3, `Folsom's three nights read by time (${g.lists.length})`);
+      const cardW = Object.values(g.clocks)[0].width;
+      for (const l of g.lists) {
+        assert.ok(!l.inRow && l.scrolls <= 0, `${l.where}: never a sideways row`);
+        assert.equal(l.cols.length, Math.min(2, l.most), `${l.where}: two across wherever a band has two (${l.cols})`);
+        assert.ok(Math.abs(l.cols[0] - g.shellLeft) < 0.75, `${l.where}: starts at the shell's edge (${l.cols[0]} vs ${g.shellLeft})`);
+        assert.ok(l.widths.length === 1 && Math.abs(l.widths[0] - cardW) < 0.75, `${l.where}: the one card width (${l.widths} vs ${cardW})`);
+        assert.ok(l.right <= g.shellRight + 0.5, `${l.where}: nothing past the shell (${l.right} vs ${g.shellRight})`);
+        assert.deepEqual(l.heads, [l.cols[0]], `${l.where}: every band head on the list's edge`);
+      }
       // A day with no clock (Thursday, Friday) is exactly as it was.
       const bare = g.rows.filter((r) => !r.clock);
-      assert.ok(bare.length >= 3, 'the unclocked nights are on the wall');
+      assert.ok(bare.length >= 2, 'the unclocked nights are on the wall');
       for (const r of bare) {
         assert.ok(!r.row && r.overflowX === 'visible' && r.scrolls === 0, `${r.where}: no row, nothing scrolls`);
         assert.ok(Math.abs(r.cols[0] - g.shellLeft) < 0.75, `${r.where}: starts at the shell's edge (${r.cols[0]} vs ${g.shellLeft})`);
@@ -145,6 +179,21 @@ test('1280px desktop: the row is an ordinary box — nothing scrolls, and v90\'s
       assert.equal(r.overflowX, 'visible', `${r.where}: not a scroller on a desktop`);
       assert.equal(r.scrolls, 0, `${r.where}`);
       assert.ok(Math.abs(r.cols[0] - g.clocks[r.day].cols[0]) < 0.75, `${r.where}: under the clock's first column`);
+    }
+    // By time (v94): under a clock, column n sits under the clock's column n;
+    // without one (Friday), the list starts at the shell's edge.
+    assert.ok(g.lists.length >= 3, 'Folsom reads by time');
+    for (const l of g.lists) {
+      assert.equal(l.cols.length, Math.min(5, l.most), `${l.where}: as many across as the busiest band has, five at 1280 (${l.cols})`);
+      if (l.clock) {
+        const c = g.clocks[l.day];
+        l.cols.slice(0, 2).forEach((x, i) => assert.ok(Math.abs(x - c.cols[i]) < 0.75, `${l.where}: column ${i + 1} under the clock's (${x} vs ${c.cols[i]})`));
+        assert.ok(Math.abs(l.widths[0] - c.width) < 0.75, `${l.where}: the clock's card width`);
+      } else {
+        assert.ok(Math.abs(l.cols[0] - g.shellLeft) < 0.75, `${l.where}: at the shell's edge`);
+      }
+      assert.deepEqual(l.heads, [l.cols[0]], `${l.where}: band heads on the list's edge`);
+      assert.ok(l.right <= g.shellRight + 0.5, `${l.where}: nothing past the shell`);
     }
   } finally {
     await ctx.close();

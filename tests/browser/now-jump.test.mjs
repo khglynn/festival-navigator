@@ -301,7 +301,7 @@ for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here�
       await settled(page);
       await sleep(900); // past the 750 ms pulse fallback
       const r = await page.evaluate(() => {
-        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now');
+        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now');
         const b = first.getBoundingClientRect();
         return {
           toast: (document.querySelector('#toast-root') || {}).textContent || '',
@@ -428,7 +428,7 @@ const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
         return !!hit && c.contains(hit);
       });
     };
-    const seen = [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')].filter(visible).map(show);
+    const seen = [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')].filter(visible).map(show);
     const sc = line && line.closest('.times-scroll');
     return { y: Math.round(scrollY), sl: sc ? Math.round(sc.scrollLeft) : null, pulsed, seen, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
   });
@@ -462,14 +462,25 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
         assert.ok(stops[i].pulsed.length, `stop ${i + 1} pulses what it landed on`);
         for (const c of stops[i].pulsed) assert.ok(c.now && c.inView, `${c.artist}: live, and in view: ${JSON.stringify(stops[i])}`);
       }
-      // Side by side is one stop: some stop pulses two cards at one height.
-      assert.ok(stops.some((st) => st.pulsed.some((a) => st.pulsed.some((b) => a !== b && Math.abs(a.top - b.top) <= 1))), 'cards side by side land together, in one tap');
+      // Side by side is one stop: every pair of live cards at one height on
+      // the page lands together, in one tap (pulsed there, or seen there
+      // without a pulse). Read off the page rather than assumed: on a phone
+      // the afters rows always hold such a pair; at 1280 whether one exists
+      // is the night's own shape (v94: Folsom reads by time, so Magnitude and
+      // PERVERT XXL are two bands, one above the other, not two stacks side
+      // by side).
+      const livePos = await page.evaluate(() => [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')]
+        .map((c) => ({ show: `${c.dataset.artist}|${c.dataset.occ || ''}`, top: Math.round(c.getBoundingClientRect().top + scrollY) })));
+      const pairs = livePos.flatMap((a, i) => livePos.slice(i + 1).filter((b) => b.show !== a.show && Math.abs(a.top - b.top) <= 1).map((b) => [a.show, b.show]));
+      if (width < 720) assert.ok(pairs.length, 'a phone has live cards side by side at 10:30 PM');
+      const at = (st, show) => st.pulsed.some((c) => c.show === show) || st.seen.includes(show);
+      for (const [a, b] of pairs) assert.ok(stops.some((st) => at(st, a) && at(st, b)), `side by side, one tap: ${a} / ${b}`);
       // Every live show is brought into view by some tap — pulsed at its own
       // stop, or seen without a pulse where a stop (the line's, say) already
       // shows it — exactly the live ones, and none pulses twice. (The first cut
       // only checked that no more cards pulsed than were live, which passes
       // with a show never reached at all — Codex, 2026-09-24.)
-      const live = await page.evaluate(() => [...new Set([...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')]
+      const live = await page.evaluate(() => [...new Set([...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now, #wall-root .time-list[data-iso] .card.now')]
         .map((c) => `${c.dataset.artist}|${c.dataset.occ || ''}`))].sort());
       assert.ok(live.length >= 4, `the afters are on at 10:30 PM: ${live.length} live shows`);
       const seen = [...new Set(stops.flatMap((st) => st.seen))].sort();
