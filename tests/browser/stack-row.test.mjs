@@ -356,7 +356,7 @@ test('390, real touch: a tap on a card in the row\'s last line — the right-han
     // Its bottom 16px above the dock: the tap lands on the card, not the dock.
     await page.evaluate(([sel, a]) => {
       const card = [...document.querySelector(sel).querySelectorAll('.card')].find((c) => c.dataset.artist === a);
-      const dock = document.getElementById('dock').getBoundingClientRect().top;
+      const dock = Math.min(...(document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight)); // the dock, or Our plan's peek on it
       window.scrollBy(0, card.getBoundingClientRect().bottom - (dock - 16));
     }, [AFTERS, artist]);
     await sleep(300);

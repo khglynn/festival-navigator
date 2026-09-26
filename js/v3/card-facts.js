@@ -21,6 +21,7 @@ import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
+import { footTop, sideLeft } from './foot.js'; // Our plan: the zoom's floor is the dock or the peek on it; its right bound the laptop's open panel
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -1077,17 +1078,14 @@ function insetFor(r0, r1) {
   return `inset(${t}px ${r}px ${b}px ${l}px round ${RADIUS}px)`;
 }
 
-// The phone dock's top edge while it is showing (under 720px; display:none
-// above it, and on the screens that hide it), else null. The one piece of
-// bottom chrome a zoom has to clear: the zoom layer sits over the dock, so a
-// card grown near the bottom hung across it (Kevin, 2026-09-24, a narrow
-// desktop window under a mouse: "keep this from happening easily").
-function dockTop() {
-  const dock = document.getElementById('dock');
-  if (!dock || !dock.getClientRects().length) return null;
-  const t = dock.getBoundingClientRect().top;
-  return t > 0 && t < window.innerHeight ? t : null;
-}
+// The top edge of the phone's bottom chrome while it is showing (under 720px;
+// display:none above it, and on the screens that hide it), else null. The one
+// piece of bottom chrome a zoom has to clear: the zoom layer sits over the
+// dock, so a card grown near the bottom hung across it (Kevin, 2026-09-24, a
+// narrow desktop window under a mouse: "keep this from happening easily").
+// Our plan (2026-09-26): the peek stands on the dock, so the floor is the
+// higher of the two — foot.js footTop reads both.
+const dockTop = footTop;
 
 // The sticky chrome ABOVE a card, as the zoom layer sees it: the lowest
 // bottom edge on screen of the desktop day rail (≥720, sticky at the top)
@@ -1141,7 +1139,10 @@ function place(slot, el, { floorAt = null } = {}) {
   const vw = window.innerWidth;
   let left = Math.round(r0.left + r0.width / 2 - w / 2);
   let top = floorAt !== null && Number.isFinite(floorAt) ? Math.round(floorAt - h) : Math.round(r0.top + r0.height / 2 - h / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - w));
+  // Our plan's open panel on a laptop is a right edge (the wall beside it
+  // stays usable, and so does a zoom on it).
+  const side = sideLeft();
+  left = Math.max(8, Math.min(left, (side !== null ? side : vw) - 8 - w));
   const floor = dockTop();
   const ceiling = chromeCeiling(el);
   if (floor !== null && top + h > floor - 8 && (ceiling !== null || h <= floor - 16)) top = Math.floor(floor - 8 - h);
@@ -1725,8 +1726,8 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled off screen' });
       return;
     }
-    const ceiling = chromeCeiling(z.el), floor = dockTop();
-    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor)) {
+    const ceiling = chromeCeiling(z.el), floor = dockTop(), side = sideLeft(); // side: Our plan's open panel
+    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor) || (side !== null && r.left >= side)) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }

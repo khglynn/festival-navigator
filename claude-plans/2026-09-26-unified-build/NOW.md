@@ -15,8 +15,16 @@
   Kevin's iPhone; ships alone after his OK.
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
-- **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`): phone peek,
-  day plan and laptop panel built; its own review page for Kevin; gating.
+- **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
+  `OUR-PLAN-BUILD.md`; afternoon): shipping as "Our picks" in PR #60 (v101).
+  The Linux WebKit reds (animations started late on a loaded runner, plus one
+  real pop when the window was grabbed mid-settle) and Kevin's peek note were
+  fixed at 2b14fdf. One intermittent red followed: the peek test read the page
+  between a late font and the frame that refits for it, a state no frame
+  paints. Fixed in the test (fonts in before any read); a font landing
+  mid-arrival (one-frame drop, first visit only) is banked for the Share
+  build. Kevin has answered the Share calls (logged in `OUR-PLAN-BUILD.md`):
+  the Share build starts from main after v101.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The

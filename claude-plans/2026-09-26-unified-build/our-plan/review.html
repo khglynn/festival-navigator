@@ -1,0 +1,383 @@
+<title>Our Plan, Built</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Dark first, like the app it reviews: the night ground and the brand violet. */
+:root{
+  --ground:#0e0b17; --surface:#171225; --raise:#1f1830; --line:#2b2342; --ink:#edeaf4; --body:#c6c1d6; --muted:#958dae;
+  --brand:#c084fc; --brand-ink:#1a0f2c; --brand-soft:rgba(192,132,252,.14); --live:#e9d5ff;
+  --display:"Anton","Impact","Arial Narrow",sans-serif; --text:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --ground:#f6f4fa; --surface:#ffffff; --raise:#f0ecf7; --line:#e0d9ec; --ink:#1c1530; --body:#3b3352; --muted:#6a6184;
+  --brand:#7a3dcc; --brand-ink:#ffffff; --brand-soft:rgba(122,61,204,.10); --live:#5b21b6; color-scheme:light}}
+:root[data-theme="light"]{
+  --ground:#f6f4fa; --surface:#ffffff; --raise:#f0ecf7; --line:#e0d9ec; --ink:#1c1530; --body:#3b3352; --muted:#6a6184;
+  --brand:#7a3dcc; --brand-ink:#ffffff; --brand-soft:rgba(122,61,204,.10); --live:#5b21b6; color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--body);font:16.5px/1.55 var(--text);margin:0;padding-inline:18px;padding-block:28px 72px;
+  font-variant-numeric:tabular-nums}
+.col{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+.wide{max-width:1120px;margin:0 auto;width:100%}
+p{margin:0;max-width:66ch} a{color:var(--brand)} strong{color:var(--ink);font-weight:600}
+:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:4px}
+
+/* The app's room head: one Anton line and a small sub beside it. */
+.head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.head .name{font:400 26px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
+.head .name b{font-weight:400;color:var(--brand)}
+.head .sub{font:600 11.5px/1.2 var(--text);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.hero .name{font-size:clamp(40px,9vw,64px)}
+.hero{display:flex;flex-direction:column;gap:16px}
+.lede{font-size:18.5px;color:var(--ink);max-width:62ch}
+section{display:flex;flex-direction:column;gap:16px}
+.note{color:var(--muted);font-size:15px}
+ol.note{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* Kevin's call, as the plan draws a day: a rail with nodes. */
+.rail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rail>li{position:relative;display:grid;grid-template-columns:22px 1fr;gap:12px;padding:0 0 14px}
+.rail>li::before{content:"";position:absolute;left:10px;top:14px;bottom:-4px;width:2px;background:var(--line)}
+.rail>li:last-child::before{display:none}
+.node{width:12px;height:12px;border-radius:50%;margin:6px 0 0 5px;border:2px solid var(--brand);background:var(--brand);position:relative;z-index:1}
+.node.hollow{background:var(--ground)}
+.rail .t{color:var(--ink);font-weight:600}
+.rail .d{color:var(--muted);font-size:15px}
+
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.status>div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.status .k{font:600 11px/1.2 var(--text);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.status .v{color:var(--ink);font-weight:600}
+.status .v.wait{color:var(--muted);font-weight:500}
+
+/* Frames: phones in a row that scrolls sideways on a phone; laptops full width. */
+.strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.strip.fixed{grid-auto-columns:minmax(210px,300px);justify-content:start}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;scroll-snap-align:start;min-width:0}
+figure img,figure video{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#0e0b17}
+figcaption{font-size:14px;line-height:1.4;color:var(--muted)}
+figcaption b{display:block;color:var(--ink);font-weight:600;font-size:14.5px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.desks{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:900px){.desks.two{grid-template-columns:1fr 1fr}}
+.motion{display:grid;grid-template-columns:minmax(180px,300px) 1fr;gap:18px;align-items:start}
+@media (max-width:640px){.motion{grid-template-columns:1fr}.motion figure:first-child{max-width:300px}.pair{grid-template-columns:1fr}}
+
+/* Your calls: the same rail; the options are bare rings, no boxes. */
+.calls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.call{position:relative;display:grid;grid-template-columns:22px 1fr;gap:12px;padding-bottom:26px}
+.call::before{content:"";position:absolute;left:10px;top:16px;bottom:0;width:2px;background:var(--line)}
+.call:last-child::before{display:none}
+.call .node{background:var(--ground);transition:background .18s ease}
+.call.answered .node{background:var(--brand)}
+.call .q{color:var(--ink);font-weight:600;font-size:17px;line-height:1.35;max-width:62ch}
+.call .why{color:var(--muted);font-size:15px;margin-top:4px}
+.opts{display:flex;flex-direction:column;gap:2px;margin-top:10px}
+.opt{display:flex;align-items:baseline;gap:10px;background:none;border:0;padding:8px 2px;font:inherit;font-size:15.5px;color:var(--body);
+  text-align:left;cursor:pointer;border-radius:6px;min-height:44px}
+.opt .ring{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transform:translateY(2px);transition:border-color .15s,background .15s}
+.opt:hover .ring{border-color:var(--brand)}
+.opt[aria-pressed="true"]{color:var(--ink)}
+.opt[aria-pressed="true"] .ring{border-color:var(--brand);background:var(--brand);box-shadow:inset 0 0 0 2px var(--ground)}
+.opt .pick{font:600 10.5px/1 var(--text);letter-spacing:.1em;text-transform:uppercase;color:var(--brand);margin-left:4px;white-space:nowrap}
+.call textarea{margin-top:6px}
+textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:9px 11px;min-height:44px;resize:vertical}
+textarea::placeholder{color:var(--muted)}
+.saved{font-size:12.5px;color:var(--muted);min-height:1em;margin-top:4px}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.copy{font:600 15px var(--text);background:var(--brand);color:var(--brand-ink);border:0;border-radius:999px;padding:11px 18px;cursor:pointer;min-height:44px}
+#answers{display:block;white-space:pre-wrap;font:13.5px/1.5 ui-monospace,Menlo,monospace;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink)}
+footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="col">
+  <header class="hero">
+    <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, morning</span></div>
+    <div class="head"><span class="name"><b>Our plan</b>, built</span></div>
+    <p class="lede">Your call #5 is built on the phone and the laptop. On a phone, the crew's NOW or NEXT sits just above the dock and pulls up into the whole day's plan. On a laptop it is a card in the bottom-right corner that opens into a panel beside the wall. Everything below is the real app on the real Portola lineup, with a made-up crew of nine.</p>
+    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, rounds of independent code review, and a real-browser walk. Since then it also opens from your avatar’s menu: “Our plan ›” is the first row below its line, as the people-menu design drew it. What it caught is under <a href="#stands">Where it stands</a>, all fixed. This morning’s ACL data also landed: every Late night now has a time, so the plan can place them. That raised one new question, the last call at the bottom. Eleven calls there have my pick marked. Tap to change any of them; your answers save on this page.</p>
+  </header>
+
+  <section>
+    <div class="head"><span class="name">Your call</span><span class="sub">all eight built</span></div>
+    <ol class="rail">
+      <li><span class="node"></span><div><div class="t">A peek just above the phone's dock</div><div class="d">The artist is big with the place under it; NOW or NEXT and its time sit just left of "8 of us"; the second line is one text size.</div></div></li>
+      <li><span class="node"></span><div><div class="t">It drags up into the whole day, with the same rows</div><div class="d">The peek is the day plan's own NOW row seen through a window, so opening it is the same row with the day around it.</div></div></li>
+      <li><span class="node"></span><div><div class="t">On a laptop, a corner card with "Open ⌃" grows into a 400px panel on the right</div><div class="d">No dimming: the wall scrolls, picks and zooms beside it, and a zoom keeps left of the panel.</div></div></li>
+      <li><span class="node"></span><div><div class="t">One NOW</div><div class="d">While the peek says NOW, the dock's NOW steps aside (and the rail's on a laptop). It comes back when the peek says NEXT.</div></div></li>
+      <li><span class="node"></span><div><div class="t">An artist who plays twice counts at both places</div><div class="d">The rows say it: "Pier Stage · also Fri", "Warehouse · also 1:30 AM".</div></div></li>
+      <li><span class="node"></span><div><div class="t">Hidden rooms stay hidden</div><div class="d">A room you've switched off in the Show menu is off in the plan too.</div></div></li>
+      <li><span class="node"></span><div><div class="t">The bar is max(3, ceil(pickers/4))</div><div class="d">With nine picking, a stop needs three of us. Fewer than three pickers and there is no plan.</div></div></li>
+      <li><span class="node hollow"></span><div><div class="t">No "Tell a friend"</div><div class="d">Not in the peek, the plan or the panel.</div></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="head"><span class="name">In motion</span><span class="sub">real pointer input · Sat 9:40 PM</span></div>
+    <p>On the phone: a slow pull that stops short of a third settles back, a quick flick opens it, a row tap grows that stop's card under it and a second tap folds it, and the grabber closes it. On the laptop: the corner card lifts on hover, a click grows it into the panel, a card beside the panel zooms to its left, and Escape shrinks the panel back into the corner.</p>
+  </section>
+</div>
+
+<div class="wide" style="margin-top:18px">
+  <div class="motion">
+    <figure><video src="m-phone-390.mp4" muted autoplay loop playsinline controls aria-label="The phone: pull, settle back, flick open, grow a card, fold it, close"></video><figcaption><b>Phone, 390</b>9 seconds, looping</figcaption></figure>
+    <figure><video src="m-laptop-1280.mp4" muted autoplay loop playsinline controls aria-label="The laptop: hover the corner card, open the panel, zoom a card beside it, Escape"></video><figcaption><b>Laptop, 1280</b>9 seconds, looping</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:44px">
+  <section>
+    <div class="head"><span class="name">Phone <b>the peek</b></span><span class="sub">just above the dock</span></div>
+    <p>One row tall, exactly: the grabber, then the tagged row, ending at the dock's top edge. A finger anywhere on it opens the plan; nothing behind it can be tapped through it. A NEXT row's faces wait just under the window, so NOW and NEXT peeks are the same height.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip fixed">
+    <figure><img src="p-peek-now-390.jpg" alt="The NOW peek at 390: Dog Blood, Pier Stage, NOW, till 10:15 PM, 8 of us"><figcaption><b>NOW, 390</b>Dog Blood · till 10:15 PM · 8 of us</figcaption></figure>
+    <figure><img src="p-peek-next-390.jpg" alt="The NEXT peek at 11 AM: Tove Lo, Pier Stage, NEXT 5:40 PM, 6 of us"><figcaption><b>NEXT, 11 AM</b>Tove Lo · 5:40 PM · the dock keeps its NOW</figcaption></figure>
+    <figure><img src="p-peek-now-320.jpg" alt="The NOW peek at 320 wide"><figcaption><b>NOW, 320</b>the narrowest phone</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:44px">
+  <section>
+    <div class="head"><span class="name">Phone <b>the whole day</b></span><span class="sub">drag, tap or flick</span></div>
+    <p>Past a third it opens, short of a third it settles back, and a flick goes the way it was flung. The head and the other rows fade in from the edges as it rises. The NOW row's card is grown under it. A row tap grows that stop's card and only the rows below make room; the tapped row stays under your finger unless its card would be cut off at the bottom, and then it rises only as far as it has to. Closing leaves grown cards grown for next time. There's no history entry, so it never costs you a Back.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip">
+    <figure><img src="p-drag-40-390.jpg" alt="Mid-drag at forty percent: the head and rows half faded in"><figcaption><b>Mid-drag</b>the rows arrive as it rises</figcaption></figure>
+    <figure><img src="p-open-now-390.jpg" alt="The open plan at 9:40 PM with Dog Blood's card grown under its row"><figcaption><b>Open, NOW</b>Earlier folded to one line</figcaption></figure>
+    <figure><img src="p-open-next-390.jpg" alt="The open plan at 11 AM with Tove Lo tagged NEXT"><figcaption><b>Open, NEXT</b>the day before the gates</figcaption></figure>
+    <figure><img src="p-grow-tap-390.jpg" alt="A row tapped: Tricky's card grown under its row"><figcaption><b>A row tapped</b>its card grows where it is</figcaption></figure>
+    <figure><img src="p-open-now-320.jpg" alt="The open plan at 320 wide"><figcaption><b>Open, 320</b>nothing clipped</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:44px">
+  <section>
+    <div class="head"><span class="name">Phone <b>the edges</b></span><span class="sub">clock states</span></div>
+    <p>After midnight, Saturday's night stays current while any of its stops is still to come. On a festival's last night, late, it keeps going until the end. The day before a festival the peek shows tomorrow's first stop with its weekday; two days before, nothing. A newcomer's welcome card comes first, and the peek rises once it's gone.</p>
+  </section>
+</div>
+<div class="wide" style="margin-top:16px">
+  <div class="strip fixed">
+    <figure><img src="p-afters-2am-390.jpg" alt="Sunday 2 AM: NOW The Great Northern, till 3 AM, 4 of us"><figcaption><b>Sun 2 AM</b>Saturday's afters: The Great Northern · till 3 AM</figcaption></figure>
+    <figure><img src="p-tomorrow-390.jpg" alt="Sunday 7 AM: NEXT Mochakk, Pier Stage, 6 PM, 5 of us"><figcaption><b>Sun 7 AM</b>Saturday done: Sunday's first, Mochakk</figcaption></figure>
+    <figure><img src="p-last-night-late-390.jpg" alt="Sunday 11:30 PM: NOW Public Works, till 12 AM, 3 of us"><figcaption><b>Sun 11:30 PM</b>the last night, late</figcaption></figure>
+    <figure><img src="p-day-before-390.jpg" alt="Wednesday noon: NEXT Regency Ballroom, Thu about 10:30 PM, 5 of us"><figcaption><b>Wed noon</b>the day before: Thu's first stop</figcaption></figure>
+    <figure><img src="p-two-days-before-390.jpg" alt="Tuesday noon: no peek, the dock alone"><figcaption><b>Tue noon</b>two days before: no peek</figcaption></figure>
+    <figure><img src="p-fri-fork-390.jpg" alt="Friday 7 PM, open: Regency Ballroom NEXT, Public Works, or 1015 Folsom"><figcaption><b>Fri 7 PM, open</b>a short night: three rows, a fork</figcaption></figure>
+    <figure><img src="p-welcome-390.jpg" alt="A newcomer: the welcome card above the dock, no peek"><figcaption><b>A newcomer</b>the welcome card first</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:44px">
+  <section>
+    <div class="head"><span class="name">Laptop <b>the corner</b></span><span class="sub">1280 · 1440</span></div>
+    <p>One card, 20px in from both edges: "OUR PLAN · SAT · 9 OF US" and "Open ⌃" over the tagged row. On hover it lifts 2px and takes a brand edge. A click grows the same element into a 400px panel that runs from under the day rail to the bottom. As it grows, the card's line crossfades into the panel's head ("SAT OUR PLAN · Sep 26 · 9 of us picking") and "Open ⌃" becomes "Close ⌄". There's no drag on a laptop; a click opens it and Escape or Close puts it back.</p>
+  </section>
+  <div class="pair">
+    <figure><img src="d-corner-now-1280-crop.jpg" alt="The corner card at rest"><figcaption><b>At rest</b>the bottom-right corner, 1280</figcaption></figure>
+    <figure><img src="d-hover-1280-crop.jpg" alt="The corner card on hover, lifted with a violet edge"><figcaption><b>Hover</b>lifted 2px, a brand edge</figcaption></figure>
+  </div>
+</div>
+<div class="wide" style="margin-top:22px">
+  <div class="desks two">
+    <figure><img src="d-open-1280.jpg" alt="The panel open at 1280 beside the wall"><figcaption><b>Open, 1280</b>the wall stays usable beside it</figcaption></figure>
+    <figure><img src="d-open-zoom-1280.jpg" alt="A zoom on Melanie C sitting left of the open panel"><figcaption><b>A zoom beside it</b>Melanie C grows left of the panel, never under it</figcaption></figure>
+    <figure><img src="d-open-scrolled-1280.jpg" alt="The panel open with the wall scrolled down to Folsom"><figcaption><b>The wall scrolled</b>the panel's top follows the rail</figcaption></figure>
+    <figure><img src="d-corner-next-1440.jpg" alt="The corner card at 1440 with Tove Lo NEXT"><figcaption><b>NEXT, 1440</b>the rail keeps its NOW</figcaption></figure>
+    <figure><img src="d-open-1440.jpg" alt="The panel open at 1440"><figcaption><b>Open, 1440</b></figcaption></figure>
+    <figure><img src="d-welcome-1280.jpg" alt="A newcomer on a laptop: the welcome card, no corner card"><figcaption><b>A newcomer</b>the welcome card first here too</figcaption></figure>
+  </div>
+</div>
+
+<div class="col" style="margin-top:52px">
+  <section>
+    <div class="head"><span class="name">Your calls</span><span class="sub">11 · tap to answer · saved here</span></div>
+    <p class="note">The first ten are built the way "my pick" says; changing an answer changes the build. The last is not built yet: it waits for your answer.</p>
+    <ol class="calls" id="calls"></ol>
+    <div>
+      <label for="note-extra" class="q" style="display:block;color:var(--ink);font-weight:600;margin-bottom:6px">Anything else</label>
+      <textarea id="note-extra" placeholder="Optional"></textarea>
+      <div class="saved" id="saved-extra"></div>
+    </div>
+    <div class="bar"><button class="copy" id="copy" type="button">Copy my answers</button><span class="saved" id="copy-status"></span></div>
+    <code id="answers" hidden></code>
+  </section>
+
+  <section>
+    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 23bbcf2, with the people menu and this morning’s ACL data merged in</span></div>
+    <div class="status">
+      <div><span class="k">Unit tests</span><span class="v">1203 of 1205 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
+      <div><span class="k">Real browsers</span><span class="v" id="browser-line">288 of 289 pass</span><span class="note">the whole suite in Chromium and WebKit, 27 of them Our plan's own, with real mouse, touch and keys. The 1 skipped is a keyboard test Safari can't run: it Tabs past buttons unless you turn on Full Keyboard Access</span></div>
+      <div><span class="k">Code review</span><span class="v">Codex, seven rounds</span><span class="note">eleven real findings, all fixed: eight in the build, and three in this morning’s test update for the new ACL and Portola data (tests that had to check more, and two numbers in my notes that were wrong). The last round found nothing</span></div>
+      <div><span class="k">Walk</span><span class="v">41 of 42 pass</span><span class="note">an independent walker, real input, phone and laptop. The one miss was its own: a tap in Safari's engine that never took focus off the search field. With the field really left, it passes</span></div>
+    </div>
+    <p class="note">What the gate caught, all fixed, each with a test that fails without the fix:</p>
+    <ol class="note">
+      <li>On an iPhone-like engine, when the fonts arrived after the first paint, the peek sat 27px above the dock. It now re-measures whenever its own boxes change size.</li>
+      <li>After a search was cleared and the field left, the dock showed a second NOW beside the peek's.</li>
+      <li>A new pick arriving mid-drag snapped the plan away from your finger. It now waits until you let go.</li>
+      <li>A card grown on a phone, then the window widened to a laptop, left the panel short of the bottom.</li>
+      <li>A keyboard couldn't reach the stops in the laptop panel, and the corner card was 40+ Tabs away behind every wall card. It now comes right after the day rail, and Enter grows a stop's card.</li>
+      <li>The open grabber bar was a 13px target. The head takes the tap too (a call above).</li>
+      <li>The avatar menu’s “Our plan” row could outlive the plan: left open past the night’s last stop, it offered a plan that was gone. It now comes and goes with the plan.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Frames and clips are rendered by the production app over the real festival data, with a made-up crew of nine and every write refused. Nothing touched production or a real crew.</p>
+    <p>Build log: <a href="https://github.com/khglynn/festival-navigator/blob/live/plan/claude-plans/2026-09-26-unified-build/OUR-PLAN-BUILD.md">OUR-PLAN-BUILD.md on live/plan</a>.</p>
+  </footer>
+</div>
+
+<script>
+const CALLS = [
+  { id: 'op-ship', q: 'When should Our plan reach friends?',
+    why: 'The List view shipped this morning (v97); the tap change waits for your iPhone test and the people menu is still building, and Sunday is Portola’s last day. A new surface over the dock on the last day of a live festival is the risky order; ACL has a Late-nights week to shake it out.',
+    options: [{ key: 'acl', label: 'Hold it for ACL', pick: true }, { key: 'clean', label: 'Ship as soon as the gate is clean, even Sunday' }, { key: 'change', label: 'Needs changes first (note)' }] },
+  { id: 'op-before', q: 'Before a festival: the peek shows tomorrow’s first stop the day before, and nothing earlier.',
+    why: 'Wednesday shows “NEXT · Thu ~9:30 PM”; Tuesday shows no peek. A peek days out would sit over the dock with nothing to act on.',
+    options: [{ key: 'tomorrow', label: 'Tomorrow only, as built', pick: true }, { key: 'any', label: 'Show the first stop on any day before' }, { key: 'none', label: 'Nothing until the first night' }] },
+  { id: 'op-back', q: 'With the plan open, Back does what it does from the wall today.',
+    why: 'The plan adds no history entry, the house rule for popovers since the Show menu. With the plan open a Back does what it does from the wall today: it leaves the wall (to whatever the link was opened from; on Android it closes the app; on an iPhone opened from Messages there is usually nothing behind it). The grabber, a drag down, Escape, ✕ and the fest name all close it.',
+    options: [{ key: 'as-built', label: 'As built: no history entry', pick: true }, { key: 'history', label: 'Back should close the plan (adds a history entry)' }] },
+  { id: 'op-nowtab', q: 'One NOW: the dock’s NOW steps aside while the peek says NOW. With a highlight on, the dock keeps its NOW.',
+    why: 'A highlight (say, just Ross) makes the NOW tab mean “Ross’s now”, which the crew’s peek doesn’t answer, so it stays.',
+    options: [{ key: 'as-built', label: 'As built', pick: true }, { key: 'always', label: 'Keep the dock’s NOW all the time' }] },
+  { id: 'op-welcome', q: 'A newcomer’s welcome card comes first; the peek waits and rises when the card goes.',
+    why: 'One thing at a time above the dock. The same holds on a laptop.',
+    options: [{ key: 'as-built', label: 'Welcome first, as built', pick: true }, { key: 'both', label: 'Show both at once' }] },
+  { id: 'op-faces', q: 'A NEXT peek keeps the crew’s faces just under its window.',
+    why: 'That makes NEXT and NOW peeks the same height (the approved peek drew no faces). The faces slide into view as it opens.',
+    options: [{ key: 'as-built', label: 'Tucked, as built', pick: true }, { key: 'show', label: 'Show the faces in the peek (a taller peek)' }] },
+  { id: 'op-grown', q: 'Grown cards: a tap never folds another card, and grown cards are still grown when you reopen the plan the same night.',
+    why: 'One-at-a-time folded the NOW card above and slid the tapped row up by a card’s height. Tapping the row again folds its card. A new night starts folded, apart from its NOW card.',
+    options: [{ key: 'as-built', label: 'As built', pick: true }, { key: 'one', label: 'One card at a time' }, { key: 'fold', label: 'Reopen with everything folded but NOW' }] },
+  { id: 'op-headtap', q: 'Phone: with the plan open, a tap on its head (“SAT OUR PLAN”) closes it, the same as a tap on the grabber.',
+    why: 'The review found the open grabber bar is only 13px tall, a hard target. The head already drags the plan down and opens nothing of its own, so it now takes a tap too. The ✕ still closes it as well.',
+    options: [{ key: 'keep', label: 'Keep: the head is part of the handle', pick: true }, { key: 'grabber', label: 'Only the grabber and ✕ close it' }] },
+  { id: 'op-deskhead', q: 'Laptop: as the card grows, its line crossfades into the panel’s head, and “Open ⌃” becomes “Close ⌄”.',
+    why: 'Watch the laptop clip at the top. The alternative is one head that never changes: “OUR PLAN · SAT · 9 OF US” at both sizes.',
+    options: [{ key: 'as-built', label: 'Crossfade, as built', pick: true }, { key: 'one', label: 'One head at both sizes' }] },
+  { id: 'op-deskcover', q: 'Laptop: the open panel covers the wall’s right 400px, with no dimming. The wall stays usable beside it.',
+    why: 'Pushing the wall narrower would re-lay out every card at once, the motion the app avoids. A zoom keeps left of the panel, and the Spotify pill rides above the corner card.',
+    options: [{ key: 'as-built', label: 'Cover, as built', pick: true }, { key: 'push', label: 'Push the wall narrower' }] },
+  { id: 'op-trip', q: 'ACL: a Late night that starts while the festival is still playing can send the plan across town and back. Not built: your call.',
+    why: 'Every ACL Late night has a time since this morning, and 16 of the 41 Late-night sets on festival days start before the last festival set ends (most at 9 or 9:30, during the headliners; the Scoot Inn at 7 PM on Friday and Saturday). The plan puts each friend at their favourite pick every five minutes, so on the made-up crew Sunday reads Scoot Inn, then Zilker, the Scoot Inn, Zilker, the Scoot Inn again. My fix: a friend moves to another place only for a pick they want more, or when theirs has nothing left, and never goes back to a place they left that night. It changes the rule you approved, and it can move a few Portola lines, so I have not built it.',
+    options: [{ key: 'one-trip', label: 'Build it: move only for something better, never back', pick: true }, { key: 'grounds', label: 'Stay at the festival until your last set there, then go' }, { key: 'leave', label: 'Leave it as is' }] },
+];
+const COLLECTION = 'decisions';
+const state = {};
+let db = null;
+const list = document.getElementById('calls');
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+function render() {
+  list.textContent = '';
+  for (const c of CALLS) {
+    const s = state[c.id] || {};
+    const li = el('li', 'call' + (s.choice ? ' answered' : ''));
+    li.dataset.call = c.id;
+    const body = el('div');
+    body.append(el('div', 'q', c.q));
+    if (c.why) body.append(el('div', 'why', c.why));
+    const opts = el('div', 'opts');
+    opts.setAttribute('role', 'group');
+    opts.setAttribute('aria-label', c.q);
+    for (const o of c.options) {
+      const b = el('button', 'opt');
+      b.type = 'button';
+      b.dataset.key = o.key;
+      b.setAttribute('aria-pressed', String(s.choice === o.key));
+      b.append(el('span', 'ring'), el('span', null, o.label));
+      if (o.pick) b.append(el('span', 'pick', 'my pick'));
+      b.addEventListener('click', () => choose(c.id, o.key));
+      opts.append(b);
+    }
+    const ta = el('textarea');
+    ta.id = 'note-' + c.id;
+    ta.placeholder = 'Optional note';
+    ta.setAttribute('aria-label', 'Note: ' + c.q);
+    ta.value = s.note || '';
+    let t;
+    ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => note(c.id, ta.value), 800); });
+    ta.addEventListener('change', () => { clearTimeout(t); note(c.id, ta.value); });
+    const saved = el('div', 'saved', s.label || '');
+    saved.id = 'saved-' + c.id;
+    body.append(opts, ta, saved);
+    li.append(el('span', 'node'), body);
+    list.append(li);
+  }
+}
+async function save(id) {
+  const s = state[id] || {};
+  const lab = document.getElementById('saved-' + id);
+  if (!db) { if (lab) lab.textContent = 'Not saved on the page — use Copy my answers'; return; }
+  try {
+    await db.doc(COLLECTION + '/' + id).set({ choice: s.choice || null, note: s.note || '', at: new Date().toISOString() });
+    s.label = 'Saved';
+  } catch (e) { s.label = 'Couldn’t save — use Copy my answers'; }
+  if (lab) lab.textContent = s.label;
+}
+function choose(id, key) {
+  state[id] = { ...(state[id] || {}), choice: key };
+  const li = list.querySelector(`[data-call="${id}"]`);
+  if (li) {
+    li.classList.add('answered');
+    li.querySelectorAll('.opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.key === key)));
+  }
+  save(id);
+}
+function note(id, v) { state[id] = { ...(state[id] || {}), note: v.trim() }; save(id); }
+function answersText() {
+  const lines = CALLS.map((c) => {
+    const s = state[c.id] || {};
+    const o = c.options.find((x) => x.key === s.choice);
+    return `${c.id}: ${o ? o.label : '(no answer)'}${s.note ? ' — ' + s.note : ''}`;
+  });
+  const extra = (state.extra || {}).note;
+  if (extra) lines.push('else — ' + extra);
+  return lines.join('\n');
+}
+document.getElementById('copy').addEventListener('click', async () => {
+  const t = answersText();
+  const out = document.getElementById('answers');
+  out.textContent = t; out.hidden = false;
+  const st = document.getElementById('copy-status');
+  try { await navigator.clipboard.writeText(t); st.textContent = 'Copied'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(out); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); st.textContent = 'Selected — copy it with your keyboard'; }
+});
+const extra = document.getElementById('note-extra');
+let te;
+extra.addEventListener('input', () => { clearTimeout(te); te = setTimeout(() => note('extra', extra.value), 800); });
+extra.addEventListener('change', () => { clearTimeout(te); note('extra', extra.value); });
+render();
+
+(async () => {
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+  if (!db) return;
+  try {
+    const local = { ...state };
+    const snap = await db.collection(COLLECTION).get();
+    const seen = new Set();
+    for (const d of snap.docs) {
+      seen.add(d.id);
+      const v = d.data() || {};
+      state[d.id] = { choice: v.choice || undefined, note: v.note || '', label: (v.choice || v.note) ? 'Saved' : '' };
+    }
+    for (const id of Object.keys(local)) if (!seen.has(id)) { state[id] = local[id]; save(id); }
+    const ae = document.activeElement;
+    if (!(ae && ae.tagName === 'TEXTAREA')) render();
+    if (state.extra && !extra.value) extra.value = state.extra.note || '';
+  } catch (e) { /* the page still works: Copy my answers */ }
+})();
+</script>

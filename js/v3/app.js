@@ -58,7 +58,7 @@ configureReports({
 });
 import { createSortControl } from './sort-control.js';
 // The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
-import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
+import { buildHighlightMenu, paintHighlightMenu, menuActionRow, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
 import { passesPeople } from './filters.js';
 import { nameProblem, ACTIVE_PEOPLE_MAX } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -72,6 +72,12 @@ import { openImportSheet } from './import.js'; // picks from a festival app's sc
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
 import { showJoinShelf, joinShelf } from './join-shelf.js';
+// Our plan (2026-09-26): the model, the phone's peek-and-day shelf, and the
+// floor they change (the dock plus the peek).
+import { planOf, planAt, peekOf } from './plan.js';
+import { shortDate } from './events.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
+import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 import { getLS } from '../util.js';
@@ -181,6 +187,14 @@ const ctx = {
   onHold: (artist, el, occ) => { eatLiftClick(); handleTap(artist, el, occ, 'finger'); },
 };
 
+// Our plan's cache (2026-09-26): the model, whether refreshCtx has made it
+// stale, and a generation the shelf compares so a minute tick on an unchanged
+// plan never rebuilds a row. Declared up here, beside ctx, because refreshCtx
+// writes planDirty and runs before the Our plan block below is reached.
+let planDirty = true;
+let planModel = null;
+let planGen = 0;
+
 // The one click a hold's lift may still send (ctx.onHold): eaten if it comes
 // within a beat of the finger lifting, wherever it lands. Gone at the next
 // press, at that click, a beat after the lift, or — a finger held on and on —
@@ -253,6 +267,10 @@ function refreshCtx() {
   ctx.folded = loadFolded(ctx.fid);
   ctx.view = listOffered(state.fest()) ? loadView(ctx.fid) : BOARD;
   ctx.festDates = festDatesOf();
+  // Every path that changes what Our plan counts comes through here — a pick
+  // (which never repaints the wall), a friend's pick, a fold, a member, a new
+  // festival file — so this is where the cached plan goes stale.
+  planDirty = true;
 }
 
 // Every date on the day axis, in the wall's order — the grid days (both
@@ -726,6 +744,9 @@ function refreshArtistCards(artistName) {
   // A refreshed card can be a NEW node, and the now mark rides the node: pick
   // the artist who is playing and the ring would go out until the next tick.
   positionNowMarks($('wall-root'), ctx.now || new Date());
+  // A pick changes Our plan's counts, and this path never repaints the wall
+  // (so never reaches renderDayNav): the peek is painted here.
+  paintPlan();
 }
 
 // What a press on a card means (the tap change, Kevin 2026-09-26: "a tap on
@@ -1166,6 +1187,7 @@ function setPeopleFilter(names) {
   renderPersonChips();
   if (zoomedCard()) { repaintWall(); return; }
   dimInPlace();
+  paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
 function dimInPlace() {
@@ -1211,9 +1233,10 @@ function tickClock(date = new Date()) {
   // every new build's reload on this phone for good): given back here, at the
   // minute tick and whenever the page is shown again.
   if (document.body.dataset.busy === 'show-menu' && !openMenu) delete document.body.dataset.busy;
+  if (document.body.dataset.busy === 'plan-drag' && !planDragging()) delete document.body.dataset.busy;
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
-  paintNowTabs(date); // the same minute decides whether NOW is there at all
+  paintPlan(date); // the same minute decides the peek, and then whether NOW is there at all
 }
 
 // ---- NOW: the jump to what is playing (Kevin, 2026-09-24) -------------------------
@@ -1238,13 +1261,113 @@ function tickClock(date = new Date()) {
 // just outside the row, and a rebuilt row (every repaint) gets it back in
 // place without a flicker.
 const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
+// ONE NOW (Our plan, 2026-09-26): once the plan carries a NOW row where a
+// person can see it — the phone's peek, the laptop's corner card or panel —
+// the NOW tab beside the day steps aside: two doors to one moment is one too
+// many. (planShowsNow asks whether the plan is on screen, so each door answers
+// for its own layout: the dock under 720, the rail above.) The tab stays
+// wherever the plan is not saying NOW (nothing today, a live set that is no
+// stop of ours, a NEXT peek). A highlight filters both doors (Kevin,
+// 2026-09-26: "the filters should filter the now too"): the peek says NOW
+// only for a stop the highlighted people are in (plan.js peekOf), and where
+// it does not, the tab comes back as "what is on for Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
   const landing = nowLanding($('wall-root'), ctx, date);
   const at = landing && (landing.card || landing.line);
   const block = at ? at.closest(DAY_ANCHOR) : null;
   const day = landing ? (block ? block.dataset.day : '') : null;
-  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), day);
+  const planSaysNow = planShowsNow();
+  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow ? null : day);
 }
+// ---- Our plan (2026-09-26 — Kevin's call #5) ----------------------------------
+// Where most of us will be, as a route of stops, from everyone's picks
+// (plan.js), shown as the peek on the dock that drags up into the day
+// (plan-shelf.js). The model is built lazily and cached until refreshCtx
+// says something it counts has changed; the minute tick only asks it where
+// the clock is. SPEC: claude-plans/2026-09-26-unified-build/our-plan/SPEC-ui.md.
+function currentPlan() {
+  if (planDirty || !planModel) {
+    const fest = state.fest();
+    planModel = fest ? planOf(fest, { picks: ctx.picks, members: state.activePeople().map(([n]) => n), folded: ctx.folded }) : null;
+    planDirty = false;
+    planGen += 1;
+  }
+  return planModel;
+}
+
+// What the peek shows right now, or null for no peek. The model answers
+// "tonight, else the next night with a stop"; the shell decides which of those
+// a person sees:
+//   · not while a search is on — the search wall has no clock (NOW goes too);
+//   · not while the welcome card or the bring-your-picks offer is up — one
+//     thing at a time at the bottom of the screen; the peek rises when it goes;
+//   · a night ahead only when it is TOMORROW's — after tonight's last stop the
+//     peek says where we start tomorrow, and the days before a festival have
+//     no peek at all (Kevin, 2026-09-26: "tomorrow only, as built");
+//   · with a highlight on, only the highlighted people's stops (peekOf) —
+//     and the rows none of them is in step back, as their cards do.
+function planAnswer(date) {
+  const fest = state.fest();
+  if (!fest || !state.getCrewToken() || ctx.query) return null;
+  // Any card still in the screen counts, a leaving one included: its removal
+  // is what lets the peek rise (the observer in wire-up).
+  if ($('screen-app').querySelector(':scope > .bring-offer')) return null;
+  const plan = currentPlan();
+  if (!plan || !plan.available) return null;
+  const highlight = ctx.filterPeople || [];
+  const peek = peekOf(plan, fest, date, { people: highlight });
+  if (!peek) return null;
+  const at = planAt(plan, fest, date);
+  const tonight = at ? at.night.iso : festivalClock(date, fest.timezone || null).iso;
+  if (!peek.today && peek.night.iso !== isoAfter(tonight)) return null;
+  const entry = plan.nights.find((n) => n.id === peek.night.id) || {};
+  const when = entry.iso ? shortDate(entry.iso) : '';
+  // "also Thu" on Portola, "also Oct 9" where two nights share a weekday
+  // (ACL's two weekends): a night is called what tells it apart.
+  const wdCount = new Map();
+  for (const n of plan.nights) wdCount.set(n.wd, (wdCount.get(n.wd) || 0) + 1);
+  const nightLabelOf = (id) => {
+    const n = plan.nights.find((x) => x.id === id);
+    if (!n) return '';
+    return wdCount.get(n.wd) > 1 && n.iso ? shortDate(n.iso) : (n.wd || '');
+  };
+  return {
+    plan, peek, route: peek.night, gen: planGen, highlight,
+    nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
+    weekday: String(entry.wd || '').toUpperCase(),
+    sub: [when, `${plan.us.length} picking`].filter(Boolean).join(' · '),
+    dayWord: peek.today ? '' : (entry.wd || ''),
+    nightLabelOf,
+  };
+}
+const isoAfter = (iso) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
+
+// ONE paint for the peek and then the NOW tab, on one date — so they can never
+// disagree across a minute (the tab reads whether the peek says NOW). Called
+// from every repaint (renderDayNav), a pick (refreshArtistCards), the minute
+// tick and an empty NOW tap.
+// The plan rides on the wall and never takes it down: a throw in it is
+// recorded, the peek goes away, and the NOW tab paints as it did before Our
+// plan existed.
+function paintPlan(date = ctx.now || new Date()) {
+  if ($('screen-app').style.display !== 'none') {
+    try { paintPlanShelf($('screen-app'), ctx, planAnswer(date)); } catch (e) {
+      record('plan:paint', e);
+      try { hidePlanShelf({ instant: true }); } catch { /* already gone */ }
+    }
+  }
+  paintNowTabs(date);
+  // The people menu offers Our plan only while there is one: a plan that
+  // comes or goes (the minute past the last stop, the welcome card leaving)
+  // redraws the menu's rows, an open menu's included (Codex, 2026-09-26).
+  if (planHere() !== menuHasPlan) paintHighlight();
+}
+
 // The day tab NOW follows: the live day's, else none (the row's start).
 const liveTabIn = (row, day) => [...row.children].find((t) => t.classList.contains('day-tab') && t.dataset.day === day) || null;
 const inPlace = (tab, row, after) => tab.parentElement === row && (after ? tab.previousElementSibling === after : !tab.previousElementSibling);
@@ -1356,9 +1479,10 @@ function seenBand(inGrid) {
     const strip = block ? block.querySelector('.stage-strip') : null;
     top = (parseFloat(vars.getPropertyValue('--rail-h')) || 0) + (strip ? strip.offsetHeight : 0);
   }
-  const dock = $('dock');
-  const docked = dock && window.getComputedStyle(dock).display !== 'none' && !dock.classList.contains('hidden');
-  return { top, bottom: docked ? dock.getBoundingClientRect().top : window.innerHeight };
+  // The floor is the dock's top, or Our plan's above it — the peek, or the
+  // open plan, which covers the wall below its top edge (foot.js).
+  const floor = footTop();
+  return { top, bottom: floor == null ? window.innerHeight : floor };
 }
 
 // Tap NOW: land on what is playing (wall.js nowLanding says what, nowStops
@@ -1451,7 +1575,7 @@ function jumpToNow() {
   const root = $('wall-root');
   const geo = pageGeo(root);
   const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
-  if (!plan || !plan.stops.length) { nowCycle = null; paintNowTabs(); return; }
+  if (!plan || !plan.stops.length) { nowCycle = null; paintPlan(); return; }
   const { best } = plan;
   // Which stop, led by what, landing where: wall.js nowStep. A stop lands the
   // same way every time it is reached — first tap, next tap or wrap — at its
@@ -1808,7 +1932,8 @@ function renderDayNav() {
   unspy = wireScrollspy([dock, rail], $('wall-root'));
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
-  paintNowTabs();
+  // Our plan's peek paints first, so the one-NOW rule reads this pass's peek.
+  paintPlan();
   // Moving NOW out and back in drops focus; someone walking NOW's stops on a
   // keyboard must not lose their place to the 25 s poll's repaint.
   NOW_DOORS.forEach(([tab], i) => {
@@ -1930,6 +2055,7 @@ function catchStrayTaps(on) {
 
 function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   closeShowMenu({ instant: true });
+  closePlan(); // Our plan: the fest name is a way out of the open plan too (SPEC-ui §7)
   settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
   // The bar the menu lives in (the dock, the day rail) is a stacking context:
   // its menu paints at the bar's own level, which put the dock's upward menu
@@ -2131,13 +2257,23 @@ const YOU_SLOTS = [['dock-you-wrap', 'dock-you', 'dock-days'], ['rail-you-wrap',
 const hlPop = (wrap) => (wrap ? wrap.querySelector(':scope > .hl-pop') : null);
 const highlightOpenIn = (wrap) => !!(openMenu && openMenu.wrap === wrap);
 
-// Our plan's row slots into the menu above Pick as someone else (the Our plan
-// build on live/plan fills this: return people-menu.js menuActionRow(...)
-// wired to open the plan, or null). Nothing here yet — the brief, item 4.
-function peopleMenuPlanRow() { return null; }
+// Our plan's row, above Pick as someone else / Join the crew (the design's
+// "Our plan ›", read as "Our picks ›" since 2026-09-26 — the other way in). The menu gives way and
+// the plan rises from where it already is — the peek over the dock, the
+// laptop's corner card. It is offered only while there is a plan on screen
+// (peopleMenuData); opening a menu closes an open plan to its peek, so the
+// row always has somewhere to go. A click with no pointer behind it (Enter,
+// Space, a screen reader) takes the focus into the plan with it.
+function peopleMenuPlanRow() {
+  const r = menuActionRow({ label: PEOPLE_WORDS.plan, chev: true, act: 'plan', cls: 'plan' });
+  r.b.addEventListener('click', (e) => { closeShowMenu(); openPlan({ focus: e.detail === 0 }); });
+  return r;
+}
 
+let menuHasPlan = false; // whether the people menu was last drawn with Our plan's row (paintPlan)
 function peopleMenuData() {
   const guest = !ctx.meName;
+  menuHasPlan = planHere();
   const active = state.activePeople();
   return {
     people: active.map(([name, p]) => ({ name, color: hslOf(colorIndexOf(name, p)) })),
@@ -2147,7 +2283,7 @@ function peopleMenuData() {
     // Nobody else in the crew: nobody to pick as (PEOPLE-BUILD.md).
     pickAs: !guest && active.some(([n]) => n !== ctx.meName),
     invite: !guest,
-    plan: peopleMenuPlanRow,
+    plan: menuHasPlan ? peopleMenuPlanRow : null,
   };
 }
 const PEOPLE_DOORS = {
@@ -2298,6 +2434,7 @@ function repaintWall() {
   updateMigrationBanner();
   updateArchiveNote();
   measureStickyChrome();
+  measureFoot(); // Our plan: the shell's padding follows the dock and the peek
 }
 
 // The first-wall coach mark (CT-1) lived here until v92: one strip in the
@@ -2404,8 +2541,9 @@ const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app',
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
   // The Show menu belongs to the wall's screen, and goes with it: left open,
-  // it came back up over the wall the next time that screen showed.
-  if (screen !== 'screen-app') closeShowMenu({ instant: true });
+  // it came back up over the wall the next time that screen showed. An open
+  // Our plan goes back to its peek the same way.
+  if (screen !== 'screen-app') { closeShowMenu({ instant: true }); dropPlan(); }
   for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
@@ -3974,6 +4112,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   guestOf = member || crew.me(token) ? null : token;
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
+  hidePlanShelf({ instant: true });     // Our plan: one crew's day never shows over the next
   welcomeHere = null;                   // decided below, once the name is known
   // A share link's starting view (v92): consumed once, like the fest hint,
   // and only ever for a phone that has never shown the link's festival — read
@@ -4526,15 +4665,26 @@ export function init() {
   });
   // A late font changes how wide the days and NOW draw, and so where their
   // row rests (the corners' refit does the same, wall.js). The row's own box
-  // may not change size, so its resize watch would not see it.
+  // may not change size, so its resize watch would not see it. (Our plan
+  // watches its own boxes: WebKit's event came before the font's layout.)
   if (document.fonts && typeof document.fonts.addEventListener === 'function') {
-    document.fonts.addEventListener('loadingdone', () => NOW_DOORS.forEach(([, row]) => restDayRow($(row))));
+    document.fonts.addEventListener('loadingdone', () => { NOW_DOORS.forEach(([, row]) => restDayRow($(row))); });
+  }
+  // The dock's height moves on its own — a late font, the NOW tab stepping
+  // aside for the peek, whatever the dock comes to hold — and the plan stands
+  // on it and the page's padding follows it. Watch the box itself rather than
+  // each cause (a browser run once caught the peek 1px under a dock that had
+  // grown after the last measure).
+  if (typeof window.ResizeObserver === 'function') {
+    new window.ResizeObserver(() => { measureFoot(); refitPlanShelf(); }).observe($('dock'));
   }
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       measureStickyChrome();
+      refitPlanShelf();
+      measureFoot();
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -4554,8 +4704,37 @@ export function init() {
   const sortCtl = createSortControl({ initial: ctx.sort, onChange: (v) => { ctx.sort = v; repaintWall(); } });
   $('sort-control').appendChild(sortCtl.el);
   const dock = $('dock');
-  $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
-  $('search-input').addEventListener('blur', () => dock.classList.remove('hidden'));
+  // The search field hides the dock while it has focus (the keyboard is up)
+  // and Our plan's peek with it; blur brings both back. Each is a change in
+  // whether the peek's NOW can be seen, so the one-NOW rule reads it again —
+  // or a query cleared in the field left the dock's NOW beside the peek's
+  // after the blur (Codex, 2026-09-26).
+  $('search-input').addEventListener('focus', () => { dock.classList.add('hidden'); $('screen-app').classList.add('searching'); paintNowTabs(); });
+  $('search-input').addEventListener('blur', () => { dock.classList.remove('hidden'); $('screen-app').classList.remove('searching'); measureFoot(); paintNowTabs(); });
+  // Our plan waits for the card above the dock — the welcome, the bring-your-
+  // picks offer — and rises when it has gone (one thing at a time down there).
+  // Both mount into #screen-app and leave by being removed, so their coming
+  // and going is the whole signal. The Spotify pill stands above the card
+  // (foot.js measureOffer): on its arrival, whenever its size changes (its
+  // text changes after an answer), and whenever the floor is measured.
+  let offerSize = null;
+  const watchOffer = () => {
+    if (offerSize) { offerSize.disconnect(); offerSize = null; }
+    const card = $('screen-app').querySelector(':scope > .bring-offer');
+    if (card && typeof window.ResizeObserver === 'function') {
+      offerSize = new window.ResizeObserver(() => measureOffer());
+      offerSize.observe(card);
+    }
+    measureOffer();
+  };
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (typeof Observer === 'function') {
+    const isCard = (n) => n.nodeType === 1 && n.classList.contains('bring-offer');
+    new Observer((records) => {
+      if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isCard))) { paintPlan(); watchOffer(); }
+    }).observe($('screen-app'), { childList: true });
+  }
+  watchOffer();
   // The "you" slot opens the people menu (2026-09-26) — a guest's dashed +
   // too, whose menu ends in Join the crew. Jump to top retired with no door
   // (PEOPLE-BUILD.md): its real job was reaching the people row.
@@ -4602,7 +4781,7 @@ export function init() {
   // always did, and the menu goes with the page — as it does when the page
   // is put away.
   window.addEventListener('popstate', () => closeShowMenu({ instant: true }));
-  window.addEventListener('pagehide', () => closeShowMenu({ instant: true }));
+  window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); });
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
@@ -4659,6 +4838,9 @@ export function init() {
     if (e.key !== 'Escape') return;
     if (openMenu) { closeShowMenu(); return; }
     if (leaveShelf('escape')) return; // the shelf decides, busy or not (never a bare closeSheet)
+    // An open Our plan comes after any sheet over it (a sheet paints above the
+    // plan, so it is the top thing) and before the router's layers.
+    if (planIsOpen() && !$('sheet-backdrop') && $('screen-app').style.display !== 'none') { closePlan(); return; }
     if (!router.requestClose()) closeSheet();
   });
   // Last-resort net (FLOW-4): an early crash used to leave every screen

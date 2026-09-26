@@ -88,8 +88,10 @@ async function openWall(engine, { width, height, touch = false }) {
         const r = n.getBoundingClientRect();
         if (r.height > 0 && r.bottom > 0 && r.top < innerHeight && (ceiling === null || r.bottom > ceiling)) ceiling = r.bottom;
       }
-      const dock = document.getElementById('dock');
-      return { ceiling, floor: dock && dock.getClientRects().length ? dock.getBoundingClientRect().top : null };
+      // The floor is the top of the bottom chrome: the dock, or Our plan's
+      // peek standing on it (foot.js footTop, 2026-09-26).
+      const tops = (document.getElementById('dock').getClientRects().length ? ['dock', 'plan'] : []).map((id) => document.getElementById(id)).filter((n) => n && n.getClientRects().length).map((n) => n.getBoundingClientRect().top).filter((y) => y > 0 && y < innerHeight);
+      return { ceiling, floor: tops.length ? Math.min(...tops) : null };
     };
   });
   const page = await ctx.newPage();

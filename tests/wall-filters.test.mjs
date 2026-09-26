@@ -138,9 +138,12 @@ test('the people filter dims everywhere and hides nothing: the clock keeps every
   assert.equal(count(root, '.card'), count(plain, '.card'), 'the filtered wall has exactly the cards the plain wall has');
   assert.equal(count(root, '.venue-group'), count(plain, '.venue-group'), 'and exactly the groups');
   // One rule, one class: the dim on a cell and the dim on a stack card is the
-  // same `.card.dim` — nothing in the stylesheet tells them apart.
+  // same `.card.dim` — nothing in the stylesheet tells them apart. Read the
+  // selectors, not the comments; the only other `.dim` is Our plan's, on its
+  // own rows and grown cards (a highlight dims those the same way, same .28).
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
-  assert.equal((css.match(/\.dim\b/g) || []).length, 1, 'one .dim rule');
+  const dimmed = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([\w-]*)\.dim\b/g)].map((m) => m[1]);
+  assert.deepEqual(dimmed.filter((cls) => !cls.startsWith('plan-')), ['card'], 'one .dim rule on the wall');
   assert.match(css, /\.card\.dim \{ opacity: \.28; \}/);
   assert.equal(css.includes('section-empty'), false, 'the empty-room copy has no rule left to wear');
   plain.remove(); root.remove();

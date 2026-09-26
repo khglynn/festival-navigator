@@ -87,8 +87,8 @@ test('− on a guest’s shelf asks naming the artist, promises no pick — and 
   await settle(10);
   assert.equal(notesShelf(), null, 'the notes shelf gave way');
   assert.ok(shelf(), 'the question is up');
-  assert.equal(shelfLine(), 'Join the plan for Robyn as…');
-  assert.equal(shelf().getAttribute('aria-label'), 'Join the plan for Robyn as');
+  assert.equal(shelfLine(), 'Join the crew for Robyn as…');
+  assert.equal(shelf().getAttribute('aria-label'), 'Join the crew for Robyn as');
   assert.equal(history.state && history.state.joinShelf, true, 'on the notes shelf’s own entry, not a second one');
   await lookAround();
   assert.equal(shelf(), null);
@@ -105,7 +105,7 @@ test('the note door’s place asks the same way, naming the artist', async () =>
   join.click();
   await settle(10);
   assert.ok(shelf());
-  assert.equal(shelfLine(), 'Join the plan for Robyn as…');
+  assert.equal(shelfLine(), 'Join the crew for Robyn as…');
   await lookAround();
   assert.deepEqual(writes, []);
 });
@@ -129,7 +129,7 @@ test('a mouse’s zoom (a desktop guest) carries the same doors: its − asks th
   zoomCard().querySelector('.f-step.minus').click();
   await settle(10);
   assert.equal(zoomCard(), null, 'the zoom goes back into its card');
-  assert.equal(shelfLine(), 'Join the plan for Robyn as…');
+  assert.equal(shelfLine(), 'Join the crew for Robyn as…');
   await lookAround();
   el.dispatchEvent(new shell.dom.window.PointerEvent('pointerleave', { pointerType: 'mouse' }));
 });
