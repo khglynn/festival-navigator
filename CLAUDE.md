@@ -174,9 +174,11 @@ Non-inferable facts only (the code answers everything else — read it).
   are two real places, a native link bypasses the router, and "skip the
   dead entry" can step out of the app. So a menu or popover takes no entry
   of its own: the Show menu has none, and v93 spent four review rounds on
-  Back bugs giving it one before cutting it. A surface Back truly must close
-  (the join shelf today) is one designed model with those four cases as its
-  acceptance tests, not a patch mid-release.
+  Back bugs giving it one before cutting it. Layers Back must close
+  (Settings and its drills, the note sheets) ride one designed model,
+  `js/v3/router.js`, and the join shelf keeps its own entry; anything new
+  that Back must close joins the router with those four cases as its
+  tests, not a patch mid-release.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies images

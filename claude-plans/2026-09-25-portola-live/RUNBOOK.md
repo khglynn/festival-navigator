@@ -64,12 +64,11 @@ Evidence for every rule is in `research/` beside this file.
    builder's own walk had passed (Escape regrowing a zoom; a welcome that
    never showed).
    **When a third round finds a new hole of the same kind, stop patching and
-   cut the mechanism, not the feature.** v93's stay-open Show menu took four
-   rounds of Back bugs, costing more than three other releases together, and
-   every one came from the menu owning a browser-history entry. As a popover
-   with no entry it kept the feature and lost the whole class of bug (the
-   first proposal cut the feature; Kevin pushed back). Say what was cut and
-   where it is banked (`v93-BUILD.md` on `live/v93`, which lands with v96).
+   cut the mechanism, not the feature** — v93's Show menu kept staying open
+   once it lost its history entry (CLAUDE.md's history bullet has the why;
+   the first proposal cut the feature and Kevin pushed back). Say what was
+   cut and where it is banked (`v93-BUILD.md` on `live/v93`, which lands
+   with v96).
 7. Merge yourself (`gh pr merge --merge`) — Kevin's standing rule — unless a
    finding is a product call he hasn't seen or it touches friends' data.
 8. Verify: wait for main's CI, then run `node ops/prod-smoke.mjs` **from
