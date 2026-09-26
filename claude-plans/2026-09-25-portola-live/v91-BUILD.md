@@ -186,3 +186,15 @@ other: swiping SAT AFTERS leaves SAT FOLSOM where it was (see calls).
    feels sticky on his phone, the timetable would too.
 5. The NOW jump does not slide a stack row to frame a NOW card in the right
    column (the grid gets that); at rest such a card is ≥79% on screen.
+
+### Wrap-up (2026-09-25, builder)
+
+Full `npm test` on the final head: 922 tests, 920 pass, 1 skipped (the
+DATABASE_URL-gated concurrency test), 1 fail — the ASSET_STAMP check, as
+expected: `js/v3/wall.js`, `assets/v3.css` and `assets/v3-tokens.css`
+changed and the stamp is the orchestrator's. Browser suite one file at a
+time (`node --test --test-concurrency=1 tests/browser/*.test.mjs`): 185/185
+before the last comment-only tidy; `stack-row` re-run after it, 6/6. No PR,
+merge or stamp; no crew-data, sync, merge, artist-name or update-machinery
+change; nothing loaded production or wrote to the database (a static server
+and a made-up crew throughout).
