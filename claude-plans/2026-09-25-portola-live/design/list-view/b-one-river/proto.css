@@ -1,0 +1,88 @@
+/* One river — prototype styles (list-view round, 2026-09-26, on v95).
+ * Tokens only (assets/v3-tokens.css). The card, its aura, its corners, the
+ * band head, the whisper and the now ring are production; these rules add the
+ * river's four new pieces: the day's head of doors, the room word on a card,
+ * the ALL HOUR line, and the list's now line and past fold. Never --fest. */
+
+.rv { display: flex; flex-direction: column; gap: 9px; }
+
+/* THE DAY'S ONE HEAD — "SUN  PORTOLA · AFTERS · FOLSOM  SEP 27 ——". The
+ * weekday is secondary (as on today's heads); each room word is its own note
+ * door, a real button, header colour, the display face at the room head's
+ * size. One line: the date gives way first, then the dots tighten. */
+.rv-head { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+.rv-head .wd, .rv-head .door { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: var(--fs-day); }
+.rv-head .wd { color: var(--text-secondary); flex: none; }
+.rv-head .doors { display: flex; align-items: center; flex: none; min-width: 0; }
+.rv-head .door { background: none; border: 0; padding: 0 2px; margin: 0; color: var(--text-header); cursor: pointer; line-height: 1; }
+.rv-head .sep { color: var(--text-tertiary); padding: 0 5px; font-weight: 800; }
+.rv-head .sub { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; }
+.rv-head .line { flex: 1 1 0; min-width: 0; height: 1px; background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+/* A whisper says which door it came from, in the card's room-word voice. */
+.rv-whisper .rv-from { flex: none; color: var(--text-tertiary); font-size: 8px; font-weight: 800; letter-spacing: .14em; }
+
+/* THE ROOM WORD — a card's eyebrow: the room it is in, in the card's own sub
+ * colour at a whisper. Where only one room is on, it is not drawn. */
+.rv .card .rv-room { position: relative; font-size: 7.5px; font-weight: 800; letter-spacing: .16em; line-height: 1;
+                     opacity: .78; margin-bottom: 1px; }
+.rv[data-rooms="1"] .card .rv-room { display: none; }
+
+/* THE HOUR — production's band head, sticky: it rides the top while its hour
+ * is on screen and the next hour pushes it off (sticky is bounded by its band). */
+.rv-list { gap: 12px; }
+.rv-band { gap: 6px; }
+.rv-divider { position: sticky; top: 0; z-index: 4; padding: 10px var(--sp-gutter) 6px;
+              margin: -10px calc(-1 * var(--sp-gutter)) 0; background: linear-gradient(var(--page) 78%, transparent); }
+.rv-divider .label { color: var(--text-body); font-size: 11px; }
+
+/* ALL HOUR — what started earlier and is still on when the hour ends: one line
+ * of names, the crew's picks bright, a count. A button (its floor comes from
+ * being one); a tap opens it into the real cards. */
+.rv-hold { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; background: none; border: 0;
+           padding: 0 2px; margin: -2px 0 0; text-align: left; font-family: var(--font-ui); cursor: pointer; }
+.rv-hold .k { flex: none; color: var(--text-secondary); font-size: 8.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.rv-hold .names { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                  color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
+.rv-hold .n.p { color: var(--text-body); }
+.rv-hold .d { color: var(--text-tertiary); }
+.rv-hold .rw { color: var(--text-tertiary); font-size: 7.5px; font-weight: 800; letter-spacing: .16em; margin-right: 6px; vertical-align: 1px; }
+.rv-hold .gap { display: inline-block; width: 10px; }
+.rv-hold .more { flex: none; color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; }
+.rv-hold .more::after { content: ' ›'; }
+.rv-hold.open .more::after { content: ''; }
+.rv-hold.open .names { color: var(--text-secondary); }
+.rv-held { padding-bottom: 4px; }
+/* On touch the line is a 44px button; take the extra air back from its
+ * neighbours so it sits as close to the hour as a line of text would. */
+@media (pointer: coarse) { .rv-hold { margin: -10px 0 -8px; } }
+
+/* THE NOW LINE in a list — the timetable's line (brand, its glow, its time
+ * pill), between what is playing and what is still to start. */
+.rv-now { position: relative; display: flex; align-items: center; height: 12px; margin: 1px 0; }
+.rv-now .rule { flex: 1; height: 2px; background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .8); }
+.rv-now .pill { position: absolute; right: 4px; background: rgb(var(--brand)); color: var(--page); font-size: 8px; font-weight: 800;
+                letter-spacing: .08em; padding: 1px 5px; border-radius: var(--r-pill); white-space: nowrap; }
+
+/* THE FOLD — what is over: its last row, fading up into the page, and one
+ * door back. Not a long way back (Kevin, 2026-09-26). */
+.rv-fold { display: flex; flex-direction: column; align-items: center; margin-bottom: -2px; }
+.rv-fold .tail { align-self: stretch; height: 30px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+.rv-fold .band-grid { -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .5) 100%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .5) 100%); }
+.rv-earlier { min-height: 36px; /* 44px on touch: the floor */ display: inline-flex; align-items: center; gap: 7px;
+              background: none; border: 0; padding: 0 10px; cursor: pointer; font-family: var(--font-ui); }
+.rv-earlier .k { color: var(--text-body); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.rv-earlier .k::before { content: '↑ '; color: var(--text-tertiary); }
+.rv-earlier .n { color: var(--text-tertiary); font-size: 11px; font-weight: 600; }
+
+/* The Show menu's two new rows: the view as one row of two words, the chosen
+ * one in brand; what's over as an ordinary check row. */
+.sort-pop .rv-seg { gap: 8px; }
+.sort-pop .rv-seg .sw { color: var(--text-tertiary); }
+.sort-pop .rv-seg .sw.on { color: rgb(var(--brand)); }
+.sort-pop .rv-seg .sd { color: var(--text-tertiary); }
+
+/* Mid-motion ghosts (design only). */
+.rv-ghost { position: absolute; z-index: 1; pointer-events: none; transform-origin: 50% 50%; }
+.rv-cap { position: fixed; top: 6px; right: 8px; z-index: 80; color: var(--text-tertiary); font-size: 9px; font-weight: 800;
+          letter-spacing: .12em; text-transform: uppercase; background: rgba(12, 10, 20, .85); padding: 2px 6px; border-radius: 4px; }

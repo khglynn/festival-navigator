@@ -1,0 +1,61 @@
+/* Direction A — Rooms by time — prototype styles (2026-09-26, on v95).
+ * Tokens only (v3-tokens.css). Every rule is scoped to body.lv-list, so
+ * Board mode is production, pixel for pixel. */
+
+/* ---- a band head that is a door ------------------------------------------------
+ * In List mode an HOUR's head is a button (the time pin). The touch floor gives
+ * it 44px on a phone, and the list's own gaps give that height back: the band
+ * keeps no gap of its own, so the head's box IS the space between one hour's
+ * cards and the next. The label sits at the box's FOOT, 7px over its cards (as
+ * v94's did), so the air goes above it — between hours, not inside one. Same
+ * rhythm, now tappable. A word band (Daytime, Late)
+ * is not a door but takes the same height, so a room has one kind of head. */
+.lv-list .time-list { gap: 0; }
+.lv-list .time-band { gap: 0; position: relative; }
+.lv-list .band-head { min-height: 30px; align-items: flex-end; padding-bottom: 7px; box-sizing: border-box; }
+@media (pointer: coarse) { .lv-list .band-head { min-height: 44px; } }
+.lv-list button.band-head { width: 100%; padding: 0 0 7px; margin: 0; border: 0; background: none;
+                            font: inherit; color: inherit; text-align: left; cursor: pointer;
+                            -webkit-tap-highlight-color: transparent; }
+.lv-list .band-head .label { transition: color var(--lv-t, 170ms) ease; }
+.lv-list .band-head .line { position: relative; margin-bottom: 4.5px; } /* the label's middle, now it sits at the foot */
+/* The first hour sits a little closer under its room head (the head is already
+ * a 44px box on a phone; two boxes' air in a row read as a gap). */
+.lv-list .room > .time-list > .time-band:first-child { margin-top: -8px; }
+
+/* ---- the stage, as a place -------------------------------------------------------
+ * In the festival room a card's place is a stage: capitals, tracked, the card's
+ * own sub colour — the room head's register at the card's size. Never --fest. */
+.lv-stage-caps .room[data-room=":fest"] .card .place { text-transform: uppercase; letter-spacing: .1em;
+                                                      font-weight: 700; font-size: 8.5px; }
+
+/* ---- the time pin --------------------------------------------------------------- */
+.lv-list .card.lv-off { opacity: .28; } /* the people filter's own dim (.card.dim) */
+.lv-list .band-head.lv-at .label { color: rgb(var(--brand)); }
+.lv-list .band-head.lv-at .lv-hour { color: rgb(var(--brand)); }
+.lv-draw { position: absolute; inset: 0; transform-origin: left center; pointer-events: none;
+           background: linear-gradient(to right, rgba(var(--brand), .95), rgba(var(--brand), .15)); }
+/* The jump: a bare word at the line's end, no shape (Kevin: "just − + no
+ * button shape"). The page colour behind it cuts the line so it reads. */
+.lv-jump { position: absolute; top: 0; right: 0; display: inline-flex; align-items: flex-end; min-height: 30px; box-sizing: border-box;
+           padding: 0 0 7px 10px; margin: 0; border: 0; background: var(--page); cursor: pointer;
+           color: rgb(var(--brand)); font: 800 10px/1 var(--font-ui); letter-spacing: .09em;
+           -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) { .lv-jump { min-height: 44px; padding-left: 14px; } }
+.lv-jump:active { opacity: .6; }
+
+/* ---- side by side (from 1100) ------------------------------------------------------ */
+.day-block.lv-aligned { display: grid; align-items: start; justify-content: start; row-gap: 0; }
+.day-block.lv-aligned > .room,
+.day-block.lv-aligned .time-list,
+.day-block.lv-aligned .time-band { display: contents; }
+.day-block.lv-aligned .band-head[hidden] { display: none; } /* [hidden] loses to .band-head's display */
+/* The room heads ride the top of the day while it scrolls (under the day
+ * rail), so every column stays named at 4 PM as it was at noon. */
+.day-block.lv-aligned > .room > .room-head { align-self: end; position: sticky; top: var(--lv-top, 0px); z-index: 4;
+                                              background: var(--page); box-shadow: 0 8px 10px -6px var(--page); }
+.day-block.lv-aligned .band-grid { padding-bottom: 2px; }
+.day-block.lv-aligned > .room > .time-list > .time-band:first-child { margin-top: 0; }
+
+/* ---- the one-row-per-set alternative (argued against; frames only) ---------------- */
+.lv-1up .band-grid { grid-template-columns: 1fr; }

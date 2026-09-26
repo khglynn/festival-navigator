@@ -1,0 +1,125 @@
+/* The moment — design prototype styles (list-view round, direction c,
+ * 2026-09-26, over v95). Tokens only (assets/v3-tokens.css); the card, the
+ * avatar, the band head and the sheet surface are the app's own. Never --fest:
+ * the accent's four homes do not include a lens. */
+
+/* ---- the list it sits on ------------------------------------------------------
+ * Every room is a time list (the Folsom treatment), with hourly bands. A band's
+ * label is a DOOR to the moment at that hour: a real button, opted out of the
+ * 44px floor the way chips are, with borrowed space instead (v3.css). */
+.band-head .label.band-door { background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  line-height: 1; position: relative; min-height: 0; transition: color .14s cubic-bezier(.4, 0, .2, 1); }
+.band-head .label.band-door::after { content: ''; position: absolute; inset: -14px -12px; }
+@media (hover: hover) { .band-head .label.band-door:hover { color: var(--text-header); } }
+/* The band NOW is in: its label says so, in the brand (the now line's violet). */
+.band-head .label.band-door.is-now { color: rgb(var(--brand)); }
+.band-head .label.band-door .at { color: var(--text-tertiary); font-weight: 700; margin-left: 6px; }
+/* A door that is open: while the moment stands on this band, its label is lit
+ * and its hairline takes the brand for its first stretch. */
+.band-head.open .label.band-door { color: rgb(var(--brand)); }
+.band-head.open .line { background: linear-gradient(to right, rgba(var(--brand), .7), var(--hairline) 120px); }
+
+/* ---- the moment ----------------------------------------------------------------- */
+.mo-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 40; }
+.moment { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; box-sizing: border-box;
+  background: var(--dock); border-radius: var(--r-sheet); box-shadow: 0 -8px 30px rgba(0, 0, 0, .5);
+  padding: 8px 0 calc(18px + env(safe-area-inset-bottom)); max-height: 86vh; overflow-y: auto; overscroll-behavior: contain; }
+.moment .grabber { width: 36px; height: 4px; border-radius: var(--r-pill); background: var(--border-card);
+  margin: 0 auto; padding: 6px 30px; background-clip: content-box; }
+
+/* The head: − WHEN + — the moment's time in the room heads' own voice (the
+ * weekday secondary, the time in the header colour), the steppers bare glyphs. */
+.mo-head { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 0 var(--sp-gutter); }
+.mo-head .step { width: 44px; height: 44px; background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--text-secondary); font-size: 22px; font-weight: 500; line-height: 1; font-family: var(--font-ui); }
+.mo-head .when { min-width: 150px; text-align: center; font-family: var(--font-display); letter-spacing: var(--track-display);
+  font-size: calc(var(--fs-day) + 3px); color: var(--text-header); white-space: nowrap; overflow: hidden; }
+.mo-head .when .wd { color: var(--text-secondary); margin-right: 8px; }
+.mo-head .when .t { display: inline-block; }
+
+/* The fork: a stem from the time, one branch to each room. Drawn, not boxed. */
+.mo-scroll { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scroll-snap-type: x proximity;
+  padding: 0 var(--sp-gutter); scroll-padding-inline: var(--sp-gutter); }
+.mo-scroll::-webkit-scrollbar { display: none; }
+.mo-fork { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: var(--col-w);
+  column-gap: var(--mo-gap, var(--col-gap)); width: max-content; padding-top: 30px; }
+.mo-fork > svg.mo-lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.mo-lines path { fill: none; stroke: var(--border-emphasis); stroke-width: 1.5; stroke-linecap: round; }
+.mo-lines path.away { stroke-dasharray: 2 5; }
+.mo-lines path.most { stroke: rgba(var(--brand), .85); }
+
+/* A branch: head, faces, what's on, then. No box around it — the fork is the frame. */
+.mo-branch { display: flex; flex-direction: column; gap: 8px; min-width: 0; scroll-snap-align: start; }
+.mo-bhead { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+  background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; min-height: 0; }
+.mo-bhead .name { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: var(--fs-day);
+  color: var(--text-header); line-height: 1.05; }
+.mo-bhead .sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.mo-who { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 20px; }
+.mo-who .avatar-cluster .avatar + .avatar { margin-left: -5px; }
+.mo-who .avatar { box-shadow: 0 0 0 1.5px var(--dock); }
+.mo-who .count { color: var(--text-secondary); font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.mo-who .count.most { color: var(--tonal-text); }
+.mo-who .none { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.mo-cards { display: flex; flex-direction: column; gap: var(--col-gap); }
+.mo-more { color: var(--text-tertiary); font-size: 10px; font-weight: 700; text-align: center; letter-spacing: .02em; }
+
+/* THEN: the crew's next picks in this room — the other side of the fork's
+ * give-up, read across. Band-head voice for the label, one line per pick. */
+.mo-then { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.mo-then .band-head .label { font-size: 9.5px; }
+.mo-then ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.mo-then li { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 6px; min-width: 0; }
+.mo-then .t { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mo-then .n { color: var(--text-body); font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mo-then li.mine .n { color: var(--text-primary); }
+.mo-then .avatar-cluster .avatar { width: 13px; height: 13px; font-size: 6.5px; box-shadow: 0 0 0 1px var(--dock); }
+.mo-then .avatar-cluster .avatar + .avatar { margin-left: -4px; }
+.mo-then .quiet { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+
+/* ---- desktop: a lens that grows from the band it was opened on -------------------- */
+@media (min-width: 720px) {
+  .mo-backdrop { background: rgba(0, 0, 0, .32); }
+  .moment { left: var(--mo-x, 50%); top: var(--mo-y, 50%); translate: var(--mo-tx, -50% -50%); right: auto; bottom: auto; width: max-content; max-width: calc(100vw - 48px);
+    border-radius: 16px; border: 1px solid var(--hairline); box-shadow: 0 18px 50px rgba(0, 0, 0, .55); padding: 14px 0 22px; }
+  .moment .grabber { display: none; }
+  .mo-fork { --mo-gap: 32px; }
+  .mo-scroll { padding: 0 24px; }
+  .mo-head { justify-content: center; }
+}
+
+/* ---- motion (enter lively, leave quick and plain; Reduce Motion / Low Power instant) */
+.moment.enter { animation: moRise .26s cubic-bezier(.2, 1.15, .35, 1) both; }
+.mo-backdrop.enter { animation: moFade .18s cubic-bezier(.4, 0, .2, 1) both; }
+.moment.enter .mo-lines path { stroke-dasharray: var(--len) var(--len); animation: moDraw .22s cubic-bezier(.4, 0, .2, 1) .12s both; }
+.moment.enter .mo-lines path.away { animation-name: moDrawAway; }
+.moment.enter .mo-branch > * { animation: moArrive .2s cubic-bezier(.2, 1.15, .35, 1) both;
+  animation-delay: calc(.2s + var(--b, 0) * .05s + var(--k, 0) * .035s); }
+.moment.leave { animation: moDrop .16s cubic-bezier(.4, 0, 1, 1) both; }
+.mo-backdrop.leave { animation: moFade .16s reverse both; }
+@keyframes moRise { from { transform: translateY(100%); } }
+@keyframes moFade { from { opacity: 0; } }
+@keyframes moDraw { from { stroke-dashoffset: var(--len); } }
+@keyframes moDrawAway { from { opacity: 0; } }
+@keyframes moArrive { from { opacity: 0; transform: translateY(6px); } }
+@keyframes moDrop { to { transform: translateY(100%); } }
+@media (min-width: 720px) {
+  .moment.enter { animation-name: moGrow; transform-origin: 0 0; }
+  .moment.leave { animation-name: moShrink; transform-origin: 0 0; }
+  @keyframes moGrow { from { opacity: 0; transform: scale(.96) translateY(-6px); } }
+  @keyframes moShrink { to { opacity: 0; transform: scale(.98); } }
+}
+/* Scrub (− / +): the time rolls; a card that stays is untouched, a card that
+ * arrives slides in, a then-row that arrives fades up. */
+.mo-head .when .t.roll-in { animation: moRollIn .16s cubic-bezier(.2, 1.15, .35, 1) both; }
+@keyframes moRollIn { from { opacity: 0; transform: translateY(40%); } }
+.mo-cards > .card.arrive, .mo-then li.arrive { animation: moArrive .2s cubic-bezier(.2, 1.15, .35, 1) both; }
+.mo-lines path { transition: stroke .2s cubic-bezier(.4, 0, .2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .moment, .mo-backdrop, .moment *, .mo-head .when .t { animation: none !important; transition: none !important; }
+}
+
+/* Frame captions (design only). */
+.mo-cap { position: fixed; top: 6px; right: 8px; z-index: 80; color: var(--text-tertiary); font-size: 9px; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase; background: rgba(12, 10, 20, .85); padding: 2px 6px; border-radius: 4px; }
