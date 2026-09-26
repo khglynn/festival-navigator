@@ -1,5 +1,7 @@
 # Post-ship prod smoke test — how to run it, and what it found
 
+> **Current implementation (2026-09-25, later):** the committed smoke is `ops/prod-smoke.mjs` and the clock helper is `tests/helpers/night-clock.mjs`. They supersede the scratchpad scripts described below (which hard-coded v89 and wrote beside themselves); the run records below are kept as history.
+
 **Slice:** a two-minute post-ship smoke test that proves production boots on
 phones, without writing to the production database. Read-only throughout —
 no push/merge/deploy/rollback, no DB writes, nothing typed in.

@@ -134,7 +134,7 @@ either a personal API key or a safe MCP path exists.
 **(a) Error count by build, last 2 hours** — HogQL via `execute-sql` or the
 REST `/api/projects/627900/query/` endpoint:
 ```sql
-SELECT properties.$exception_list, properties.build, count() AS n
+SELECT properties.build, count() AS n  -- (fixed 2026-09-25: $exception_list was selected but not grouped)
 FROM events
 WHERE event = '$exception'
   AND timestamp > now() - INTERVAL 2 HOUR

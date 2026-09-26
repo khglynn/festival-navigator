@@ -33,7 +33,9 @@ Evidence for every rule is in `research/` beside this file.
 3. Stamp on a clean tree above the newest origin/main:
    `node scripts/sw-stamp.mjs` (a real release) or `--keep` (a fix to a
    still-unreleased version). `git status --short` must be empty first.
-4. Local gate: `npm test`, `TZ=Asia/Tokyo npm test`,
+4. Local gate: `npm test`, `TZ=Asia/Tokyo npm test`, the festival-night
+   pass `NIGHT_CLOCK=2026-09-27T04:30:00Z NODE_OPTIONS="--import
+   ./tests/helpers/night-clock.mjs" npm test`, and
    `node scripts/validate-festivals.mjs`; `npm run test:browser` when the
    release is visual.
 5. PR → CI. **Check both jobs by name** (`gh pr checks`): the ruleset only

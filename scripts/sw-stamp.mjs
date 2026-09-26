@@ -50,6 +50,14 @@ export function readStamp(sw) {
 
 const main = () => {
   const args = new Set(process.argv.slice(2));
+  // Anything but --check / --keep refuses: `--help` once performed a real
+  // bump (a review run, 2026-09-25), and a stamp is a release decision.
+  const unknown = [...args].filter((a) => a !== '--check' && a !== '--keep');
+  if (unknown.length) {
+    console.error(`sw-stamp: unknown ${unknown.join(' ')}. Usage: node scripts/sw-stamp.mjs [--keep | --check]` +
+      ' — no flag bumps CACHE_VERSION and restamps; --keep restamps only; --check exits 1 when stale.');
+    process.exit(2);
+  }
   let sw = readFileSync(SW, 'utf8');
   const fresh = assetStamp(sw);
   const current = readStamp(sw);
