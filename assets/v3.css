@@ -222,6 +222,9 @@ html { touch-action: manipulation; }
 .welcome-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .welcome-head .micro-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .welcome-head .avatar { width: 20px; height: 20px; font-size: 8.5px; }
+/* The ✕ in the card's upper right, the sheets' own button: pulled into the
+ * padding so the head row keeps the faces' height. */
+.welcome-head .sheet-close { margin: -5px -4px -5px auto; }
 .welcome-head .avatar-cluster .avatar + .avatar { margin-left: -5px; }
 .welcome-head .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; } /* +n more of the crew: solid, like a card's +n — dashed means "add" */
 .welcome-card .bring-line { font-size: 14px; }
