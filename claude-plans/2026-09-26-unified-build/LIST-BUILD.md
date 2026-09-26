@@ -44,6 +44,25 @@ are the handoff.*
    conflicts. Node suite at UTC, Tokyo and the night clock: 1114 pass, the stamp
    the one fail (not stamped, by instruction). `npm run test:browser`: 236 / 236.
 
+## Sol's review of v97 (0d19e6e) — `930f186`, re-stamped v97 `--keep` — `c5c9b9a`
+
+1. **The address carries the List.** `wallUrl` adds `&view=list` while this phone
+   reads the festival as a List (read for the festival the address names, never
+   from ctx, which lags a festival switch), rewritten when the view switches and
+   dropped on Board. "Seeded once" holds because seeding asks the PHONE — has it
+   shown this festival, is there a seed marker — so a reload of your own address
+   says nothing and never undoes a Board chosen since.
+2. **A festival switch is a new wall for the past:** a completed switch resets
+   `ctx.pastAt` and `ctx.pastOpen` (an abandoned one returns before it).
+3. **The import lands on a folded pick:** `landOnPicks` lands on the first added
+   pick that is on the wall; when all are folded, the fold holding the first opens
+   (its room's line, or the days line) and nothing else. The sheet hands back
+   every added name (`done(n, { first, added })`).
+4. The stale "caret" words in v3.css and settings.js.
+Tests: `tests/view-menu.test.mjs` (address, both reloads), `tests/past-shell.test.mjs`
+(the three landings, the switch — red without the reset). Node suite at UTC, Tokyo
+and the night clock: 1121 pass, 0 fail each; `npm run test:browser`: 236 / 236.
+
 ## Results (merged head, 2026-09-26 ~5 AM PT)
 
 - `npm test` at UTC, `TZ=Asia/Tokyo` and the night clock (`NIGHT_CLOCK=2026-09-27T04:30:00Z`):

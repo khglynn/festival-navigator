@@ -643,16 +643,14 @@ button.room-head { cursor: pointer; }
    * and the cards' edges above them, and the 4px it returns go to the day row
    * — the menu bar's three lines cost it about 11px (Phase 1, 2026-09-26). */
   padding: 9px var(--sp-gutter) calc(9px + env(safe-area-inset-bottom));
-  /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
-   * and the row's two gaps give exactly that back — so the D1 frames hold
-   * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
-   * at the edge), and ACL's long name still leaves the day you are in whole
-   * at 320 where Linux and Android draw Inter wide. The row's edge fades
-   * keep the air the eye reads between the parts. 9px, not 10 (Phase 1):
-   * the menu bar's three lines cost the row ~11px; the gutter above returns
-   * 4, the fest link's own gap 2, these two gaps 2 — and ACL's long name
-   * still leaves the day you are in whole at 320 with Linux-wide glyphs
-   * (tests/browser/now-jump.test.mjs). */
+  /* 9px between the avatar, the day row and the fest link: the fest link's
+   * menu glyph (the three lines) costs the day row about 11px, and the
+   * dock gives it back — the gutter above returns 4, the fest link's own
+   * gap 2, these two gaps 2 (v93 had already taken them from 14 to 10) — so
+   * the day-row frames hold (390 FRI SAT NOW SUN, 320 SAT NOW) and ACL's
+   * long name still leaves the day you are in whole at 320 with Linux-wide
+   * glyphs (tests/browser/now-jump.test.mjs). The row's edge fades keep the
+   * air the eye reads between the parts. */
   display: flex; align-items: center; gap: 9px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
