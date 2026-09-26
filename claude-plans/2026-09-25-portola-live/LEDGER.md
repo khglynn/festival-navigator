@@ -26,3 +26,5 @@ each table; the rules live in RUNBOOK.md.
 
 | Head | Change | Model · effort | Minutes | Findings (real / false / nit) | Missed what others caught |
 |---|---|---|---|---|---|
+| ef717ba | #37 ops: runbook, night-clock CI pass, prod smoke | Sol 6 · xhigh | 5.8 | 7 real (smoke guard blind to SW-handled and non-/api/ writes; host check ignored status/stamp; 404 could pass; silent Chromium fallback; runbook rollback target, walk scope, PostHog wording) / 0 / 1 nit | — (Astra, Terra pending) |
+| 66789fb | #37 fix commit | Sol 6 · high | 2.2 | 3 real (explicit build skipped the stamp; worker install untested; secondary hosts' app bytes unchecked) / 0 / 0 | — |

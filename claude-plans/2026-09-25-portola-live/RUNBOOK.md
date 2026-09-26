@@ -51,10 +51,12 @@ Evidence for every rule is in `research/` beside this file.
 8. Verify: wait for main's CI, then run `node ops/prod-smoke.mjs` **from
    the release worktree** (it expects that checkout's CACHE_VERSION and
    ASSET_STAMP; elsewhere pass them: `node ops/prod-smoke.mjs
-   https://fest.kevinhg.com festival-nav-vNN <stamp>`). It checks all three
-   hosts serve identical bytes of the new build and boots every host's
-   landing plus gallery.html in iPhone WebKit with no errors, blocking every
-   write, telemetry call and service worker; ~18 s. Then watch errors for
+   https://fest.kevinhg.com festival-nav-vNN <stamp>` — both, or it
+   refuses). It checks all three hosts serve the new build and identical
+   bytes for every APP_CORE file, boots every host's landing plus
+   gallery.html in iPhone WebKit with no errors while blocking every write,
+   telemetry call and service worker, then lets the worker install on the
+   landing and confirms it caches the new build; ~30 s. Then watch errors for
    15 min (PostHog project 627900 — see Observability).
 9. Tell Kevin in one short message: what changed, what to try, "say roll
    back to undo". Update NOW.md and the LEDGER.

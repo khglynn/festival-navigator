@@ -9,14 +9,18 @@
 //   3. On the base host, gallery.html (the fixture wall: real cards, zoom and
 //      strip code, no crew, no database) renders its cards with no errors —
 //      far more of the shipped JS than the landing exercises.
+//   4. Every file in the worker's APP_CORE list is byte-identical on all
+//      three hosts, so a secondary host cannot serve different app code.
+//   5. On the base host, the service worker really installs and caches the
+//      expected build (a separate pass with workers allowed, landing only).
 //
 // READ-ONLY: it never loads a crew link (#g=...), so the app never has a crew
 // to write to. On top of that the browser context blocks service workers (so
 // every request passes the route guard — Playwright's routing cannot see
 // requests a service worker handles), aborts EVERY non-GET/HEAD request on
 // any URL, aborts all /fn-i/ telemetry, and fails the run if a page opens a
-// WebSocket. The service worker's own health is checked by step 1, from the
-// bytes each host serves.
+// WebSocket. Only step 5 lets a worker run, and only on the crew-less
+// landing that step 2 has just proven makes no writes.
 //
 // Usage (run it from the RELEASE worktree, whose service-worker.js is the one
 // that shipped — or pass the build explicitly):
@@ -42,6 +46,10 @@ const local = localStamp();
 const baseURL = (process.argv[2] || 'https://fest.kevinhg.com').replace(/\/+$/, '');
 const expectedBuild = process.argv[3] || local.build;
 const expectedStamp = process.argv[4] || (process.argv[3] ? null : local.stamp);
+if (process.argv[3] && !process.argv[4]) {
+  console.error('prod-smoke: pass the ASSET_STAMP with an explicit build (node ops/prod-smoke.mjs <base> <build> <stamp>)');
+  process.exit(2);
+}
 
 function localStamp() {
   const sw = readFileSync(path.join(__dirname, '..', 'service-worker.js'), 'utf8');
@@ -75,6 +83,66 @@ async function checkHost(host) {
     log(`[sw] ${host}: FETCH FAILED — ${e && e.message}`);
     return { url, ok: false, error: String((e && e.message) || e) };
   }
+}
+
+// Every APP_CORE path, fetched from each host, must hash the same everywhere.
+async function compareAppCore() {
+  const swText = await (await fetch(`https://${HOSTS[0]}/service-worker.js`, { cache: 'no-store' })).text();
+  const block = (swText.match(/const APP_CORE = \[([\s\S]*?)\];/) || [])[1] || '';
+  const paths = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const mismatches = [];
+  for (const p of paths) {
+    const hashes = [];
+    for (const host of HOSTS) {
+      try {
+        // Follow redirects (Vercel sends /index.html to / with a 308), but only
+        // within the same host — landing somewhere else is a mismatch.
+        const res = await fetch(`https://${host}${p}`, { redirect: 'follow', cache: 'no-store' });
+        const buf = Buffer.from(await res.arrayBuffer());
+        const sameHost = new URL(res.url).host === host;
+        hashes.push(res.status === 200 && sameHost
+          ? crypto.createHash('md5').update(buf).digest('hex')
+          : `status ${res.status} at ${res.url}`);
+      } catch (e) {
+        hashes.push(`error ${e && e.message}`);
+      }
+    }
+    if (new Set(hashes).size !== 1 || hashes[0].startsWith('status') || hashes[0].startsWith('error')) mismatches.push({ path: p, hashes });
+  }
+  const r = { files: paths.length, mismatches, ok: paths.length > 0 && mismatches.length === 0 };
+  log(`[core] ${paths.length} APP_CORE files across ${HOSTS.length} hosts: ${r.ok ? 'identical' : `${mismatches.length} differ`}`);
+  return r;
+}
+
+// Workers allowed, crew-less landing only: does the worker install and cache
+// the expected build? (The guarded pass has already shown this page writes
+// nothing.)
+async function checkWorkerInstall(browser, target) {
+  const context = await browser.newContext({ ...devices['iPhone 14'] });
+  const page = await context.newPage();
+  const r = { target, ok: false };
+  try {
+    await page.goto(target, { waitUntil: 'load', timeout: 30000 });
+    r.state = await page.evaluate(async () => {
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((resolve) => setTimeout(() => resolve(null), 20000)),
+      ]);
+      if (!reg || !reg.active) return 'not active';
+      // ready resolves while the worker may still be "activating".
+      for (let i = 0; i < 100 && reg.active.state !== 'activated'; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      return reg.active.state;
+    });
+    r.caches = await page.evaluate(() => caches.keys());
+    r.ok = r.state === 'activated' && r.caches.some((k) => k.includes(expectedBuild));
+  } catch (e) {
+    r.error = String((e && e.message) || e);
+  }
+  await context.close();
+  log(`[worker] ${target}: ${r.state || r.error} caches=${JSON.stringify(r.caches || [])} ${r.ok ? 'ok' : 'FAIL'}`);
+  return r;
 }
 
 async function bootPage(browser, target, readySelector) {
@@ -148,6 +216,7 @@ async function bootPage(browser, target, readySelector) {
   for (const host of HOSTS) report.hosts[host] = await checkHost(host);
   const md5s = new Set(Object.values(report.hosts).map((h) => h.md5));
   report.hostsAgree = md5s.size === 1;
+  report.appCore = await compareAppCore();
 
   // WebKit is the point (iPhone Safari); there is deliberately no fallback.
   let browser;
@@ -160,14 +229,16 @@ async function bootPage(browser, target, readySelector) {
   if (browser) {
     for (const host of HOSTS) report.pages.push(await bootPage(browser, `https://${host}/`, '#screen-landing'));
     report.pages.push(await bootPage(browser, `${baseURL}/gallery.html`, '.card'));
+    report.worker = await checkWorkerInstall(browser, `${baseURL}/`);
     await browser.close();
   }
 
   report.totalMs = Date.now() - startedAt;
   const reportPath = path.join(OUT_DIR, `report-${startedAt}.json`);
   await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-  const pass = report.hostsAgree && Object.values(report.hosts).every((h) => h.ok) &&
-    !report.browserError && report.pages.length === HOSTS.length + 1 && report.pages.every((p) => p.ok);
+  const pass = report.hostsAgree && Object.values(report.hosts).every((h) => h.ok) && report.appCore.ok &&
+    !report.browserError && report.pages.length === HOSTS.length + 1 && report.pages.every((p) => p.ok) &&
+    report.worker && report.worker.ok;
   log(`report: ${reportPath}`);
   log(`${pass ? 'PASS' : 'FAIL'} — ${expectedBuild}${expectedStamp ? ` / ${expectedStamp}` : ''} in ${(report.totalMs / 1000).toFixed(1)} s`);
   process.exitCode = pass ? 0 : 1;
