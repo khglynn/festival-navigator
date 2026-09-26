@@ -103,11 +103,14 @@ test('a member whose storage reads start failing after the wall painted keeps th
   const getItem = localStorage.getItem;
   localStorage.getItem = () => { throw new Error('SecurityError: storage went away'); };
   try {
-    cardOf('Soulwax').click();
+    // A mouse's clicks, press and all (clickCard): since the tap change a
+    // click with no press of its own is an assistive activation, which opens
+    // the card rather than picking — this case is about picking.
+    clickCard('Soulwax');
     assert.equal(crew.me(MEMBER), 'Kevin', 'a failed read answers with the name this page knows');
     assert.equal($('dock-you').textContent, 'K', 'still Kevin on the wall after the repaint');
     assert.ok(!$('dock-you').classList.contains('guest'), 'never turned into a guest');
-    cardOf('Soulwax').click(); // and keeps picking: the second tap is a 2
+    clickCard('Soulwax'); // and keeps picking: the second click is a 2
     assert.deepEqual(shownScreens(), ['screen-app'], 'no join screen');
     await settle(1500); // past the push debounce
     const sent = crewWrites(MEMBER).filter((w) => w.body && w.body.data && w.body.data.festivals);

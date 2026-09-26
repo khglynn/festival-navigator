@@ -161,7 +161,7 @@ const ctx = {
   // `contextmenu` here — the same shelf — and a click that engine may still
   // send at the lift is eaten: it would land on the dimmed wall and close the
   // shelf it had just opened.
-  onHold: (artist, el, occ) => { eatLiftClick(); handleTap(artist, el, occ); },
+  onHold: (artist, el, occ) => { eatLiftClick(); handleTap(artist, el, occ, 'finger'); },
 };
 
 // The one click a hold's lift may still send (ctx.onHold): eaten if it comes
@@ -490,13 +490,21 @@ function refreshArtistCards(artistName) {
 // the welcome goes.
 //   A mouse click or a key picks, as it always has: a member cycles
 // (nothing → 1 → 2 → 3 → must → nothing); a guest is asked who they are.
-// The hand is the last real press or key (card-facts.js fingerHand), never
-// the click's own pointerType — WebKit sends a finger's click as "mouse".
-function handleTap(artistName, el = null, occ = null) {
-  // Any press from a card (el) — even a node a repaint replaced between the
-  // finger's press and its click — opens the shelf for a finger: a finger
-  // never picks by tapping (the review of the tap change).
-  if (el && fingerHand()) {
+//   An ASSISTIVE activation — a click with no pointer press and no key of
+// its own: VoiceOver's double-tap, Switch Control — opens the shelf too, on a
+// phone and a desktop alike (Sol 6's review, 2026-09-26): the shelf's
+// labelled − · + is the better control, and a pick made unseen is the worst
+// kind.
+// `hand` is the press behind this activation (card-facts.js clickHand; the
+// card's own keydown says 'keyboard'), never the click's own pointerType —
+// WebKit sends a finger's click as "mouse".
+function handleTap(artistName, el = null, occ = null, hand = null) {
+  const h = hand || (fingerHand() ? 'finger' : 'mouse');
+  // Any activation from a card (el) — even a node a repaint replaced between
+  // the finger's press and its click — opens the shelf for a finger or an
+  // assistive press: they never pick by activating a card (the review of the
+  // tap change).
+  if (el && (h === 'finger' || h === 'assistive')) {
     if (welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
     ctx.onOpenNotes(artistName, occ);
     return;

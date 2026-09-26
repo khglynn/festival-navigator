@@ -690,6 +690,9 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
     // A pick replaces the card's node. The window rides the node, so a refresh
     // that dropped it would put the ring out until the next full repaint.
     const first = $('wall-root').querySelector(`.card.now[data-artist="${playing[0]}"]`);
+    // A mouse's pick, press and all: a click with no press of its own is an
+    // assistive activation, which opens the card instead (the tap change).
+    first.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
     first.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
     assert.deepEqual(marked(), playing, 'and a pick keeps every mark, the picked card included');
     const fresh = $('wall-root').querySelector(`.card[data-artist="${playing[0]}"].now`);

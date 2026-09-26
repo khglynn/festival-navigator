@@ -587,7 +587,7 @@ const ctx = {
     wireCardFocusZoom(el, artist, ctx, opts);
   },
   // A hold is a slow tap; an engine that turns it into contextmenu opens the shelf too.
-  onHold: (artist, el, occ) => handleTap(artist, el, occ),
+  onHold: (artist, el, occ) => handleTap(artist, el, occ, 'finger'),
 };
 
 function refreshPicks() {
@@ -609,10 +609,12 @@ function zoomStatus(msg) {
 // crewDoc itself so picksFor sees it immediately; skip that mirror and
 // every tap silently no-ops against a stale doc (caught live in this
 // gallery, 2026-08-30 — a click never moved the pill until this landed).
-// A finger opens the card's shelf (app.js handleTap since the tap change); a
-// mouse click or a key cycles.
-function handleTap(artistName, el = null, occ = null) {
-  if (el && el.isConnected && fingerHand()) { ctx.onOpenNotes(artistName, occ); return; }
+// A finger or an assistive activation opens the card's shelf (app.js
+// handleTap since the tap change); a mouse click or a key cycles. `hand` is
+// the press behind the activation (card-facts.js clickHand).
+function handleTap(artistName, el = null, occ = null, hand = null) {
+  const h = hand || (fingerHand() ? 'finger' : 'mouse');
+  if (el && (h === 'finger' || h === 'assistive')) { ctx.onOpenNotes(artistName, occ); return; }
   const cur = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   setLevel(artistName, model.nextTapLevel(cur));
 }
@@ -1000,7 +1002,7 @@ const ectx = {
     wireCardZoom(el, artist, ectx, opts);
     wireCardFocusZoom(el, artist, ectx, opts);
   },
-  onHold: (artist, el, occ) => eventsTap(artist, el, occ),
+  onHold: (artist, el, occ) => eventsTap(artist, el, occ, 'finger'),
 };
 function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
 function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.folded = folded; }
@@ -1019,9 +1021,10 @@ function repaint() {
     if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
   }
 }
-function eventsTap(artistName, el = null) {
-  // A finger's tap would open the shelf (app.js); the sheet is not wired in this section.
-  if (el && el.isConnected && fingerHand()) { eventsStatus(`a finger's tap on "${artistName}" opens its shelf in the app`); return; }
+function eventsTap(artistName, el = null, occ = null, hand = null) {
+  // A finger's tap (or an assistive activation) would open the shelf (app.js); the sheet is not wired in this section.
+  const h = hand || (fingerHand() ? 'finger' : 'mouse');
+  if (el && (h === 'finger' || h === 'assistive')) { eventsStatus(`a finger's tap on "${artistName}" opens its shelf in the app`); return; }
   const cur = (ectx.picks[artistName] || {})[ectx.meName] || 0;
   const next = model.nextTapLevel(cur);
   state.recordSelection(artistName, ectx.meName, next);

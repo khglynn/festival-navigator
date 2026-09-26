@@ -26,11 +26,12 @@
 // on threaded roots, where the reply count (information, not an action) lives
 // in it at rest.
 import * as state from '../state.js';
+import * as crew from '../crew.js';
 import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, fingerHand } from './card-facts.js';
+import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, handNow } from './card-facts.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_SURFACE } from './motion.js';
 import { router } from './router.js';
 import { loadJSON, saveLS, getLS } from '../util.js';
@@ -803,19 +804,35 @@ export function rememberOpener() {
 }
 
 // The one-time line (the tap change, 2026-09-26): a friend who learned "a tap
-// lights it" is told once, inside the first shelf a finger opens, that picking
-// moved to the + here. Only a member who has picked on this fest before (a
-// fresh member never learned the old way), only from a finger (a mouse click
-// still picks), once per device. The marker is device-local and try-wrapped,
-// never in the crew doc; an older build never reads it.
+// lights it" is told once, inside the first shelf a tap opens, that picking
+// moved to the + here. Only someone who has picked before (a fresh member
+// never learned the old way), only from a finger or an assistive activation
+// (a mouse click still picks), once per device. The marker is device-local
+// and try-wrapped, never in the crew doc; an older build never reads it.
 export const TAP_NEWS = 'A tap opens the card now — pick with + here.';
 const LS_TAP_NEWS = 'fn_tap_news_v1';
 let tapNewsSeen = false; // storage blocked: memory holds it for this visit
+// "Picked before" is any festival in this crew, then any other crew this
+// phone keeps — under the name this phone is in each (Sol 6's review: the
+// open festival alone missed a friend whose picks were all at another fest).
+// A few local reads, and only until the line has been shown once.
+const pickedIn = (doc, me) => !!doc && !!me && Object.values(doc.festivals || {})
+  .some((f) => Object.values((f && f.selections) || {}).some((by) => ((by || {})[me] || 0) > 0));
+export function pickedBefore(meName) {
+  if (pickedIn(state.crewDoc, meName)) return true;
+  try {
+    for (const { token } of crew.knownCrews() || []) {
+      if (!token || token === state.getCrewToken()) continue;
+      if (pickedIn(state.cachedDoc(token), crew.me(token))) return true;
+    }
+  } catch { /* storage blocked: this crew was the one to read */ }
+  return false;
+}
 function tapNews(ctx) {
-  if (tapNewsSeen || !ctx.meName || !fingerHand()) return null;
+  const h = handNow();
+  if (tapNewsSeen || !ctx.meName || (h !== 'finger' && h !== 'assistive')) return null;
   if (getLS(LS_TAP_NEWS) != null) { tapNewsSeen = true; return null; }
-  const returning = Object.values(ctx.picks || {}).some((by) => ((by || {})[ctx.meName] || 0) > 0);
-  if (!returning) return null;
+  if (!pickedBefore(ctx.meName)) return null;
   tapNewsSeen = true;
   try { localStorage.setItem(LS_TAP_NEWS, '1'); } catch { /* memory holds it */ }
   const line = document.createElement('div');

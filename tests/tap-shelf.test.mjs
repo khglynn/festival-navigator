@@ -272,3 +272,85 @@ test('Tab walks the shelf\'s own controls and wraps, moved by the sheet itself (
   assert.equal(document.activeElement, doors[doors.length - 1], 'Shift+Tab wraps back');
   await closeShelf();
 });
+
+// Sol 6's review (2026-09-26): an activation with no pointer press and no key
+// of its own — VoiceOver's double-tap, Switch Control — opens the card's shelf
+// on every screen, and never picks unseen. Enter on the card still picks.
+test('an assistive activation (a click with no press of its own) opens the shelf and picks nothing; Diagnostics says so', async () => {
+  const before = level('Robyn');
+  cardOf('Robyn').click(); // no pointerdown, no key: what VoiceOver's double-tap sends
+  await settle(20);
+  assert.ok(shelf(), 'the card\'s shelf');
+  assert.equal(shelf().querySelector('.sheet-card .f-name').textContent, 'Robyn');
+  assert.equal(level('Robyn'), before, 'nothing picked unseen');
+  assert.equal(document.documentElement.dataset.hand, 'assistive', 'the paste would say which hand');
+  // Its − and + are the labelled controls; they step as they do for anyone.
+  plus().click();
+  assert.equal(level('Robyn'), before + 1, '+ on the shelf picks');
+  minus().click();
+  assert.equal(level('Robyn'), before);
+  await closeShelf();
+});
+
+test('Enter on a card still picks, and a key\'s own click on a button is the keyboard\'s, not an assistive one', async () => {
+  const before = level('Robyn');
+  const el = cardOf('Robyn');
+  el.focus();
+  el.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await settle(20);
+  assert.equal(level('Robyn'), before + 1, 'Enter picks');
+  assert.equal(shelf(), null, 'and opens nothing');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); // the key's zoom
+  await settle(20);
+  const { clickHand } = await import('../js/v3/card-facts.js');
+  const b = document.createElement('button');
+  document.body.appendChild(b);
+  let hand = null;
+  b.addEventListener('click', (e) => { hand = clickHand(e); });
+  b.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  b.click(); // the browser's own click for that Enter
+  assert.equal(hand, 'keyboard');
+  b.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+  await settle(10);
+  b.click(); // later, with no key and no press: assistive
+  assert.equal(hand, 'assistive');
+  b.remove();
+  // Back to where the next cases expect Robyn.
+  for (let i = 0; i < 4; i++) await tap(cardOf('Robyn'), 'mouse');
+  assert.equal(level('Robyn'), before);
+});
+
+test('a press that became a scroll answers no click: the next pointerless click is assistive', async () => {
+  const { clickHand } = await import('../js/v3/card-facts.js');
+  const b = document.createElement('button');
+  document.body.appendChild(b);
+  let hand = null;
+  b.addEventListener('click', (e) => { hand = clickHand(e); });
+  b.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
+  b.dispatchEvent(new window.PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' }));
+  b.click();
+  assert.equal(hand, 'assistive');
+  b.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  b.click();
+  assert.equal(hand, 'mouse', 'a click answers the press before it');
+  b.click();
+  assert.equal(hand, 'assistive', 'once: a second click has no press of its own');
+  b.remove();
+});
+
+test('"picked before" is any festival in this crew, then this phone\'s other crews under its name there (Sol 6\'s NIT)', async () => {
+  const { pickedBefore } = await import('../js/v3/notes.js');
+  assert.equal(pickedBefore('Zed'), false, 'nobody who never picked');
+  state.crewDoc.festivals['acl-2026'] = { selections: { 'Kings of Leon': { Zed: 2 } } };
+  try {
+    assert.equal(pickedBefore('Zed'), true, 'a pick at another festival of this crew counts');
+  } finally { delete state.crewDoc.festivals['acl-2026']; }
+  assert.equal(pickedBefore('Zed'), false);
+  const OTHER = 'tapshelfother_crew_012345'; // made up
+  localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: CREW, name: 'Tap Crew' }, { token: OTHER, name: 'Other' }]));
+  localStorage.setItem(`fn_me_v3_${OTHER}`, 'Ana');
+  localStorage.setItem(state.LS.doc(OTHER), JSON.stringify({ v: 4, people: { Ana: { colorIndex: 1 } }, festivals: { 'acl-2026': { selections: { Doechii: { Ana: 1 } } } } }));
+  assert.equal(pickedBefore('Zed'), true, 'a pick in another crew on this phone, under the name this phone is there');
+  localStorage.setItem(`fn_me_v3_${OTHER}`, 'Bea');
+  assert.equal(pickedBefore('Zed'), false, 'someone else\'s pick there is not yours');
+});

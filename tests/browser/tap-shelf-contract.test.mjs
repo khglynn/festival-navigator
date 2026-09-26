@@ -402,3 +402,24 @@ for (const [name, get] of ENGINES) {
     } finally { await ctx.close(); }
   });
 }
+
+// Sol 6's review (2026-09-26): an activation with no pointer press of its
+// own — the shape VoiceOver's double-tap and Switch Control take — opens the
+// card's shelf in a real engine too, and never picks unseen. (No engine here
+// can drive VoiceOver itself; Kevin's iPhone check with VoiceOver on is the
+// device proof.)
+for (const [name, get] of ENGINES) {
+  test(`${name}: an activation with no press of its own opens the card's shelf and picks nothing`, { skip: skipFor(name, get) }, async () => {
+    const { ctx, page, errors } = await memberPhone(get());
+    try {
+      await cardAt(page, 'Tove Lo');
+      const before = await level(page, 'Tove Lo');
+      await page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Tove Lo"]').click());
+      await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      assert.equal((await shelf(page)).name, 'Tove Lo');
+      assert.equal(await level(page, 'Tove Lo'), before, 'nothing picked');
+      assert.equal(await page.evaluate(() => document.documentElement.dataset.hand), 'assistive');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

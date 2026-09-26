@@ -13,7 +13,7 @@ import { dayLabelParts } from '../time.js';
 import { aboutCorner, fitCorners, GIVE_WAY, CLEAR } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
-import { factsFor, timeRange, fingerHand } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
+import { factsFor, timeRange, fingerHand, clickHand } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { BY_TIME, sectionLayoutOf, timeBandsOf, areaOf } from './events.js'; // the list by time (v94) — its own line, like isCancelled's
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
@@ -87,7 +87,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     // grown block bubbles here too, and the browser then activates the button
     // — a pick and an open from one keypress (Codex gate, 2026-08-29).
     if (e.target !== el) return;
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el, opts.occ || null, 'keyboard'); }
   });
   // Stash render opts on the node so refreshCard can reproduce this exact
   // render — a single-card refresh must preserve every invariant the full
@@ -195,7 +195,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     // picks, a finger opens the shelf. (The 2026-08-29 version excluded a
     // whole grown block here, which is how a zoomed card stopped taking picks.)
     if (e.target !== el && e.target.closest && e.target.closest('button')) return;
-    ctx.onTap(artistName, el, opts.occ || null);
+    ctx.onTap(artistName, el, opts.occ || null, clickHand(e));
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   watchFit(el);

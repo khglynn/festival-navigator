@@ -140,6 +140,17 @@ test('a finger’s tap on another card while a zoom stands opens THAT card’s s
   await settle(60);
 });
 
+test('a guest\'s assistive activation (a click with no press of its own) opens the card\'s shelf, not the question (Sol 6\'s review)', async () => {
+  cardOf('Robyn').click(); // what VoiceOver's double-tap sends
+  await settle(20);
+  assert.ok(notesShelf(), 'the card\'s shelf');
+  assert.equal(shelf(), null, 'no join question before the guest asks');
+  assert.equal(notesShelf().querySelector('.sheet-card .f-name').textContent, 'Robyn');
+  history.back();
+  await settle(60);
+  assert.deepEqual(writes, []);
+});
+
 test('joining from − joins, and picks nothing', async () => {
   await openCard('Robyn');
   door('.f-step.minus').click();

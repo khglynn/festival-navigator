@@ -790,7 +790,10 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   const gridCell = root.querySelector('.room[data-room=":fest"] .card.cell[data-artist="Gelli Haha"]');
   assert.ok(gridCell.getAttribute('aria-label').startsWith('Gelli Haha — not picked'));
   // A door the last pick has just slid under the hand is not a door yet: the
-  // tap that meant "one more bar" picks, and opens nothing (DOOR_SETTLE_MS).
+  // click that meant "one more bar" picks, and opens nothing (DOOR_SETTLE_MS).
+  // A MOUSE's click — its press first: the beat is about a pointer (a key's or
+  // an assistive activation names the door it means, card-facts.js clickHand).
+  document.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
   const early = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
   overlay().querySelector('.f-links a.f-link').dispatchEvent(early);
   assert.equal(level('Gelli Haha'), 1, 'a door the pick just slid under the hand picks');

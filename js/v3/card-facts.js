@@ -869,6 +869,31 @@ let lastInput = 'pointer';
 // pointerType (WebKit sends that click as "mouse" — the ghost below).
 let lastPointerType = 'mouse';
 export const fingerHand = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
+// The press behind each CLICK (Sol 6's review of the tap change, 2026-09-26).
+// A click is judged by the pointer press it answers — a touch or pen press
+// is 'finger', a mouse press 'mouse' — never by its own pointerType (WebKit's
+// click after a finger says "mouse"). A click that answers NO press is an
+// assistive activation — VoiceOver's double-tap, Switch Control, Voice
+// Control — 'assistive', and it opens the card's shelf like a finger (the
+// shelf's labelled − · + is a better control than an unlabelled cycle; before
+// this, the tracker's 'mouse' default made it pick unseen). The one exception
+// is the browser's own click for Enter or Space on a native button or link:
+// 'keyboard'. Enter or Space on a CARD picks through its keydown and never
+// clicks. Kept per event: clickHand(e), read by whoever handles that click.
+let pendingPress = null;   // the pointer press no click has answered yet: 'finger' | 'mouse'
+let keyActivation = false; // an Enter or Space whose click may still come
+const clickHands = new WeakMap();
+export function clickHand(e) {
+  const h = e ? clickHands.get(e) : null;
+  if (h) return h;
+  // A click this module never saw (dispatched outside the document): the
+  // last hand, as before there was a per-click rule.
+  return lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse';
+}
+// What Diagnostics says (sayHand, below): the last press's hand, or
+// 'assistive' after a pointerless click.
+let saidHand = null;
+export const handNow = () => saidHand;
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 // A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
 // follows a touch tap with a click whose pointerType is "mouse", and when the
@@ -919,21 +944,39 @@ if (typeof document !== 'undefined') {
   // The hand, said on the page for Diagnostics (js/errlog.js reads it, the way
   // it reads the strip's data-follow): the next "my tap picked" report carries
   // its own evidence. Written only when it changes.
-  const sayHand = () => {
-    const h = lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse';
+  const sayHand = (said = null) => {
+    const h = said || (lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse');
+    saidHand = h;
     const root = document.documentElement;
     if (root && root.dataset.hand !== h) root.dataset.hand = h;
   };
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
     lastPointerType = e.pointerType || 'mouse';
+    pendingPress = lastPointerType === 'mouse' ? 'mouse' : 'finger';
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
     sayHand();
   }, { passive: true, capture: true });
   document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fingerAt(e); }, { passive: true, capture: true });
+  // A press that became a scroll or a gesture answers no click.
+  document.addEventListener('pointercancel', () => { pendingPress = null; }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
-    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) { lastInput = 'keyboard'; sayHand(); }
+    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) {
+      lastInput = 'keyboard';
+      pendingPress = null;
+      keyActivation = e.key === 'Enter' || e.key === ' ';
+      sayHand();
+    }
+  }, { passive: true, capture: true });
+  // Space clicks a button on its keyup; after that, a click is not the key's.
+  document.addEventListener('keyup', () => { if (keyActivation) setTimeout(() => { keyActivation = false; }, 0); }, { passive: true, capture: true });
+  document.addEventListener('click', (e) => {
+    const h = pendingPress || (keyActivation ? 'keyboard' : 'assistive');
+    pendingPress = null;
+    keyActivation = false;
+    clickHands.set(e, h);
+    if (h === 'assistive') sayHand('assistive');
   }, { passive: true, capture: true });
 }
 
@@ -1565,8 +1608,11 @@ function wireSlot(z) {
 
   // A door that a pick just slid under the hand picks (DOOR_SETTLE_MS). Capture,
   // so it runs before the door's own click (which stops the event there).
+  // A MOUSE's click only: the beat is about a pointer that content slid a door
+  // under, and a key or an assistive activation names the door it means.
   card.addEventListener('click', (e) => {
     if (zoomed !== z || !z.refreshedAt || Date.now() - z.refreshedAt >= DOOR_SETTLE_MS) return;
+    if (clickHand(e) !== 'mouse') return;
     if (!e.target.closest?.(ZOOM_DOORS)) return;
     e.preventDefault();
     e.stopPropagation();
@@ -1577,18 +1623,19 @@ function wireSlot(z) {
     // closed the zoom mid-pick (v88 walk, 2026-09-25). Hand focus back to the
     // card first: where an ordinary pick on the zoom leaves it.
     if (card.contains(document.activeElement)) z.el.focus({ preventScroll: true });
-    z.ctx.onTap(z.artist, z.el);
+    z.ctx.onTap(z.artist, z.el, z.occ, 'mouse');
   }, true);
 
   // A click on the grown card means what it means on the resting card — the
-  // same call (ctx.onTap), so the same hand decides: a mouse or a key picks, a
-  // finger (a touch screen with a mouse zoom standing) opens the shelf. Its
-  // buttons and links are their own controls.
+  // same call (ctx.onTap), with the press behind THIS click (clickHand): a
+  // mouse picks; a finger (a touch screen with a mouse zoom standing) or an
+  // assistive activation opens the shelf. Its buttons and links are their
+  // own controls.
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
     if (isOwnControl(e.target)) return;
     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
-    z.ctx.onTap(z.artist, z.el, z.occ);
+    z.ctx.onTap(z.artist, z.el, z.occ, clickHand(e));
   });
 
   // Hover bookkeeping: the pointer lands on the overlay the instant it
