@@ -171,6 +171,13 @@ test('a row tap grows that stop’s card under it, leaves the NOW card grown, an
   assert.ok(again.nextElementSibling && again.nextElementSibling.classList.contains('plan-grow'), 'its card, as the next sibling');
   assert.ok(tagged().nextElementSibling.classList.contains('plan-grow'), 'the NOW card stays grown: a tap never folds a card elsewhere (storyboard 8)');
   assert.equal(plan().querySelectorAll('.plan-grow').length, 2);
+  // A big name means "most of us" (Kevin, 2026-09-26): each grown card
+  // carries its stop's tier, whatever its tag.
+  for (const g of plan().querySelectorAll('.plan-grow')) {
+    const r = g.previousElementSibling;
+    assert.equal(g.classList.contains('most'), r.classList.contains('most'), r.getAttribute('aria-label'));
+    assert.equal(g.classList.contains('some'), r.classList.contains('some'), r.getAttribute('aria-label'));
+  }
   again.querySelector('.plan-what').click();
   const folded = plan().querySelector(`.plan-row[data-stop="${CSS.escape(key)}"]`);
   assert.ok(!folded.nextElementSibling || !folded.nextElementSibling.classList.contains('plan-grow'));
@@ -287,6 +294,35 @@ test('a click with no hand behind it opens the peek (a screen reader’s activat
   assert.equal(plan().dataset.state, 'open');
   plan().querySelector('.plan-grab').click();
   assert.equal(plan().dataset.state, 'peek');
+});
+
+// Kevin, 2026-09-26, on the one-NOW call: "the filters should filter the now
+// too". A highlight dims the plan's rows the way it dims the wall's cards, the
+// peek names only the highlighted people's stops, and there is still one NOW.
+test('a highlight filters the plan and its NOW: the peek names only their stops, the rest dim, and the dock’s NOW is back only when the peek is not NOW', async () => {
+  await repaint();
+  const you = $('dock-you');
+  const person = (name) => $('dock-you-wrap').querySelector(`.hl-pop [data-person="${name}"]`);
+  const dogBlood = () => plan().querySelector('.plan-row[data-stop^="Pier Stage|"]:not(.or)[aria-label*="Dog Blood"]');
+  you.click();
+  person('Gus').click(); // Gus is at none of the stops until the Great Northern
+  await settle(40);
+  assert.equal(tagged().querySelector('.plan-tag').textContent, 'NEXT');
+  assert.match(tagged().getAttribute('aria-label'), /^Next: The Great Northern, ~1:30 AM, 4 of us$/);
+  assert.equal($('dock-now').hidden, false, 'the peek is not saying NOW, so the dock’s NOW is the way to what is on for Gus');
+  assert.ok(dogBlood().classList.contains('dim'), 'a stop Gus is not in steps back, as its card does');
+  assert.ok(!tagged().classList.contains('dim'));
+  assert.ok($('wall-root').querySelector('.card[data-artist="Dog Blood"]').classList.contains('dim'), 'the same rule as the wall');
+  person('Gus').click();
+  person('Ana').click(); // Ana is at Dog Blood
+  await settle(40);
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'the count stays the crew’s');
+  assert.equal($('dock-now').hidden, true, 'one NOW, a highlight or not');
+  assert.ok(!dogBlood().classList.contains('dim'));
+  person('').click(); // everyone
+  await settle(40);
+  assert.equal(plan().querySelectorAll('.plan-row.dim').length, 0, 'no highlight, nothing dim');
+  you.click();
 });
 
 // The people menu is the other way in (the people-shelf design: "Our plan ›",

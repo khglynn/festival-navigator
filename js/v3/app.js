@@ -1145,6 +1145,7 @@ function setPeopleFilter(names) {
   renderPersonChips();
   if (zoomedCard()) { repaintWall(); return; }
   dimInPlace();
+  paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
 function dimInPlace() {
@@ -1224,15 +1225,16 @@ const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // many. (planShowsNow asks whether the plan is on screen, so each door answers
 // for its own layout: the dock under 720, the rail above.) The tab stays
 // wherever the plan is not saying NOW (nothing today, a live set that is no
-// stop of ours, a NEXT peek), and while a highlight is on — the tab is then
-// "where is Ross right now", which the crew's plan does not answer (PLAN Q4a
-// and Q4c).
+// stop of ours, a NEXT peek). A highlight filters both doors (Kevin,
+// 2026-09-26: "the filters should filter the now too"): the peek says NOW
+// only for a stop the highlighted people are in (plan.js peekOf), and where
+// it does not, the tab comes back as "what is on for Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
   const landing = nowLanding($('wall-root'), ctx, date);
   const at = landing && (landing.card || landing.line);
   const block = at ? at.closest(DAY_ANCHOR) : null;
   const day = landing ? (block ? block.dataset.day : '') : null;
-  const planSaysNow = planShowsNow() && !(ctx.filterPeople || []).length;
+  const planSaysNow = planShowsNow();
   for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow ? null : day);
 }
 // ---- Our plan (2026-09-26 — Kevin's call #5) ----------------------------------
@@ -1259,7 +1261,9 @@ function currentPlan() {
 //     thing at a time at the bottom of the screen; the peek rises when it goes;
 //   · a night ahead only when it is TOMORROW's — after tonight's last stop the
 //     peek says where we start tomorrow, and the days before a festival have
-//     no peek at all (the review page asks Kevin, 2026-09-26).
+//     no peek at all (Kevin, 2026-09-26: "tomorrow only, as built");
+//   · with a highlight on, only the highlighted people's stops (peekOf) —
+//     and the rows none of them is in step back, as their cards do.
 function planAnswer(date) {
   const fest = state.fest();
   if (!fest || !state.getCrewToken() || ctx.query) return null;
@@ -1268,7 +1272,8 @@ function planAnswer(date) {
   if ($('screen-app').querySelector(':scope > .bring-offer')) return null;
   const plan = currentPlan();
   if (!plan || !plan.available) return null;
-  const peek = peekOf(plan, fest, date);
+  const highlight = ctx.filterPeople || [];
+  const peek = peekOf(plan, fest, date, { people: highlight });
   if (!peek) return null;
   const at = planAt(plan, fest, date);
   const tonight = at ? at.night.iso : festivalClock(date, fest.timezone || null).iso;
@@ -1285,7 +1290,7 @@ function planAnswer(date) {
     return wdCount.get(n.wd) > 1 && n.iso ? shortDate(n.iso) : (n.wd || '');
   };
   return {
-    plan, peek, route: peek.night, gen: planGen,
+    plan, peek, route: peek.night, gen: planGen, highlight,
     nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: [when, `${plan.us.length} of us picking`].filter(Boolean).join(' · '),

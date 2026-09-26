@@ -725,6 +725,30 @@ test('the people filter is not an input: the plan is the whole crew', () => {
   assert.deepEqual(rows(b, '2026-09-26'), rows(a, '2026-09-26'));
 });
 
+// Kevin, 2026-09-26: "the filters should filter the now too". The highlight
+// never moves the route; it decides which stops the peek may name.
+test('a highlight filters the peek: NOW only for a stop they are in, else their next stop, else nothing', () => {
+  const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+  const sat940 = new Date('2026-09-27T04:40:00Z'); // Saturday 9:40 PM PDT, Dog Blood on the Pier Stage
+  const peek = (people) => {
+    const k = P.peekOf(plan, PORTOLA, sat940, { people });
+    return k && [k.tag, k.stop.place.place, q(k.stop.from), k.count];
+  };
+  assert.deepEqual(peek([]), ['now', 'Pier Stage', '9 PM', 8]);
+  assert.deepEqual(peek(['Ana']), ['now', 'Pier Stage', '9 PM', 8], 'the count stays the crew\'s');
+  assert.deepEqual(peek(['Gus', 'Hal']), ['now', 'Pier Stage', '9 PM', 8], 'any one of them is enough');
+  // Gus is at none of the stops from 9 PM until the Great Northern at 1:30 AM
+  // (his Warehouse and Audio crowds are forks, which the peek never names).
+  assert.deepEqual(peek(['Gus']), ['next', 'The Great Northern', '1:30 AM', 4]);
+  assert.equal(P.peekOf(plan, PORTOLA, sat940, { people: ['Nobody'] }), null);
+  // hasAny reads a stop's whole timeline, a fork's peak crowd.
+  const sat = stops(plan, '2026-09-26');
+  assert.deepEqual(sat.map((s) => P.hasAny(s, ['Gus'])), [false, true, true, false, true, false, true, true, false, false, false, true]);
+  const soulwax = sat.find((s) => s.acts[0].name === 'Soulwax');
+  assert.deepEqual(soulwax.forks.map((f) => [f.place.place, P.hasAny(f, ['Gus'])]), [['Warehouse', true]]);
+  assert.ok(sat.every((s) => P.hasAny(s, [])), 'no highlight: every stop');
+});
+
 // ---- 5. no clock, no plan ----------------------------------------------------------------
 test('no plan where there is no clock: Seismic 9 and a lineup with days have no nights and no peek', () => {
   const crew = { picks: { [SEISMIC.artists[0].name]: lv(3, 'Ana', 'Ben', 'Cy') }, members: ['Ana', 'Ben', 'Cy'] };

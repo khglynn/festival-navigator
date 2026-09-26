@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock } from './plan.js';
+import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, hasAny } from './plan.js';
 
 export const PLAN_NAME = 'Our plan';
 
@@ -154,7 +154,8 @@ export function stopRow(stop, opts) {
 // row's on open, or any row a person taps.
 export function grownEl(stop, ctx) {
   const act = actFor(stop, ctx.picks);
-  const g = mk('div', 'plan-grow');
+  // The stop's tier rides along: a big name is "most of us" (v3.css).
+  const g = mk('div', `plan-grow ${stop.tier || 'some'}`);
   g.dataset.stop = `grow|${stopKey(stop)}`;
   if (!act) return g;
   const card = sheetCard(factsFor(act.name, ctx, act.occ || null), { onClose() {}, notesChip: false });
@@ -220,9 +221,12 @@ function earlierRow(n, open, onToggle) {
 // `route` is plan.night(id); `peek` is peekOf's answer for this night (or
 // null); `nowMin` is the clock on this night's axis (null for a night that is
 // not tonight); `grown` is the set of stop keys whose cards are grown under
-// their rows. Returns the list element; each row carries data-stop.
+// their rows; `highlight` is the people menu's highlight — a stop or fork
+// none of them is in steps back (`.dim`, the wall card's word for the same
+// thing), and the route itself is unchanged. Returns the list element; each
+// row carries data-stop.
 export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(),
-  earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '' } = {}) {
+  earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', highlight = [] } = {}) {
   const list = mk('div', 'plan-list');
   if (!route) return list;
   let items = route.items;
@@ -242,13 +246,20 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
       grow: grown.has(key), nightLabelOf, dayWord: tag === 'next' ? dayWord : '',
     });
     const past = nowMin != null && it.to <= nowMin;
+    const dim = !hasAny(it, highlight);
     if (past) r.classList.add('past');
+    if (dim) r.classList.add('dim');
     rows.push(r);
-    if (grown.has(key)) rows.push(grownEl(it, ctx));
+    if (grown.has(key)) {
+      const g = grownEl(it, ctx);
+      if (dim) g.classList.add('dim');
+      rows.push(g);
+    }
     const f = forkFor(it, plan.bar, tag === 'now' ? nowMin : null);
     if (f) {
       const fr = forkRow(f, it, { ctx });
       if (past) fr.classList.add('past');
+      if (!hasAny(f, highlight)) fr.classList.add('dim');
       rows.push(fr);
     }
   }

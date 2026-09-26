@@ -187,7 +187,7 @@ function railBottom() {
 
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
-//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen }
+//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight }
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -219,7 +219,7 @@ export function paintPlanShelf(host, ctx, answer) {
 function signature(a) {
   const rows = a.route ? a.route.items.map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}:${i.tier || ''}`).join(',') : '';
   const over = a.nowMin == null || !a.route ? '' : a.route.items.filter((i) => i.to <= a.nowMin).length;
-  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen].join('|');
+  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
 }
 
 function draw() {
@@ -243,7 +243,7 @@ function draw() {
   // peek's window (the row alone) never includes one.
   const list = planList(a.route, {
     ctx, plan: a.plan, peek: a.peek, nowMin: a.nowMin, grown: grownNow(),
-    earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
+    earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord, highlight: a.highlight || [],
   });
   list.addEventListener('click', onRowTap);
   // A new list element starts at the top: an open list someone had scrolled
@@ -445,10 +445,21 @@ function redraw() {
 
 function snapshot() {
   const rows = new Map();
-  if (listEl) for (const r of listEl.children) if (r.dataset.stop) rows.set(r.dataset.stop, r.getBoundingClientRect().top);
-  return { rows, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
+  const dims = new Set();
+  if (listEl) {
+    for (const r of listEl.children) {
+      if (!r.dataset.stop) continue;
+      rows.set(r.dataset.stop, r.getBoundingClientRect().top);
+      if (r.classList.contains('dim')) dims.add(r.dataset.stop);
+    }
+  }
+  return { rows, dims, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
 }
+// A row's content — never the row, whose opacity is the window's — steps back
+// or forward when a highlight changes (v3.css .dim), the wall's dim in place.
+const DIMMED = ':scope > .plan-node, :scope > .plan-what, :scope > .plan-when, :scope > .plan-n, :scope > .sheet-card';
 
+const dimOf = (r) => Number(window.getComputedStyle(r).getPropertyValue('--plan-dim')) || 0.3;
 function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
@@ -463,6 +474,13 @@ function play(before, { duration, easing }) {
     if (was == null) {
       if (shown > 0) r.animate([{ opacity: 0 }, { opacity: shown }], { duration: CASCADE_MS, delay: arrivals++ * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       continue;
+    }
+    const dimmed = r.classList.contains('dim');
+    if (before.dims.has(r.dataset.stop) !== dimmed) {
+      for (const c of r.querySelectorAll(DIMMED)) {
+        const to = Number(window.getComputedStyle(c).opacity);
+        c.animate([{ opacity: dimmed ? 1 : dimOf(r) }, { opacity: to }], { duration, easing });
+      }
     }
     const dy = was - now - (before.top - top);
     // The row that WAS the peek's leaves the window as it scrolls by: seen

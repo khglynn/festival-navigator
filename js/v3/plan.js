@@ -12,7 +12,8 @@
 //
 // Pure: no DOM, no state, no storage, no network. The caller hands in the
 // festival, the picks (model.picksFor), the active member names and the show
-// menu's fold; the minute ticker only calls planAt / peekOf.
+// menu's fold; the minute ticker only calls planAt / peekOf. The people
+// highlight is never an input to the route — it is read by peekOf and hasAny.
 //
 // The rules:
 //   1. US = the members with at least one pick in this festival, counted on
@@ -517,24 +518,38 @@ export function planAt(plan, fest, date) {
   return has(clock.iso) ? atOn(plan, clock.iso, clock.minutes) : null;
 }
 
+// A HIGHLIGHT (the people menu's "just Ross") is a view, like the wall's dim:
+// the route stays the whole crew's (rule 1), and a stop is one of Ross's when
+// he is in its crowd at any moment of it; a fork, in its peak crowd. No
+// highlight: every stop is.
+export function hasAny(stop, people) {
+  if (!people || !people.length) return true;
+  const at = (list) => (list || []).some((p) => people.includes(p));
+  return stop.timeline ? stop.timeline.some((x) => at(x.people)) : at(stop.people);
+}
+
 // What the peek shows: the stop the clock is in (NOW, with the count at this
 // minute), else the next time MOST of us meet, else the next stop (NEXT, with
 // its peak). When tonight has nothing left, the next night that has a stop,
-// `today: false` — whether to show it is the UI's call.
+// `today: false` — whether to show it is the UI's call. With a highlight on,
+// only the highlighted people's stops are candidates: the peek never says NOW
+// for a stop the wall has dimmed (Kevin, 2026-09-26: "the filters should
+// filter the now too").
 const nextOf = (stops) => stops.find((x) => x.tier === 'most') || stops[0] || null;
-export function peekOf(plan, fest, date) {
+export function peekOf(plan, fest, date, { people = [] } = {}) {
   if (!plan || !plan.nights || !plan.nights.length) return null;
+  const theirs = (s) => !!s && hasAny(s, people);
   const at = planAt(plan, fest, date);
   if (at) {
-    if (at.current) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
-    const s = nextOf([at.next, ...at.later].filter(Boolean));
+    if (theirs(at.current)) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
+    const s = nextOf([at.next, ...at.later].filter(theirs));
     if (s) return { night: at.night, stop: s, tag: 'next', count: s.count, today: true };
   }
   const after = at ? at.night.iso : festivalClock(date, (fest && fest.timezone) || null).iso;
   for (const n of plan.nights) {
     if (!n.iso || !(n.iso > after)) continue;
     const route = plan.night(n.id);
-    const s = nextOf(route.items.filter((i) => i.kind === 'stop'));
+    const s = nextOf(route.items.filter((i) => i.kind === 'stop' && theirs(i)));
     if (s) return { night: route, stop: s, tag: 'next', count: s.count, today: false };
   }
   return null;
