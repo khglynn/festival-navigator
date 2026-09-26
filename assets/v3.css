@@ -413,7 +413,8 @@ button.room-head { cursor: pointer; }
    * vocabulary, two positions. */
   .day-rail .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
   .day-rail .fest-link { margin-left: auto; }
-  .day-rail .rail-days { display: flex; gap: 20px; overflow-x: auto; }
+  /* --gap-min: a row that nearly fits tightens to fit (wall.js fitDayRowGap). */
+  .day-rail .rail-days { display: flex; --gap: 20px; --gap-min: 14px; gap: var(--gap); overflow-x: auto; }
   .day-rail .day-tab {
     font-family: var(--font-display); letter-spacing: var(--track-label);
     font-size: var(--fs-micro); text-transform: uppercase;
@@ -497,10 +498,11 @@ button.room-head { cursor: pointer; }
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
 /* Centered when they fit, scrollable from the START when they don't — plain
- * justify-content:center clips the first tabs unreachably at 390px (AX-6). */
-.dock .days { flex: 1; display: flex; gap: 24px; overflow-x: auto; }
-.dock .day-tab:first-child { margin-left: auto; }
-.dock .day-tab:last-child { margin-right: auto; }
+ * justify-content:center clips the first tabs unreachably at 390px (AX-6).
+ * Whatever is first and last: NOW can be the last tab (SUN · NOW). */
+.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 16px; gap: var(--gap); overflow-x: auto; }
+.dock .days > :first-child { margin-left: auto; }
+.dock .days > :last-child { margin-right: auto; }
 /* More days than fit (ACL's seven on a 152px row): the row has always
  * scrolled, but nothing said so and nothing kept the day you were in on
  * screen. wall.js scrolls the active tab to the middle; this is the other
@@ -512,10 +514,18 @@ button.room-head { cursor: pointer; }
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
 }
+/* A tab mid-slide (app.js slideTabs, a transform) counts toward how far its
+ * row can scroll, so one sliding in from the left edge of its end place
+ * would shrink the row's range and the browser would pull a row resting at
+ * its end short by that much, for good. A zero-width mark after the last
+ * tab holds the range at the layout's end; its margin takes back the gap it
+ * would otherwise add. */
+.dock .days::after, .day-rail .rail-days::after { content: ''; flex: none; width: 0; margin-left: calc(-1 * var(--gap)); }
 /* Each edge fades only while there is something past it, so the last tab —
  * often the one you are standing in — is never the dim one. */
-/* How far a clipped edge fades: one number, which app.js fitNowTab reads too
- * (a neighbour day is only seen once it clears the gap AND the fade). */
+/* How far a clipped edge fades: one number, which wall.js restingLeft reads
+ * too (the tabs it keeps whole stay clear of it; a tab past an edge shows
+ * nothing there but a hint). */
 .dock .days, .day-rail .rail-days { --row-fade: 18px; }
 .dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: var(--row-fade); }
 .dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: var(--row-fade); }
@@ -597,10 +607,6 @@ button.room-head { cursor: pointer; }
   .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
-  /* NOW down to its dot is 17px wide: it takes the gap on its right (the
-   * days' own reach is 2px) but not on its left, where the avatar's reach
-   * already is. */
-  .now-tab.compact::after { inset: -14px -10px -14px -2px; }
   /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
@@ -623,8 +629,9 @@ button.room-head { cursor: pointer; }
   .card button::after { content: none; }
 }
 /* NOW (2026-09-24, Kevin: "where is ross likely right now"): the jump to
- * what is playing, before the day tabs in the dock and the rail — in each
- * one's own day-tab type, so it reads as one of the row, but in the now
+ * what is playing — since v93 a tab in the day row itself, right after the
+ * day that is live (SAT · NOW), in the dock and the rail. It wears each row's
+ * own day-tab type and box, so it reads as one of the row, but in the now
  * line's violet (brand, never the fest accent: it is app chrome), with a live
  * dot that breathes. The motion kill rules make the dot still under Reduce
  * Motion and Low Power, which is what they are for. It is only there while
@@ -636,21 +643,7 @@ button.room-head { cursor: pointer; }
 .now-tab .live { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand));
                  box-shadow: 0 0 5px rgba(var(--brand), .8); animation: now-live 2.4s ease-in-out infinite; }
 @keyframes now-live { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-/* Where the days would lose the day you are in (app.js fitNowTab — a long
- * fest name on a 320 dock), NOW keeps only its dot, in a faint ring so it
- * still reads as something to tap rather than a stray pixel. */
-.now-tab.compact { width: 17px; height: 17px; padding: 0; justify-content: center; gap: 0;
-                   border: 1.5px solid rgba(var(--brand), .45); border-radius: var(--r-pill); }
-.now-tab.compact .word { display: none; }
-.now-tab.compact .live { width: 7px; height: 7px; }
 .dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
-/* The last resort (app.js fitNowTab): even beside NOW's dot the days are
- * narrower than one tab, so they claim their widest and the fest name gives
- * way with an ellipsis. !important only to out-rank the wrap's inline
- * `flex: none` in index.html, which every other state keeps. */
-.dock.squeezed #dock-fest-wrap { flex: 0 1 auto !important; min-width: 0; }
-.dock.squeezed .fest-link { flex: 0 1 auto; max-width: 100%; min-width: 0; }
-.dock.squeezed .fest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
                      font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }

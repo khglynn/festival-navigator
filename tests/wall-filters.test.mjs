@@ -270,17 +270,20 @@ test('scrollspy: the day you are in is brought into the middle of its row, on op
   const hadGCS = globalThis.getComputedStyle;
   globalThis.getComputedStyle = window.getComputedStyle.bind(window);
   const nav = document.createElement('div');
-  nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
+  nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button><button class="day-tab" data-day="Late"></button>';
   const root = document.createElement('div');
-  root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
-  const [sat, sun] = root.querySelectorAll('.day-block');
-  // A 60px row holding two 40px tabs at 0 and 100 (layout positions — the
-  // tabs may be mid-slide, and a slide is a transform the row must ignore).
+  root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div><div class="day-block" data-day="Late"></div>';
+  const [sat, sun, late] = root.querySelectorAll('.day-block');
+  late.getBoundingClientRect = () => ({ top: 900 }); // below the fold throughout
+  // A 60px row holding three 40px tabs at 0, 100 and 200 (layout positions —
+  // the tabs may be mid-slide, and a slide is a transform the row must
+  // ignore; the row's range is read from them too, v93).
   const px = (el, props) => { for (const [k, v] of Object.entries(props)) Object.defineProperty(el, k, { value: v, configurable: true }); };
   px(nav, { clientWidth: 60, scrollWidth: 240, offsetLeft: 0, clientLeft: 0 });
-  const [satTab, sunTab] = nav.querySelectorAll('.day-tab');
+  const [satTab, sunTab, lateTab] = nav.querySelectorAll('.day-tab');
   px(satTab, { offsetLeft: 0, offsetWidth: 40 });
   px(sunTab, { offsetLeft: 100, offsetWidth: 40 });
+  px(lateTab, { offsetLeft: 200, offsetWidth: 40 });
   const shown = [];
   nav.scrollTo = (o) => shown.push([o.left === 0 ? 'Saturday' : o.left === 90 ? 'Sunday' : `left ${o.left}`, o]);
   const pageScrolls = [];
