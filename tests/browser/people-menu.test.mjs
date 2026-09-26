@@ -115,7 +115,11 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     assert.ok(at, 'a card to tap beside the menu');
     if (phone) await page.touchscreen.tap(at.x, at.y);
     else await page.mouse.click(at.x, at.y);
-    await sleep(450);
+    // Wait for the menu to have gone, not a fixed time: on a loaded Linux
+    // runner WebKit's close had not landed 450 ms after the tap (CI run
+    // 36263155410, 2026-09-26; 4/4 locally). The pill's motion then settles.
+    await page.waitForFunction(() => ![...document.querySelectorAll('.hl-pop, .sort-pop')].some((p) => getComputedStyle(p).display !== 'none'), null, { timeout: 4000 }).catch(() => {});
+    await sleep(250);
     return at.artist;
   };
   return { ctx, page, errors, posts, phone, bar, press, outside, width };
