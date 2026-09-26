@@ -16,8 +16,10 @@ Evidence for every rule is in `research/` beside this file.
    not merge to main before Mon Sep 28 (its own rule). Main can still move
    under us (docs merges from other sessions): re-stamp above the newest
    main before promoting.
-3. Budget and memory: one Codex job and one browser at a time; Sonnet for
-   breadth and walks, Opus for judgment, never Fable in a fan-out.
+3. Budget and memory: one Codex job and one browser at a time; never Fable
+   in a fan-out. High effort is the default for every agent (Kevin,
+   2026-09-26): Opus for design and key build work (Sonnet lacks the taste
+   for design), Sonnet for walks and data research.
 
 ## Ship (every release)
 
@@ -33,6 +35,11 @@ Evidence for every rule is in `research/` beside this file.
 3. Stamp on a clean tree above the newest origin/main:
    `node scripts/sw-stamp.mjs` (a real release) or `--keep` (a fix to a
    still-unreleased version). `git status --short` must be empty first.
+   Bring main in with `git merge origin/main`, not a rebase: the branch is
+   pushed and its head sha is what Codex and the walker judged, and the
+   merge commit records how each conflict was resolved (35cb467). The number
+   follows ship order, not branch names: v94 shipped before `live/v93`, so
+   that branch re-stamps above main and ships as v96 (2026-09-26).
 4. Local gate: `npm test`, `TZ=Asia/Tokyo npm test`, the festival-night
    pass `NIGHT_CLOCK=2026-09-27T04:30:00Z NODE_OPTIONS="--import
    ./tests/helpers/night-clock.mjs" npm test`, and
@@ -41,13 +48,27 @@ Evidence for every rule is in `research/` beside this file.
 5. PR → CI. **Check both jobs by name** (`gh pr checks`): the ruleset only
    requires `checks`, so `browser` can be red under a green merge button.
    CI is ~4 min (the two jobs run in parallel); `checks` now also runs a
-   Portola Saturday-night pass (`tests/helpers/night-clock.mjs`).
+   Portola Saturday-night pass (`tests/helpers/night-clock.mjs`). Poll the
+   two jobs by name rather than `gh pr checks --watch`, which never returns
+   while an unrelated check (the staging deploy) sits pending:
+   `gh pr checks <n> --json name,bucket --jq '.[] | select(.name=="checks"
+   or .name=="browser") | "\(.name) \(.bucket)"'`.
 6. Independent review on the exact head: Codex **Sol 6** (`gpt-6-sol`,
-   xhigh) through `codex-run.sh`, in a detached worktree at the head sha
-   with `node_modules` symlinked. Fix real findings, re-stamp `--keep`,
+   high since 2026-09-26; xhigh before) through `codex-run.sh`, in a
+   detached worktree at the head sha with `node_modules` symlinked. Fix
+   real findings, re-stamp `--keep`,
    loop to 4. Every release also gets a real-browser walk (a Sonnet
    teammate, phone viewport, real input) of the states it touches —
-   CLAUDE.md asks for one before any promote, visual or not.
+   CLAUDE.md asks for one before any promote, visual or not. The walker is
+   not the builder: on 2026-09-26 independent walks caught two bugs the
+   builder's own walk had passed (Escape regrowing a zoom; a welcome that
+   never showed).
+   **When a third round finds a new hole of the same kind, stop patching and
+   cut the mechanism, not the feature** — v93's Show menu kept staying open
+   once it lost its history entry (CLAUDE.md's history bullet has the why;
+   the first proposal cut the feature and Kevin pushed back). Say what was
+   cut and where it is banked (`v93-BUILD.md` on `live/v93`, which lands
+   with v96).
 7. Merge yourself (`gh pr merge --merge`) — Kevin's standing rule — unless a
    finding is a product call he hasn't seen or it touches friends' data.
 8. Verify: wait for main's CI, then run `node ops/prod-smoke.mjs` **from
@@ -58,7 +79,10 @@ Evidence for every rule is in `research/` beside this file.
    bytes for every APP_CORE file, boots every host's landing plus
    gallery.html in iPhone WebKit with no errors while blocking every write,
    telemetry call and service worker, then lets the worker install on the
-   landing and confirms it caches the new build; ~30 s. Then watch errors for
+   landing and confirms it caches the new build; ~30 s. One transient miss
+   on one host (a host a few seconds behind, a single fetch error) earns one
+   rerun, which came back clean both times it happened (v91, v95); the same
+   failure twice is real. Then watch errors for
    15 min (PostHog project 627900 — see Observability).
 9. Tell Kevin in one short message: what changed, what to try, "say roll
    back to undo". Update NOW.md and the LEDGER.
