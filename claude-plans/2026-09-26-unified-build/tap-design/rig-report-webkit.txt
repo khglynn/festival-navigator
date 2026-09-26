@@ -11,13 +11,15 @@ webkit member390
   frame webkit-390-member-boysnoize-doors.png
   errors: none
 webkit grows390
-  Oskar open: {"top":546,"h":298,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  Oskar open: {"top":520,"h":324,"rowY":660,"meter":"0","minusOff":true,"plusOff":false}
   frame webkit-390-member-unpicked-open.png
-  after +: {"top":517,"h":327,"rowY":686,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
+  after +: {"top":491,"h":353,"rowY":660,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
   frame webkit-390-member-unpicked-plus1.png
-  after −: {"top":546,"h":298,"rowY":686,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
+  after −: {"top":520,"h":324,"rowY":660,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
   errors: none
 webkit motion390
+webkit alt390
+  frame webkit-390-ALT-no-meter-plus2.png
 webkit member320
   frame webkit-320-member-boysnoize-doors.png
   Robyn open 320: {"top":127,"h":441,"rowY":324,"meter":"0","minusOff":true,"plusOff":false}
@@ -41,4 +43,4 @@ webkit desktop1280
   frame webkit-1280-mouse-robyn-shelf.png
   frame webkit-1280-mouse-robyn-shelf-plus1.png
   errors: none
-writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person

@@ -11,11 +11,11 @@ chromium member390
   frame chromium-390-member-boysnoize-doors.png
   errors: none
 chromium grows390
-  Oskar open: {"top":545,"h":299,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  Oskar open: {"top":518,"h":326,"rowY":659,"meter":"0","minusOff":true,"plusOff":false}
   frame chromium-390-member-unpicked-open.png
-  after +: {"top":516,"h":328,"rowY":686,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
+  after +: {"top":489,"h":355,"rowY":659,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
   frame chromium-390-member-unpicked-plus1.png
-  after −: {"top":545,"h":299,"rowY":686,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
+  after −: {"top":518,"h":326,"rowY":659,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
   errors: none
 chromium motion390
   frame chromium-390-motion-arrive-0.png
@@ -35,6 +35,8 @@ chromium motion390
   frame chromium-390-motion-plus-6.png
   frame chromium-390-motion-plus-7.png
   errors: none
+chromium alt390
+  frame chromium-390-ALT-no-meter-plus2.png
 chromium member320
   frame chromium-320-member-boysnoize-doors.png
   Robyn open 320: {"top":127,"h":441,"rowY":325,"meter":"0","minusOff":true,"plusOff":false}
@@ -58,4 +60,4 @@ chromium desktop1280
   frame chromium-1280-mouse-robyn-shelf.png
   frame chromium-1280-mouse-robyn-shelf-plus1.png
   errors: none
-writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person
