@@ -313,10 +313,15 @@ export function roomsOnWall() {
 // instant under Low Power and reduced motion. The repaint is the wall's own
 // path — the days and their tabs are re-read from the plan, so a day with
 // nothing visible left goes with its rooms.
+// A fold whose room is still on its way out: at most one. Whatever wants the
+// page next — the next tick, NOW, a day tab — finishes it first (settleFold),
+// so it acts on the wall as it will be and nothing lands on the page after it.
+let pendingFold = null; // { finish }
+function settleFold() { if (pendingFold) pendingFold.finish(); }
 function toggleFoldFlow(key) {
+  settleFold();
   // The setting lands NOW — memory, storage and ctx; only the room's leaving
-  // is deferred. A second tap during the fade reads this one, never the
-  // state before it.
+  // is deferred.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
   // The days before and after, from the plan: what the fold takes with it
   // (a day whose last visible room went; a weekend's three days) and what it
@@ -328,31 +333,49 @@ function toggleFoldFlow(key) {
   // Where the person is standing, read before anything moves: the element at
   // the top of what they see (wall.js pickWallAnchor). Read now, not after the
   // fade — a room that is leaving is lifted 4px by it.
-  const place = takeWallPlace();
+  let place = takeWallPlace();
+  const tookAt = window.scrollY;
   // The everything-hidden notice (wall.js) is the wall's one line when the
   // last room goes: it arrives with the beat once the week has left, and it
   // is the first thing to leave when a room comes back.
   const notice = () => $('wall-root').querySelector(':scope > .wall-empty');
   const arrive = arriveBlocks;
+  const anims = [];
+  let done = false;
+  const fold = {};
   const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingFold === fold) pendingFold = null;
+    // A newer scroll wins (Sol 6's re-review): the page moved since the place
+    // was read — a hand scroll during the fade — so the place is read again,
+    // where the person is now, with the leaving rooms put back at rest first
+    // so their lift does not count. Keeping the old place would pull the page
+    // back from where they scrolled.
+    if (Math.abs(window.scrollY - tookAt) >= 1) {
+      for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
+      place = takeWallPlace();
+    }
     repaintWall();
     keepWallPlace(place);
     if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
     else if (notice()) arrive([notice()]);
   };
+  fold.finish = finish;
   const leaving = (folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)) : [notice()].filter(Boolean))
     .filter((block) => canAnimate(block, ctx));
   if (!leaving.length) { finish(); return; }
+  pendingFold = fold;
   let pending = leaving.length;
-  let done = false;
-  const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
   for (const room of leaving) {
     const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
     a.onfinish = settle;
     a.oncancel = settle;
+    anims.push(a);
   }
-  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
 }
 
 // A room coming back arrives with the usual beat (the fold flow's way in).
@@ -369,6 +392,7 @@ function arriveBlocks(blocks) {
 // Nothing leaves, so there is nothing to wait for: the wall repaints, the
 // page stays on the day it was on, and what came back arrives with the beat.
 function unfoldAll() {
+  settleFold();
   const keys = [...(ctx.folded || [])];
   if (!keys.length) return;
   const daysBefore = planDayKeys();
@@ -399,6 +423,7 @@ function takeWallPlace() {
 }
 function keepWallPlace(place) {
   if (!place) return;
+  const was = window.scrollY;
   const anchors = wallAnchors($('wall-root'));
   const key = resolveWallAnchor(place, anchors.map((a) => a.key));
   if (!key) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); }
@@ -410,6 +435,12 @@ function keepWallPlace(place) {
   // The Show menu, if it is up, now holds THIS place (menuGone's hold): its
   // own scroll listener would only hear of it a frame from now.
   if (menuY != null) menuY = window.scrollY;
+  // NOW's "still there" is measured in page offsets, and the page's offsets
+  // just moved under a view that did not: where the last NOW left the page
+  // moves with them, so the next NOW tap goes on to the next stop rather
+  // than starting over (Sol 6's re-review).
+  const moved = window.scrollY - was;
+  if (nowCycle && Math.abs(moved) >= 1) nowCycle.y += moved;
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -1042,6 +1073,7 @@ const pageGeo = (root) => ({
   },
 });
 function jumpToNow() {
+  settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
   const seq = ++nowSeq;
   const root = $('wall-root');
   const geo = pageGeo(root);
@@ -1373,6 +1405,7 @@ function renderDayNav() {
   for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
     const at = day.anchor || day.key;
     const jump = () => {
+      settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
       const target = document.querySelector(anchorFor(at));
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
