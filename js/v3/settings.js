@@ -821,6 +821,14 @@ export function renderSettings(root, ctx, actions) {
   }
   // Bulk paste writes picks under the names it reads — a member's tool (v92).
   if (ctx.meName) list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
+  // Its neighbour (2026-09-26): picks read from the festival app's own
+  // schedule export — a sheet over Settings (js/v3/import.js), for YOUR
+  // picks only, so a member's tool too. Named for the festival on screen: the
+  // export being read is that festival's app's.
+  const fest = state.fest();
+  if (ctx.meName && actions.openImport && fest && (fest.artists || []).length) {
+    list.appendChild(linkRow(`Import from the ${fest.name} app`, () => actions.openImport()));
+  }
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   // Which build this phone runs, and the way to a newer one (v90) — beside

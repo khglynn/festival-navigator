@@ -50,6 +50,8 @@ const APP_CORE = [
   '/js/v3/notes.js',
   '/js/v3/settings.js',
   '/js/v3/tools.js',
+  '/js/v3/import.js',
+  '/js/v3/import-match.js',
   '/js/v3/model.js',
   '/js/v3/aura.js',
   '/js/v3/palette.js',

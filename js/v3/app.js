@@ -64,6 +64,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+import { openImportSheet } from './import.js'; // picks from a festival app's schedule export (2026-09-26)
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
@@ -1924,6 +1925,49 @@ function seedShowOnce(fid, slugs) {
   return showLabel(rooms, folded);
 }
 
+// ---- import from a festival app's schedule export (2026-09-26) ----------------------
+// A pick a Settings tool makes — Bulk paste, the schedule import — goes the
+// way a tap's does: the same migration gate (nothing counts while a legacy
+// crew is being updated, and the tool says so), the same pending write and
+// local mirror. The caller schedules the sync once, after its whole batch.
+function recordToolPick(artist, person, level) {
+  if (ctx.migrationPending) return false; // same gate as handleTap
+  state.recordSelection(artist, person, level);
+  applyLocalPick(artist, person, level);
+  return true;
+}
+
+// The sheet (js/v3/import.js) reads the images, lands the levels, and hands
+// back only the picks the person chose, for them alone. Once they are added:
+// one sync, then the wall — every layer down at once (history.go through
+// the router's own stack, so Back never lands on a dead Settings) — and a
+// line saying what happened. False when there is nothing to open (a guest,
+// a festival with no lineup yet).
+function openImport() {
+  refreshCtx();
+  const fest = state.fest();
+  const token = state.getCrewToken();
+  if (!ctx.meName || !token || !fest || !(fest.artists || []).length) return false;
+  const me = ctx.meName;
+  const fid = ctx.fid;
+  openImportSheet({
+    ctx, fest, token, me,
+    // Only ever the person importing, and only on the festival it opened on.
+    record: (name, level) => (ctx.fid === fid && ctx.meName === me ? recordToolPick(name, me, level) : false),
+    close: () => { if (!router.requestClose()) closeSheet(); },
+    done: (n, { stay = false } = {}) => {
+      sync.scheduleSync();
+      refreshCtx();
+      if (stay) { repaintWall(); return; }
+      const depth = router.depth();
+      if (depth > 0) history.go(-depth);
+      else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); }
+      showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);
+    },
+  });
+  return true;
+}
+
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
@@ -2249,13 +2293,11 @@ function openSettings() {
       const gen = bootGeneration;
       if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
     },
-    recordPick: (artist, person, level) => {
-      if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
-      state.recordSelection(artist, person, level);
-      applyLocalPick(artist, person, level);
-      return true;
-    },
+    recordPick: (artist, person, level) => recordToolPick(artist, person, level),
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // Import from the festival app's schedule export (2026-09-26): a sheet
+    // over Settings, a history entry of its own like every sheet.
+    openImport: () => { if (openImport()) router.push('sheet:import'); },
     // Every link Settings hands out carries this phone's view (v92, SD1), and
     // says so in one line.
     inviteLink: (meName = null) => inviteLink(meName),
@@ -3478,6 +3520,7 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') { if (ctx.meName) openAddMember(); } // a guest adds nobody (v92)
+    else if (key === 'sheet:import') openImport(); // your picks only: a member's sheet (it opens nothing for a guest)
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {

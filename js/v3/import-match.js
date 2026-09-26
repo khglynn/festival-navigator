@@ -170,7 +170,9 @@ export function matchItem(index, item, day = null) {
     occ: { day: occ.day, stage: occ.stage, time: occ.time, grid: !!occ.grid },
     offDay,
     where: anyDays,
-    cancelled: mine.some((o) => o.cancelled),
+    // Called off: every entry for the name is cancelled (a cancelled act's set
+    // comes off the grid, so a name still on the grid is on).
+    cancelled: mine.every((o) => o.cancelled),
   };
 }
 
