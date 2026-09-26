@@ -104,6 +104,54 @@ async function drag(page, from, dy, { steps = 12, stepMs = 16, holdMs = 250 } = 
   return mid;
 }
 
+// A flick, and a check that the page really received one (2026-09-26). The
+// shelf reads a flick from its events' times: the speed over its last moves,
+// and none at all if the hand stopped more than STILL_MS before letting go.
+// Under page.clock those times are the fake performance.now() at the moment
+// each listener ran (Playwright redefines Event.prototype.timeStamp), so
+// they are exactly as far apart as the machine made them: with other
+// sessions holding the load average at 17, Chromium's release landed past
+// 80 ms after the last move and a flick up read as a short slow drag (twice
+// in about ten runs). No protocol timestamp can undo that. So the test reads
+// back what the page's own listeners saw and asks the shelf's question of
+// it; a gesture the machine did not deliver as a flick settles back where it
+// began (it is short) and is sent again, up to three times. What is asserted
+// is the rule: every gesture the page received as a flick decided by its
+// direction.
+const SHELF_SRC = readFileSync(path.join(ROOT, 'js/v3/plan-shelf.js'), 'utf8');
+const FLING = Number(SHELF_SRC.match(/const FLING = ([\d.]+);/)[1]);
+const STILL_MS = Number(SHELF_SRC.match(/const still = e\.timeStamp - b\.t > (\d+);/)[1]);
+const asTheShelfSees = (seen) => {
+  const down = seen.findIndex((e) => e[0] === 'pointerdown');
+  const up = seen.find((e) => e[0] === 'pointerup');
+  // From the press on, as the shelf keeps them (the move to the start point
+  // before the press is not part of the gesture).
+  const samples = seen.slice(Math.max(0, down)).filter((e) => e[0] === 'pointerdown' || e[0] === 'pointermove').slice(-5);
+  if (!up || samples.length < 2) return { flick: false, seen };
+  const a = samples[0];
+  const b = samples[samples.length - 1];
+  const v = b[1] > a[1] ? Math.abs(a[2] - b[2]) / (b[1] - a[1]) : 0;
+  return { flick: down >= 0 && up[1] - b[1] <= STILL_MS && v > FLING, v, still: up[1] - b[1], seen };
+};
+async function flick(page, from, dy) {
+  let got;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await page.evaluate(() => {
+      window.__flick = [];
+      if (window.__flickWired) return;
+      window.__flickWired = true;
+      for (const t of ['pointerdown', 'pointermove', 'pointerup']) {
+        document.addEventListener(t, (e) => { if (window.__flick) window.__flick.push([t, e.timeStamp, e.clientY]); }, true);
+      }
+    });
+    await drag(page, from, dy, { steps: 3, stepMs: 0, holdMs: 0 });
+    got = asTheShelfSees(await page.evaluate(() => window.__flick));
+    if (got.flick) return got;
+    await sleep(600); // not a flick as delivered: it goes back where it began
+  }
+  assert.fail(`the machine never delivered a flick in three tries (last: ${JSON.stringify(got)})`);
+}
+
 for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
   const skip = get() ? false : (name === 'WebKit' ? 'WebKit not installed' : NO_BROWSER);
 
@@ -169,11 +217,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     const { ctx, page, errors } = await openPhone(get());
     try {
       let from = await grabAt(page);
-      await drag(page, from, -90, { steps: 3, stepMs: 0, holdMs: 0 }); // short (under a third) and fast: decisive enough to stay a flick on a machine 4x slower
+      // Short: 28% of the way, under the third a slow release needs, so only
+      // its speed can open it — and long enough to stay fast on a slow machine.
+      await flick(page, from, -from.range * 0.28);
       await sleep(600);
       assert.equal((await geometry(page)).state, 'open', 'a flick up opens it, short as it was');
       from = await grabAt(page);
-      await drag(page, from, 90, { steps: 3, stepMs: 0, holdMs: 0 });
+      await flick(page, from, from.range * 0.28);
       await sleep(500);
       assert.equal((await geometry(page)).state, 'peek', 'a flick down closes it');
       // A tap on the peek's row: the plan opens; the wall behind hears nothing.
