@@ -17,6 +17,17 @@ function announceSynced() {
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
 let pollAfterPush = false; // afterServerWrite while a push was out: poll when it lands
+// The newest server doc this phone has applied, per crew, as the pushGen its
+// request LEFT at (a poll, or a push's answer). pushGen only rises, and
+// afterServerWrite bumps it the moment an outside write is answered — so a
+// request that left at that number or later carries that write: whatever it
+// says about it (there, removed since, recoloured) is the server's word.
+const heardAt = new Map(); // crew token → pushGen when the newest applied request left
+function heard(token, gen) { if (!(heardAt.get(token) >= gen)) heardAt.set(token, gen); }
+// Has this phone applied a doc that left after the write marked `mark`
+// (afterServerWrite's return)? The Invite sheet's memory of an answered add
+// asks this, and lets the add go once it is true (2026-09-26).
+export function heardSince(token, mark) { return heardAt.get(token) >= mark; }
 let onRemoteChange = () => {};
 let onCrewGone = () => {};
 let onSyncBlocked = () => {};
@@ -123,6 +134,7 @@ export async function pushSync() {
   if (isRefused(payload, tokenAtStart)) { setSyncStatus('blocked'); return; }
 
   isSyncing = true; setSyncStatus('syncing');
+  const genAtStart = pushGen; // when this left (heardAt)
   try {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
       method: 'POST',
@@ -164,6 +176,7 @@ export async function pushSync() {
     // is either an edit made during the round-trip or another tab's write —
     // both real, both still owed a push.
     state.clearPending(payload);
+    heard(tokenAtStart, genAtStart);
     applyRemote(stored);
     pushGen++;
     // "Stay offline" switched on while this was in flight: what arrived is
@@ -191,11 +204,15 @@ export async function pushSync() {
 // ordered way: a poll already out carries a snapshot older than that write,
 // so it must not apply (the same rule a completed push makes — pushGen); a
 // fresh poll runs now, or, while a push is out, right after it lands, so no
-// answer that left before the write has the last word.
+// answer that left before the write has the last word. Returns the write's
+// mark: heardSince(token, mark) is true once a doc that left after it has
+// been applied here.
 export function afterServerWrite() {
   pushGen++;
-  if (isSyncing) { pollAfterPush = true; return; }
-  pollSync();
+  const mark = pushGen;
+  if (isSyncing) pollAfterPush = true;
+  else pollSync();
+  return mark;
 }
 
 // Last call before the page dies.
@@ -271,6 +288,7 @@ export async function pollSync() {
     // freshly-synced picks back for a visible ~25s (sweep P1, 2026-07-12).
     if (pushGen !== genAtStart) return;
 
+    heard(tokenAtStart, genAtStart);
     const changed = state.applyRemoteDoc(remote);
     if (changed) {
       onRemoteChange();

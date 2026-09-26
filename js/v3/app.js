@@ -2975,15 +2975,21 @@ const addInFlight = new Map(); // crew token → { canonical, waiters: Set<(outc
 // Answered, not yet in this phone's doc (the ordered poll has not landed):
 // the sheet counts them as here — "Mo is already in this crew", and the next
 // person does not take Mo's colour. Memory only; the doc stays sync's.
-const addedHere = new Map(); // crew token → Map(lower-case name → { name, person })
+//
+// Each is let go the moment this phone has applied a doc that left AFTER the
+// add was answered (sync.heardSince, the mark afterServerWrite handed back):
+// from then on this phone's doc is the server's word on that person, whatever
+// it says — here, or removed since by another phone. Not "once they look
+// active here": a removed member being brought back already has an entry
+// (removed: true), so that let a reopened sheet send the same add twice (Sol,
+// 58e75fe); and a success nobody re-checked while it was active stayed
+// forever, so a person another phone then removed could not be added back —
+// "already in this crew", no POST, where production re-adds (Codex, 6178e38).
+const addedHere = new Map(); // crew token → Map(lower-case name → { name, person, mark })
 function addedNotYetHere(token) {
   const mine = addedHere.get(token);
   if (!mine) return [];
-  // Here means here AS ADDED — active: a removed member being brought back
-  // already has an entry (removed: true), and pruning on that let a reopened
-  // sheet send the same add again (Sol's re-review of 58e75fe).
-  const here = new Set(Object.entries(state.people()).filter(([, p]) => state.isActivePerson(p)).map(([n]) => n.toLowerCase()));
-  for (const k of [...mine.keys()]) if (here.has(k)) mine.delete(k);
+  for (const [k, a] of [...mine]) if (sync.heardSince(token, a.mark)) mine.delete(k);
   return [...mine.values()];
 }
 function addPerson(token, canonical, person) {
@@ -3039,8 +3045,11 @@ function addPerson(token, canonical, person) {
         return;
       }
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+      // The doc, the ordered way (it waits under Stay offline); the mark says
+      // when a doc that carries this add has reached this phone.
+      const mark = sync.afterServerWrite();
       const mine = addedHere.get(token) || new Map();
-      mine.set(canonical.toLowerCase(), { name: canonical, person });
+      mine.set(canonical.toLowerCase(), { name: canonical, person, mark });
       addedHere.set(token, mine);
       // Stay offline switched on while this was out: the server has the
       // person, and nothing is queued here — a pending copy could bring back
@@ -3048,7 +3057,6 @@ function addPerson(token, canonical, person) {
       // 0e51b06). The sheet says the crew arrives once the phone is online
       // again, and the ordered poll brings them when sync resumes.
       finish({ ok: true, canonical, offline: sync.stayingOffline() });
-      sync.afterServerWrite(); // the doc, the ordered way (it waits under Stay offline)
     } catch {
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
       if (deadline && deadline.aborted) {

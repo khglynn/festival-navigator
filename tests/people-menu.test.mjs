@@ -675,6 +675,30 @@ test('bringing back a removed member: a reopened sheet before the poll lands sti
   await sheetClosed();
 });
 
+// Codex on 6178e38 (a regression against production): an answered add was
+// remembered until a sheet happened to check it while the person looked
+// active here. Nobody did, another phone removed him, and the sheet said
+// "already in this crew" and sent nothing — production sends the re-add.
+// The memory now ends when a read that left after the add has landed,
+// whatever it says about him.
+test('an add answered, another phone removes him, an ordered poll brings that: adding him back sends the POST', async () => {
+  await addNamed('Gus');
+  await answered('Gus');
+  await until(() => state.people().Gus && !state.people().Gus.removed, 'Gus, brought by the ordered poll');
+  await doneWithSheet(); // and nothing on this phone looks at the add again while he is here
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Gus: { removed: true } } }); // another phone removes him
+  await sync.pollSync(); // a poll that left after the add: the server's word on Gus
+  assert.equal(state.people().Gus.removed, true, 'Gus is out, here');
+  const before = postsNow();
+  await addNamed('Gus');
+  await answered('Gus');
+  assert.equal(postsNow(), before + 1, 'the re-add goes to the server, as production’s does');
+  const post = writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).at(-1);
+  assert.equal(post.body.data.people.Gus.removed, false, 'bringing him back');
+  await until(() => state.people().Gus && !state.people().Gus.removed, 'Gus back, brought by the ordered poll');
+  await doneWithSheet();
+});
+
 test('the menu gained Zed in place, and a crew-mate who left is gone from it and from the highlight', async () => {
   await openMenu();
   assert.ok(row('Zed'), 'the new person has a row');
