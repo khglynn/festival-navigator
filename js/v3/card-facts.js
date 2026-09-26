@@ -25,7 +25,12 @@ export function timeRange(t) {
   const [s, e] = t.split(' - ');
   if (!e) return t;
   const ps = s.trim().split(' '), pe = e.trim().split(' ');
-  return ps[1] === pe[1] ? `${ps[0]} – ${e.trim()}` : `${s.trim()} – ${e.trim()}`;
+  // "12 – 6 PM" drops the start's AM/PM only when both ends sit in the SAME
+  // half-day, end after start. 10 AM to 12 AM is ten in the morning to
+  // MIDNIGHT, and "10 – 12 AM" read as a two-hour brunch (the Kink.com
+  // Penthouse Preview, Folsom Sunday, v94).
+  const mins = (c) => { const [h, m] = String(c).split(':'); return (Number(h) % 12) * 60 + Number(m || 0); };
+  return ps[1] === pe[1] && mins(pe[0]) > mins(ps[0]) ? `${ps[0]} – ${e.trim()}` : `${s.trim()} – ${e.trim()}`;
 }
 
 const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMeta[day].wd) || day;

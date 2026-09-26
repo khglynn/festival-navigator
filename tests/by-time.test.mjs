@@ -32,7 +32,7 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
 const { sectionLayoutOf, timeBandsOf, bandOf, TIME_BANDS, venueGroupsOf, occOf, BY_TIME, BY_VENUE, LAYOUTS, showsOnItsOwn, linksOf } = await import('../js/v3/events.js');
-const { factsFor } = await import('../js/v3/card-facts.js');
+const { factsFor, timeRange } = await import('../js/v3/card-facts.js');
 const { foldFromShow } = await import('../js/v3/filters.js');
 const { dayArtistsFor } = await import('../js/v3/tools.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
@@ -194,6 +194,15 @@ test('how many parties there are changes nothing about how they are banded', () 
   const many = timeBandsOf([...PARTIES_FRI, ...PARTIES_FRI.map((a) => ({ ...a, name: `${a.name} II` }))]);
   assert.deepEqual(many.map((b) => b.key), timeBandsOf(PARTIES_FRI).map((b) => b.key));
   assert.deepEqual(timeBandsOf([]), []);
+});
+
+test('a range drops the first AM/PM only inside one half-day: 10 AM to 12 AM is to MIDNIGHT, never a two-hour brunch', () => {
+  const cases = [
+    ['10 AM - 12 AM', '10 AM – 12 AM'], // the Kink.com Penthouse Preview, Folsom Sunday
+    ['12 PM - 6 PM', '12 – 6 PM'], ['9 PM - 11:59 PM', '9 – 11:59 PM'], ['12 AM - 3 AM', '12 – 3 AM'],
+    ['9 PM - 3 AM', '9 PM – 3 AM'], ['3 PM - 12 AM', '3 PM – 12 AM'], ['7:30 PM - 12 AM', '7:30 PM – 12 AM'],
+  ];
+  for (const [t, want] of cases) assert.equal(timeRange(t), want, t);
 });
 
 // ---- the wall ---------------------------------------------------------------------------
