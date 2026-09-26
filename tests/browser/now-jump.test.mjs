@@ -159,6 +159,23 @@ const tapNow = async (page, door) => {
   await sleep(150); // the glide starts
   await settled(page);
 };
+// The dock (or the rail) with today lit and its row at rest. Polled from
+// here, in real time: under the pinned clock the scrollspy lights the day the
+// open landed on a beat late, and then the row glides — a read in between
+// sees a day that is not whole yet.
+const restedOn = async (page, day, door = 'dock') => {
+  const read = () => page.evaluate((d) => {
+    const row = document.getElementById(`${d}-days`);
+    return `${(row.querySelector('.active') || {}).dataset?.day}|${row.scrollLeft}|${row.clientWidth}`;
+  }, door);
+  let last = await read(), still = 0;
+  for (let i = 0; i < 80 && still < 4; i++) {
+    await sleep(100);
+    const cur = await read();
+    still = cur === last && cur.startsWith(`${day}|`) ? still + 1 : 0;
+    last = cur;
+  }
+};
 const highlight = async (page, name) => {
   await page.locator('#person-chips .person-chip', { hasText: name }).first().click();
   await sleep(400);
@@ -166,21 +183,28 @@ const highlight = async (page, name) => {
 
 for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''], [1280, 800, false, browser, ''], [390, 844, true, webkit, 'WebKit ']]) {
   const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
-  test(`${name}${width}: NOW sits before the days, is not a day, and a tap lands the now line in view`, { skip }, async () => {
+  // v93 (Kevin's D1): NOW is a tab IN the day row, right after the day that
+  // is live — SAT · NOW — never pinned before the days.
+  test(`${name}${width}: NOW sits in the day row right after the live day, is not a day, and a tap lands the now line in view`, { skip }, async () => {
     const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
+      await restedOn(page, 'Saturday', door);
       const tab = await page.evaluate((d) => {
         const now = document.getElementById(`${d}-now`);
         const days = document.getElementById(`${d}-days`);
         const r = now.getBoundingClientRect();
+        const rr = days.getBoundingClientRect();
         return {
-          shown: !now.hidden && r.width > 0, text: now.textContent.trim(), left: r.right <= days.getBoundingClientRect().left + 1,
+          shown: !now.hidden && r.width > 0, text: now.textContent.trim(), inRow: now.parentElement === days,
+          after: (now.previousElementSibling || {}).dataset?.day || null, whole: r.left >= rr.left - 0.5 && r.right <= rr.right + 0.5,
           day: now.dataset.day || null, color: getComputedStyle(now).color, dot: !!now.querySelector('.live'),
         };
       }, door);
       assert.ok(tab.shown, 'something is live, so NOW is there');
       assert.equal(tab.text, 'NOW');
-      assert.ok(tab.left, 'to the left of the days');
+      assert.ok(tab.inRow, 'in the day row');
+      assert.equal(tab.after, 'Saturday', 'right after the day that is live');
+      assert.ok(tab.whole, 'and whole in it');
       assert.equal(tab.day, null, 'not a day: the scrollspy never lights it');
       assert.ok(tab.dot, 'with its live dot');
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -766,28 +790,44 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
   } finally { await ctx.close(); }
 });
 
-// The squeeze is NOW's to undo: when the last set ends and NOW leaves, the
-// days give back the room they claimed and the fest name is whole again.
-test('ACL at 305: NOW squeezes the fest name while live, and gives the room back when it leaves', { skip }, async () => {
+// v90's dock squeezed the fest name to an ellipsis where the days needed the
+// room (ACL's long name at 305). D1 retired the squeeze and NOW's dot: the
+// fest name never gives way. On a row too narrow for SAT 3 and NOW together
+// the day you are in stays whole and NOW waits past the edge — whole or not
+// shown, never a sliver — and when nothing is live NOW leaves the row.
+test('ACL at 305: the fest name never gives way; the day you are in stays whole, NOW past the edge not a sliver; NOW leaves the row when nothing is live', { skip }, async () => {
   const { ctx, page } = await openApp({ fest: 'acl-2026', width: 305, height: 640, now: new Date('2026-10-03T20:00:00-05:00') });
   // Poll (from here, in real time) until the state reads as asserted, or 5 s.
   const until = async (read, ok) => { let v = await read(); for (let t = 0; t < 50 && !ok(v); t++) { await sleep(100); v = await read(); } return v; };
   try {
     const state = () => page.evaluate(() => {
       const f = document.getElementById('dock-fest-name');
+      const row = document.getElementById('dock-days');
+      const now = document.getElementById('dock-now');
+      const r = row.getBoundingClientRect();
+      const seen = (el) => { const b = el.getBoundingClientRect(); return Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left)); };
+      const on = row.querySelector('.day-tab.active');
       return {
-        now: !document.getElementById('dock-now').hidden, squeezed: document.getElementById('dock').classList.contains('squeezed'),
-        minWidth: document.getElementById('dock-days').style.minWidth, cut: f.scrollWidth > f.clientWidth + 1,
+        now: !now.hidden, inRow: now.parentElement === row, nowSeen: now.hidden ? 0 : Math.round(seen(now)), nowW: Math.round(now.getBoundingClientRect().width),
+        activeWhole: !!on && seen(on) >= on.getBoundingClientRect().width - 1, active: on && on.dataset.day,
+        squeezed: document.getElementById('dock').classList.contains('squeezed'), cut: f.scrollWidth > f.clientWidth + 1,
       };
     });
-    const live = await until(state, (v) => v.now && v.squeezed && v.cut);
-    assert.ok(live.now && live.squeezed && live.cut, `live: squeezed, the name cut: ${JSON.stringify(live)}`);
+    await restedOn(page, 'Saturday|W1');
+    const live = await until(state, (v) => v.now && v.active === 'Saturday|W1');
+    assert.ok(live.now && live.inRow, `live: NOW is in the row: ${JSON.stringify(live)}`);
+    assert.ok(live.activeWhole, `the day you are in is whole: ${JSON.stringify(live)}`);
+    assert.ok(live.nowSeen <= 6 || live.nowSeen >= live.nowW - 1, `NOW whole or past the edge, never a sliver: ${JSON.stringify(live)}`);
+    assert.equal(live.cut, false, 'the fest name is whole');
+    assert.equal(live.squeezed, false, 'and there is no squeeze');
     // Next morning, nothing on; the app re-reads the clock when the page is
     // shown again (the minute ticker's other door).
     await page.clock.setFixedTime(new Date('2026-10-04T09:00:00-05:00'));
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    const after = await until(state, (v) => !v.now && !v.squeezed); // NOW's quick exit
-    assert.deepEqual(after, { now: false, squeezed: false, minWidth: '', cut: false }, 'NOW gone, the room given back, the name whole');
+    const after = await until(state, (v) => !v.now); // NOW's quick exit
+    assert.equal(after.now, false, 'NOW gone');
+    assert.equal(after.inRow, false, 'out of the row, waiting beside it');
+    assert.equal(after.cut, false, 'the name whole');
   } finally { await ctx.close(); }
 });
 
@@ -799,108 +839,141 @@ test('outside the live window there is no NOW (Saturday 9 AM)', { skip }, async 
   } finally { await ctx.close(); }
 });
 
-test('320: NOW fits the dock beside the days and the fest name, nothing overlapping', { skip }, async () => {
+test('320: the dock is you · the day row with NOW in it · the fest name — nothing overlapping', { skip }, async () => {
   const { ctx, page } = await openApp({ width: 320, height: 640 });
   try {
+    await restedOn(page, 'Saturday');
     const r = await page.evaluate(() => {
       const box = (id) => document.getElementById(id).getBoundingClientRect();
       const now = box('dock-now'), days = box('dock-days'), fest = box('dock-fest-link'), you = box('dock-you');
       return { now: [now.left, now.right], days: [days.left, days.right], fest: [fest.left, fest.right], you: [you.left, you.right], width: innerWidth };
     });
-    assert.ok(r.you[1] <= r.now[0] && r.now[1] <= r.days[0] && r.days[1] <= r.fest[0], `in a row, no overlap: ${JSON.stringify(r)}`);
+    assert.ok(r.you[1] <= r.days[0] && r.days[1] <= r.fest[0], `in a row, no overlap: ${JSON.stringify(r)}`);
+    assert.ok(r.now[0] >= r.days[0] - 0.5 && r.now[1] <= r.days[1] + 0.5, `NOW inside the day row, whole: ${JSON.stringify(r)}`);
     assert.ok(r.fest[1] <= r.width, 'nothing off the right edge');
   } finally { await ctx.close(); }
 });
 
-// The dock's days keep the day you are in AND a glimpse of the days either
-// side — the glimpse is what says the row scrolls. They already scroll on a
-// phone (Portola's four overflow a 390 dock by a few px), and NOW narrows
-// them. A neighbour shows only once the room beside the centred day clears
-// the gap between tabs and the edge fade; short of that NOW keeps only its
-// dot (review, 2026-09-24: the first cut left one lone day at Portola 320
-// and ACL 375). ACL is measured on Saturday Oct 3, a day in the middle of
-// its row — the first or last day has all the slack on one side.
-const dockFit = (page) => page.evaluate(() => {
-  const now = document.getElementById('dock-now');
+// The dock's day row with NOW in it (v93, Kevin's D1 — the frames he
+// approved: 390 shows FRI SAT NOW SUN, 320 shows SAT NOW). Where the row
+// rests is wall.js restingLeft (its numbers are tests/day-row.test.mjs); this
+// is the same rule fed by a real engine's widths: the day you are in whole;
+// NOW whole wherever the row can hold it beside its day; no tab at an edge
+// shows as a sliver (a hint of <= 6px, or all but <= 6px); and the fest name
+// never gives way — v90's dot and its squeeze are gone. ACL is measured on
+// Saturday Oct 3, a day in the middle of its seven tabs.
+const dockRow = (page) => page.evaluate(() => {
   const row = document.getElementById('dock-days');
-  const on = row.querySelector('.day-tab.active');
-  const n = now.getBoundingClientRect(), r = row.getBoundingClientRect(), a = on.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  const tabs = [...row.children].filter((t) => !t.hidden).map((t) => {
+    const b = t.getBoundingClientRect();
+    const seen = Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left));
+    return { name: t.classList.contains('now-tab') ? 'NOW' : t.textContent, active: t.classList.contains('active'), w: b.width, seen };
+  });
+  const f = document.getElementById('dock-fest-name');
   return {
-    shown: !now.hidden && n.width > 0, compact: now.classList.contains('compact'), label: now.getAttribute('aria-label'),
-    dot: !!now.querySelector('.live') && getComputedStyle(now.querySelector('.live')).display !== 'none',
-    rowW: Math.round(r.width), active: on.dataset.day, activeWhole: a.left >= r.left - 1 && a.right <= r.right + 1,
-    overflowing: row.classList.contains('overflowing'), clear: n.right <= r.left,
+    tabs, rowW: Math.round(r.width), scrollLeft: row.scrollLeft,
+    festCut: f.scrollWidth > f.clientWidth + 1, festRight: document.getElementById('dock-fest-wrap').getBoundingClientRect().right, innerWidth,
     squeezed: document.getElementById('dock').classList.contains('squeezed'),
-    festRight: document.getElementById('dock-fest-wrap').getBoundingClientRect().right, innerWidth,
-    festCut: (() => { const f = document.getElementById('dock-fest-name'); return f.scrollWidth > f.clientWidth + 1; })(),
-    scrollLeft: row.scrollLeft, rowLog: window.__rowLog, at: Math.round(performance.now()),
-    // Pixels of the other days inside the row, the fades included.
-    others: Math.round([...row.children].filter((t) => t !== on).reduce((sum, t) => {
-      const b = t.getBoundingClientRect();
-      return sum + Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left));
-    }, 0)),
+    compact: document.getElementById('dock-now').classList.contains('compact'),
   };
 });
 const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
-// What NOW does at each width is asserted where the margin is wide; within a
-// few px of the threshold (Portola 375, ACL 430) the engine's glyph widths
-// decide — Linux draws Inter wider than a Mac — so there the CONTRACT is what
-// is checked: NOW keeps its word only with a real glimpse of the other days.
-for (const [fest, width, height, now, expect] of [
-  ['portola-2026', 430, 932, SAT_1030, 'word'],
-  ['portola-2026', 390, 844, SAT_1030, 'word'],
-  ['portola-2026', 375, 667, SAT_1030, 'either'],
-  ['portola-2026', 320, 640, SAT_1030, 'dot'],
-  ['acl-2026', 430, 932, ACL_SAT, 'either'],
-  ['acl-2026', 390, 844, ACL_SAT, 'dot'],
-  ['acl-2026', 375, 667, ACL_SAT, 'dot'],
-  // ACL's long fest name leaves 51px even beside the dot here (Linux draws
-  // Inter wider: 36px in CI, narrower than the day's tab): the day you are in
-  // stays whole, and there is no room for more. At 305 this engine is where
-  // CI is at 320 — the row claims its widest tab and the fest name gives way.
-  ['acl-2026', 320, 640, ACL_SAT, 'dot'],
-  ['acl-2026', 305, 640, ACL_SAT, 'dot'],
+// `shows`: what this engine shows at that width, as Kevin's frames name it
+// (null: only the contract — the glyphs decide, as they do on Linux).
+for (const [fest, width, height, now, shows] of [
+  ['portola-2026', 430, 932, SAT_1030, ['THU', 'FRI', 'SAT', 'NOW', 'SUN']], // a row that nearly fits, fits: its gaps tighten
+  ['portola-2026', 390, 844, SAT_1030, ['FRI', 'SAT', 'NOW', 'SUN']],
+  ['portola-2026', 375, 667, SAT_1030, ['FRI', 'SAT', 'NOW']],
+  ['portola-2026', 320, 640, SAT_1030, ['SAT', 'NOW']],
+  ['acl-2026', 430, 932, ACL_SAT, null],
+  ['acl-2026', 390, 844, ACL_SAT, ['SAT3', 'NOW']],
+  ['acl-2026', 375, 667, ACL_SAT, ['SAT3', 'NOW']],
+  ['acl-2026', 320, 640, ACL_SAT, ['SAT3']], // too narrow for the pair beside ACL's long name: the day you are in wins
 ]) for (const wide of [null, '0.7px']) {
   // Each case twice: as this engine draws, and with every dock glyph 0.7px
-  // wider — which reproduces CI's Linux rows to the pixel (ACL beside the
-  // dot: 146 / 106 / 91 / 36 at 430 / 390 / 375 / 320). With wider glyphs
-  // only the contract is asserted: which form NOW takes is the engine's.
-  const want = wide ? 'either' : expect;
-  const says = { word: 'keeps its word', dot: 'keeps only its dot', either: 'keeps its word only with a real glimpse' }[want];
-  test(`${fest} at ${width}${wide ? ', glyphs wider (as Linux draws them)' : ''}: NOW ${says}, and the day you are in stays whole`, { skip }, async () => {
+  // wider — which reproduces CI's Linux rows to the pixel. With wider glyphs
+  // only the contract is asserted: which tabs fit is the engine's.
+  const exact = wide ? null : shows;
+  test(`${fest} at ${width}${wide ? ', glyphs wider (as Linux draws them)' : ''}: ${exact ? exact.join(' ') : 'the row\'s contract'}, the day you are in whole, no sliver, the fest name whole`, { skip }, async () => {
     const { ctx, page } = await openApp({ fest, width, height, now, wide });
     try {
-      // The day-of open lands, the scrollspy lights today, the row glides to
-      // centre it: wait for today to be lit and the row to rest. (On ACL the
-      // dock lights FRI 2 for about a second after the open before it finds
-      // SAT 3 — v86 does the same; flagged, not NOW's.)
-      // Polled from here, in real time: the page's own timers run on the
-      // pinned clock, which let an in-page poll "rest" 26ms into the glide.
-      const today = fest === 'acl-2026' ? 'Saturday|W1' : 'Saturday';
-      const read = () => page.evaluate(() => {
-        const row = document.getElementById('dock-days');
-        return `${(row.querySelector('.active') || {}).dataset?.day}|${row.scrollLeft}|${row.clientWidth}`;
-      });
-      let last = await read(), still = 0;
-      for (let i = 0; i < 80 && still < 4; i++) {
-        await sleep(100);
-        const cur = await read();
-        still = cur === last && cur.startsWith(`${today}|`) ? still + 1 : 0;
-        last = cur;
+      // The day-of open lands, the scrollspy lights today, the row rests:
+      // wait for today to be lit and the row to be still (polled from here,
+      // in real time — the page's own timers run on the pinned clock).
+      await restedOn(page, fest === 'acl-2026' ? 'Saturday|W1' : 'Saturday');
+      const f = await dockRow(page);
+      const said = JSON.stringify(f.tabs.map((t) => `${t.name}${t.active ? '*' : ''}:${Math.round(t.seen)}/${Math.round(t.w)}`));
+      const on = f.tabs.find((t) => t.active);
+      const now = f.tabs.find((t) => t.name === 'NOW');
+      assert.ok(now, 'something is live, so NOW is in the row');
+      assert.ok(on && on.seen >= on.w - 1, `the day you are in is whole: ${said}`);
+      const pair = on.w + now.w + 24; // the day, the gap, NOW
+      if (f.rowW >= pair + 2 && f.tabs.indexOf(now) === f.tabs.indexOf(on) + 1) assert.ok(now.seen >= now.w - 1, `the row can hold the pair, so NOW is whole: ${said}`);
+      // A pixel over the rule's 6px: it reasons in whole pixels, a real
+      // engine draws fractions.
+      for (const t of f.tabs) assert.ok(t.seen <= 7 || t.seen >= t.w - 7 || t === now, `${t.name} is not a sliver at an edge: ${said}`);
+      if (now.seen < now.w - 1) assert.ok(now.seen <= 7, `NOW whole, or past the edge — never a sliver: ${said}`);
+      if (exact) {
+        const whole = f.tabs.filter((t) => t.seen >= t.w - 7).map((t) => t.name);
+        assert.deepEqual(whole, exact, `the row shows ${exact.join(' ')}: ${said}`);
       }
-      const f = await dockFit(page);
-      assert.ok(f.shown, 'something is live');
-      if (want !== 'either') assert.equal(f.compact, want === 'dot', JSON.stringify(f));
-      assert.ok(f.dot, 'the live dot, either way');
-      assert.equal(f.label, 'Jump to what is playing now');
-      assert.ok(f.clear, 'NOW never sits over the days');
-      assert.ok(f.activeWhole, `the day you are in is whole in the row: ${JSON.stringify(f)}`);
-      assert.ok(f.overflowing, 'a row that scrolls says so at its edges (re-read when NOW took its room)');
-      if (!f.compact) assert.ok(f.others >= 12, `the word only with a real glimpse of the other days: ${JSON.stringify(f)}`);
-      assert.ok(f.festRight <= f.innerWidth + 0.5, `the fest name stays on screen: ${JSON.stringify(f)}`);
-      if (f.squeezed) assert.ok(f.festCut, 'squeezed: the fest name is what gives way, with its ellipsis');
-      else assert.equal(f.festCut, false, 'otherwise the fest name is whole');
-      if (width === 305) assert.ok(f.squeezed, 'at 305 the days need the fest name to give way');
+      assert.equal(f.festCut, false, 'the fest name never gives way');
+      assert.equal(f.squeezed, false, 'no squeeze');
+      assert.equal(f.compact, false, 'no dot');
+      assert.ok(f.festRight <= f.innerWidth + 0.5, 'and it stays on screen');
+    } finally { await ctx.close(); }
+  });
+}
+
+// NOW arriving and leaving with the clock (v93): it comes into the row after
+// the live day as the row comes to rest on the pair, and when nothing is live
+// it leaves and the room closes up. In Chromium, with the motion on: NOW
+// fades in from 6px left and the tabs slide from where they were (transforms
+// only); under Reduce Motion there is no animation at all.
+for (const reduce of [false, true]) {
+  test(`390${reduce ? ', Reduce Motion' : ''}: the clock brings NOW into the row after SAT and takes it out again`, { skip }, async () => {
+    const { ctx, page } = await openApp({ now: SAT_9AM });
+    if (reduce) await page.emulateMedia({ reducedMotion: 'reduce' });
+    const until = async (read, ok) => { let v = await read(); for (let t = 0; t < 50 && !ok(v); t++) { await sleep(100); v = await read(); } return v; };
+    try {
+      await page.evaluate(() => {
+        window.__rowAnims = [];
+        const was = Element.prototype.animate;
+        Element.prototype.animate = function (kf, opts) {
+          if (this.closest && this.closest('#dock-days')) window.__rowAnims.push([this.classList.contains('now-tab') ? 'NOW' : this.textContent, JSON.stringify(kf)]);
+          return was.call(this, kf, opts);
+        };
+      });
+      const before = await dockRow(page);
+      assert.equal(before.tabs.some((t) => t.name === 'NOW'), false, '9 AM: nothing live, no NOW');
+      await page.clock.setFixedTime(SAT_1030);
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      const state = () => page.evaluate(() => {
+        const now = document.getElementById('dock-now');
+        return { live: !now.hidden, after: (now.previousElementSibling || {}).dataset?.day || null, inRow: now.parentElement === document.getElementById('dock-days') };
+      });
+      const live = await until(state, (v) => v.live);
+      assert.deepEqual(live, { live: true, after: 'Saturday', inRow: true }, 'NOW arrives after SAT');
+      await restedOn(page, 'Saturday');
+      const f = await dockRow(page);
+      const whole = f.tabs.filter((t) => t.seen >= t.w - 7).map((t) => t.name);
+      assert.deepEqual(whole, ['FRI', 'SAT', 'NOW', 'SUN'], `and the row rests on the pair: ${JSON.stringify(f.tabs)}`);
+      const arrived = await page.evaluate(() => window.__rowAnims.splice(0));
+      if (reduce) assert.deepEqual(arrived, [], 'Reduce Motion: nothing moves, it is just there');
+      else {
+        assert.ok(arrived.some(([n, kf]) => n === 'NOW' && /"opacity":0/.test(kf) && /translateX\(-6px\)/.test(kf)), `NOW fades in from 6px left: ${JSON.stringify(arrived)}`);
+        assert.ok(arrived.some(([n, kf]) => n !== 'NOW' && /translateX/.test(kf)), 'and the tabs slide from where they were');
+        assert.ok(arrived.every(([, kf]) => !/"(left|width|margin)/.test(kf)), 'transforms and opacity only');
+      }
+      await page.clock.setFixedTime(new Date('2026-09-28T05:00:00-07:00'));
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      const gone = await until(state, (v) => !v.live && !v.inRow);
+      assert.deepEqual(gone, { live: false, after: null, inRow: false }, 'nothing live: NOW leaves the row');
+      await sleep(500);
+      const g = await dockRow(page);
+      assert.deepEqual(g.tabs.map((t) => t.name), ['THU', 'FRI', 'SAT', 'SUN'], 'the row is its days again');
+      assert.ok(g.tabs.every((t) => t.seen >= t.w - 7), `and at 390 all four are back in view: ${JSON.stringify(g.tabs)}`);
     } finally { await ctx.close(); }
   });
 }

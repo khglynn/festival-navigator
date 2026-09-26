@@ -2481,13 +2481,15 @@ const LANDED_WITHIN = 32;
 //   2. while something is live, NOW is whole, and so is the day it follows
 //      (Kevin, 2026-09-25, D1: NOW is a tab in the row, right after the day
 //      that is live — "SAT · NOW" — never pinned, never shrunk to a dot);
-//   3. those stay clear of the edge fades where the room allows;
-//   4. no tab shows as a sliver: a tab past an edge shows all but a sliver
+//   3. no tab shows as a sliver: a tab past an edge shows all but a sliver
 //      of itself, or nothing but a hint inside the fade (the "RI | SAT | S"
 //      that v91's dock left at 320, and the "HU" of THU at 430);
+//   4. the tabs of rules 1-2 stay clear of the edge fades where the room
+//      allows (a whole tab dimmed at its edge still reads; a sliver never
+//      does, so 3 outranks 4);
 //   5. and, of what is left, the row sits closest to centring those tabs.
 // Each rule outranks the ones after it, so a narrow row gives up centring
-// before a sliver, a sliver before a fade, NOW before the day you are in.
+// before a fade, a fade before a sliver, NOW before the day you are in.
 // That is how 390 comes to show FRI SAT NOW SUN and 320 exactly SAT NOW,
 // with no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
 // so the rule is testable without a layout engine: `items` are the row's
@@ -2521,7 +2523,7 @@ export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1
       const cut = it.w - seen;
       if (seen > EDGE_HINT && cut > EDGE_HINT) slivers += Math.min(seen, cut);
     }
-    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, whole(live, L) ? 0 : 1, faded, slivers, Math.abs(L - ideal)];
+    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, whole(live, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
   };
   const better = (a, b) => {
     for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
