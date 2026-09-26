@@ -15,7 +15,7 @@
 // waiting pick — are app.js's joinAnswers, the same code the full-screen join
 // screen runs. Claiming takes two taps on purpose (the name, then "I'm Maya"):
 // one tap to claim is how friends ended up picking as somebody else.
-import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { focusQuietly } from './card-facts.js';
 
 // `line` names the artist the guest touched and what the tap meant: + (or a
@@ -264,7 +264,10 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   // Reduce Motion / Low Power: already there.
   if (canAnimate(sheet, ctx)) {
     back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
-    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    // The box on the surface curve, never past its rest (an overshoot lifts
+    // its bottom edge off the screen's for a few frames); the lines keep the
+    // arrival's life — the notes shelf rises the same way (notes.js arrive).
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_SURFACE, fill: 'backwards' });
     [head, ...chips, field, actions].forEach((n, i) => n.animate(
       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
       { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
