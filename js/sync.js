@@ -16,6 +16,7 @@ function announceSynced() {
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
+let pollAfterPush = false; // afterServerWrite while a push was out: poll when it lands
 let onRemoteChange = () => {};
 let onCrewGone = () => {};
 let onSyncBlocked = () => {};
@@ -177,7 +178,21 @@ export async function pushSync() {
   } finally {
     isSyncing = false;
     if (syncQueued) { syncQueued = false; scheduleSync(); }
+    if (pollAfterPush) { pollAfterPush = false; pollSync(); }
   }
+}
+
+// A write that reached the server OUTSIDE this engine (the Invite sheet's
+// add by name, 2026-09-26 — server-first, because its answer is the people
+// cap's and "name taken"). The doc it changed comes to this phone the one
+// ordered way: a poll already out carries a snapshot older than that write,
+// so it must not apply (the same rule a completed push makes — pushGen); a
+// fresh poll runs now, or, while a push is out, right after it lands, so no
+// answer that left before the write has the last word.
+export function afterServerWrite() {
+  pushGen++;
+  if (isSyncing) { pollAfterPush = true; return; }
+  pollSync();
 }
 
 // Last call before the page dies.

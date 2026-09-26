@@ -79,6 +79,71 @@ The tolerance is now the row's own (two pixels in rects).
    to land (`lookAround`, `historySettled`), never a fixed time; 3× under the night clock with eight
    CPU hogs, unit and browser guest cases, all green.
 
+## Sol's re-review of `1b678c0` (P1) and two test waits
+
+1. **P1 — the one-add guard lived in the sheet**, so closing and reopening the Invite sheet reset it:
+   two POSTs, and the older answer landing last replaced the crew doc and the newer person vanished
+   on this phone. Fixed at the mechanism: `addPerson` in app.js keeps **one add in flight per crew
+   for the page** (`addInFlight`); a freshly opened Invite sheet reads it — "Adding Mo…", every way in
+   waiting — and takes the success state when it lands. And an add's answer is applied **whole only
+   if nothing newer has reached this phone since it left** (`state.remoteGeneration()`, counted in
+   `applyRemoteDoc` — a poll, a push, another add); otherwise only the person it added is written in,
+   so a late answer can never take anyone away. Tests (`tests/people-menu.test.mjs`): add Mo → close
+   → reopen (the new sheet waits on Mo; Enter and Add for Nia send nothing) → Mo's answer lands on the
+   reopened sheet with Mo's link → Nia added after, her link; one POST at a time, both present. And
+   out of order both ways: another phone adds Quin and a poll brings him while Pat's answer is in
+   transit, Pat's lands last — Pat and Quin both present; Ria's lands first, then Sol's poll —
+   everyone present. Each test fails without its half of the fix.
+2. `tests/view-menu.test.mjs`'s fixed 40 ms wait after Back (the List build's test) now waits for
+   Settings to leave and the router's entry to go.
+3. `tests/people-menu.test.mjs`: every wait is for a state — the menu open, history still, a sheet and
+   its entry gone — never a fixed settle (the "menu gained Zed" case failed once at 10 ms under load
+   25). 4 runs of the touched files under the night clock with 12 CPU hogs: green.
+
+## Cut, not patched: third round on the add answer (Sol's re-review of `bcaacb3`)
+
+Sol found two more P1s in the same place — (1) a poll or push that left before the add could answer
+after it and replace the doc (sync orders polls against pushes, not against Invite adds); (2) with the
+generation moved, the late answer still replaced the whole person entry, undoing a newer removal,
+colour or pid — and a P2: the add request had no deadline, so a hang held the page-level guard. Three
+rounds on one mechanism: the add path writing its own server answer into this phone's crew doc,
+beside the sync engine and outside its ordering (the old add sheet did it since July). Cut:
+
+1. The add stays **server-first** (its POST is what answers the people cap and "name taken"), but its
+   answer is **never written into the local doc**. On success the sheet takes only the name it sent;
+   the personal link is built from it.
+2. The doc comes **the one ordered way**: `sync.afterServerWrite()` (new, `js/sync.js`, the smallest
+   entry point) treats the add like a completed push — any poll already out carries an older snapshot
+   and is set aside (`pushGen`) — and polls now, or right after a push that is out (so no answer that
+   left before the write has the last word). The menu and people row repaint when it lands
+   (`onRemoteChange` → `repaintFromRemote`), like any other remote change.
+3. **A deadline** (the join flow's 12 s): a hung add is let go with "Didn’t reach the crew — try
+   again.", and the page-level guard is released. Offline is unchanged: a local pending edit, pushed by
+   sync.
+4. `state.remoteGeneration()` and its counter are gone (nothing else read them).
+
+**Everything that read the add's local doc, and how each is served now:**
+
+| Reader | Needs | Served by |
+|---|---|---|
+| The success sheet ("MO IS IN", Share, Copy) | the name and their personal link | the name the request sent; `inviteLink(name)` builds the link — at once |
+| The laptop's people row (`renderPersonChips`) | the person in `state.activePeople()` | the ordered poll → `repaintFromRemote` |
+| The Highlight menu's rows | the same | the same (`paintHighlight` from `renderPersonChips` / `renderYou`); every open also re-reads the crew |
+| Pick as someone else (picking for the new person) | the person in `activePeople()` (and its still-in-the-crew check) | the ordered poll — typically well before a person can close the success sheet and open the shelf |
+| The Invite sheet's own checks ("already in this crew", the next person's colour) | people the server has that this phone does not yet | `addedNotYetHere` — memory of names answered, pruned when the poll lands; never written to the doc |
+| "From your other fests" chips | who is already here | `state.people()`; a just-added one still showing is caught by the check above |
+| The invite-festival stamp | `meta.inviteFestId` | read at sheet open; untouched by adds |
+| Sync's pending overlay | — | an online add never touches it; offline adds go through it as before (`recordPerson`) |
+| Settings → Crew (member chips, their links) | `activePeople()` | read when Settings renders (as for any remote change) |
+| The wall (marks, auras) | picks | a new person has none |
+
+**Tests** (`tests/people-menu.test.mjs`, each red without its part): a poll that left before the add
+and answers after it cannot take the new person away (red without the `pushGen` bump); another phone's
+removal and recolour, arriving while the add's answer is in transit, are not undone (the fresh poll held
+so the answer's own effect is seen alone — red if the answer is applied); a hung request is let go at the
+12 s deadline (stubbed short) with the plain word and a free guard for a reopened sheet (red without the
+deadline); plus every earlier add test, now waiting for the ordered poll instead of reading the answer.
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line

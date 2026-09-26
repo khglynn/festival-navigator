@@ -52,6 +52,14 @@ const writes = []; // every non-GET request
 // A crew POST can be held until the test lets it answer (two quick adds).
 let holdPosts = false;
 const heldPosts = [];
+// And the next N GETs (a poll that left before something else happened).
+let holdGets = 0;
+const heldGets = [];
+// A held request that is given up on (its deadline) fails like a real fetch.
+const held = (list, opts) => new Promise((resolve, reject) => {
+  list.push(resolve);
+  if (opts.signal) opts.signal.addEventListener('abort', () => reject(new window.DOMException('The operation was aborted.', 'AbortError')));
+});
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 async function network(url, opts = {}) {
   const u = String(url);
@@ -63,9 +71,13 @@ async function network(url, opts = {}) {
   if (u.startsWith('/api/crew?')) {
     const t = new URL(u, 'https://x').searchParams.get('t');
     if (!SERVER[t]) return json({ error: 'Crew not found' }, 404);
-    if (method !== 'GET' && holdPosts) await new Promise((r) => heldPosts.push(r));
+    // The server takes a write at once; a held POST is its ANSWER slow in
+    // transit — so it carries the crew as it was when the write landed.
     if (method !== 'GET') SERVER[t] = deepMerge(SERVER[t], JSON.parse(opts.body).data || {});
-    return json(SERVER[t]);
+    const answer = JSON.parse(JSON.stringify(SERVER[t]));
+    if (method !== 'GET' && holdPosts) await held(heldPosts, opts);
+    if (method === 'GET' && holdGets > 0) { holdGets -= 1; await held(heldGets, opts); }
+    return json(answer);
   }
   return json({ error: 'not in this test' }, 503);
 }
@@ -90,6 +102,7 @@ await settle(200);
 const state = await import('../js/state.js'); // the SAME instances app.js holds
 const crew = await import('../js/crew.js');
 const filters = await import('../js/v3/filters.js');
+const sync = await import('../js/sync.js');
 
 const pop = () => document.querySelector('#dock-you-wrap .hl-pop');
 const isOpen = () => !!pop() && pop().style.display !== 'none';
@@ -99,10 +112,21 @@ const wrap = () => $('dock-you-wrap');
 const escape = () => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const shelf = () => document.querySelector('.join-shelf');
+// Wait for a state, never the clock (a loaded machine runs late: "the menu
+// gained Zed" once failed at a fixed 10 ms settle under load 25). Any history
+// traversal still on its way closes a menu when it lands (a menu goes with the
+// page on a popstate), so the menu opens only once history is still.
+async function until(check, what, ms = 3000) {
+  for (let t = 0; !check(); t += 5) {
+    if (t > ms) assert.fail(`still waiting for ${what}`);
+    await settle(5);
+  }
+}
+const historyStill = () => !(window.history.state && (window.history.state.joinShelf || (window.history.state.layers || []).length));
 async function openMenu() {
+  await until(historyStill, 'the history to settle');
   if (!isOpen()) $('dock-you').click();
-  await settle(10);
-  assert.ok(isOpen(), 'the menu is open');
+  await until(isOpen, 'the menu to open');
 }
 async function closeMenu() { if (isOpen()) { escape(); await settle(10); } }
 // The join shelf's ways out pop its history entry, and the popstate that
@@ -110,8 +134,12 @@ async function closeMenu() { if (isOpen()) { escape(); await settle(10); } }
 // the next tap, never a fixed time (a loaded machine lands it late — see
 // first-open-guest.test.mjs lookAround).
 async function historySettled() {
-  for (let i = 0; i < 400 && window.history.state && window.history.state.joinShelf; i++) await settle(5);
+  await until(historyStill, 'the shelf’s history entry to go');
   await settle(10);
+}
+// A sheet's Done pops the router's entry for it; wait for that to land.
+async function sheetClosed() {
+  await until(() => !document.getElementById('artist-sheet') && historyStill(), 'the sheet and its history entry to go');
 }
 
 test('the avatar opens HIGHLIGHT, the Show menu’s twin: its label, Everyone, the crew with you marked, a line, then the ways on', async () => {
@@ -345,9 +373,10 @@ test('Add by name is server-first and ends on their own link; a name already her
   const done = document.querySelector('#artist-sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
-  assert.ok(state.people().Zed, 'and Zed is in the crew here');
+  // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
+  await until(() => state.people().Zed, 'Zed, brought by the poll');
   done.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
 });
 
 test('one add at a time: a chip, then Enter, then another chip while the first is on its way — one POST, and the link is the first one’s', async () => {
@@ -377,10 +406,10 @@ test('one add at a time: a chip, then Enter, then another chip while the first i
   sheet = document.querySelector('#artist-sheet');
   assert.equal(sheet.querySelector('.sheet-title').textContent, 'DREW IS IN');
   assert.match(sheet.querySelector('.inv-link input').value, /me=Drew/, 'Drew’s own link');
-  assert.ok(state.people().Drew, 'Drew is in the crew');
+  await until(() => state.people().Drew, 'Drew, brought by the poll');
   assert.equal(state.people().Kat, undefined, 'and Kat, never sent, is not');
   sheet.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
 });
 
 test('one add at a time, the other way round: a typed name and Enter, then a chip and the Add button — one POST, the typed one’s link', async () => {
@@ -410,7 +439,140 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   assert.match(sheet.querySelector('.inv-link input').value, /me=Lu/);
   assert.equal(state.people().Kat, undefined);
   sheet.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
+});
+
+// One add per crew, whatever the sheets do (Sol's re-review of 1b678c0: the
+// guard lived in the sheet, so close and reopen reset it, two POSTs went out,
+// and the older answer landing last dropped the newer person locally).
+test('one add per crew across a closed and reopened sheet: the new sheet waits on the add that is out, then takes its answer', async () => {
+  const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew'));
+  const before = posts().length;
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  holdPosts = true;
+  sheet.querySelector('.inv-name input').value = 'Mo';
+  sheet.querySelector('.inv-add').click();
+  await settle(5);
+  assert.equal(posts().length, before + 1, 'Mo is on its way');
+  sheet.querySelector('.inv-done').click(); // closed with Mo still out
+  await sheetClosed();
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'the new sheet says what is out');
+  assert.equal(sheet.querySelector('.inv-add').disabled, true, 'and waits for it');
+  assert.equal(sheet.querySelector('.inv-name input').readOnly, true);
+  assert.ok([...sheet.querySelectorAll('.inv-others button')].every((b) => b.disabled));
+  const input = sheet.querySelector('.inv-name input');
+  input.value = 'Nia';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  sheet.querySelector('.inv-add').click();
+  await settle(20);
+  assert.equal(posts().length, before + 1, 'one POST at a time: Nia waits');
+  holdPosts = false;
+  heldPosts.splice(0).forEach((r) => r());
+  await until(() => /MO IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Mo’s answer on the reopened sheet');
+  sheet = document.querySelector('#artist-sheet');
+  assert.match(sheet.querySelector('.inv-link input').value, /me=Mo/, 'Mo’s own link, on the sheet that was open when it landed');
+  await until(() => state.people().Mo, 'Mo, brought by the poll');
+  sheet.querySelector('.inv-done').click();
+  await sheetClosed();
+  // Now Nia, on her own.
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.equal(sheet.querySelector('.inv-add').disabled, false, 'nothing out: the entries are live again');
+  sheet.querySelector('.inv-name input').value = 'Nia';
+  sheet.querySelector('.inv-add').click();
+  await until(() => /NIA IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Nia’s answer');
+  assert.match(document.querySelector('#artist-sheet .inv-link input').value, /me=Nia/);
+  assert.equal(posts().length, before + 2, 'two adds, two POSTs, one after the other');
+  await until(() => state.people().Mo && state.people().Nia, 'both, on this phone');
+  document.querySelector('#artist-sheet .inv-done').click();
+  await sheetClosed();
+});
+
+// Cut, not patched (Sol's third round on the add answer, bcaacb3): the add
+// no longer writes its answer into this phone's doc, and asks sync for the
+// doc the ordered way. So the two orders that lost or resurrected people
+// simply cannot happen.
+const addNamed = async (name, { holdAnswer = false } = {}) => {
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  if (holdAnswer) holdPosts = true;
+  sheet.querySelector('.inv-name input').value = name;
+  sheet.querySelector('.inv-add').click();
+  await settle(5);
+};
+const answered = (name) => until(() => new RegExp(`${name.toUpperCase()} IS IN`).test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), `${name}’s answer`);
+const doneWithSheet = async () => { document.querySelector('#artist-sheet .inv-done').click(); await sheetClosed(); };
+
+test('a poll that left before the add and answers after it cannot take the new person away', async () => {
+  holdGets = 1;
+  const old = sync.pollSync(); // out before the add: its snapshot has no Pat
+  await settle(5);
+  await addNamed('Pat');
+  await answered('Pat');
+  assert.match(document.querySelector('#artist-sheet .inv-link input').value, /me=Pat/, 'Pat’s link, at once, from the name alone');
+  await until(() => state.people().Pat, 'Pat, brought by the fresh poll');
+  heldGets.splice(0).forEach((r) => r()); // the old poll answers now, last
+  await old;
+  await settle(20);
+  assert.ok(state.people().Pat, 'Pat is still here: the older snapshot was set aside');
+  await doneWithSheet();
+});
+
+test('another phone’s removal and recolour, arriving while an add’s answer is in transit, are never undone by it', async () => {
+  await addNamed('Ria', { holdAnswer: true }); // the server has Ria; her answer is slow
+  const benWas = state.people().Ben.colorIndex;
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Mo: { removed: true }, Ben: { colorIndex: 17 } } }); // another phone
+  await sync.pollSync(); // …and a poll brings it
+  assert.equal(state.people().Mo.removed, true, 'Mo is out, here');
+  assert.equal(state.people().Ben.colorIndex, 17);
+  holdPosts = false;
+  holdGets = 1; // hold the fresh poll too, so the answer's own effect can be seen alone
+  heldPosts.splice(0).forEach((r) => r()); // Ria's answer — Mo active, Ben's old colour — lands last
+  await answered('Ria');
+  await settle(20);
+  assert.equal(state.people().Mo.removed, true, 'Mo stays out: the answer writes nothing into this phone’s doc');
+  assert.equal(state.people().Ben.colorIndex, 17, 'and Ben keeps his new colour');
+  heldGets.splice(0).forEach((r) => r());
+  await until(() => state.people().Ria, 'Ria, brought by the fresh poll');
+  assert.equal(state.people().Mo.removed, true);
+  assert.equal(state.people().Ben.colorIndex, 17);
+  assert.notEqual(benWas, 17);
+  await doneWithSheet();
+});
+
+test('a request that hangs is let go at its deadline: a plain word, and the entries live again', async () => {
+  const real = AbortSignal.timeout;
+  let asked = null;
+  AbortSignal.timeout = (ms) => { asked = ms; const c = new AbortController(); setTimeout(() => c.abort(), 60); return c.signal; };
+  try {
+    await addNamed('Uma', { holdAnswer: true }); // never answered
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    assert.equal(asked, 12000, 'the join flow’s deadline');
+    assert.equal(sheet.querySelector('.inv-add').disabled, true, 'waiting');
+    await until(() => !sheet.querySelector('.inv-add').disabled, 'the entries to come back');
+    assert.equal(sheet.querySelector('.inv-status').textContent, 'Didn’t reach the crew — try again.');
+    assert.equal(sheet.querySelector('.inv-name input').readOnly, false);
+  } finally {
+    AbortSignal.timeout = real;
+    holdPosts = false;
+    heldPosts.splice(0);
+  }
+  // Let go for the page, not just this sheet: a reopened sheet is free, and the try again goes out.
+  await doneWithSheet();
+  await addNamed('Uma');
+  await answered('Uma');
+  await doneWithSheet();
 });
 
 test('the menu gained Zed in place, and a crew-mate who left is gone from it and from the highlight', async () => {
