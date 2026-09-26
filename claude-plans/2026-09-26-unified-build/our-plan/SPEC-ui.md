@@ -33,7 +33,8 @@ is a **window onto the day plan**:
 
 ## 2. The row (all four surfaces)
 
-Four columns `16px | 1fr | 72px | 48px`, gap 10 (≤359px: `16 | 1fr | 64 | 44`, gap 8), baseline
+Four columns `16px | 1fr | 72px | 52px`, gap 10 (≤359px: `16 | 1fr | 64 | 50`, gap 8; the count
+column was 48/44 until "10 picked" replaced "10 of us", 2026-09-26), baseline
 aligned; tokens `--plan-nw/--plan-ww/--plan-cw/--plan-gap` in v3-tokens.css.
 
 1. Node (col 1): most = 16px aura disc from the card's own facts (`factsFor(act, ctx, occ)`),
@@ -44,7 +45,7 @@ aligned; tokens `--plan-nw/--plan-ww/--plan-cw/--plan-gap` in v3-tokens.css.
 3. When (col 3): NOW pill + "till h:mm" (a set's own end, a room's stop end — `tillOf`); NEXT pill
    + start; every other row its start, quiet. `quietClock` ("9 PM", "9:40 PM"). The column is
    right-aligned and may spill left into the gap (measured at 320 before shipping).
-4. Count (col 4): Anton digit + "of us". The NOW row's count is the count at this minute;
+4. Count (col 4): Anton digit + "picked" ("of us" as first drawn). The NOW row's count is the count at this minute;
    every other row's is its peak.
 5. Faces: on MOST rows in the open plan only (you first), never in the peek or corner.
 6. A fork row ("or Kettama · Warehouse 3") at most one per stop (`forkFor`), scattered rows
