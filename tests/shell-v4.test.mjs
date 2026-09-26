@@ -177,7 +177,8 @@ test('a tap opens it; Escape, a tap outside, the fest name again and Back each c
     click(link);
     assert.equal(pop.style.display, '', `${way}: open`);
     assert.equal(link.getAttribute('aria-expanded'), 'true');
-    assert.deepEqual(h.state, { layers: ['menu:show'] }, `${way}: the menu stands on a history entry of its own`);
+    assert.deepEqual(h.state.layers, ['menu:show'], `${way}: the menu stands on a history entry of its own`);
+    assert.equal(typeof h.state.menu, 'string', `${way}: which names this menu, by its id`);
     go();
     await settle(30);
     assert.equal(link.getAttribute('aria-expanded'), 'false', `${way} closes it`);

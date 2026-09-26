@@ -62,7 +62,8 @@ const openMenu = () => {
   click(link());
   assert.equal(pop().style.display, '', 'the menu is up');
   assert.equal(busy(), 'show-menu', 'and holding a new build’s reload');
-  assert.deepEqual(h.state, { layers: ['menu:show'] }, 'on its own history entry');
+  assert.deepEqual(h.state.layers, ['menu:show'], 'on its own history entry');
+  assert.equal(typeof h.state.menu, 'string', 'which names this menu');
 };
 // Wait for what a test is about to assert, not a fixed time: under a loaded
 // suite the popstate and the replayed tap land later.
@@ -71,7 +72,7 @@ const retired = (why) => {
   assert.equal(link().getAttribute('aria-expanded'), 'false', `${why}: the menu is closed`);
   assert.equal(pop().style.display, 'none', `${why}: and hidden`);
   assert.equal(busy(), undefined, `${why}: the busy flag is given back — a new build can reload`);
-  assert.notDeepEqual(h.state, { layers: ['menu:show'] }, `${why}: history no longer stands on the menu`);
+  assert.ok(!(h.state && (h.state.layers || []).includes('menu:show')), `${why}: history no longer stands on the menu`);
   assert.equal(router.current().includes('menu:show'), false, `${why}: nor does the router`);
 };
 

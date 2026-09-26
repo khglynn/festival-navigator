@@ -119,6 +119,20 @@ test('forget drops a layer from the model and the current entry, without a trave
   assert.deepEqual(h.router.current(), [], 'Back from there lands on the wall, with nothing to close');
 });
 
+// The show menu's entry carries the menu's id beside its layers (v93), so an
+// arrival there later can tell a menu that is gone. forget takes the layer
+// out and keeps the id; a layer that takes the entry over carries only its own.
+test('push carries extra fields on the entry; forget keeps them; a swap drops them', () => {
+  const h = harness();
+  h.router.push('menu:show', { menu: 'doc:1' });
+  assert.deepEqual(h.hist.state, { menu: 'doc:1', layers: ['menu:show'] });
+  h.router.forget('menu:show');
+  assert.deepEqual(h.hist.state, { menu: 'doc:1', layers: [] }, 'the layer is out, the id stays');
+  h.router.push('menu:show', { menu: 'doc:2' });
+  h.router.push('settings');
+  assert.deepEqual(h.hist.state, { layers: ['settings'] }, 'Settings took the entry, and carries only its own');
+});
+
 test('requestClose drives history; nothing to close returns false', () => {
   const h = harness();
   assert.equal(h.router.requestClose(), false);
