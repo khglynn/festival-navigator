@@ -236,9 +236,11 @@ export function pillFaces(people, cap = PILL_FACES) {
   return { faces: people.slice(0, k - 1), more: people.length - (k - 1) };
 }
 // The pill's width with `discs` discs, from v3.css: 3.5px padding each side,
-// 20px discs overlapping 6px, and the ✕'s 20px. The browser contract
+// 20px discs overlapping 6px, and the ✕'s 20px. `0` is the pill folded to
+// the avatar's own 26px — one disc in the ring, no ✕ — for a dock with no
+// room even for one disc and a ✕ (app.js pillCap). The browser contract
 // (tests/browser/people-menu.test.mjs) holds this to the drawn width.
-export const pillWidth = (discs) => 7 + 20 + 14 * (Math.max(1, discs) - 1) + 20;
+export const pillWidth = (discs) => (discs <= 0 ? 26 : 7 + 20 + 14 * (discs - 1) + 20);
 
 export function ensurePill(wrap, { onFaces, onClear } = {}) {
   let pill = wrap.querySelector(':scope > .hl-pill');
@@ -265,6 +267,9 @@ export function ensurePill(wrap, { onFaces, onClear } = {}) {
 // `people`: [{ name, bg, stroke }] — the highlighted, in the crew's order.
 function paintFaces(pill, people, cap) {
   const faces = pill.querySelector('.hl-faces');
+  // Folded to the avatar's size: the faces still open the menu, whose
+  // Everyone clears; the ✕ waits for a dock with room for it.
+  if (cap <= 0) pill.dataset.compact = ''; else delete pill.dataset.compact;
   const { faces: shown, more } = pillFaces(people, cap);
   const have = new Map([...faces.querySelectorAll('.avatar[data-name]')].map((a) => [a.dataset.name, a]));
   const kids = [];

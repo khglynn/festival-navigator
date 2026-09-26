@@ -42,6 +42,17 @@ says; more room never yields fewer discs; and the pill takes the room it has (on
 the promise). Both the refit and the cap still fail their tests when removed. The harness now stubs the
 worker's `register()` as now-jump does, so the page's update check no longer throws there.
 
+**Second CI round (run 36248232574, on `350d4d7`):** the widened variants went red on CI itself —
+Linux's already-wide Inter plus the 0.7px widening. Two real design faults came out of it, not test
+tolerance: (a) where not even one disc and its ✕ left NOW its room, the pill still took 47px and
+pushed NOW (and on ACL, the day you are in) out; (b) the cap promised NOW only where it could fit
+beside the bare avatar, so it was not monotonic — ACL showed two discs at 320 and one at 360.
+Now (call 17): while NOW is live its room is always asked for, and where one disc and a ✕ do not fit,
+the pill **folds to the avatar's own 26px** — one disc in the brand ring (the face, or the count),
+no ✕; Everyone in the menu clears. A highlight then costs the row nothing the avatar did not. A width
+sweep (320 → 430, Portola and ACL, Mac and wide glyphs, each step a real resize) holds the rule: the
+promise at every width, and never fewer discs for more room. Frame: `people-shots/sheet-compact.png`.
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line
@@ -218,6 +229,10 @@ C if a highlight is on — under the sheet's backdrop) and the shelf or sheet ri
     worth Kevin knowing it was broken on his phone.
 15. **The Invite sheet's lone Done stays small** where there is no share sheet (a laptop); with Share
     the row is [Share the link][Done].
+17. **At the tightest dock the pill folds to the avatar's size** (26px: one disc — the face, or the
+    count — in the brand ring, no ✕; Everyone in the menu clears). Reached only where one disc and a
+    ✕ would take NOW's room or the day you are in (ACL's long name at 320; Linux-wide glyphs at 320).
+    The ✕ comes back when there is room.
 16. **Faces open the menu from the pill with its own label** ("Highlighting Ben and Cy. Open
     Highlight"); the ✕ says "Stop highlighting: show everyone's picks". The avatar's label names you
     and the menu ("Ana: highlight people's picks"; a guest's: "…, or join the crew").

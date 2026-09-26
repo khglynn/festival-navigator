@@ -2146,24 +2146,25 @@ function paintSlots({ sources = null, instant = false } = {}) {
 // How many discs the pill may hold (design §2: "up to three"): as many as
 // leave the day row its promise (wall.js restingLeft, rules 1-2) — the day
 // you are in whole, and while something is live NOW whole beside the day it
-// follows. At 320 with NOW live a third disc pushes NOW out (measured: 92px
-// of row for SAT · NOW's 101), so two; ACL's long name leaves room for one.
-// Where NOW cannot be whole even beside the bare avatar (ACL at 320 today),
-// only the day you are in is promised. The laptop's rail has room.
+// follows. At 320 with NOW live a third disc pushes NOW out on a Mac
+// (92px of row for SAT · NOW's 101); Linux and Android draw wider and fit
+// one. Where not even one disc and its ✕ leave that room, the pill folds to
+// the avatar's own size (one disc in the ring, no ✕ — Everyone in the menu
+// clears), so a highlight never costs the row more than the avatar did. The
+// rule only ever gives fewer discs for less room —
+// promising NOW only where it fits made a narrower dock show MORE discs than
+// a wider one (ACL: two at 320, one at 360), so NOW's room is always asked
+// for while it is live. The laptop's rail has room.
 function pillCap(wrap, row, n) {
-  if (n <= 1 || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
-  const slot = wrap.getBoundingClientRect().width;
-  const room = row.clientWidth + slot; // the row and the slot share this width
+  if (!n || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
+  const room = row.clientWidth + wrap.getBoundingClientRect().width; // the row and the slot share this width
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
   const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
   const focus = [active, nowAt >= 0 ? tabs[nowAt] : null, nowAt > 0 ? tabs[nowAt - 1] : null].filter(Boolean);
-  const span = (list) => (list.length ? Math.max(...list.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...list.map((t) => t.offsetLeft)) : 0);
-  const avatar = wrap.querySelector(':scope > .you-avatar');
-  const bare = (avatar && avatar.offsetWidth) || 26;
-  const need = span(focus) <= room - bare ? span(focus) : span(active ? [active] : []);
-  for (let k = PILL_FACES; k > 1; k -= 1) if (pillWidth(k) + need <= room) return k;
-  return 1;
+  const need = focus.length ? Math.max(...focus.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...focus.map((t) => t.offsetLeft)) : 0;
+  for (let k = PILL_FACES; k >= 1; k -= 1) if (pillWidth(Math.min(k, n)) + need <= room) return k;
+  return 0;
 }
 
 function openHighlight(wrap) {

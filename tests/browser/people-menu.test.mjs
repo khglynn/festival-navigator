@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
 import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { pillWidth } from '../../js/v3/people-menu.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -38,10 +39,11 @@ const docFor = () => ({
 // draws it — a stand-in for Linux and Android, whose Inter and Anton are wider
 // than a Mac's (CI put the 320 pill at one disc where the Mac fit two,
 // 2026-09-26). now-jump's trick, aimed at the same dock.
-async function openApp(engine, { width = 390, height = 844, guest = false, wide = null } = {}) {
+async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT } = {}) {
   const touch = width < 720;
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' });
   const doc = docFor();
+  if (fid !== FID) doc.festivals[fid] = { selections: { Turnstile: { Ben: 2, Cy: 3 } } };
   const posts = [];
   if (wide) {
     await ctx.addInitScript((w) => {
@@ -60,7 +62,7 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     // The share sheet, where this engine has none: a stand-in that records.
     window.__shared = [];
     Object.defineProperty(navigator, 'share', { configurable: true, value: async (data) => { window.__shared.push(data); } });
-  }, [CREW, OTHER, FID, guest]);
+  }, [CREW, OTHER, fid, guest]);
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
   await ctx.route('**/api/crew**', (r) => {
@@ -76,8 +78,8 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.clock.setFixedTime(SAT);
-  await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
+  await page.clock.setFixedTime(now);
+  await page.goto(`${server.origin}/#g=${CREW}&f=${fid}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 5, null, { timeout: 20000 });
   await page.evaluate(() => document.fonts.ready);
@@ -140,9 +142,10 @@ const menuState = (page, bar) => page.evaluate((b) => {
 //   a. the discs and the +n add up to the people highlighted, faces in the crew's order;
 //   b. the day you are in is whole in the day row;
 //   c. while NOW is live, NOW and the day it follows are whole too — wherever
-//      they could be beside the bare avatar (where they cannot, the pill is
-//      not what pushed them out);
-//   d. one to three discs.
+//      they fit beside the bare avatar (the pill folds to the avatar's size
+//      before it would take their room; where they do not fit even then, the
+//      pill is not what pushed them out);
+//   d. one to three discs, and a ✕ unless folded.
 const pillRead = (page) => page.evaluate(() => {
   const row = document.getElementById('dock-days');
   const wrap = document.getElementById('dock-you-wrap');
@@ -159,6 +162,8 @@ const pillRead = (page) => page.evaluate(() => {
     named: discs.filter((a) => a.dataset.name).map((a) => a.dataset.name),
     count: discs.reduce((n, a) => n + (a.dataset.name ? 1 : Number(a.textContent.replace('+', ''))), 0),
     discs: discs.length,
+    compact: wrap.querySelector('.hl-pill').hasAttribute('data-compact'),
+    x: getComputedStyle(wrap.querySelector('.hl-pill .hl-x')).display !== 'none',
     row: edges(row), active: active && edges(active), now: now && edges(now), live: live && edges(live),
     room: row.clientWidth + wrap.getBoundingClientRect().width,
     focus: span([active, now, live].filter(Boolean)),
@@ -166,14 +171,15 @@ const pillRead = (page) => page.evaluate(() => {
     pill: wrap.querySelector('.hl-pill').getBoundingClientRect().width,
   };
 });
-const BARE = 26; // the avatar's width (v3.css .dock .you)
+const BARE = pillWidth(0); // the avatar's width, and the folded pill's
 function assertPillPromise(r, people, label) {
   const whole = (x) => !!x && x[0] >= r.row[0] - 1 && x[1] <= r.row[1] + 1;
   assert.equal(r.slot, 'pill', `${label}: the slot is the pill`);
   assert.equal(r.count, people.length, `${label}: the discs and the +n add up to ${people.length} (${JSON.stringify(r)})`);
   assert.deepEqual(r.named, people.slice(0, r.named.length), `${label}: the faces are the first of the highlighted, in the crew's order`);
   assert.ok(r.discs >= 1 && r.discs <= 3, `${label}: one to three discs (${r.discs})`);
-  assert.ok(whole(r.active), `${label}: the day you are in is whole (${JSON.stringify(r)})`);
+  assert.equal(r.x, !r.compact, `${label}: a ✕ unless folded`);
+  if (r.activeW <= r.room - BARE) assert.ok(whole(r.active), `${label}: the day you are in is whole (${JSON.stringify(r)})`);
   if (r.now && r.focus <= r.room - BARE) {
     assert.ok(whole(r.now) && whole(r.live), `${label}: NOW and its day are whole (${JSON.stringify(r)})`);
   }
@@ -181,9 +187,12 @@ function assertPillPromise(r, people, label) {
 // And it uses the room it has: one disc more would break the promise (the
 // refit's reason to exist; pillWidth is held to the drawn pill below).
 async function assertPillFull(r, people, label) {
-  const { pillWidth } = await import('../../js/v3/people-menu.js');
+  const need = r.now ? r.focus : r.activeW;
+  if (r.compact) {
+    assert.ok(pillWidth(1) + need > r.room, `${label}: folded where one disc and its ✕ would fit (${JSON.stringify(r)})`);
+    return;
+  }
   if (r.discs >= Math.min(3, people.length)) return;
-  const need = r.now && r.focus <= r.room - BARE ? r.focus : r.activeW;
   assert.ok(pillWidth(r.discs + 1) + need > r.room, `${label}: ${r.discs} disc(s) where ${r.discs + 1} would fit (${JSON.stringify(r)})`);
 }
 
@@ -380,8 +389,7 @@ for (const wide of [null, '0.7px']) {
       const fest = await page.evaluate(() => document.getElementById('dock-fest-link').getBoundingClientRect().left);
       assert.ok(r.row[1] <= fest + 0.5, `the day row stops before the fest name (${r.row[1]} / ${fest})`);
       // The fit is computed from pillWidth: it must be the pill as drawn.
-      const { pillWidth } = await import('../../js/v3/people-menu.js');
-      assert.ok(Math.abs(r.pill - pillWidth(r.discs)) < 1, `pillWidth(${r.discs}) matches the drawn pill (${r.pill})`);
+      assert.ok(Math.abs(r.pill - pillWidth(r.compact ? 0 : r.discs)) < 1, `pillWidth matches the drawn pill (${r.pill}, ${r.compact ? 'folded' : `${r.discs} discs`})`);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -499,9 +507,45 @@ for (const wide of [null, '0.7px']) {
       const gone = await pillRead(page);
       assert.equal(gone.now, null, 'NOW has left the row');
       assertPillPromise(gone, four, label('NOW gone'));
-      assert.ok(gone.discs >= live.discs, `more room never yields fewer discs (${live.discs} → ${gone.discs})`);
+      const size = (r) => (r.compact ? 0 : r.discs); // folded is the smallest
+      assert.ok(size(gone) >= size(live), `more room never yields fewer discs (${size(live)} → ${size(gone)})`);
       await assertPillFull(gone, four, label('NOW gone'));
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
+}
+
+// More room never yields fewer discs (the rule has no cliffs): four people
+// highlighted with NOW live, the phone widened step by step — Portola and
+// ACL's long name, at the Mac's glyph widths and at Linux's. Before the rule
+// asked for NOW's room whenever NOW was live, ACL showed two discs at 320 and
+// one at 360. Each step is a real resize (the pill refits on it).
+for (const [fest, fid, now] of [['Portola', FID, SAT], ['ACL', 'acl-2026', new Date('2026-10-03T20:00:00-05:00')]]) {
+  for (const wide of [null, '0.7px']) {
+    test(`Chromium, ${fest}${wide ? ', wide glyphs' : ''}: widening the phone from 320 to 430 never takes a disc away, and the promise holds at every width`, { skip: chromium ? false : NO_BROWSER }, async () => {
+      const { ctx, page, errors, press, outside } = await openApp(chromium, { width: 320, wide, fid, now });
+      const four = fid === FID ? ['Ben', 'Cy', 'Dot', 'Eli'] : ['Ben', 'Cy', 'Dot', 'Eli'];
+      try {
+        await press('#dock-you');
+        for (const n of four) await press(`#dock-you-wrap .hl-pop [data-person="${n}"]`);
+        await outside();
+        await sleep(500);
+        let last = 0;
+        const seen = [];
+        for (const width of [320, 340, 360, 375, 390, 412, 430]) {
+          await page.setViewportSize({ width, height: 844 });
+          await sleep(700); // the resize refit (160 ms) and the row at rest
+          const r = await pillRead(page);
+          seen.push(`${width}:${r.compact ? 'folded' : r.discs}`);
+          assert.ok(Math.abs(r.pill - pillWidth(r.compact ? 0 : r.discs)) < 1, `${width}: pillWidth matches the drawn pill (${r.pill})`);
+          assertPillPromise(r, four, `${fest} ${width}${wide ? ' wide' : ''}`);
+          await assertPillFull(r, four, `${fest} ${width}${wide ? ' wide' : ''}`);
+          const size = r.compact ? 0 : r.discs; // folded is the smallest
+          assert.ok(size >= last, `more room, never fewer discs: ${seen.join(' ')}`);
+          last = size;
+        }
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
 }
