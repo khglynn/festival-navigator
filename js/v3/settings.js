@@ -1807,7 +1807,9 @@ function openSpotifyDrill(ctx, actions) {
     const segAll = el('button', '', 'Everyone'); segAll.className = 'seg active';
     const segMine = el('button', '', 'Just mine'); segMine.className = 'seg';
     let mineOnly = false;
-    const defaultTitle = () => `${state.fest().name} — ${mineOnly ? ctx.meName : 'the crew'}`;
+    // Kevin, 2026-09-26: "[Fest] peeps' picks" and "[Fest] me" — short, and the
+    // crew's one reads as what it is (picks, not a plan).
+    const defaultTitle = () => `${state.fest().name} ${mineOnly ? 'me' : 'peeps’ picks'}`;
     segRow.append(segAll, segMine);
     pl.appendChild(segRow);
 
