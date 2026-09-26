@@ -26,6 +26,8 @@ const docFor = () => {
     'Party On The Plaza: Folsom Edition': { Dot: 3, Hal: 2 },
     Magnitude: { Ana: 3, Eli: 2 },
     'PERVERT XXL': { Ben: 2 },
+    // A long party name with people beside it: three lines at 320 (the row grows).
+    'CUMUNION + BEARUNION - FOLSOM EDITION': { Ana: 3, Ben: 2, Cy: 4, Dot: 1, Eli: 2 },
   });
   d.festivals[ACL] = { selections: { Turnstile: { Ana: 3, Ben: 2 }, 'Jesse Welles': { Cy: 2 }, Fcukers: { Ana: 2, Dot: 3 } } };
   return d;
@@ -136,6 +138,7 @@ export const FRAMES = [
   { id: 'p-now-landing-390', width: 390, now: SAT, at: 'top', act: (p) => tap(p, '#dock-now').then(() => sleep(1300)) },
   { id: 'p-930pm-afters-390', width: 390, now: PT('2026-09-26T21:30:00'), at: room('Saturday', 'Afters') },
   { id: 'p-6am-sun-390', width: 390, now: PT('2026-09-27T06:00:00'), at: 'top' },
+  { id: 'p-long-name-320', width: 320, now: SAT, at: '.day-block[data-day="Saturday"] .room[data-room="Folsom"] .time-band[data-band="evening"]' },
   ...W3('acl-sat-grid', { fid: 'acl-2026', now: ACL_SAT, at: '.day-block[data-day="Saturday|W1"] .room[data-room=":fest"]' }),
   ...W3('acl-late-night', { fid: 'acl-2026', now: ACL_SAT, at: lateNight('2026-10-03') }),
   { id: 'acl-menu-open-390', width: 390, fid: 'acl-2026', now: ACL_SAT, at: '.day-block[data-day="Saturday|W1"] .room[data-room=":fest"]', act: (p) => tap(p, '#dock-fest-link') },

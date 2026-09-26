@@ -1681,13 +1681,13 @@ const rowPlace = (m, siteName) => [m.venue === siteName ? null : m.venue, areaOf
 // card full width, one to a row (.time-list.rows, v3.css). A festival-grid set
 // carries the grid's own occurrence (`gridOcc`), so its zoom, its notes and a
 // zoom kept across a repaint are the grid cell's, whichever view drew it.
-export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null, ladder = 'night', row = false } = {}) {
+export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null, ladder = 'night', row = false, window = 'printed' } = {}) {
   const list = mk('div', row ? 'time-list rows' : 'time-list');
   if (day && day.iso) list.dataset.iso = day.iso;
   if (fest && fest.timezone) list.dataset.tz = fest.timezone;
   if (clock) list.dataset.clock = clock;
   let shown = 0;
-  for (const band of timeBandsOf(entries, { fallbackVenue, ladder })) {
+  for (const band of timeBandsOf(entries, { fallbackVenue, ladder, window })) {
     const b = mk('div', 'time-band');
     b.dataset.band = band.key;
     const head = mk('div', 'band-head');
@@ -1717,8 +1717,12 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
 // keeps its night ladder, every other room reads on hours (events.js).
 function sectionBody(fest, key, ctx = {}) {
   if (ctx.view === 'list') {
-    const ladder = sectionLayoutOf(fest, key) === BY_TIME ? 'night' : 'hours';
-    return (root, entries, c, opts = {}) => timeGroups(root, entries, c, { ...opts, clock: null, ladder, row: true });
+    // A ring never changes with the view: a declared by-time section keeps its
+    // own window rule (the printed end wins, as on the Board), every other
+    // room the stacks' (the next act's start wins) — events.js timeBandsOf.
+    const byTime = sectionLayoutOf(fest, key) === BY_TIME;
+    return (root, entries, c, opts = {}) => timeGroups(root, entries, c,
+      { ...opts, clock: null, ladder: byTime ? 'night' : 'hours', window: byTime ? 'printed' : 'stack', row: true });
   }
   return sectionLayoutOf(fest, key) === BY_TIME ? timeGroups : venueGroups;
 }
@@ -1728,16 +1732,23 @@ const shortStage = (s) => String(s || '').replace(/\s+stage$/i, '').trim() || nu
 // The festival's own room in the List: every set of the day's grid, as a
 // by-time entry under its stage's short name with the grid cell's own
 // occurrence and now window, then whatever of the festival's is not on the
-// grid (festRoomExtras: a stray stage, a name billed with no set, an activity).
+// grid (festRoomExtras: a stray stage, a name billed with no set, an activity)
+// — each extra with the window the Board's stacks give it (the same
+// venueGroupsOf call renderComposed makes), so no ring moves with the view.
 function festRoomListEntries(fest, day, layout) {
   const sets = state.getDayArtists(day.dayKey, day.weekend)
     .filter((a) => layout.stages.indexOf(a.stage) !== -1)
     .map((a) => ({
       name: a.name, day: day.dayKey, venue: shortStage(a.stage), time: a.time || null,
-      liveFrom: a.startMin, liveTo: a.endMin ?? a.startMin + 60, // the grid cell's own window (renderScheduledDayBody)
+      win: { from: a.startMin, to: a.endMin ?? a.startMin + 60 }, // the grid cell's own window (renderScheduledDayBody)
       gridOcc: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null },
     }));
-  return [...sets, ...festRoomExtras(fest, day, layout)];
+  const extras = festRoomExtras(fest, day, layout);
+  const winOf = new Map();
+  for (const g of venueGroupsOf(extras, { fallbackVenue: festRoomSub(fest) })) {
+    for (const m of g.members) winOf.set(m.e, m.nowFrom != null && m.nowTo != null ? { from: m.nowFrom, to: m.nowTo } : null);
+  }
+  return [...sets, ...extras.map((e) => ({ ...e, win: winOf.has(e) ? winOf.get(e) : null }))];
 }
 // Where the now mark lives: a stack's grid or a time list, each carrying its
 // date (and the festival's zone) for the ticker.
@@ -2438,7 +2449,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
       room.appendChild(head(fest.name, festRoomSub(fest), door));
       if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
       if (day.grid && ctx.view === 'list') {
-        timeGroups(room, festRoomListEntries(fest, day, layout), ctx, { day, fest, fallbackVenue: festRoomSub(fest), ladder: 'hours', row: true });
+        timeGroups(room, festRoomListEntries(fest, day, layout), ctx, { day, fest, fallbackVenue: festRoomSub(fest), ladder: 'hours', window: 'stack', row: true });
       } else if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
         clocked = renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });

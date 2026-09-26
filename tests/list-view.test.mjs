@@ -197,3 +197,82 @@ test('a search is a list of answers in either view: the view does not reach it',
   assert.equal(root.querySelector('.card.row'), null);
   assert.ok(root.querySelector('.card[data-artist="Robyn"]'));
 });
+
+// ---- a ring never changes with the view (review, 2026-09-26) -----------------------
+// The Board draws a stacked room (Afters, Late nights) with venueGroupsOf's
+// rule — an act plays until the next act starts — and a room that DECLARED
+// by-time with the printed end winning. The List reads every room through
+// timeBandsOf, so it must carry the same window per room, or two back-to-back
+// sets with overlapping printed ends ring one at a time on the Board and
+// together in the List.
+const OVERLAP = {
+  id: 'overlap-fest', name: 'Overlap', year: "'26", status: 'scheduled', timezone: 'America/Los_Angeles',
+  dayMeta: {
+    Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' },
+    Afters: { date: 'Sep 26' },
+    Parties: { date: 'Sep 26', layout: 'by-time' },
+  },
+  artists: [
+    { name: 'Headliner', day: 'Saturday' },
+    // A stacked room: a run of two, printed ends that overlap (10–12, 11–1).
+    { name: 'Opener', day: 'Afters', stage: 'Sat · Room X', night: 'Sat', venue: 'Room X', time: '10 PM - 12 AM', order: { seq: 1, of: 2, source: 'https://example.test/x', confirmed: true } },
+    { name: 'Closer', day: 'Afters', stage: 'Sat · Room X', night: 'Sat', venue: 'Room X', time: '11 PM - 1 AM', order: { seq: 2, of: 2, source: 'https://example.test/x', confirmed: true } },
+    // A declared by-time room, the same shape: two parties in one venue.
+    { name: 'Tea Party', day: 'Parties', stage: 'Sat · Venue Y', night: 'Sat', venue: 'Venue Y', time: '10 PM - 12 AM' },
+    { name: 'Late Party', day: 'Parties', stage: 'Sat · Venue Y', night: 'Sat', venue: 'Venue Y', time: '11 PM - 1 AM' },
+  ],
+  days: { Saturday: { stages: ['A'], artists: [{ name: 'Headliner', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
+};
+FESTIVALS['overlap-fest'] = OVERLAP;
+if (!FESTIVAL_INDEX.some((f) => f.id === 'overlap-fest')) FESTIVAL_INDEX.push({ id: 'overlap-fest', status: 'scheduled' });
+const ringsAt = (fid, view, now) => {
+  const { root } = render(fid, { view, now });
+  positionNowMarks(root, now);
+  return [...root.querySelectorAll('.card.now')].map((c) => `${c.closest('.room').dataset.room}:${c.dataset.artist}`).sort();
+};
+
+test('a stacked room with overlapping printed ends: the same instant rings the same sets on the Board and in the List', () => {
+  const at1130 = new Date('2026-09-26T23:30:00-07:00');
+  const board = ringsAt('overlap-fest', 'board', at1130);
+  const list = ringsAt('overlap-fest', 'list', at1130);
+  assert.deepEqual(list, board, 'the ring does not change with the view');
+  assert.deepEqual(board.filter((r) => r.startsWith('Afters:')), ['Afters:Closer'], 'a run: the Opener is done when the Closer starts');
+  assert.deepEqual(board.filter((r) => r.startsWith('Parties:')), ['Parties:Late Party', 'Parties:Tea Party'], 'declared by-time: a party runs to its printed end');
+  const at1230 = new Date('2026-09-27T00:30:00-07:00');
+  assert.deepEqual(ringsAt('overlap-fest', 'list', at1230), ringsAt('overlap-fest', 'board', at1230), 'and at 12:30');
+});
+
+// Every card of the real files, both views, one render before the festival
+// (nothing folded): the same card carries the same window in both, so it
+// rings at exactly the same instants whichever view is up.
+const windowsOf = (fid, view, now) => {
+  const { root } = render(fid, { view, now });
+  const seen = new Map();
+  const out = new Map();
+  for (const c of root.querySelectorAll('.card[data-artist]')) {
+    let key = `${c.closest('.day-block').dataset.day}|${c.closest('.room').dataset.room}|${c.dataset.artist}|${c.dataset.occ}`;
+    const n = (seen.get(key) || 0) + 1;
+    seen.set(key, n);
+    if (n > 1) key += `|${n}`;
+    out.set(key, c.dataset.nowFrom == null ? null : `${c.dataset.nowFrom}-${c.dataset.nowTo}`);
+  }
+  return out;
+};
+for (const [fid, now] of [[PORTOLA, new Date('2026-09-19T12:00:00-07:00')], [ACL, new Date('2026-09-20T12:00:00-05:00')]]) {
+  test(`${fid}: every card carries the same now window on the Board and in the List`, () => {
+    const board = windowsOf(fid, 'board', now);
+    const list = windowsOf(fid, 'list', now);
+    assert.ok(board.size > 100, `the whole week (${board.size} cards)`);
+    assert.deepEqual([...list.keys()].sort(), [...board.keys()].sort(), 'the same cards');
+    const differ = [...board].filter(([k, w]) => list.get(k) !== w).map(([k, w]) => `${k}: board ${w}, list ${list.get(k)}`);
+    assert.deepEqual(differ, [], 'the same windows');
+  });
+}
+
+test('a List name is never cut short: no line clamp on a row\'s name — a long one takes its lines and only its row grows', () => {
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  const rule = /\.card\.row \.name \{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the row name rule');
+  assert.doesNotMatch(rule[1], /line-clamp|text-overflow|overflow:\s*hidden/, 'nothing that cuts a name');
+  assert.match(rule[1], /overflow-wrap: anywhere/, 'a name longer than the line breaks inside itself rather than overflow');
+});

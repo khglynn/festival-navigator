@@ -396,23 +396,37 @@ export const LADDERS = { night: bandOf, hours: hourBandOf };
 // room, else the room's close, else an hour); a longer guess is data's to
 // make (`close`, closeApprox), never the renderer's.
 //
+// A RING MUST NOT CHANGE WITH THE VIEW (the List, Phase 1, 2026-09-26). The
+// List reads every room through here, so the window each card carries is the
+// one the Board would have given it:
+//   · `opts.window: 'printed'` (the default) is the by-time rule above — a
+//     section that DECLARED by-time reads here on the Board too;
+//   · `opts.window: 'stack'` is the stacks' own rule, venueGroupsOf's exactly
+//     (the next act's start, else the printed end, else the close, else an
+//     hour): a room the Board draws as stacks (Afters, Late nights) — two
+//     back-to-back sets with overlapping printed ends ring one at a time, in
+//     both views (review, 2026-09-26);
+//   · an entry that brings its own `win` ({ from, to } or null) keeps it: the
+//     festival room's grid sets (the cell's window) and its extras (the window
+//     the Board's stacks computed for them), from wall.js.
 // `opts.ladder` names the bands: 'night' (the default, above) or 'hours'
-// (hourBandOf). A festival-grid set in the List (wall.js) brings the grid's
-// own window as `liveFrom`/`liveTo` — the cell's start, its printed end else
-// an hour — so switching Board and List never moves whose ring is lit.
+// (hourBandOf).
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 export function timeBandsOf(entries, opts = {}) {
   const list = entries || [];
   const at = new Map(list.map((e, i) => [e, i]));
   const ladder = LADDERS[opts.ladder] || bandOf;
+  const printed = opts.window !== 'stack';
   const members = [];
   for (const g of venueGroupsOf(list, opts)) {
     for (const m of g.members) {
       const t = parseEventTime(m.e.time) || parseEventTime(m.e.doors);
       const set = parseEventTime(m.e.time);
-      const grid = Number.isFinite(m.e.liveFrom) && Number.isFinite(m.e.liveTo);
-      const nowFrom = grid ? m.e.liveFrom : m.nowFrom;
-      const nowTo = grid ? m.e.liveTo
-        : m.nowFrom != null && set && set.endMin != null ? set.endMin : m.nowTo;
+      let { nowFrom, nowTo } = m;
+      if (hasOwn(m.e, 'win')) {
+        nowFrom = m.e.win ? m.e.win.from : null;
+        nowTo = m.e.win ? m.e.win.to : null;
+      } else if (printed && m.nowFrom != null && set && set.endMin != null) nowTo = set.endMin;
       members.push({ ...m, nowFrom, nowTo, venue: g.venue, tba: g.tba, startMin: t ? t.startMin : null, i: at.get(m.e) ?? 0 });
     }
   }
