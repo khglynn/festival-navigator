@@ -570,7 +570,7 @@ const ctx = {
   fid: GFID, meName: 'Kevin', picks: {}, affinity: null,
   lowPower: false, filterPeople: [], now: null,
   // The real notes shelf (app.js ctx.onOpenNotes, minus the router): the zoom's
-  // note door and a finger's tap both open it, with − · your meter · + on its card.
+  // note door and a finger's tap both open it, with − and + in its card's bottom corners.
   onOpenNotes: (artist, occ = null) => { unzoom({ why: 'notes sheet opened', meant: true }); openArtistSheet(artist, ctx, () => {}, occ); },
   onOpenDayNotes: () => {},
   onOpenFestNotes: () => {},

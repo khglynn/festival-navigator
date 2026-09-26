@@ -105,7 +105,8 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       assert.equal(await zoomUp(page), 0, 'no zoom');
       assert.equal(await page.locator('.join-shelf').count(), 0, 'and asked nothing yet');
       assert.deepEqual(await page.locator('#artist-sheet .sheet-card .f-step-row > *').evaluateAll((ns) => ns.map((n) => n.className.split(' ')[0])),
-        ['f-step', 'f-meter', 'f-step'], '− · a hollow meter · +');
+        ['f-step', 'f-step'], '− and +, nothing between (Kevin, 2026-09-26: no second meter)');
+      assert.equal(await page.locator('#artist-sheet .sheet-card .f-who .f-nm.you').count(), 0, 'a guest has no level: no chip of theirs in the who-row');
 
       await tap(page, centre(await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox()));
       await page.waitForSelector('.join-shelf', { timeout: 4000 });

@@ -13,7 +13,7 @@
 // colorIndexOf and roomOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
-import { ordered, auraBackground, auraLayers, nameColor, subColor, meterOf } from './aura.js';
+import { ordered, auraBackground, auraLayers, nameColor, subColor } from './aura.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
@@ -341,9 +341,11 @@ export const STEP_WORDS = {
   must: (name) => `Must for ${name}`,
   note: '+ note', // the same words as the notes chip everywhere else ("2 notes" once there are some)
 };
-// `middle`: what stands between − and + — the notes door in the zoom (its
-// default), YOUR meter on the shelf (the notes are already open underneath).
-function stepRow(facts, { onOpenNotes = null, step, middle = null }) {
+// `notesBetween`: the zoom's row carries the notes door between − and + (its
+// default). The shelf's carries nothing there — its thread is already open
+// underneath, and your level is on your own chip in the who-row just above
+// (Kevin, 2026-09-26: the meter it once had there was "a 2nd copy").
+function stepRow(facts, { onOpenNotes = null, step, notesBetween = true }) {
   const row = document.createElement('div');
   row.className = 'f-chips f-step-row';
   const side = (dir) => {
@@ -360,31 +362,9 @@ function stepRow(facts, { onOpenNotes = null, step, middle = null }) {
     b.addEventListener('click', (e) => { e.stopPropagation(); if (!b.disabled) step.onStep(dir); });
     return b;
   };
-  row.append(side(-1), middle || notesDoor(facts, onOpenNotes, STEP_WORDS.note), side(1));
+  if (notesBetween) row.append(side(-1), notesDoor(facts, onOpenNotes, STEP_WORDS.note), side(1));
+  else row.append(side(-1), side(1));
   return row;
-}
-
-// The shelf's middle (the tap change, 2026-09-26): YOUR meter — the resting
-// card's own corner chip (aura.js meterOf, wall.js meterChip: your colour,
-// three bars lit one per +, then MUST), drawn larger, so "each + fills a bar"
-// is exactly what the finger sees between − and +. Nothing picked (and a
-// guest, who has no level yet) is the same chip hollow. A span: the − and +
-// are the targets.
-function meterMiddle(facts, step) {
-  const you = step.guest ? null : facts.people.find((p) => p.isYou) || null;
-  const m = meterOf(you);
-  const level = m ? m.level : 0;
-  const c = document.createElement('span');
-  c.className = 'f-meter' + (!m ? ' empty' : level === 4 ? ' is-must' : '');
-  c.dataset.level = String(level);
-  if (m) { c.style.background = m.fill; c.style.borderColor = m.stroke; }
-  if (step.guest) c.setAttribute('aria-hidden', 'true');
-  else {
-    c.setAttribute('role', 'img');
-    c.setAttribute('aria-label', `You: ${level ? LEVEL_LABELS_V4[level].toLowerCase() : 'not picked'}`);
-  }
-  c.appendChild(levelGlyph(level));
-  return c;
 }
 
 // What − and + do for this viewer, on the zoom's row and on the shelf's: a
@@ -645,8 +625,12 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null, notes
   card.appendChild(name);
   const grown = grownBlock(facts, { onOpenNotes, notesChip });
   card.appendChild(grown);
-  // The shelf's − · + along the card's floor, your meter between them.
-  if (step) card.appendChild(stepRow(facts, { step, middle: meterMiddle(facts, step) }));
+  // The shelf's − and + in the card's two bottom corners, level with its last
+  // line (v3.css .sheet-card.steps): they cost the card no line of its own.
+  if (step) {
+    card.classList.add('steps');
+    card.appendChild(stepRow(facts, { step, notesBetween: false }));
+  }
   return card;
 }
 
@@ -656,8 +640,8 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null, notes
 // the artist sheet, where the thread is already open underneath (MODEL-V4 §4,
 // Kevin 2026-09-17: "confusing there cause we're already in notes"). The
 // ZOOMED card on the wall keeps its chip: that one is a door to here.
-// `step` (the tap change, 2026-09-26): the shelf's − · + row — the one place a
-// finger picks now (shelfStep builds it).
+// `step` (the tap change, 2026-09-26): the shelf's − and + — the one place a
+// finger picks now (shelfStep builds it), in the card's bottom corners.
 export function sheetCard(facts, { onClose, onOpenNotes = null, notesChip = true, step = null } = {}) {
   return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes, notesChip, step });
 }
@@ -676,9 +660,10 @@ export function shelfStep(artist, ctx, stepped) {
 // A step on the shelf redraws its card IN PLACE — the zoom's refresh grammar
 // (refreshZoomInner), on the sheet: the new wash fades in under the old, every
 // piece that stayed slides from where it was, a who-chip that appeared grows
-// in (who-motion.js), and the − · + row NEVER moves under the finger that is
-// stepping. The row is the card's floor and the who-row sits above it, so a
-// first + that brings the who-row makes the card taller UPWARD: a bottom sheet
+// in (who-motion.js), and the − and + NEVER move under the finger that is
+// stepping. They are the card's floor (its bottom corners) and everything else
+// stands above them, so a first + that brings the who-row makes the card
+// taller UPWARD: a bottom sheet
 // sized to its content simply rises (nothing below the growth moves), and a
 // sheet already at its full height and scrolled is scrolled by the same amount
 // (`scroller`), so the row stays where the finger is. A focused − or + (a key)
@@ -701,7 +686,6 @@ export function refreshSheetCard(card, facts, { onClose = null, notesChip = true
   const oldBg = card.style.background;
   const oldAnimated = card.classList.contains('animated');
   const oldPos = animate && oldAnimated ? window.getComputedStyle(card).backgroundPosition : '';
-  const meterWas = Number((rowWas && rowWas.querySelector('.f-meter') && rowWas.querySelector('.f-meter').dataset.level) || 0);
   // WRITES: the card's own node stays (its breathing wash keeps its phase);
   // its class, wash and parts are the fresh card's.
   const fresh = sheetCard(facts, { onClose, notesChip, step });
@@ -769,20 +753,9 @@ export function refreshSheetCard(card, facts, { onClose = null, notesChip = true
       arrivals += 1;
     }
   }
+  // Your level moves on your own chip in the who-row (who-motion.js): the
+  // name travels to its level's chip, or a chip of your own grows in.
   anims.push(...whoMotion(card, whoBefore));
-  // The meter between − and +: the next bar rises from its foot, or the bars
-  // step out and MUST arrives as the word — the resting meter's own event.
-  const meter = card.querySelector('.f-step-row > .f-meter');
-  if (meter) {
-    const was = meterWas;
-    const nowL = Number(meter.dataset.level || 0);
-    if (nowL > was && nowL < 4) {
-      const bar = meter.querySelector('.bars')?.children[nowL - 1];
-      if (bar) anims.push(bar.animate([{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: REFRESH_MS, delay: 40, easing: EASE_ARRIVE, fill: 'both' }));
-    } else if (nowL !== was) {
-      anims.push(meter.animate([{ transform: 'scale(.82)' }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_ARRIVE }));
-    }
-  }
   card._anims = anims;
 }
 

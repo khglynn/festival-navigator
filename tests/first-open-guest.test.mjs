@@ -189,7 +189,7 @@ test('"Pick shows" on the welcome asks on the shelf, over the wall — nothing w
 });
 
 const notesShelf = () => { const n = document.getElementById('artist-sheet'); return n && !n.classList.contains('join-shelf') ? n : null; };
-test('a guest’s finger tap on a card opens its shelf — − · meter · + along the card’s floor — and writes nothing', async () => {
+test('a guest’s finger tap on a card opens its shelf — − and + in the card’s bottom corners — and writes nothing', async () => {
   fingerTap(cardOf('Robyn'));
   await settle(10);
   assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom on a finger');
@@ -197,7 +197,8 @@ test('a guest’s finger tap on a card opens its shelf — − · meter · + alo
   assert.ok(sheet, 'the card’s shelf, the view a member gets by tapping');
   assert.equal(shelf(), null, 'nothing asked yet: a tap looks');
   const doors = [...sheet.querySelectorAll('.sheet-card .f-step-row > *')];
-  assert.deepEqual(doors.map((b) => b.className.split(' ')[0]), ['f-step', 'f-meter', 'f-step'], '− · a hollow meter · +');
+  assert.deepEqual(doors.map((b) => b.className.split(' ')[0]), ['f-step', 'f-step'], '− and +, nothing between (Kevin, 2026-09-26: no second meter)');
+  assert.equal(sheet.querySelector('.sheet-card .f-who .f-nm.you'), null, 'a guest has no level: no chip of theirs in the who-row');
   assert.ok(doors.filter((b) => b.tagName === 'BUTTON').every((b) => !b.disabled), '− and + both live: each one asks who you are');
   assert.equal(sheet.querySelector('.f-pick'), null, 'no special Pick shows button');
   assert.equal(sheet.querySelector('.composer'), null, 'no composer for a guest');

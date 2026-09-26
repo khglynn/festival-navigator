@@ -1,5 +1,5 @@
 // The tap change (Kevin, 2026-09-26): a FINGER's tap on a card opens ONE shelf —
-// the card's facts, − · your meter · + along its floor, the thread — and
+// the card's facts, − and + in its bottom corners, the thread — and
 // picking lives on its − and +. A mouse click or a key still picks. A hold is
 // a slow tap (the long-press is gone); an engine that turns a hold into
 // `contextmenu` opens the same shelf and its lift's click is eaten. The real
@@ -55,7 +55,10 @@ const shelf = () => document.getElementById('artist-sheet');
 const row = () => shelf().querySelector('.sheet-card .f-step-row');
 const minus = () => row().querySelector('.f-step.minus');
 const plus = () => row().querySelector('.f-step.plus');
-const meter = () => row().querySelector('.f-meter');
+// Your level on the shelf is your own chip in its who-row (Kevin, 2026-09-26:
+// the meter that stood between − and + was a second copy of it); '0' = none.
+const mineChip = () => shelf().querySelector('.sheet-card .f-who .f-nm.you')?.closest('.f-pill') || null;
+const mine = () => (mineChip() ? mineChip().dataset.level : '0');
 const level = (artist) => (state.crewDoc.festivals[FID].selections[artist] || {}).Kevin || 0;
 const press = (el, pointerType, pointerId = POINTER_IDS[pointerType]) => el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType, pointerId }));
 const lift = (el, pointerType, pointerId = POINTER_IDS[pointerType]) => el.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType, pointerId }));
@@ -75,16 +78,17 @@ async function closeShelf() {
   assert.equal(shelf(), null, 'the shelf is down');
 }
 
-test('a finger’s tap opens the card’s shelf — facts, − · meter · +, the thread — and writes nothing', async () => {
+test('a finger’s tap opens the card’s shelf — facts, − and +, the thread — and writes nothing', async () => {
   await tap(cardOf('Robyn'));
   assert.ok(shelf(), 'the shelf is up');
   assert.equal(shelf().classList.contains('join-shelf'), false, 'the notes shelf, not a question');
   assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom on a finger');
   assert.equal(shelf().querySelector('.sheet-card .f-name').textContent, 'Robyn');
-  assert.deepEqual([...row().children].map((n) => n.className.split(' ')[0]), ['f-step', 'f-meter', 'f-step'],
-    '− · your meter · +, and no notes door: the thread is right there');
+  assert.deepEqual([...row().children].map((n) => n.className.split(' ')[0]), ['f-step', 'f-step'],
+    '− and +, nothing between: no second meter, and no notes door — the thread is right there');
+  assert.ok(shelf().querySelector('.sheet-card').classList.contains('steps'), 'the card that stands them in its corners');
   assert.equal(shelf().querySelector('.f-chip.notes, .chip-notes'), null, 'no notes button of its own');
-  assert.equal(meter().dataset.level, '0');
+  assert.equal(mine(), '0', 'no chip of yours in the who-row yet');
   assert.equal(minus().disabled, true, 'nothing to lower');
   assert.equal(plus().getAttribute('aria-label'), 'More for Robyn');
   assert.ok(shelf().querySelector('.composer textarea'), 'a member writes here');
@@ -104,10 +108,10 @@ test('+ climbs one level a press to must and stops; the shelf stays; the wall be
     plus().click();
     assert.equal(level('Robyn'), want);
     assert.ok(shelf(), 'the shelf stays up');
-    assert.equal(meter().dataset.level, String(want), 'your meter between − and + says it');
+    assert.equal(mine(), String(want), 'your own chip in the who-row says it');
   }
   assert.equal(plus().disabled, true, 'nowhere higher than must');
-  assert.equal(meter().textContent, 'MUST');
+  assert.equal(mineChip().querySelector('.must')?.textContent, 'MUST', 'your chip says MUST');
   plus().click();
   assert.equal(level('Robyn'), 4, 'a spent + changes nothing');
   assert.match(cardOf('Robyn').getAttribute('aria-label'), /^Robyn — must/, 'the resting card behind says must');
@@ -119,7 +123,7 @@ test('− steps back to not picked and stops — never a wraparound', async () =
   assert.equal(minus().disabled, true);
   minus().click();
   assert.equal(level('Robyn'), 0);
-  assert.equal(meter().classList.contains('empty'), true, 'the hollow meter again');
+  assert.equal(mine(), '0', 'no chip of yours again');
   await closeShelf();
 });
 
@@ -127,7 +131,7 @@ test('the line does not come back, and a pen taps like a finger', async () => {
   await tap(cardOf('Dog Blood'), 'pen');
   assert.ok(shelf(), 'a pen opens the shelf');
   assert.equal(shelf().querySelector('.shelf-news'), null, 'once was enough');
-  assert.equal(meter().dataset.level, '3', 'your level on this card');
+  assert.equal(mine(), '3', 'your level on this card, on your chip');
   assert.equal(level('Dog Blood'), 3, 'nothing written');
   await closeShelf();
 });

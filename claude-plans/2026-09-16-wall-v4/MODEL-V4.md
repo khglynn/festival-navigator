@@ -505,10 +505,13 @@ Clicking that opens the notes shelf — with no notes button."
 
 - **A finger** (the last press was touch or pen, whatever the screen width): a
   tap on any card opens ONE shelf from the bottom — the card (name, when,
-  where, the doors out), `−` · your meter · `+` along its floor, the thread,
-  the composer stuck to the shelf's bottom edge. No zoom, no notes button.
+  where, the doors out), `−` and `+` in the card's two bottom corners, level
+  with its last line (nothing between them: your level is your own chip in
+  the who-row — Kevin, 2026-09-26, the meter once there was "a 2nd copy"),
+  the thread, the composer stuck to the shelf's bottom edge. No zoom, no
+  notes button, no grabber (the ✕, Escape, Back and the dimmed wall close it).
   `+` climbs picked ×1 → ×2 → ×3 → must and stops; `−` steps back to nothing
-  and stops. The row never moves under the finger: a first `+` that brings
+  and stops. `−` and `+` never move under the finger: a first `+` that brings
   the who-row grows the card upward. A guest's `−` / `+` / note door ask who
   they are on the join shelf, naming the artist; only `+` carries the pick.
   A hold is a slow tap (the long-press is gone).

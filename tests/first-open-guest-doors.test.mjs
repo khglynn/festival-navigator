@@ -80,7 +80,8 @@ async function lookAround() { shelf().querySelector('.js-look').click(); await s
 
 test('− on a guest’s shelf asks naming the artist, promises no pick — and the question takes the shelf’s place', async () => {
   await openCard('Robyn');
-  assert.equal(door('.f-meter').classList.contains('empty'), true, 'a guest’s meter is hollow');
+  assert.equal(notesShelf().querySelector('.sheet-card .f-who .f-nm.you'), null, 'a guest has no level: no chip of theirs in the who-row');
+  assert.equal(notesShelf().querySelector('.sheet-card .f-step-row > :not(.f-step)'), null, 'and nothing between − and +');
   assert.ok(layers().some((k) => k.startsWith('sheet:notes:')), 'the notes shelf has its entry');
   door('.f-step.minus').click();
   await settle(10);

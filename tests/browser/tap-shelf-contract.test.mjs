@@ -3,8 +3,8 @@
 // button"). The REAL APP (index.html, never the gallery's copy of the
 // routing), a member of a made-up crew on an iPhone profile, real touch input:
 //
-//   a tap on a card opens its shelf — the card, − · your meter · +, the
-//   thread — and grows no zoom and picks nothing; + climbs one level a press
+//   a tap on a card opens its shelf — the card, − and + in its bottom
+//   corners, the thread — and grows no zoom and picks nothing; + climbs one level a press
 //   to must and stops, − steps back to nothing and stops, and the row stands
 //   still under the finger through every press (the card grows upward); the
 //   dimmed wall and the system Back both close it, and the resting card's
@@ -40,7 +40,9 @@ const FID = 'portola-2026';
 const ENGINES = [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]];
 const skipFor = (name, get) => (get() ? false : (name.startsWith('WebKit') ? 'Playwright WebKit is not installed (npx playwright install webkit)' : NO_BROWSER));
 
-async function memberPhone(engine, { width = 390, height = 664, mouse = false, notes = null, view = null } = {}) {
+// `crowd`: four more friends on Robyn, so her who-row is one wide line at 390
+// (the corners' column law has something to hold).
+async function memberPhone(engine, { width = 390, height = 664, mouse = false, notes = null, view = null, crowd = false } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
   const profile = devices['iPhone 13'] || { viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 };
   const opts = { ...profile, viewport: { width, height }, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' };
@@ -57,8 +59,8 @@ async function memberPhone(engine, { width = 390, height = 664, mouse = false, n
   }, CREW);
   let crewDoc = {
     v: 4, meta: { name: 'Tap Crew', inviteFestId: FID }, spotify: {}, affinity: {},
-    people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 } },
-    festivals: { [FID]: { selections: { Fcukers: { Maya: 2 } }, ...(notes ? { notes } : {}) } },
+    people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 }, ...(crowd ? { Jonah: { colorIndex: 6 }, Priya: { colorIndex: 9 }, Theo: { colorIndex: 12 }, Rosa: { colorIndex: 15 } } : {}) },
+    festivals: { [FID]: { selections: { Fcukers: { Maya: 2 }, ...(crowd ? { Robyn: { Maya: 4, Jonah: 4, Priya: 3, Rosa: 3, Theo: 2 } } : {}) }, ...(notes ? { notes } : {}) } },
   };
   const writes = [];
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
@@ -99,7 +101,10 @@ const shelf = (page) => page.evaluate(() => {
   if (!s || s.classList.contains('join-shelf')) return null;
   const row = s.querySelector('.sheet-card .f-step-row');
   const b = (sel) => { const n = row && row.querySelector(sel); if (!n) return null; const r = n.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, off: !!n.disabled }; };
-  return { name: s.querySelector('.sheet-card .f-name')?.textContent, meter: row?.querySelector('.f-meter')?.dataset.level, minus: b('.f-step.minus'), plus: b('.f-step.plus'), notesButton: !!s.querySelector('.f-chip.notes') };
+  // Your level on the shelf: your own chip in its who-row ('0' = none) — the
+  // meter that once stood between − and + was a second copy of it (Kevin, 2026-09-26).
+  const you = s.querySelector('.sheet-card .f-who .f-nm.you');
+  return { name: s.querySelector('.sheet-card .f-name')?.textContent, mine: you ? you.closest('.f-pill').dataset.level : '0', between: row ? row.children.length - 2 : null, minus: b('.f-step.minus'), plus: b('.f-step.plus'), notesButton: !!s.querySelector('.f-chip.notes') };
 });
 const zoomUp = (page) => page.evaluate(() => document.querySelectorAll('#zoom-layer .zoom-slot.shown').length);
 const level = (page, artist) => page.evaluate(async (a) => {
@@ -127,7 +132,8 @@ for (const [name, get] of ENGINES) {
       await sleep(500);
       let s = await shelf(page);
       assert.equal(s.name, 'Oskar Med K', 'the tapped card’s shelf');
-      assert.equal(s.meter, '0');
+      assert.equal(s.mine, '0', 'no chip of yours yet');
+      assert.equal(s.between, 0, 'nothing between − and +');
       assert.equal(s.minus.off, true);
       assert.equal(s.notesButton, false, 'no notes button of its own');
       assert.equal(await zoomUp(page), 0, 'no zoom');
@@ -154,15 +160,15 @@ for (const [name, get] of ENGINES) {
         s = await shelf(page);
         assert.ok(s, `the shelf stays up (+${want})`);
         assert.equal(await level(page, 'Oskar Med K'), want, `+ ×${want}`);
-        assert.equal(s.meter, String(want));
+        assert.equal(s.mine, String(want), 'your own chip in the who-row says the level');
         // Within a pixel and a half: Linux's WebKit put the row 1.03px lower
         // after the first + on CI (run 36239935622, 2026-09-26) — the sheet's
         // snapped height against its content's fractional one — where macOS
         // WebKit and Chromium hold it to 0. No finger feels a pixel; the law's
         // teeth are the 22–29px jumps a who-row arriving used to cause.
         assert.ok(Math.abs(s.plus.y - rowY) <= 1.5, `the row did not move under the finger (+${want}: ${s.plus.y - rowY}px)`);
-        // Nor sideways: the meter's MUST is wider than its bars, and a middle
-        // that sized to it re-divided the row at must (the tap walk).
+        // Nor sideways: a middle that sized to its content once re-divided the
+        // row at must (the tap walk); the corners are fixed boxes now.
         assert.ok(Math.abs(s.plus.x - plusAt.x) <= 1.5 && Math.abs(s.minus.x - minusX) <= 1.5,
           `− and + kept their boxes (+${want}: +${(s.plus.x - plusAt.x).toFixed(1)}px, −${(s.minus.x - minusX).toFixed(1)}px)`);
       }
@@ -225,6 +231,90 @@ for (const [name, get] of ENGINES) {
   });
 }
 
+// Kevin at Portola (2026-09-26): the meter between − and + was "a 2nd copy" of
+// your own chip, "and then the cards can be less tall". So − and + stand in
+// the card's two bottom corners, level with its last line: real 44px boxes on
+// the card's floor, out to its side edges, covering no fact and no door, and
+// costing the card no line of its own — whatever the last line is (the place,
+// your chip, the Tix · Info doors), at 390 and at 320.
+const corners = (page) => page.evaluate(() => {
+  const card = document.querySelector('#artist-sheet .sheet-card');
+  const R = (n) => { const r = n.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }; };
+  const cs = getComputedStyle(card);
+  const c = R(card);
+  const inner = { left: c.left + parseFloat(cs.borderLeftWidth), right: c.right - parseFloat(cs.borderRightWidth), bottom: c.bottom - parseFloat(cs.borderBottomWidth) };
+  const steps = [...card.querySelectorAll('.f-step-row > .f-step')].map((b) => ({ ...R(b), glyph: R(b.querySelector('.f-step-dot')) }));
+  const facts = [...card.querySelectorAll('.f-name, .f-sub, .f-where, .f-links a, .f-who > .f-pill, .f-chips:not(.f-step-row) > *')]
+    .filter((n) => n.getClientRects().length)
+    .map((n) => ({ what: `${n.tagName.toLowerCase()}.${String(n.className).split(' ')[0]} "${n.textContent.trim().slice(0, 24)}"`, ...R(n) }));
+  return { card: inner, steps, facts };
+});
+function assertCorners(m, where) {
+  assert.equal(m.steps.length, 2, `${where}: − and +, nothing between`);
+  const [minus, plus] = m.steps;
+  const overlap = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+  for (const st of m.steps) {
+    assert.ok(st.width >= 44 && st.height >= 44, `${where}: a real 44px box (${st.width.toFixed(1)}×${st.height.toFixed(1)})`);
+    assert.ok(Math.abs(st.bottom - m.card.bottom) <= 1, `${where}: on the card's floor (${(m.card.bottom - st.bottom).toFixed(1)}px above it)`);
+    for (const f of m.facts) assert.ok(!overlap(st, f), `${where}: a corner covers no fact or door — ${f.what} ${JSON.stringify(f)} under ${JSON.stringify(st)}`);
+  }
+  assert.ok(Math.abs(minus.left - m.card.left) <= 1 && Math.abs(plus.right - m.card.right) <= 1, `${where}: each runs out to its side of the card`);
+  const last = m.facts.reduce((a, f) => (f.bottom > a.bottom ? f : a));
+  for (const st of m.steps) {
+    const mid = (st.glyph.top + st.glyph.bottom) / 2;
+    assert.ok(mid >= last.top - 2 && mid <= last.bottom + 2,
+      `${where}: the glyph stands level with the last line, ${last.what} (${last.top.toFixed(1)}–${last.bottom.toFixed(1)}; glyph centre ${mid.toFixed(1)})`);
+  }
+  assert.ok(m.card.bottom - last.bottom <= 24, `${where}: no line of their own under the last fact (${(m.card.bottom - last.bottom).toFixed(1)}px to the floor)`);
+}
+for (const [name, get] of ENGINES) {
+  for (const [width, height] of [[390, 664], [320, 568]]) {
+    test(`${name} at ${width}: − and + stand in the card's bottom corners — level with its last line, over no fact or door, no line of their own`, { skip: skipFor(name, get) }, async () => {
+      const { ctx, page, errors } = await memberPhone(get(), { width, height, crowd: true });
+      try {
+        const open = async (artist) => {
+          await tapAt(page, await cardAt(page, artist));
+          await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+          await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
+        };
+        const step = async () => {
+          const p = (await shelf(page)).plus;
+          await tapAt(page, p);
+          await sleep(300);
+          await motionDone(page, { within: '#artist-sheet' });
+        };
+        await open('Oskar Med K');
+        assertCorners(await corners(page), `${width} unpicked (the last line is the place)`);
+        await step();
+        assert.equal(await level(page, 'Oskar Med K'), 1, 'the + under the finger picked');
+        assertCorners(await corners(page), `${width} after + (the last line is your chip)`);
+        await step(); await step(); await step();
+        assert.equal(await level(page, 'Oskar Med K'), 4);
+        assertCorners(await corners(page), `${width} at must`);
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
+        // An afters show: its Tix · Info doors are its last line, beside the corners.
+        await open('Boys Noize');
+        const m = await corners(page);
+        assert.ok(m.facts.some((f) => f.what.startsWith('a.')), 'the doors out are on the card');
+        assertCorners(m, `${width} Boys Noize (the doors out)`);
+        await step();
+        assert.equal(await level(page, 'Boys Noize'), 1, 'a press on + beside the doors is the +');
+        assert.equal(await page.locator('#artist-sheet').count(), 1, 'and nothing navigated away');
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
+        // A crowd: at full width its three chips would make one wide last
+        // line, under both corners; in the column it wraps between them.
+        await open('Robyn');
+        assertCorners(await corners(page), `${width} Robyn's crowd`);
+        await step();
+        assertCorners(await corners(page), `${width} Robyn's crowd, and you`);
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+}
+
 // Chromium's touch input can hold a finger down for real (CDP): a hold is a
 // slow tap — one shelf, no pick, no system callout — whether this engine
 // ends the gesture with a click or with a context menu.
@@ -285,6 +375,7 @@ test('Chromium (a touch screen with a mouse): a finger opens the shelf, the mous
     await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
     await sleep(400);
     assert.equal((await shelf(page)).name, 'Tove Lo', 'the finger opened the shelf (a centred dialog at this width)');
+    assertCorners(await corners(page), '820, the centred dialog');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
     const other = await cardAt(page, 'Fcukers');

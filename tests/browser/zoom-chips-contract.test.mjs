@@ -237,14 +237,20 @@ for (const t of TARGETS) for (const b of t.busy) {
       const m = await page.evaluate((scope) => {
         const card = document.querySelector(scope).getBoundingClientRect();
         const row = document.querySelector(`${scope} .f-who`).getBoundingClientRect();
-        const chips = [...document.querySelectorAll(`${scope} .f-who > .f-pill`)].map((c) => { const r = c.getBoundingClientRect(); return { level: c.dataset.level, left: r.left, right: r.right }; });
-        const steps = [...document.querySelectorAll(`${scope} .f-step-row > *`)].map((c) => { const r = c.getBoundingClientRect(); return { left: r.left, right: r.right }; });
+        const box = (c) => { const r = c.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
+        const chips = [...document.querySelectorAll(`${scope} .f-who > .f-pill`)].map((c) => ({ level: c.dataset.level, ...box(c) }));
+        const steps = [...document.querySelectorAll(`${scope} .f-step-row > *`)].map(box);
         return { card: { left: card.left, right: card.right }, vw: window.innerWidth, row: { left: row.left, right: row.right }, chips, steps };
       }, SHELF);
       assert.ok(m.card.left >= 0 && m.card.right <= m.vw, `the card is on screen: ${JSON.stringify(m.card)}`);
       assert.equal(m.chips.length, 4, 'still one chip per level');
       for (const c of m.chips) assert.ok(c.left >= m.row.left - 0.5 && c.right <= m.row.right + 0.5, `a chip never outgrows its row at 320: ${JSON.stringify(c)}`);
-      for (const d of m.steps) assert.ok(d.left >= m.card.left - 0.5 && d.right <= m.card.right + 0.5, `− · meter · + inside the card: ${JSON.stringify(d)}`);
+      assert.equal(m.steps.length, 2, '− and +, nothing between (Kevin, 2026-09-26)');
+      for (const d of m.steps) assert.ok(d.left >= m.card.left - 0.5 && d.right <= m.card.right + 0.5, `− and + inside the card: ${JSON.stringify(d)}`);
+      // They stand in the card's bottom corners, beside its last line: the
+      // crowd wraps inside the column between them, never under one.
+      const under = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+      for (const c of m.chips) for (const d of m.steps) assert.ok(!under(c, d), `no chip under a corner at 320: ${JSON.stringify(c)} vs ${JSON.stringify(d)}`);
     } finally {
       await ctx.close();
     }

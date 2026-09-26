@@ -26,7 +26,7 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   order. The data's shape decides which, never a threshold. Picks carry over
   automatically because they are keyed by artist, not by slot.
 - **Tap a card to open it; + and − pick.** On a phone a tap opens the card's
-  shelf — its facts, `−` · your meter · `+`, and the crew's notes. Levels are
+  shelf — its facts, `−` and `+` in its bottom corners, and the crew's notes. Levels are
   `picked ×1 → ×2 → ×3 → must`; `+` climbs and `−` steps back, never a wraparound.
   With a mouse, hover grows the card (its notes door opens the same shelf) and a
   click cycles `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
