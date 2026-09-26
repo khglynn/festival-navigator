@@ -87,7 +87,7 @@ api/share.js                  per-festival link previews: index.html with its OG
 data/festivals/index.json     the festival list (single source of truth)
 data/venues/index.json        the venue registry: each room's usual doors, close and set lengths, with sources
 scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
-scripts/guess-run-times.mjs   a club night's set-time guesses from the venue registry, as a reviewable diff
+scripts/guess-run-times.mjs   a night's set-time guesses (club or concert) from the venue registry, as a reviewable diff
 scripts/brand-assets.mjs      npm run brand — regenerates the icons and every link preview
 tests/                        node --test suites (npm test)
 tests/browser/                the hover contract in a real browser, against gallery.html (npm run test:browser)

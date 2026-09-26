@@ -1,6 +1,6 @@
 {
   "$schema": "venues-v1",
-  "researchedAt": "2026-09-02",
+  "researchedAt": "2026-09-26",
   "venues": {
     "Regency Ballroom": {
       "city": "San Francisco",
@@ -38,7 +38,7 @@
           "quote": "SAT, 13 JUN 2026 at 08:00PM PDT ... Doors Open: 07:00PM"
         }
       ],
-      "notes": "No published close anywhere — not the venue FAQ, not its tech rider (a DAYTIME 5 PM weekday sound curfew only), not 15+ listings. Doors open one hour before showtime per the venue's own FAQ. The guesser falls back to the hall default (12 AM) and marks it."
+      "notes": "No published close anywhere — not the venue FAQ, not its tech rider (a DAYTIME 5 PM weekday sound curfew only), not 15+ listings. Doors open one hour before showtime per the venue's own FAQ. The guesser falls back to the hall default (12 AM) and marks it. Laid out as a concert since 2026-09-26 (round two of ACL prep): the opener at its posted time, the headliner a support slot after it, the close only a cap — so no guess lands later than the show. That moved Portola's Sat Parcels from ~10:45 to ~10 PM (AXS: doors 9 PM, the event 10 PM; Velvet Trip opens at 9:15) and the past Thu/Fri rooms from 10:30 to 9:30 PM."
     },
     "Monarch": {
       "city": "San Francisco",
@@ -513,6 +513,453 @@
         }
       ],
       "notes": "A 4 AM close, consistently listed."
+    },
+    "The Concourse Project": {
+      "city": "Austin",
+      "kind": "club",
+      "site": "https://concourseproject.com/",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+            "quote": "18+ Welcome // 9pm - 2am\nMain Room (Indoors) at The Concourse Project"
+          },
+          {
+            "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
+            "quote": "18+ Welcome // 9pm - 2am\nMain Room (Indoors) at The Concourse Project"
+          },
+          {
+            "url": "https://wl.seetickets.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+            "quote": "Show: 9:00PM ... 18+ Welcome // 9pm - 2am Main Room (Indoors) at The Concourse Project"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 0,
+      "headlinerSetMin": 120,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+          "quote": "Official 2026 ACL Fest Nights: Steve Aoki ... Show: 9:00PM (doors also 9:00PM per Do512)"
+        },
+        {
+          "url": "https://www.reddit.com/r/concourseproject/comments/1kyeynm/show_start_time/",
+          "quote": "Headliners go on at midnight unless otherwise stated or they do a surprise 3hr set."
+        },
+        {
+          "url": "https://www.reddit.com/r/Austin/comments/1kxxac2/concourse_project_am_i_too_old_to_be_awake_for/",
+          "quote": "They will likely go on at midnight and play until 1:30ish. Sets at Concourse usually start at 12:00 or so and go until 2:00."
+        },
+        {
+          "url": "https://www.reddit.com/r/ZedsDeadFam/comments/1jtaypb/concourse_project_austin_tx/",
+          "quote": "Headliners are typically midnight. Maybe 12:15-30 with prep time in mind."
+        },
+        {
+          "url": "https://www.instagram.com/p/CwndJWvOapQ/",
+          "quote": "Update 9/2: *SET TIMES* (show now ending at 2:30am) 09:00pm - 10:00pm Colton Cameron 10:00pm - 11:30pm Tal Fussman ... (the venue's own post, 2023: the headliner from 11:30 PM on an extended night)"
+        }
+      ],
+      "notes": "A club night that runs 9 PM to 2 AM: every ACL Fest Nights ticket page here prints \"Show: 9:00PM\" and \"9pm - 2am\" for its own night (Chainsmokers, Aoki, it's murph, Yukimatsu, BUNT.), so those events carry the 2 AM close as printed and their first act as posted. Headliners: four independent reports say midnight to 2 AM (headlinerSetMin 120, so the closer goes on at 12 AM, not the 12:30 AM a 90-minute default gave); the venue's own 2023 set times show a headliner from 11:30 PM on a night that ran to 2:30 AM, so an extended night can start earlier than this guess. (Round two, 2026-09-26.)"
+    },
+    "Stubb's": {
+      "city": "Austin",
+      "kind": "outdoor",
+      "site": "https://stubbsaustin.com/",
+      "close": {
+        "default": null,
+        "byWeekday": {
+          "Sun": "10:30 PM",
+          "Mon": "10:30 PM",
+          "Tue": "10:30 PM",
+          "Wed": "10:30 PM",
+          "Thu": "12 AM",
+          "Fri": "1 AM",
+          "Sat": "1 AM"
+        },
+        "byDate": {
+          "2026-10-01": "10 PM",
+          "2026-10-02": "10:30 PM",
+          "2026-10-03": "11 PM"
+        },
+        "late": null,
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://stubbsaustin.com/faq/",
+            "quote": "HOW LATE DO YOUR SHOWS RUN UNTIL? The indoor stage has a hard curfew of 1:45 AM every night."
+          },
+          {
+            "url": "https://services.austintexas.gov/edims/document.cfm?id=296553",
+            "quote": "§ 9-2-30 (A)(4): Up to 85 decibels at an outdoor music venue located in the Red River Cultural District, between 10:00 a.m. and: (a) 10:30 p.m. on Sunday through Wednesday; (b) 12:00 midnight on Thursday; or (c) 1:00 a.m. on Friday or Saturday."
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/",
+            "quote": "All Ages Welcome. Doors: 10:00PM. Show: 10:30PM. Free with wristband from Brandon Flowers *Capacity Permitting* (the INDOOR after-show; its doors are the byDate 2026-10-01 close, inferred)"
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-grocery-bag/",
+            "quote": "All Ages Welcome! Doors: 10:30pm Show: 11:00pm Free with wristband from Bleachers *Capacity Permitting* (the byDate 2026-10-02 close, inferred)"
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-almost-heaven/",
+            "quote": "All Ages Welcome. Doors: 11:00PM. Show: 11:30PM. Free with wristband from Parcels *Capacity Permitting* (the byDate 2026-10-03 close, inferred)"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://stubbsaustin.com/faq/",
+          "quote": "WHAT TIME DOES THE SHOW START? Standard show times usually begin an hour after doors although this may not always be the case."
+        },
+        {
+          "url": "https://www.ticketmaster.com/official-2026-acl-nights-brandon-flowers-austin-texas-10-01-2026/event/3A0064FDAEAD9948",
+          "quote": "Doors: 7:00pm Show: 8:00pm (Ticketmaster's own event text, read through search; the page itself refuses scrapers)"
+        },
+        {
+          "url": "https://www.ticketmaster.com/official-2026-acl-fest-nights-parcels-austin-texas-10-03-2026/event/3A0064FDB2E8A336",
+          "quote": "Doors: 8:00pm Show: 9:00pm"
+        },
+        {
+          "url": "https://stubbsaustin.com/concert-calendar/",
+          "quote": "with Brandon Flowers, Jess Williamson / Doors: 7:00 pm (the calendar's one time per show is labelled DOORS)"
+        }
+      ],
+      "notes": "The outdoor Waller Creek Amphitheater. A concert: doors, the opener an hour later (FAQ; Ticketmaster prints Doors 7 / Show 8 for Brandon Flowers, Bleachers and Lola Young, Doors 8 / Show 9 for Parcels), the headliner after it. It sits in the Red River Cultural District, whose outdoor sound curfew is the by-weekday close here (Austin Code 9-2-30(A)(4), from the 2018 ordinance text; adoption not re-verified, and Tuesday is 10:30 PM under the general rule too). Tighter still on three ACL nights, by INFERENCE (close.byDate): the indoor stage's wristband after-shows open at 10 PM (Thu Oct 1, after Brandon Flowers), 10:30 PM (Fri Oct 2, after Bleachers) and 11 PM (Sat Oct 3, after Parcels), and a wristband show for the outdoor crowd opening then means the outdoor show is over by then. No page prints the amphitheater's end, so these are the registry's rule (sources above), and the events name the rule — \"venue's <date> close\" — never the after-show's URL (round three, 2026-09-26, after review of 09d0bbe). Round one read the concert calendar's single time as a \"Show\" time; it is labelled Doors, so the openers' 7 PM \"posted\" times were doors times, corrected to the printed show times in round two (2026-09-26)."
+    },
+    "Stubb's Indoors": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://stubbsaustin.com/",
+      "close": {
+        "default": "1:45 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://stubbsaustin.com/faq/",
+            "quote": "HOW LATE DO YOUR SHOWS RUN UNTIL? The indoor stage has a hard curfew of 1:45 AM every night."
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/",
+          "quote": "All Ages Welcome. Doors: 10:00PM. Show: 10:30PM. Free with wristband from Brandon Flowers *Capacity Permitting*"
+        },
+        {
+          "url": "https://www.ticketmaster.com/official-2026-acl-nights-montclair-austin-texas-10-01-2026/event/3A00650BBB2FBC0A",
+          "quote": "All Ages Welcome Doors: 9:30PM Show: 10:30PM Free with ..."
+        },
+        {
+          "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-grocery-bag/",
+          "quote": "All Ages Welcome! Doors: 10:30pm Show: 11:00pm Free with wristband from Bleachers *Capacity Permitting*"
+        },
+        {
+          "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-almost-heaven/",
+          "quote": "All Ages Welcome. Doors: 11:00PM. Show: 11:30PM. Free with wristband from Parcels *Capacity Permitting*"
+        },
+        {
+          "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-annie-dirusso/",
+          "quote": "All Ages Welcome. Doors: 10:00PM. Show: 10:30PM."
+        },
+        {
+          "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-sunday-1994/",
+          "quote": "Doors: 8:00PM. Show: 9:00PM. ... With Semiwestern."
+        }
+      ],
+      "notes": "doorsToFirstActMin stays null: each show's own page prints its Doors and Show, and the gap is 30 minutes on four of them and 60 on Sunday (1994) (Ticketmaster says 60 for Montclair too). Every Late nights show here carries its printed Show time as posted, except Sunday (1994), whose page bills an opener (Semiwestern) we do not carry, so its 9 PM show time is the opener's and its own is a guess. Where the venue page and Ticketmaster disagree the earlier is used (Montclair and Grocery Bag doors; Almost Heaven's show, 11:30 PM on the venue page against midnight on an older Ticketmaster copy). Round one took the concert calendar's single time for a show time; it is the doors time (corrected 2026-09-26)."
+    },
+    "Emo's": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://www.emosaustin.com/",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": [
+          {
+            "url": "https://www.emosaustin.com/visit",
+            "quote": "The box office at Emo's Austin opens at doors on show days only. (no closing/curfew time is stated anywhere on the venue's own FAQ)"
+          },
+          {
+            "url": "https://www.instagram.com/p/DTd_LAJDegZ/",
+            "quote": "SET TIMES: 9 PM — Beta Ghost 10 PM — Just Be 11 PM — Keylo B2B N Brojob ⚡ 12 AM — Party Trickz 1 AM — Saint Chris (the venue's own post for a 9 PM-doors DJ night, Jan 2026)"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.emosaustin.com/shows",
+          "quote": "Official 2026 ACL Nights: Palace — Doors: 7:00pm Show: 8:00pm — lineup Palace, The 4411; BUNT. / Levity / Suki Waterhouse / Rodrigo y Gabriela — Doors: 9:00pm Show: 10:00pm (the venue's own event data behind its calendar)"
+        },
+        {
+          "url": "https://www.reddit.com/r/Austin/comments/7kvppq/disparity_between_doors_open_and_actual/",
+          "quote": "Doors open at 7 p.m. ... start one hour after doors and play 30-45 min with 30 minutes between acts for stage"
+        }
+      ],
+      "notes": "A ~1,700-cap concert hall: kind hall (concert shape), not club. Its own event data prints Doors and a Show an hour later for every ACL show, and the show time is the first act's. No close is published: concert nights end in the evening, and its own posts show 9 PM-doors DJ nights running to 2 AM, so the close stays unknown and the hall default (~12 AM) draws the window. The support slot is left at the hall default (45 min), the early end of the Reddit account's 60-75. Round one had kind club and a 2 AM fallback close, which put Palace at 12:30 AM behind 7 PM doors (2026-09-26)."
+    },
+    "Historic Scoot Inn": {
+      "city": "Austin",
+      "kind": "outdoor",
+      "site": "https://www.scootinnaustin.com/",
+      "close": {
+        "default": null,
+        "byWeekday": {
+          "Sun": "10:30 PM",
+          "Mon": "10:30 PM",
+          "Tue": "10:30 PM",
+          "Wed": "10:30 PM",
+          "Thu": "11 PM",
+          "Fri": "12 AM",
+          "Sat": "12 AM"
+        },
+        "late": null,
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://services.austintexas.gov/edims/document.cfm?id=296553",
+            "quote": "§ 9-2-30 (A)(1): Up to 85 decibels between 10:00 a.m. and: (a) 10:30 p.m. on Sunday through Wednesday; (b) 11:00 p.m. on Thursday; or (c) 12:00 midnight on Friday or Saturday."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.ticketfairy.com/events-in-austin/historic-scoot-inn",
+          "quote": "Doors typically open about an hour before showtime. Expect a short ID check ..."
+        },
+        {
+          "url": "https://www.scootinnaustin.com/shows",
+          "quote": "Official 2026 ACL Nights - Finn Wolfhard: Doors: 6:00pm Show: 7:00pm (Finn Wolfhard, Malcy); CMAT: Doors: 6:00pm Show: 7:00pm (CMAT, Fancy Hagood); Ryan Beatty: Doors: 5:00pm Show: 6:00pm (Ryan Beatty, girlsweetvoiced); Saint Motel: Doors: 5:00pm Show: 6:00pm (Saint Motel, The 4411); Noga Erez: Doors: 7:00pm Show: 8:30pm (Noga Erez) — the venue's own event data"
+        }
+      ],
+      "notes": "An open-air East Austin venue (not in the Red River district), so its close is the city's outdoor-music curfew by weekday (Austin Code 9-2-30(A)(1)), which is why its shows open at 5-7 PM. Its own event data prints Doors and a Show an hour later (90 minutes for Noga Erez); the show time is the first act's. Ryan Beatty's bill has an opener (girlsweetvoiced) we do not carry, so his guess marks the opener's start. (Round two, 2026-09-26.)"
+    },
+    "Antone's": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://antonesnightclub.com/",
+      "close": {
+        "default": "12 AM",
+        "late": null,
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://www.yelp.com/biz/antones-nightclub-austin-6?start=20",
+            "quote": "What time does Antone's Nightclub close? Antone's Nightclub closes at 12:00 AM (Next day) on Monday, Tuesday, Wednesday, Thursday, Friday, Saturday and Sunday."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://antonesnightclub.com/calendar/",
+          "quote": "Ariel Posen: The Bannatyne Tour w/ Zach Person ... Doors: 7:00 PMShow: 8:00 PM (repeated with the same 60-min gap across every other booking on the venue's own October calendar: Emmaline, Don Was NIGHT ONE/TWO)"
+        },
+        {
+          "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
+          "quote": "Official 2026 ACL Fest Nights: World Famous Pets w/ Elijah Delgado — Thursday, October 08, 2026 — 8:00pm(Doors: 7:00pm)"
+        },
+        {
+          "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-night-tapes/",
+          "quote": "Official 2026 ACL Fest Nights: Night Tapes — Friday, October 02, 2026 — 10:00pm(Doors: 9:00pm)"
+        },
+        {
+          "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
+          "quote": "Official 2026 ACL Fest Nights: Rochelle Jordan w/ Stefon Osae — Sunday, October 04, 2026 — 10:00pm(Doors: 9:00pm)"
+        },
+        {
+          "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-don-west/",
+          "quote": "Official 2026 ACL Fest Nights: Don West w/ Kesmar. Saturday, October 10, 2026 10:00pm (Doors: 9:00pm)."
+        }
+      ],
+      "notes": "The venue's own Ticketmaster-fed calendar shows a consistent Doors->Show gap of exactly 60 minutes across four different real (non-ACL) bookings, so that is used as doorsToFirstActMin with medium-high confidence. Its calendar also carries a \"LATE:\" series (Doors 11 PM / Show 11:59 PM) that runs well past the Yelp-listed midnight close -- none of the ACL Late nights bill are billed \"LATE\", so the 12 AM default is treated as applicable to them, but the exception is noted here rather than silently assumed away. Round two (2026-09-26): kind hall — a nightclub by name, a concert room by format (Doors, a Show an hour later, a midnight close), so a 7 PM-doors bill is laid forward from its opener instead of back from midnight (World Famous Pets had 10:30 PM behind 8 PM Elijah Delgado)."
+    },
+    "3TEN": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://www.acllive.com/stages/3ten",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": []
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets",
+          "quote": "Fri Oct2, 2026 - 9:00 PM ... Doors Open: Fri Oct2, 2026 - 8:00 PM"
+        },
+        {
+          "url": "https://www.acllive.com/event/2026-10-02-official-2026-acl-fest-nights-villanelle-at-9-pm",
+          "quote": "Official 2026 ACL Fest Nights: Villanelle ... Showtimes Friday, Oct 2, 2026 9:00PM (no support billed)"
+        },
+        {
+          "url": "https://www.acllive.com/event/2026-10-08-official-2026-acl-fest-nights-aszewo-at-9-pm",
+          "quote": "Official 2026 ACL Fest Nights: Łaszewo ... Showtimes Thursday, Oct 8, 2026 9:00PM"
+        },
+        {
+          "url": "https://www.acllive.com/event/2026-10-10-official-2026-acl-fest-nights-claire-rosinkranz-at-9-pm",
+          "quote": "Official 2026 ACL Fest Nights: Claire Rosinkranz — with Abby Powledge ... Showtimes Saturday, Oct 10, 2026 9:00PM"
+        }
+      ],
+      "notes": "\"ACL Live at 3TEN\", a 350-person club/event space next to the ACL Live box office (acllive.com/stages/3ten). AXS's own event page for Villanelle is the only place doors and show print as two different times (8 PM doors, 9 PM show) -- Do512 and the venue's other AXS listings (Laszewo/Left Lucid, Claire Rosinkranz) only ever print the one door time. No closing time published anywhere found. Round two (2026-09-26): kind hall — ACL Live's own small concert room (every show prints one Show time, doors an hour earlier), not a club running to 2 AM; the club fallback had Łaszewo at 12:30 AM behind 8 PM doors. Claire Rosinkranz's page bills Abby Powledge, who is not in our lineup, so Claire's guess marks the opener's 9 PM."
+    },
+    "Devil May Care": {
+      "city": "Austin",
+      "kind": "bar",
+      "site": "https://www.devilmaycareatx.com/",
+      "close": {
+        "default": "12 AM",
+        "late": "2 AM",
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://austin.eater.com/venue/62428/devil-may-care",
+            "quote": "Sunday: 12:00 am - 2:00 am ; Monday: Closed ; Tuesday: 5:00 pm - 12:00 am ; Wednesday: 5:00 pm - 12:00 am ; Thursday: 5:00 pm - 12:00 am"
+          },
+          {
+            "url": "https://wl.eventim.us/event/1010or-official-2026-acl-nights-fcukers-at-dmc-or-austin-tx/704041?afflky=DevilMayCare",
+            "quote": "Doors: 10:00PM | Show: 11:45PM | Ends: 2:00AM"
+          },
+          {
+            "url": "https://wl.eventim.us/event/official-2026-acl-fest-nights-rebecca-black-at-dmc-or-atx/702467?afflky=DevilMayCare",
+            "quote": "Doors: 10:00PM | Show: 11:45PM | Ends: 2:00AM"
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": 135,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://wl.eventim.us/event/1010or-official-2026-acl-nights-fcukers-at-dmc-or-austin-tx/704041?afflky=DevilMayCare",
+          "quote": "Doors: 10:00PM | Show: 11:45PM | Ends: 2:00AM"
+        }
+      ],
+      "notes": "A late-night cocktail lounge (dinner/bottle service, per its own site), not a standard club -- routine hours close midnight, but both ACL Fest Nights DJ sets here (Rebecca Black 10/2, Fcukers 10/10) print an identical Doors 10 PM / Show 11:45 PM / Ends 2 AM on their own Eventim ticket pages, so `time` and `close` are recorded directly on those two entries from that printed line rather than guessed from the registry; doorsToFirstActMin/headlinerSetMin above describe that same pattern for any future night here, not a general club default. Round two (2026-09-26): doorsToFirstActMin back to null. The 105 minutes came from each night's printed \"Show: 11:45PM\", which is the HEADLINER's start (Rebecca Black's, Fcukers'), not the first act's; on Rebecca Black's night Bambi opens, and 105 minutes put Bambi's guess on Rebecca Black's posted time. With the bar default (30) and headlinerSetMin 135 the guesser reproduces both printed times and round one's hand-set 10:30 PM for Bambi."
+    },
+    "Mohawk Austin": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://mohawkaustin.com/",
+      "close": {
+        "default": "12 AM",
+        "late": "1 AM",
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://m.yelp.com/biz/mohawk-austin",
+            "quote": "Doors typically open at 7p, music starts at 8p and goes to 10:30p-1a (depending on day of the week and our local noise curfew). This may vary for special and ..."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://mohawkaustin.com/",
+          "quote": "Fcukers / Total Wife / 8pm / Indoor / All Ages (Do512 prints 7 PM doors for the same show)"
+        }
+      ],
+      "notes": "Mohawk's own contact page says only \"We open at 5pm everyday... Set Times are not available in advance\" -- the 7p-doors/8p-music/10:30p-1a close pattern is Yelp's, not the venue's, hence medium confidence and a range rather than one default. The venue's own site listing for Fcukers/Total Wife (Sep 29) independently confirms the 8 PM show time Etix's ticket page also prints. Round two (2026-09-26): kind hall — a concert venue (Doors 7, music at 8, done by 10:30 PM-1 AM), and the Fcukers / Total Wife night is indoors. The club shape had put Fcukers at 10:30 PM behind an 8 PM opener."
+    },
+    "Fair Market": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://www.fairmarketaustin.com/",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": []
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.universe.com/events/destination-defender-music-experience-at-acl-fest-tickets-WS67VT",
+          "quote": "Destination Defender Music Experience at ACL Fest — Thu, Oct 8, 2026 at 6:00 PM ... an exclusive, one-time-only performance by The War on Drugs, plus Texas-inspired open-fire cooking, custom cocktails and a few surprises"
+        }
+      ],
+      "notes": "A 12,000 sq ft industrial event space (\"Quonset hut warehouse\", per its own site) rather than a nightly club -- every event is different, so no routine hours exist to research. Generic ticket-resale aggregators (SeatGeek: doors 90 min-2 hrs before; Vivid Seats: 60-90 min before) actively contradict each other and are not venue-specific, so left out rather than averaged into a number. The one Late nights show here (The War on Drugs, Oct 8) has only a printed doors time (6 PM); its guessed set time and close both fall back to the hall KIND_DEFAULTS, which this note flags as a genuine unknown rather than a researched figure. Round two (2026-09-26): the ticket page (Universe) confirms a 6 PM start for a sponsor event with food and drink around the set, and prints no set time or end; the band's guess stays at the hall default (an hour after doors), the earliest it is likely to play."
+    },
+    "The Continental Club": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://continentalclub.com/austin",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": []
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.eventbrite.com/e/jess-williamson-tickets-1998237458028",
+          "quote": "Thursday, October 8 - 10 PM - 11:30 PM ... Doors at 9 PM"
+        }
+      ],
+      "notes": "A legendary 1955 South Austin club running two sets most nights (an early ~6:30-8 PM act, a late ~10-11:45 PM act/pair per its own public calendar at continentalclub.com/austin) -- no explicit closing time is ever printed, so left null. The one Late nights show here (Jess Williamson, Oct 8) already carries both a posted `time` (10 PM) and a posted `close` (11:30 PM) straight from its own Eventbrite page, so the registry gap here is documentation only; the guesser has nothing left to fill in for this entry. Round two (2026-09-26): kind hall (two concert sets a night, not a club running to close). The venue's own Eventbrite page says \"Doors open @9pm\" (and \"Doors at 9 PM\"), so the show's doors are 9 PM, not the 9:30 PM Do512 printed."
+    },
+    "Brushy Street Commons": {
+      "city": "Austin",
+      "kind": "hall",
+      "site": "https://brushystreet.com/",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": []
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
+          "quote": "Doors: 9:00pm\nShow: 10:00pm"
+        },
+        {
+          "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
+          "quote": "Doors: 7:00pm\nShow: 8:00pm"
+        },
+        {
+          "url": "https://www.eventim.us/event/Official-2026-ACL-Nights-LP/702361",
+          "quote": "Doors: 7:00pm\nShow: 8:00pm"
+        },
+        {
+          "url": "https://www.eventim.us/event/Official-2026-ACL-Nights-underscores-DJ-Set/700550",
+          "quote": "Official 2026 ACL Nights: underscores (DJ Set) ... Doors: 9:00pm Show: 9:30pm ... Talent: underscores, Directress / 1x333"
+        }
+      ],
+      "notes": "An INDOOR room: \"Located within the sound stage of the historic 501 Studios building\" (brushystreet.com), not an outdoor venue, so no outdoor curfew applies. Kind hall (concert shape): Live Nation/Eventim print Doors and a Show an hour later (Hunx and His Punx, Arcy Drive, LP) or 30 minutes later (the underscores DJ-set night), and the show time is the first act's. No close is published; the hall default (~12 AM) draws the window. The club fallback had put Hunx, underscores and Arcy Drive at 12:30 AM (Arcy Drive behind 7 PM doors). (Round two, 2026-09-26.)"
     }
   }
 }
