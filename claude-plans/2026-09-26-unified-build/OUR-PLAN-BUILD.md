@@ -363,3 +363,30 @@ the people menu and the wall's left-edge fix. Built from the brief above:
       tap on a grown card to the same shelf (over the plan, Back closes it through the
       router) is a new behaviour on an approved surface, so it goes to Kevin, not into
       this release.
+5. **Merged `origin/live/people` 7087828** (the coordinator's fix for a people test that
+   failed on 6cea2e2 itself: a fading menu's footprint eats a quick second tap, which had
+   fallen through onto a card and opened its shelf) at 673123d, clean.
+6. **The gate on 673123d:** three clocks 1246/1249 each (the service-worker stamp only,
+   the coordinator's at release), browser 339/340 (one skipped, none failed). The
+   earlier run on b2c9d27 had the people test above and one show-links case that passed
+   alone (load).
+7. **The walk** (a Sonnet walker, real input, 5ddb33e — 673123d without the menu fix,
+   which touches nothing it walked; brief and screenshots in the session's scratchpad).
+   It scored 13 pass / 14 fail, and every fail was the walker's own check, each
+   re-checked by hand or by a probe with real input in both engines:
+   a. Highlight Gus: NEXT The Great Northern ~1:30 AM, 4 of us; the dock's NOW back; Dog
+      Blood, Soulwax and Public Works dim, his Prospa and Audio forks bright, the Great
+      Northern's own fork dim (the walker read that fork's key as the stop's).
+   b. Clearing: with a highlight on, the avatar gives way to the pill, so `#dock-you` has
+      no box (the walker's "null x"); the pill's ✕ clears it, and the peek is back at NOW
+      Dog Blood, 8 of us, nothing dim, the dock's NOW hidden (Chromium and WebKit).
+   c. Tonight's stops read, in order, exactly the golden Saturday (the walker counted the
+      "or" fork rows as stops).
+   d. Grown names: Dog Blood (most) 17px, Soulwax (some) 14.5px, both engines.
+   e. A finger's tap on Tove Lo opens its shelf over the peek, picks nothing ("A tap opens
+      the card now — pick with + here").
+   f. The welcome card above the phone's dock and in the laptop's corner, 20px in, 380
+      wide; "Look around" raises the plan in the same place.
+   g. The laptop: a zoom beside the panel stays left of it (872 against 880); Escape
+      closes the zoom, a second Escape the panel.
+   No page errors in any run.
