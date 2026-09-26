@@ -214,6 +214,16 @@ const flows = {
     say(`  errors: ${errors.length ? errors.join(' | ') : 'none'}`);
     await ctx.close();
   },
+  // The alternative to call 1, for the decision: the bare − and + with nothing between.
+  async alt390() {
+    const { ctx, page } = await open({ width: 390, height: 844, touch: true });
+    await page.addStyleTag({ content: '.sheet-card .f-step-row > .f-meter { visibility: hidden; }' });
+    await tapCard(page, 'Oskar Med K');
+    await tapIn(page, '#artist-sheet .f-step.plus');
+    await tapIn(page, '#artist-sheet .f-step.plus');
+    await shot(page, `${ENGINE}-390-ALT-no-meter-plus2`);
+    await ctx.close();
+  },
   async member320() {
     const { ctx, page, errors } = await open({ width: 320, height: 568, touch: true });
     await tapCard(page, 'Boys Noize');

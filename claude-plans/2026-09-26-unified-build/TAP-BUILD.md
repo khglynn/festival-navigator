@@ -62,15 +62,34 @@ Skipped:
 3. U4/U5's shelf primitive (`shelf.js`, `openQuestion`) — the brief says reuse the notes sheet's anatomy.
    The arrival/exit added here is written so U5 can lift it whole.
 
+## Rollback (the coordinator's condition, Kevin 2026-09-26: "as long as we bank and are prepped to maybe roll back those parts of the code (tap)")
+
+This ships as its OWN release, never bundled with the List view or anything else, so it reverts alone.
+1. **The exact revert:** `git revert -m 1 <the tap release's merge commit on main>` through a PR, then the
+   ship recipe (stamp on a clean tree, gate, merge, prod-smoke). The server rolls back at once with
+   `vercel rollback <the deployment before the tap release>`; phones follow on their next open (a busy
+   phone shows the refresh strip — the reload glue is untouched).
+2. **What reverts cleanly with it (everything is in the one merge):** the routing (app.js, wall.js,
+   card-facts.js), the shelf (notes.js, v3.css), the copy (welcome.js, How it works in settings.js, the
+   all-notes empty line), the docs (README, CLAUDE.md, MODEL-V4 §3a.4) and docs-truth's rows, the tests,
+   and CI's WebKit install. Nothing outside the merge depends on it. Reverting CI only means WebKit
+   contracts skip on Linux again, as before.
+3. **What a phone sees after a rollback:** the v96-era gesture — a finger's tap on a card picks (the v91
+   cycle), a hold grows the zoom, a guest's tap grows the zoom. No data changes either way: no crew-doc
+   or person-doc key, no sync or merge change, no service-worker strategy change.
+4. **New persisted state:** one device-local key, `fn_tap_news_v1` (localStorage, "this phone has seen the
+   one-time line"). An old build never reads it; it sits unused and harmless. A re-ship after a rollback
+   reads it and does not show the line twice.
+
 ## Steps (commit + push after each)
 
-1. [ ] This log.
-2. [ ] Design: a frame rig (production app, a made-up crew, writes refused), phone shelf frames at 390 and
+1. [x] This log (e700c10).
+2. [x] Design: a frame rig (production app, a made-up crew, writes refused), phone shelf frames at 390 and
    320 (member, guest, doors out, long thread, keyboard up), the desktop path at 1280. Paths to the
    coordinator.
-3. [ ] The shelf: the step row in the sheet card; header refresh with the zoom's who-row motion; the
+3. [x] The shelf (877d336, WIP): the step row in the sheet card; header refresh with the zoom's who-row motion; the
    arrival and exit; the guest's doors.
-4. [ ] The route: a finger's tap / hold opens the shelf for everyone; the long-press and the finger-zoom
+4. [x] The route (877d336, WIP): a finger's tap / hold opens the shelf for everyone; the long-press and the finger-zoom
    code go; `setLevel`; the welcome goes on the first tap.
 5. [ ] Copy + docs (README, CLAUDE.md, MODEL-V4, How it works, gallery hint) with docs-truth.
 6. [ ] Tests: unit (delete long-press; tap-shelf; first-open; zoom-overlay/ghost/hover-grace renames),
@@ -83,3 +102,14 @@ Skipped:
 - **05:00** Read TAP-BRIEF, PLAN (§2.1–2.3, U0, U2, U3, U5, §4, §6), REVIEW-1, map-input, the repo
   CLAUDE.md. Baseline `npm test`: 1043 pass, 1 fail — the SW stamp (expected: the branch is not stamped;
   the coordinator stamps).
+- **05:40** Baseline browser suite: 218/219 — one pre-existing red in now-jump ("390, Dee at 7 PM: a
+  repaint keeps the cycle…"), on the base before any edit here.
+- **06:30** 877d336: the shelf + the route, WIP. The rig (`tap-design/rig.mjs`: the production app, a
+  made-up crew, writes refused) with REAL touch taps in Chromium and WebKit: the tap opens the shelf in
+  both engines (WebKit's tap reads as a finger), + steps 0→1→…→must, the row's y never moves (0px; the
+  sheet's top rose 29px when the who-row appeared), a guest's + raises the join shelf on the notes shelf's
+  own history entry. Frames + contact sheets in `tap-design/frames/` (gitignored), sent to the coordinator.
+  Two calls added while looking at frames: the composer sticks to the shelf's bottom edge (a long thread
+  hid it a whole scroll away), and the card's tap-highlight flash is off.
+- **06:45** Coordinator: calls a–h stand for now (Kevin decides on the preview). Ship as its own release;
+  the Rollback section above.
