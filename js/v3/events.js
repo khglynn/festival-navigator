@@ -362,6 +362,25 @@ export const TIME_TBA = { key: 'tba', label: 'Time TBA', from: null, to: null };
 export const bandOf = (startMin) => (startMin == null ? TIME_TBA
   : TIME_BANDS.find((b) => startMin >= b.from && startMin < b.to) || TIME_TBA);
 
+// THE HOUR LADDER (the List, Phase 1, 2026-09-26). In the List every room
+// reads by time, and a room of SETS — the festival's own grid, a night of
+// back-to-back afters — reads on hours: Portola has about four set starts an
+// hour, so an hour is one block of cards, and "what's on at midnight" is the
+// question a set-times list is for (round five, direction a, measured). The
+// night ladder above stays for a section that DECLARES it reads by time
+// (Folsom's one-party rooms): what friends liked there is untouched, and the
+// two ladders say the same words where they meet ("9 PM" is 9 PM in both).
+// After bar close (2 AM) the hours give way to the night ladder's own
+// After-hours, and no clock is Time TBA, last — the same as there.
+const AFTER_HOURS = TIME_BANDS.find((b) => b.key === 'after');
+export const hourBandOf = (startMin) => {
+  if (startMin == null) return TIME_TBA;
+  if (startMin >= AFTER_HOURS.from) return AFTER_HOURS;
+  const h = Math.floor(startMin / H);
+  return { key: `h${h}`, label: hourLabelOf(h * H), from: h * H, to: h * H + H };
+};
+export const LADDERS = { night: bandOf, hours: hourBandOf };
+
 // The night in start order, cut into bands. Built ON the stacks' own model
 // (venueGroupsOf), so everything a stack card knows — its now window, a
 // cancelled party's place, the tilde on a guessed time — a by-time card knows
@@ -376,27 +395,38 @@ export const bandOf = (startMin) => (startMin == null ? TIME_TBA
 // door. Without a printed end the stack's rule stands (the next party in the
 // room, else the room's close, else an hour); a longer guess is data's to
 // make (`close`, closeApprox), never the renderer's.
+//
+// `opts.ladder` names the bands: 'night' (the default, above) or 'hours'
+// (hourBandOf). A festival-grid set in the List (wall.js) brings the grid's
+// own window as `liveFrom`/`liveTo` — the cell's start, its printed end else
+// an hour — so switching Board and List never moves whose ring is lit.
 export function timeBandsOf(entries, opts = {}) {
   const list = entries || [];
   const at = new Map(list.map((e, i) => [e, i]));
+  const ladder = LADDERS[opts.ladder] || bandOf;
   const members = [];
   for (const g of venueGroupsOf(list, opts)) {
     for (const m of g.members) {
       const t = parseEventTime(m.e.time) || parseEventTime(m.e.doors);
       const set = parseEventTime(m.e.time);
-      const nowTo = m.nowFrom != null && set && set.endMin != null ? set.endMin : m.nowTo;
-      members.push({ ...m, nowTo, venue: g.venue, tba: g.tba, startMin: t ? t.startMin : null, i: at.get(m.e) ?? 0 });
+      const grid = Number.isFinite(m.e.liveFrom) && Number.isFinite(m.e.liveTo);
+      const nowFrom = grid ? m.e.liveFrom : m.nowFrom;
+      const nowTo = grid ? m.e.liveTo
+        : m.nowFrom != null && set && set.endMin != null ? set.endMin : m.nowTo;
+      members.push({ ...m, nowFrom, nowTo, venue: g.venue, tba: g.tba, startMin: t ? t.startMin : null, i: at.get(m.e) ?? 0 });
     }
   }
   const byBand = new Map();
   for (const m of members) {
-    const b = bandOf(m.startMin);
+    const b = ladder(m.startMin);
     if (!byBand.has(b.key)) byBand.set(b.key, { ...b, members: [] });
     byBand.get(b.key).members.push(m);
   }
-  const order = [...TIME_BANDS, TIME_TBA].map((b) => b.key);
+  // Bands in the order they start on the clock; no clock (Time TBA) last.
+  // The night ladder's own order IS its start order, so Folsom is unchanged.
+  const at0 = (b) => (b.from == null ? Infinity : b.from);
   return [...byBand.values()]
-    .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    .sort((a, b) => at0(a) - at0(b))
     .map((b) => ({
       ...b,
       members: b.members.sort((x, y) => (x.cancelled - y.cancelled)

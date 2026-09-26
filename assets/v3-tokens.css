@@ -117,6 +117,17 @@
    * stage strip's spacer and the stacks read one number each. */
   --hour-rail-w: 40px;
   --clock-gap: 4px;
+  /* THE LIST's one reading column (Phase 1, 2026-09-26). In the List a card
+   * is a ROW — the name and its time on the left, the people on the right —
+   * so it is not a card column and `--col-w` is not its width: on a phone a
+   * row is the shell's width, and from 720 up the whole list (its room heads,
+   * the Earlier lines, the band heads, the rows) stands in one centred column
+   * this wide. A row is a line you read, not a table you scan: at the shell's
+   * 1080 a name and the people who picked it would sit a screen apart. 560 is
+   * the app's reading column already (the entry screens' .center-col and
+   * Settings are 560 on a laptop) — about a phone and a half. Kevin approved
+   * the empty sides as the intended cost (round five riff, 2026-09-26). */
+  --list-w: 560px;
 }
 
 /* From 720 the wall is not two-across any more, so the column stops being a
