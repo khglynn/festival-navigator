@@ -1336,6 +1336,9 @@ function planAnswer(date) {
     nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: [when, `${plan.us.length} of us picking`].filter(Boolean).join(' · '),
+    // The Share's first line: `Our plan · Portola · Sat Sep 26` (planText).
+    fest: fest.name || '',
+    day: [entry.wd, when].filter(Boolean).join(' '),
     dayWord: peek.today ? '' : (entry.wd || ''),
     nightLabelOf,
   };

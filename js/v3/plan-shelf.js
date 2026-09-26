@@ -21,12 +21,18 @@
 // laptop; a click anywhere on the card opens it. No backdrop: the wall stays
 // usable beside the panel, and a zoom keeps left of it (foot.js sideLeft).
 //
+// The open plan ends on one action, its Share: the day in words, handed to
+// the phone's share sheet (planText), or copied where there is none. It sits
+// under the rows, not in the head — the laptop's head is a button of its own
+// (the grabber) and a button cannot hold one — and so it is the same in both,
+// in reach of a thumb, and out of the peek's window like the head.
+//
 // No history entry (the v93 Show menu's lesson). It closes by a drag down, a
 // tap on the grabber, its ✕ and Escape (app.js); the open state is dropped on
 // pagehide, boot, a crew switch and any other screen. Back does what it does
 // from the wall: it leaves it.
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { planList, planHead, stopKey, PLAN_NAME } from './plan-rows.js';
+import { planList, planHead, planText, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
 
 const ID = 'plan';
@@ -49,6 +55,9 @@ let grab = null;     // the grabber (a button: the keyboard's way in and out)
 let body = null;     // head + list, the part the window shifts
 let headEl = null;
 let listEl = null;
+let footEl = null;   // the open plan's last line: its Share
+let shareWords = null;
+let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
 let ctxRef = null;
 let data = null;     // the last paint's answer (see paintPlanShelf)
@@ -100,17 +109,21 @@ function spanOf(cls, text) {
   if (text != null) e.textContent = text;
   return e;
 }
-function chevron(up) {
+function glyph(path) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('width', '11'); s.setAttribute('height', '11'); s.setAttribute('viewBox', '0 0 12 12');
   s.setAttribute('aria-hidden', 'true');
   const d = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  d.setAttribute('d', up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
+  d.setAttribute('d', path);
   d.setAttribute('fill', 'none'); d.setAttribute('stroke', 'currentColor'); d.setAttribute('stroke-width', '1.7');
   d.setAttribute('stroke-linecap', 'round'); d.setAttribute('stroke-linejoin', 'round');
   s.appendChild(d);
   return s;
 }
+const chevron = (up) => glyph(up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
+// The system's share mark (an arrow out of a tray), and two sheets for a copy.
+const SHARE_MARK = 'M6 7.2V1.6M3.9 3.7 6 1.6l2.1 2.1M4.2 5.4H3.1v5.1h5.8V5.4H7.8';
+const COPY_MARK = 'M4.3 4.3h5.2v6.2H4.3zM7.7 4.3V2.5H2.5v6.2h1.8';
 
 function build(host) {
   frame = mk('div', 'plan-frame');
@@ -138,7 +151,16 @@ function build(host) {
   body = mk('div', 'plan-body');
   headEl = mk('div', 'plan-head');
   listEl = mk('div', 'plan-list');
-  body.append(headEl, listEl);
+  footEl = mk('div', 'plan-foot');
+  const share = mk('button', 'plan-share btn-tonal');
+  share.type = 'button';
+  const canShare = typeof navigator.share === 'function';
+  shareWords = spanOf('w', shareLabel());
+  shareWords.setAttribute('aria-live', 'polite');
+  share.append(glyph(canShare ? SHARE_MARK : COPY_MARK), shareWords);
+  share.addEventListener('click', sharePlan);
+  footEl.appendChild(share);
+  body.append(headEl, listEl, footEl);
   el.append(grab, body);
   frame.appendChild(el);
   // Right after the day rail in the page's order, so a keyboard meets the
@@ -187,7 +209,7 @@ function railBottom() {
 
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
-//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight }
+//   { plan, route, peek, nowMin, weekday, sub, fest, day, dayWord, nightLabelOf, gen, highlight }
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -325,6 +347,7 @@ function apply(q) {
   const o = p === 1 ? '' : String(p);
   const back = p === 0 ? '' : String(k);
   headEl.style.opacity = o;
+  footEl.style.opacity = o;
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.style.opacity = o;
   corner.line.style.opacity = back;
   corner.open.style.opacity = back;
@@ -348,6 +371,7 @@ function settleState() {
   // What the peek hides is not there for a keyboard or a screen reader either.
   const peek = mode !== 'open';
   headEl.inert = peek;
+  footEl.inert = peek;
   for (const r of listEl.children) {
     r.inert = peek && !r.classList.contains('tagged');
     // A row is a control in the open plan (Enter grows its card), and the
@@ -535,6 +559,7 @@ function settleTo(target, { instant = false } = {}) {
   const fade = [{ opacity: from.p }, { opacity: target }];
   const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
   headEl.animate(fade, timing);
+  footEl.animate(fade, timing);
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.animate(fade, timing);
   if (geo.desk) {
     corner.head.animate(fade, timing);
@@ -557,7 +582,7 @@ function onDown(e) {
   if (geo && geo.desk) return; // a laptop's card is a button: its click opens it (onClickPeek)
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
-  if (e.target.closest('.sheet-close')) return;
+  if (e.target.closest('.sheet-close') || footEl.contains(e.target)) return; // controls, not handles
   if (mode !== 'open') unpin();
   measure();
   apply(mode === 'open' ? 1 : 0);
@@ -676,6 +701,24 @@ function toggleEarlier() {
   if (mode !== 'open') return;
   earlierOpen = !earlierOpen;
   relayout(null, false);
+}
+// The Share: the night the rows show, as words (planText), to the share
+// sheet — and only there: nothing else leaves the phone. A dismissed sheet
+// is a choice; a sheet that fails, or a browser with none, copies instead
+// and says so on the button.
+async function sharePlan() {
+  if (mode !== 'open' || !data) return;
+  const text = planText(data.route, { ctx: ctxRef, plan: data.plan, fest: data.fest, day: data.day });
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Could not copy'); }
+}
+const shareLabel = () => (typeof navigator.share === 'function' ? 'Share this plan' : 'Copy this plan');
+function sayOnShare(words) {
+  clearTimeout(shareTimer);
+  shareWords.textContent = words;
+  shareTimer = setTimeout(() => { shareWords.textContent = shareLabel(); }, 1800);
 }
 // A tap inside the open plan changes what is under one row (its card, or
 // the earlier stops under the Earlier line). That row stays where the finger

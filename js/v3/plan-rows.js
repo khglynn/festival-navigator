@@ -271,6 +271,45 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
   return list;
 }
 
+// ---- the day as words ------------------------------------------------------------
+// What the open plan's Share hands the share sheet (plan-shelf.js): the whole
+// night, in the rows' own words, one line a stop — the start, what and where,
+// how many of us — its "or" under it, and a scattered stretch as the rows say
+// it. Plain text for a group chat:
+//
+//   Our plan · Portola · Sat Sep 26
+//   5:40 PM  Tove Lo · Pier Stage — 5 of us
+//     or Jamie xx · Ship Tent — 3 of us
+//   7 PM  Scattered till 8:15 PM
+//
+// Counts, never names (nobody is named beyond what the crew already sees),
+// and never a link: the crew's link is its key. The highlight is a view and
+// changes nothing here — the plan is the crew's.
+export function planText(route, { ctx, plan, fest = '', day = '' } = {}) {
+  const lines = [[PLAN_NAME, fest, day].filter(Boolean).join(' · ')];
+  if (!route) return lines[0];
+  const whatWhere = (stop) => {
+    if (kindOf(stop) === 'set') {
+      const act = actsOf(stop)[0];
+      return act ? `${act.name} · ${whereOf(stop)}` : whereOf(stop);
+    }
+    // A room's headliners, unless the room is named for the one act in it.
+    const acts = headlinersOf({ ...stop, people: stop.people || [] }, ctx.picks).map((h) => h.name);
+    const room = whereOf(stop);
+    return !acts.length || (acts.length === 1 && acts[0] === room) ? room : `${room} · ${acts.join(' → ')}`;
+  };
+  for (const it of route.items) {
+    if (it.kind === 'scattered') { lines.push(`${quietClock(it.from)}  Scattered till ${quietClock(it.to)}`); continue; }
+    lines.push(`${approxOf(it, ctx.picks) ? '~' : ''}${quietClock(it.from)}  ${whatWhere(it)} — ${it.count} of us`);
+    const f = forkFor(it, plan.bar, null);
+    if (f) {
+      const later = f.from >= it.from + 30 ? `, from ${quietClock(f.from)}` : '';
+      lines.push(`  or ${whatWhere(f)}${later} — ${f.count} of us`);
+    }
+  }
+  return lines.join('\n');
+}
+
 // The open plan's head, in the wall's head grammar: `SAT OUR PLAN`, then its
 // sub. (The wall's roomHead is private to wall.js and is a door to notes;
 // this one opens nothing, so it is the div form of the same look.)
