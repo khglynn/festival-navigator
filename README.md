@@ -32,6 +32,11 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   click cycles `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
   the crew gets a color, and overlapping picks blend on the wall so you can see
   at a glance where the crew is converging.
+- **Our picks.** Above the dock sits where most of the crew will be right now
+  (or next); drag it up for the day's whole route, stop by stop, with the
+  choices where the crew splits. **Share our picks** at its foot sends the day
+  as a few plain lines and a link that opens on it; the fest name's menu has
+  **Share the crew link** for the board itself.
 - **Notes** attach to an artist, a date, or the festival itself.
 - **A link looks like the festival it opens.** Paste one into iMessage or Slack
   and it unfurls as that fest's own card — its name in the display face, on a
