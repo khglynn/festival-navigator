@@ -184,3 +184,23 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   `shell-v4` 28/28; shot `how-it-works-390.png`. Standing by: the coordinator rebases onto
   main once v92 lands, using the "Rebasing onto v92" notes above (note: `gearIcon` now lives
   in tools.js, so the resolution's app.js hunks are unchanged).
+- **Merged with v92** (the coordinator's 245cd26: v92 a73df70 merged in, the five hunks as
+  written). Post-merge: v92's `tests/show-menu-fade.test.mjs` assumed a synchronous close
+  from the fest name; since v93 that close lands with the popstate, so its two cases now wait
+  for it (ec89117, same assertions).
+- **"+ Invite someone"** (dc67f5c, Kevin 2026-09-26 "invite, not add"): the chip, its label,
+  the sheet's head (INVITE SOMEONE) and dialog name, How it works' picture and row ("Invite
+  your people." / "Tap + Invite someone, or share the crew link — …"), Settings' crew card,
+  MODEL-V4 §3a.4, the docs-truth pin, docs/user-flows F2b, the gallery. The sheet's own
+  button still says **Add** (it adds their name, then hands over their link) — Kevin's call
+  if it should say Invite too. Fits: one line everywhere, 24px tall, 390 alone on its line,
+  320 beside two names, Settings' card at both widths, How it works' cell with no clipping.
+  Shots: `final-invite-chip.png`, `people-390.png`, `people-320.png`,
+  `settings-crew-390.png`, `settings-crew-320.png`, `invite-sheet-390.png`,
+  `how-it-works-390.png`, `how-it-works-320.png`.
+- **Verified on the merged head:** `npm test` 1014/1015 twice, the stamp the only failure.
+  `npm run test:browser` 207/207 on the second run, including the WebKit zoom-notes-chip case
+  v92 fixed. The first run had three load flakes (the guest-tap-route shelf Escape in both
+  engines, show-links' door-under-pointer); each passes alone. The walk's people, menu and
+  how scenarios were clean at 390/320/1280.
+
