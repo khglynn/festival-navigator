@@ -505,6 +505,7 @@ function restorePlace(place) {
 function askToJoin(artist = null, { intent = 'pick' } = {}) {
   const token = state.getCrewToken();
   if (!token || ctx.meName) return;
+  const opener = shelfOpener(); // before the zoom and the welcome go: where focus returns
   // The question comes up over the wall, which never moves: a zoom shrinks
   // back into its card as the shelf rises, and the welcome has done its job.
   unzoom({ why: 'asked who you are', meant: true });
@@ -512,14 +513,26 @@ function askToJoin(artist = null, { intent = 'pick' } = {}) {
   rememberWelcomeSeen();
   dismissWelcome({ ctx });
   pendingJoin = { token, fid: ctx.fid, artist: intent === 'pick' ? artist : null, place: wallPlace() };
-  openJoinShelf(token, artist, intent);
+  openJoinShelf(token, artist, intent, opener);
+}
+// Where keyboard focus goes back to when the shelf closes: what had it (a
+// button in Settings, the dashed +), or the card a zoom's door asked about —
+// never a node on its way out (the zoom's own door, the welcome card), and
+// failing all of those the "you" slot, where the question lives.
+function shelfOpener() {
+  const a = document.activeElement;
+  if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card')) return a;
+  const card = zoomedCard();
+  if (card) return card;
+  const you = [$('dock-you'), $('rail-you')].find((n) => n && n.offsetParent !== null);
+  return you || $('dock-you');
 }
 
 // The join shelf (v92, the guest shelf round): the production bottom sheet
 // over the wall, asking the same question with the same answers as the join
 // screen (joinAnswers). A history entry of its own, so the system Back closes
 // it rather than leaving the app; the shelf's own ways out pop that entry.
-function openJoinShelf(token, artist, intent = 'pick') {
+function openJoinShelf(token, artist, intent = 'pick', opener = null) {
   const doc = state.crewDoc || {};
   const people = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed))
     .map(([name, p]) => { const ci = colorIndexOf(name, p); return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, false) }; });
@@ -533,12 +546,37 @@ function openJoinShelf(token, artist, intent = 'pick') {
     entered: () => { if (shelf) shelf.close(); dropShelfEntry(); },
   });
   shelf = showJoinShelf({
-    artist, intent, people, offline, ctx,
+    artist, intent, people, offline, ctx, opener,
     onLook: () => { pendingJoin = null; popShelfEntry(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
   });
+  shelfUp = shelf;
   try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
+}
+let shelfUp = null; // the join shelf's handle while it is up
+// ONE close decision for the shelf, whoever asks — Escape, the system Back,
+// or its own ways out (review of 963e599: Escape mid-join took the shelf down
+// and the late answer joined Ana behind the person's back; Escape left the
+// shelf's history entry behind, so a later Back landed on it). While an
+// answer is in flight nothing closes it: that answer decides where this goes.
+// Otherwise the question is dropped, the shelf goes down, and its history
+// entry is consumed exactly once — by Back itself, or here.
+// `via`: 'back' when the entry is already gone. True when the press was the
+// shelf's (up, whether or not it closed).
+function leaveShelf(via = 'escape') {
+  const shelf = shelfUp && !shelfUp.isClosed() ? shelfUp : null;
+  if (!shelf) return false;
+  if (shelf.isBusy()) {
+    // Back already took the entry: put it back, so the history still says
+    // "the shelf is up" and the next Back (after the answer) behaves.
+    if (via === 'back') { try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history */ } }
+    return true;
+  }
+  shelf.leave();
+  pendingJoin = null;
+  if (via !== 'back') popShelfEntry();
+  return true;
 }
 // The shelf's history entry, popped by its own ways out (Look around, the
 // wall, the handle) so Back never lands on a dead step. After a join, the
@@ -3369,10 +3407,9 @@ export function init() {
   // question is dropped, the wall is where it was.
   window.addEventListener('popstate', (e) => {
     if (e.state && e.state.joinShelf) return;
-    const shelf = joinShelf();
-    if (!shelf) return;
-    pendingJoin = null;
-    closeSheet();
+    if (leaveShelf('back')) return;
+    // A shelf this module no longer holds (never in practice): take it down.
+    if (joinShelf()) { pendingJoin = null; closeSheet(); }
   });
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
@@ -3491,6 +3528,7 @@ export function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (openMenu) { closeShowMenu(); return; }
+    if (leaveShelf('escape')) return; // the shelf decides, busy or not (never a bare closeSheet)
     if (!router.requestClose()) closeSheet();
   });
   // Last-resort net (FLOW-4): an early crash used to leave every screen

@@ -1375,8 +1375,10 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * zoom has always drawn it. No shape, no container (Kevin, after the button
  * study: "I like the left and right just − + no button shape"). The same row
  * for a member and a guest, under a finger, a mouse or a key.
- *   The glyphs stand on the zoom's own content edges — the left and right
- *   edges the who-row and the doors share — never inset toward the middle.
+ *   The glyphs stand a smidge (10px) inside the zoom's own content edges —
+ *   the left and right edges the who-row and the doors share — the same on
+ *   every card and width (Kevin: "bring the buttons in a smidge from the
+ *   edges"); never pulled toward the middle beyond that.
  *   Their targets are invisible and forgiving: − owns everything left of the
  *   chip, out to the card's left edge and down to its bottom; + everything
  *   right of it; the chip is its own target (its 30px plus a vertical reach).
@@ -1400,8 +1402,8 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   display: flex; align-items: center; background: none; border: 0; border-radius: var(--r-card);
   color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; }
-.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; }
+.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
+.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
 .zoom-card .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
 .zoom-card .f-step:disabled { cursor: default; }
 .zoom-card .f-step:disabled .f-step-dot { opacity: .3; }

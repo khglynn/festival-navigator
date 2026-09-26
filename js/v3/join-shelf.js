@@ -53,7 +53,9 @@ export function joinShelf() {
 // people: [{ name, bg, stroke }] in the crew's order. Returns the shelf's
 // handle: setBusy(on) holds every door while an answer settles, say(text or
 // node) writes the status line, close({ instant }) takes it down.
-export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, onLook, onClaim, onAnswer } = {}) {
+// `opener`: where keyboard focus goes back to when the shelf closes (the
+// review of 963e599: closing it dropped focus to <body>).
+export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, opener = null, onLook, onClaim, onAnswer } = {}) {
   document.getElementById(SHEET_ID)?.remove();
   document.getElementById(BACK_ID)?.remove();
   const back = node('div', 'sheet-backdrop join-backdrop');
@@ -196,6 +198,11 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     unfit();
     sheet.removeAttribute('id');
     back.removeAttribute('id');
+    // Focus goes back where it came from — only if it is still inside the
+    // shelf (a close that the person started elsewhere keeps their focus).
+    if (sheet.contains(document.activeElement) || document.activeElement === document.body) {
+      if (opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch { /* not focusable */ } }
+    }
     const gone = () => { sheet.remove(); back.remove(); };
     if (instant || !canAnimate(sheet, ctx)) { gone(); return; }
     sheet.style.pointerEvents = 'none';
@@ -232,15 +239,20 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   grab.addEventListener('pointerup', release);
   grab.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
 
-  // Tab stays inside the shelf while it is up (the sheets' dialog rule).
+  // Tab stays inside the shelf while it is up (the sheets' dialog rule) —
+  // from the shelf itself, where focus starts, too: Shift+Tab from there used
+  // to walk out onto the wall behind (the review of 963e599). While an answer
+  // settles every door is disabled, and Tab stays put.
   sheet.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
     const f = [...sheet.querySelectorAll('button, input')].filter((n) => !n.disabled);
-    if (!f.length) return;
+    if (!f.length) { e.preventDefault(); return; }
     const first = f[0];
     const last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    const at = f.indexOf(document.activeElement);
+    if (at < 0) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+    if (e.shiftKey && at === 0) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && at === f.length - 1) { e.preventDefault(); first.focus(); }
   });
   requestAnimationFrame(() => { if (!closed) sheet.focus({ preventScroll: true }); });
 
@@ -260,6 +272,11 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   return {
     sheet,
     setBusy(on) { busy = !!on; paint(); },
+    isBusy: () => busy,
+    // The one close decision every way out shares (app.js leaveShelf):
+    // refused while an answer is in flight — that answer decides where this
+    // goes. True when the shelf went down.
+    leave() { if (busy || closed) return false; close(); return true; },
     say(x) {
       if (x == null || typeof x === 'string') status.textContent = x || '';
       else status.replaceChildren(x);

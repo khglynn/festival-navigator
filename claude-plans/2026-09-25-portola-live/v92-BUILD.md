@@ -503,3 +503,33 @@ Verified so far: `npm test` 984/986 (the stamp and one skip), browser suite
 197/197; walk 22/23/24/25 (member + + −, must stops, note opens notes, a
 resting tap still cycles; crowded at 390/320/1280 no overlap, no clip, clear
 of the dock; guest + → "Pick Tove Lo as…"; guests 0 writes).
+
+**Kevin: "bring the buttons in a smidge from the edges."** The − and + glyphs
+now stand 10px inside the zoom's content edges on every card and width (390:
+− glyph 32–48, + glyph 328–344 in a 22–354 content box; 320: 32–48 and
+272–288; 1280: 10px in, too), centred on the note chip; their invisible
+targets still run out to the card's edges and bottom. Pinned in
+`tests/browser/zoom-door-row.test.mjs`.
+
+**Independent review of 963e599 (Codex, xhigh): two blockers, one important —
+fixed.** (1) Escape or Back could take the shelf down while a join was in
+flight, and the late answer joined the person behind their back. Now ONE
+close decision (`leaveShelf`) answers Escape, the system Back and the shelf's
+own ways out: while an answer is in flight nothing closes it (a Back puts its
+history entry back, so history still says the shelf is up), and the answer
+lands the person. (2) Escape left the shelf's history entry behind, so a later
+Back landed on it with a reopened shelf still up; every close now consumes the
+entry exactly once. (3) Closing the shelf dropped focus to the page: focus now
+goes back to what opened it (the + in the dock, a Settings button, or the card
+a zoom's door asked about), and Tab never walks out of the shelf — not even
+Shift+Tab from the shelf itself, where focus starts. Tests:
+`tests/first-open-shelf-close.test.mjs` (Escape-then-reopen-then-Back,
+focus return, the Tab trap, Escape and Back mid-join); each fix was broken on
+purpose and its test went red.
+**Deliberate, and accepted by the orchestrator:** a guest's note chip that
+already HAS notes opens them to read (with "Add yourself" under them) instead
+of asking — the brief's "any of the three opens the join" is met by −, + and an
+empty note chip.
+Verified: `npm test` 988/990 in UTC, Tokyo and on the night clock (the stamp
+the only failure, one skip); browser suite 197/197; the full walk, 31
+scenarios, no failures, no page errors.

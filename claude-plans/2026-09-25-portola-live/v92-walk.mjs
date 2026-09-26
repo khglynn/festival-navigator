@@ -215,7 +215,9 @@ const zoomGeometry = (page) => page.evaluate(() => {
   const hit = (el) => { const r = el.getBoundingClientRect(); const u = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!u && (u === el || el.contains(u)); };
   const doors = [...z.querySelectorAll('a.f-link, a.f-where, a.f-order, .f-step-row > *')].map((d) => [d.textContent.trim().slice(0, 18), hit(d), Math.round(d.getBoundingClientRect().height)]);
   const dock = document.getElementById('dock');
-  const dockTop = dock && dock.offsetParent !== null ? Math.round(dock.getBoundingClientRect().top) : null;
+  // The dock is position:fixed, so offsetParent is always null — ask its box.
+  const dockBox = dock ? dock.getBoundingClientRect() : null;
+  const dockTop = dockBox && dockBox.height && getComputedStyle(dock).display !== 'none' ? Math.round(dockBox.top) : null;
   const strip = [...document.querySelectorAll('#wall-root .stage-strip, .day-rail, #topbar')].map((n) => n.getBoundingClientRect()).filter((r) => r.height && r.bottom > 0 && r.top < 10).reduce((m, r) => Math.max(m, Math.round(r.bottom)), null);
   return { card, vw: innerWidth, vh: innerHeight, dockTop, chromeBottom: strip, parts: parts.map((p) => `${p.c}[${p.t}-${p.b}]`), overlaps, clipped, doors };
 });
@@ -602,7 +604,8 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await sleep(900);
     const halves = await page.locator('#welcome-card .bring-actions button').evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return [b.textContent, Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.height)]; }));
     const more = await page.locator('#welcome-card .welcome-more').evaluate((b) => { const r = b.getBoundingClientRect(); return [b.textContent, Math.round(r.left), Math.round(r.top)]; });
-    note(`welcome halves ${JSON.stringify(halves)}; link ${JSON.stringify(more)}; card height ${Math.round((await page.locator('#welcome-card .bring-card').boundingBox()).height)}`);
+    const edges = await page.locator('#welcome-card .bring-card').evaluate((c) => { const r = c.getBoundingClientRect(); const cs = getComputedStyle(c); return [Math.round(r.left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)), Math.round(r.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth))]; });
+    note(`welcome halves ${JSON.stringify(halves)}; card content edges ${JSON.stringify(edges)} (left half starts on the left edge: ${halves[0][1] === edges[0]}, right half ends on the right edge: ${halves[halves.length - 1][2] === edges[1]}); link ${JSON.stringify(more)}; card height ${Math.round((await page.locator('#welcome-card .bring-card').boundingBox()).height)}`);
     await shot(page, `${tag}-20-welcome-halves.png`);
     const card = page.locator('#wall-root .card[data-artist="Tove Lo"]').first();
     await card.scrollIntoViewIfNeeded();
@@ -617,13 +620,22 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     });
     note(`tap → zoom ${JSON.stringify(zoom)}; screens: join ${await visible(page, '#screen-join')}`);
     await shot(page, `${tag}-21-guest-zoom.png`);
-    // A tap on another card with the zoom up only closes it.
-    const other = page.locator('#wall-root .card[data-artist="Fcukers"]').first();
-    const ob = await other.boundingBox().catch(() => null);
+    // A tap on another card with the zoom up only closes it — a card the zoom
+    // does not cover (a finger's zoom is as wide as the screen now).
+    const ob = await page.evaluate(() => {
+      for (const c of document.querySelectorAll('#wall-root .card[data-artist]')) {
+        if (c.dataset.artist === 'Tove Lo') continue;
+        const r = c.getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + Math.min(20, r.height / 2);
+        if (y < 60 || y > innerHeight - 80 || x < 0 || x > innerWidth) continue;
+        if (document.elementFromPoint(x, y)?.closest('.card') === c) return { x, y, artist: c.dataset.artist };
+      }
+      return null;
+    });
     if (ob) {
-      await page.touchscreen.tap(ob.x + ob.width / 2, ob.y + 10);
+      await page.touchscreen.tap(ob.x, ob.y);
       await sleep(600);
-      note(`close-tap on another card: zoom open ${await page.locator('#zoom-layer .zoom-card').count()} (expect 0)`);
+      note(`close-tap on another card (${ob.artist}): zoom open ${await page.locator('#zoom-layer .zoom-card').count()} (expect 0)`);
       await card.tap();
       await sleep(700);
     }
@@ -636,6 +648,12 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
       return { line: s.querySelector('.js-line').textContent, names: [...s.querySelectorAll('.js-name')].map((b) => b.textContent), go: s.querySelector('.js-go').textContent, goOff: s.querySelector('.js-go').disabled, top: Math.round(r.top), bottom: Math.round(r.bottom), zoom: !!document.querySelector('#zoom-layer .zoom-card'), y: Math.round(scrollY) };
     });
     note(`+ → shelf ${JSON.stringify(shelf)} (wall before ${yBefore}); placeholder "${await page.locator('.join-shelf .js-field').getAttribute('placeholder')}"`);
+    const shelfHalves = await page.evaluate(() => {
+      const s = document.querySelector('.join-shelf'); const cs = getComputedStyle(s); const r = s.getBoundingClientRect();
+      return { halves: [...s.querySelectorAll('.js-actions button')].map((b) => { const q = b.getBoundingClientRect(); return [b.textContent, Math.round(q.left), Math.round(q.right), Math.round(q.height)]; }),
+        edges: [Math.round(r.left + parseFloat(cs.paddingLeft)), Math.round(r.right - parseFloat(cs.paddingRight))] };
+    });
+    note(`shelf halves ${JSON.stringify(shelfHalves)}`);
     await shot(page, `${tag}-22-shelf.png`);
     await page.locator('.join-shelf .js-name').nth(1).tap();
     await sleep(250);

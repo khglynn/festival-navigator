@@ -147,9 +147,12 @@ for (const size of SIZES) {
         assert.ok(Math.abs(m.row.b - (m.card.b - 12)) <= 1, `the row sits on the card's floor — ${at}`);
         assert.deepEqual(m.cells.map((c) => c.text), ['−', '2 notes', '+']);
         const [minus, chip, plus] = m.cells;
-        // Bare glyphs on the content edges — never inset toward the middle.
-        assert.ok(Math.abs(minus.glyph.l - m.content.l) <= 1.5, `− stands on the left content edge — ${at}`);
-        assert.ok(Math.abs(plus.glyph.r - m.content.r) <= 1.5, `+ stands on the right content edge — ${at}`);
+        // Bare glyphs a smidge (10px) inside the content edges, the same on every card and width.
+        assert.ok(Math.abs(minus.glyph.l - (m.content.l + 10)) <= 1.5, `− stands 10px inside the left content edge — ${at}`);
+        assert.ok(Math.abs(plus.glyph.r - (m.content.r - 10)) <= 1.5, `+ stands 10px inside the right content edge — ${at}`);
+        // Centred on the chip's line.
+        const mid = (b) => (b.t + b.b) / 2;
+        assert.ok(Math.abs(mid(minus.glyph) - mid(chip)) <= 1.5 && Math.abs(mid(plus.glyph) - mid(chip)) <= 1.5, `− and + centred on the note chip — ${at}`);
         assert.ok(Math.abs(minus.w - plus.w) <= 1.5, `− and + own equal sides — ${at}`);
         assert.ok(Math.abs(minus.r - chip.l) <= 0.5 && Math.abs(chip.r - plus.l) <= 0.5, `the targets meet the chip, no gap — ${at}`);
         assert.ok(Math.abs((chip.l + chip.r) / 2 - (m.content.l + m.content.r) / 2) <= 1.5, `the chip sits in the middle — ${at}`);
