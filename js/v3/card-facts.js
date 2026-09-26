@@ -462,6 +462,32 @@ function fitPairs(root) {
   for (const p of over) p.classList.remove('inline');
 }
 
+// The standing zoom, laid out again from its rules: its size (the screen's
+// width decides a finger's zoom), its pairs, its place. For what changes the
+// measures under an open zoom — the viewport (a rotation, a resized window)
+// and a late font (Inter landing after the zoom opened draws every
+// statement wider; wall.js refits its cards for the same reason). One pass
+// per frame, and nothing at all with no zoom open.
+function relayoutZoom(z) {
+  if (zoomed !== z || !z.el.isConnected) return;
+  sizeSlot(z.slot, rect(z.el), doorsOf(z));
+  fitPairs(z.card);
+  place(z.slot, z.el);
+}
+let fontRaf = 0;
+function refitForFonts() {
+  if (!zoomed || fontRaf) return;
+  fontRaf = requestAnimationFrame(() => { fontRaf = 0; if (zoomed) relayoutZoom(zoomed); });
+}
+let fontsWatched = false;
+function watchFonts() {
+  if (fontsWatched || typeof document === 'undefined' || !document.fonts) return;
+  fontsWatched = true;
+  const f = document.fonts;
+  if (typeof f.addEventListener === 'function') f.addEventListener('loadingdone', refitForFonts);
+  if (f.ready && typeof f.ready.then === 'function') f.ready.then(refitForFonts, () => {});
+}
+
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';
@@ -997,6 +1023,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   sizeSlot(slot, r0, doors);
   zoomLayer().appendChild(slot);
   fitPairs(card);
+  watchFonts();
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
@@ -1463,6 +1490,7 @@ function wireSlot(z) {
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
+  let refitNext = false; // the viewport changed: size and pairs are measured again, not just the place
   const follow = () => {
     followRaf = 0;
     if (zoomed !== z) return;
@@ -1480,15 +1508,20 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
+    // A rotation or a resized window changes what the zoom may be (a finger's
+    // zoom is as wide as the screen allows) and so what its pairs fit — the
+    // re-review of a73df70: a pair kept the layout it was opened with.
+    if (refitNext) { refitNext = false; relayoutZoom(z); return; }
     place(z.slot, z.el);
   };
   const onScroll = () => { if (!followRaf) followRaf = requestAnimationFrame(follow); };
+  const onResize = () => { refitNext = true; onScroll(); };
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
   z.cleanup.push(() => {
     if (followRaf) cancelAnimationFrame(followRaf);
     window.removeEventListener('scroll', onScroll, true);
-    window.removeEventListener('resize', onScroll);
+    window.removeEventListener('resize', onResize);
   });
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the

@@ -38,14 +38,22 @@ const SIZES = [
   { w: 1280, h: 900, touch: false },
 ];
 
-async function openGallery({ w, h, touch }) {
+// `holdFont`: Inter's file is held back until releaseFont(), so the page
+// paints in the fallback font first (font-display: swap), as a slow phone does.
+async function openGallery({ w, h, touch }, { holdFont = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 2 });
+  const held = [];
+  let released = false;
+  if (holdFont) {
+    await ctx.route('**/inter-var-latin.woff2', (route) => { if (released) route.continue(); else held.push(route); });
+  }
+  const releaseFont = async () => { released = true; for (const r of held.splice(0)) await r.continue(); };
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(`${server.origin}/gallery.html`, { waitUntil: 'load' });
+  await page.goto(`${server.origin}/gallery.html`, { waitUntil: holdFont ? 'domcontentloaded' : 'load' });
   await page.waitForSelector('#zoom-row-crowded .card', { state: 'visible', timeout: 15000 });
-  return { ctx, page, errors };
+  return { ctx, page, errors, releaseFont };
 }
 
 // A real hold (touch) or a real hover (mouse) on the card, centred on screen.
@@ -276,3 +284,114 @@ for (const size of [SIZES[0], SIZES[1]]) {
     } finally { await ctx.close(); }
   });
 }
+
+// The pairs are refit while a zoom stands (the re-review of a73df70): a
+// rotation or a resized window changes how wide a finger's zoom may be, and
+// Inter landing after the zoom opened draws every statement wider — the
+// fitted layout from the moment it opened must not outlive either.
+const pairState = (page) => page.evaluate(() => {
+  const z = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+  if (!z) return null;
+  const r = z.getBoundingClientRect();
+  const pairs = [...z.querySelectorAll('.f-pair')].map((p) => {
+    const items = [...p.children].filter((c) => !c.classList.contains('f-sep'));
+    const mids = items.map((c) => { const b = c.getBoundingClientRect(); return (b.top + b.bottom) / 2; });
+    const sep = p.querySelector('.f-sep');
+    return {
+      cls: p.className, oneLine: Math.max(...mids) - Math.min(...mids) < 6,
+      sepShown: !!sep && getComputedStyle(sep).display !== 'none',
+      overflow: p.scrollWidth > p.clientWidth + 0.5,
+    };
+  });
+  return { left: r.left, right: r.right, vw: innerWidth, pairs, sub: pairs.find((p) => p.cls.includes('f-sub')) };
+});
+const assertPairsHonest = (s, at) => {
+  for (const p of s.pairs) {
+    assert.equal(p.sepShown, p.oneLine, `${p.cls}: its separator shows only on one line — ${at}`);
+    assert.equal(p.overflow, false, `${p.cls}: nothing runs past its column — ${at}`);
+  }
+};
+async function holdOpen(ctx, page, artist = CARDS[0]) {
+  const at = await page.evaluate((a) => {
+    const el = document.querySelector(`#zoom-row-crowded .card[data-artist="${a}"]`);
+    el.scrollIntoView({ block: 'center', inline: 'start' });
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left + Math.min(r.width / 2, 60)), y: Math.round(r.top + r.height / 2) };
+  }, artist);
+  await sleep(250);
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
+  await sleep(650);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+  await sleep(800);
+}
+
+test('a standing zoom refits when the screen changes width: the pair restacks, the zoom stays on screen, and comes back', { skip }, async () => {
+  const { ctx, page, errors } = await openGallery(SIZES[0]);
+  try {
+    await holdOpen(ctx, page);
+    let s = await pairState(page);
+    assert.equal(s.sub.oneLine, true, 'at 390 the window and the order share a line');
+    // Narrower than the pair's line (its column falls under 291px): it must stack.
+    await page.setViewportSize({ width: 330, height: 844 });
+    await sleep(300);
+    s = await pairState(page);
+    assert.ok(s, 'the zoom still stands');
+    assert.ok(s.right <= s.vw - 7.5 && s.left >= 7.5, `the zoom fits the narrower screen (${s.left}–${s.right} in ${s.vw})`);
+    assert.equal(s.sub.oneLine, false, 'the pair restacked');
+    assertPairsHonest(s, '330');
+    // And back.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sleep(300);
+    s = await pairState(page);
+    assert.equal(s.sub.oneLine, true, 'back at 390 the pair shares a line again');
+    assertPairsHonest(s, '390 again');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
+
+test('a standing zoom refits when Inter lands after it opened', { skip }, async (t) => {
+  // Measured, not assumed: the pair's one-line width in the fallback font and
+  // in Inter. A viewport is chosen whose column sits between them, so the two
+  // fonts disagree about the pair — the case a stale fit gets wrong.
+  const lineWidth = async (holdFont) => {
+    const { ctx, page } = await openGallery(SIZES[0], { holdFont });
+    try {
+      await holdOpen(ctx, page);
+      return await page.evaluate(() => {
+        const p = document.querySelector('#zoom-layer .zoom-slot.shown .f-pair.f-sub');
+        const was = p.classList.contains('inline');
+        p.classList.add('inline');
+        p.style.maxWidth = 'none';
+        const w = p.scrollWidth;
+        p.style.maxWidth = '';
+        if (!was) p.classList.remove('inline');
+        return w;
+      });
+    } finally { await ctx.close(); }
+  };
+  const wFallback = await lineWidth(true);
+  const wInter = await lineWidth(false);
+  t.diagnostic(`the pair's one line: ${wFallback}px in the fallback font, ${wInter}px in Inter`);
+  if (Math.abs(wFallback - wInter) < 8 || Math.max(wFallback, wInter) > 300) {
+    t.skip(`this engine draws the fallback within 8px of Inter (${wFallback} vs ${wInter}), or wider than the column: nothing to disagree about`);
+    return;
+  }
+  const column = Math.round((wFallback + wInter) / 2); // between the two
+  const vw = column + 28 + 16;                         // a finger's zoom: the screen less 16, its padding 28
+  const { ctx, page, errors, releaseFont } = await openGallery({ ...SIZES[0], w: vw }, { holdFont: true });
+  try {
+    await holdOpen(ctx, page);
+    let s = await pairState(page);
+    assert.equal(s.sub.oneLine, wFallback <= column, `opened in the fallback font: laid out for it (${wFallback}px in a ${column}px column)`);
+    assertPairsHonest(s, 'fallback');
+    await releaseFont();
+    await page.waitForFunction(() => document.fonts.check('600 11.5px Inter'), null, { timeout: 5000 });
+    await sleep(300);
+    s = await pairState(page);
+    assert.equal(s.sub.oneLine, wInter <= column, `Inter landed: refit for it (${wInter}px in a ${column}px column)`);
+    assertPairsHonest(s, 'Inter');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
