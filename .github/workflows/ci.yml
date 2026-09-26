@@ -19,6 +19,14 @@ jobs:
       # already caught a test that keyed a Portola instant on the device
       # date (2026-08-27). A far zone makes the suite prove it every time.
       - run: TZ=Asia/Tokyo npm test
+      # And a festival night, whatever hour this runs: Portola's Saturday at
+      # 9:30 PM PT, headliners on the grid and afters live. The NOW path only
+      # renders while something is live, and on 2026-09-24 it failed 48 tests
+      # at 11:42 PM that daytime CI had never reached (tests/helpers/night-clock.mjs).
+      - run: npm test
+        env:
+          NIGHT_CLOCK: '2026-09-27T04:30:00Z'
+          NODE_OPTIONS: --import ./tests/helpers/night-clock.mjs
       - run: node scripts/validate-festivals.mjs
       # Production-only, High-threshold: quiet enough to be believed,
       # loud only when a user-reachable dependency is actually at risk.

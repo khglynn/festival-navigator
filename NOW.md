@@ -84,8 +84,13 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. Kevin's next round of notes from using v89 at Portola — he is bringing
-   them to a fresh session (said 2026-09-25).
+1. Portola live ops (from 2026-09-25 evening): one session ships friends'
+   feedback while Kevin is on his phone, by
+   `claude-plans/2026-09-25-portola-live/RUNBOOK.md` (lanes, ship, undo, red
+   lines); items, releases and the Codex model comparison are in the
+   LEDGER beside it. Round 1: v90 (stack alignment, taller notes button, a
+   get-latest control) in build; OURS and first-open designs out for Kevin's
+   review; Folsom-weekend events being researched.
 2. ACL prep before Oct 2: headliner end times (its closers print only a
    start, so the grid draws them 60 min and NOW stops counting them live
    early — add ends, or run a stage's last endless set to the day's close),
