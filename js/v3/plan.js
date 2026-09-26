@@ -97,7 +97,7 @@ const atMin = (t) => (t ? (parseEventTime(t) || {}).startMin ?? null : null);
 function weekPlaces(fest, whole, shown) {
   const nights = new Map();
   const nightFor = (id, iso) => {
-    if (!nights.has(id)) nights.set(id, { id, iso: iso || null, wd: iso ? weekdayOfIso(iso) : null, days: [], extraKeys: [], places: [], sources: [] });
+    if (!nights.has(id)) nights.set(id, { id, iso: iso || null, wd: iso ? weekdayOfIso(iso) : null, places: [], sources: [] });
     return nights.get(id);
   };
   const shownDays = new Set(shown.model.days.map((d) => d.key));
@@ -108,7 +108,6 @@ function weekPlaces(fest, whole, shown) {
 
   for (const d of whole.model.days) {
     const night = nightFor(d.iso || d.key, d.iso);
-    night.days.push(d);
     if (!night.wd && d.wd) night.wd = d.wd;
     if (!d.grid) continue;
     // The grid cell's window: computeDayArtists on the weekend's sets, the
@@ -165,9 +164,7 @@ function weekPlaces(fest, whole, shown) {
   for (const e of whole.model.extras) {
     if (!e.byDate) continue; // a section that never said when has no night to be on
     for (const [iso, list] of e.byDate) {
-      const night = nightFor(iso, isoRe.test(iso) ? iso : null);
-      night.extraKeys.push(e.key);
-      night.sources.push({ key: e.key, label: e.label, list, layout: sectionLayoutOf(fest, e.key) });
+      nightFor(iso, isoRe.test(iso) ? iso : null).sources.push({ key: e.key, label: e.label, list, layout: sectionLayoutOf(fest, e.key) });
     }
   }
   for (const night of nights.values()) roomsAndParties(night, shownKeys);
