@@ -658,10 +658,17 @@ const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ?
 // because a phone can render a festival file its cache kept (Sol's review,
 // 2026-09-26: a price without its date, or $2001, rendered). Anything else
 // falls back to the bare word rather than a number nobody vouched for.
-const CHECKED_RE = /^\d{4}-\d{2}-\d{2}$/;
+// A real calendar date, the validator's rule: 2026-13-40 is shaped like one
+// and is not.
+const realDate = (d) => {
+  const m = typeof d === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  if (!m) return false;
+  const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
+};
 const tixWord = ({ price, checked }) => {
   if (!Number.isInteger(price) || price < 0 || price > 2000) return 'Tix';
-  if (typeof checked !== 'string' || !CHECKED_RE.test(checked)) return 'Tix';
+  if (!realDate(checked)) return 'Tix';
   return price === 0 ? 'Tix free' : `Tix $${price}`;
 };
 const linkOf = (l, kind, word) => {
