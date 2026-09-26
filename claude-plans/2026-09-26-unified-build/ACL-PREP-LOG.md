@@ -496,3 +496,64 @@ Those rooms read "Doors 9 PM" in the zoom — no invented window.
 | 10-10 | Antone's | Kesmar | 9 PM | ~10 PM → **10 PM** | ~12 AM |
 | 10-10 | Antone's | Don West | 9 PM | ~10:45 PM → **~10:30 PM** | ~12 AM |
 | 10-10 | Devil May Care | Fcukers | 10 PM | 11:45 PM | 2 AM |
+
+## Step C — the five red tests
+
+All five asserted the OLD data (doors only, no clock on the two Jess
+Williamson nights, no close), and none of them protected something the data
+change broke. Each now asserts the shipped data, with a line saying why:
+
+1. `occOf carries the date and the venue…` (tests/dated-occurrence.test.mjs):
+   expected `time: null` on both of Jess Williamson's nights. Old data: they
+   now carry their printed starts (Stubb's 8 PM show, the Continental Club's
+   10 PM). What the test protects — two late nights are two occurrences,
+   by date and venue — still holds.
+2. `factsFor tells each late night its own truth…`: expected "Doors 7 PM" /
+   "Doors 9:30 PM" / "Doors 9 PM" ×2. Old data: rooms with a close now read
+   as a window — "Runs 7 PM – ~10 PM" (Stubb's, evidenced close, tilde),
+   "Runs 9 PM – 11:30 PM" (Continental, printed; doors corrected to 9 PM),
+   "Runs 9 PM – ~12 AM" (Emo's, hall fallback, tilde), "Runs 9 PM – 2 AM"
+   (Concourse, printed). The right venue / map door / date per night: intact.
+3. `the artist sheet's header for a dated occurrence…`: the same Continental
+   Club string ("Doors 9:30 PM" → "Runs 9 PM – 11:30 PM"). Old data.
+4. `a dated section exports with its dates: ACL Late nights, as shipped`
+   (tests/day-image-sections.test.mjs): rows "Thu · Oct 1 · Stubb's" now end
+   "· 8 PM" / "· 10 PM" because the sets have times. Old data; every row still
+   leads with its date and names its own room.
+5. `ACL as shipped: searching finds a Weekend 2 headliner…`
+   (tests/two-weekend-schedule.test.mjs): a late card's `data-time` is now
+   "8 PM\nStubb's" rather than the bare venue. Old data; the search, the
+   date heads and the one-tab axis all still pass.
+
+Play order, search and pick keys: round one never reordered `artists[]`
+(identical to main) — it added `order` objects, which my room check shows
+agree with the clock in all 40 rooms; search finds the late nights under
+their dates (test 5); 148 pick keys byte-identical (freeze test green).
+
+**One FYI the probe turned up (code, not in scope):** `findEventEntry` matches
+an occurrence on its `time`. A notes sheet restored from a history entry
+written BEFORE this data drop carries the old time and no longer finds its
+show, so its header prints the stale clock without a tilde — for Palace,
+"Thu · Oct 1 · 12:30 AM", the very late guess this round removed. The wall
+re-renders from data and is fine. Suggest: for dated/venue entries, match on
+name + date + venue and let `time` go (a guessed time is designed to move).
+
+## Checks before reporting
+
+- `node scripts/validate-festivals.mjs`: 0 errors (2 unrelated warnings).
+- `npm test`: 1,081 pass / 0 fail at the default clock, at `TZ=Asia/Tokyo`,
+  and at `NIGHT_CLOCK=2026-09-27T04:30:00Z` (+ night-clock import).
+- `node scripts/guess-run-times.mjs acl-2026 --write` twice: 0 changes on the
+  second — every Late nights time is reproducible by the tool.
+- `node scripts/guess-run-times.mjs portola-2026`: identical plan to before
+  this round (Regency pinned; Boys Noize stays timeless).
+
+## Commits (round two)
+
+1. `6be721e` — scripts: rooms by date, concerts laid forward, posted sets as
+   fixed points; Regency pinned; 10 unit tests; docs line kept true.
+2. `5de3639` — scripts: a fallback close draws a concert's window but
+   schedules nobody (+1 test).
+3. `befa69a` — data: registry corrections with sources; posted Show times;
+   Stubb's/Scoot curfews and after-show closes; tool-written guesses.
+4. (this commit) — tests: the five as-shipped expectations; this log.

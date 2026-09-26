@@ -203,8 +203,10 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
     ['Late nights', 'THU · OCT 8', 'LATE NIGHTS'],
   ], 'the Zilker set under its day, each late night under its own date, both dates on the one tab');
   const late = ACL.artists.filter((a) => a.name === 'Jess Williamson' && a.day === 'Late nights');
+  // A late night's card says when, then where (both of Jess's starts are
+  // posted: Stubb's printed 8 PM show, the Continental Club's printed 10 PM).
   assert.deepEqual([...root2.querySelectorAll('.card')].map((c) => c.dataset.time),
-    ['Miller Lite · 2:00 PM', late[0].venue, late[1].venue], 'and every answer says where it is');
+    ['Miller Lite · 2:00 PM', `8 PM\n${late[0].venue}`, `10 PM\n${late[1].venue}`], 'and every answer says when and where it is');
   root2.remove();
 
   state.setActiveFestivalId('two-wk-fest');
