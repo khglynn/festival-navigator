@@ -91,6 +91,20 @@ const measure = (page) => page.evaluate(() => {
     const g = b.querySelector('.f-step-dot');
     return { text: b.textContent, disabled: !!b.disabled, hit: hit(b), ...box(b), glyph: g ? box(g) : null };
   }) : [];
+  // Every statement on one line, every pair either one line (its separator
+  // showing) or stacked (no separator), and the middle in its column.
+  const statements = [...z.querySelectorAll('.f-when, a.f-order, .f-where, a.f-link, .f-links')].map((e) => {
+    const r = e.getBoundingClientRect();
+    return { text: e.textContent.trim(), h: r.height, lh: parseFloat(getComputedStyle(e).fontSize) * 1.6 };
+  });
+  const pairs = [...z.querySelectorAll('.f-pair')].map((p) => {
+    const items = [...p.children].filter((c) => !c.classList.contains('f-sep'));
+    const mids = items.map((c) => { const r = c.getBoundingClientRect(); return (r.top + r.bottom) / 2; });
+    const sep = p.querySelector('.f-sep');
+    return { cls: p.className, oneLine: Math.max(...mids) - Math.min(...mids) < 6, sepShown: !!sep && getComputedStyle(sep).display !== 'none', w: p.getBoundingClientRect().width };
+  });
+  const middle = [z.querySelector('.f-name'), ...z.querySelector('.f-grown').children].map((e) => { const r = e.getBoundingClientRect(); return { cls: e.className.split(' ')[0], w: r.width, mid: (r.left + r.right) / 2 }; });
+  const colW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom-col'));
   const cs = getComputedStyle(z);
   const content = { l: z.getBoundingClientRect().left + parseFloat(cs.paddingLeft), r: z.getBoundingClientRect().right - parseFloat(cs.paddingRight) };
   // The reach: what a finger gets at the card's own edges and just above the pill.
@@ -107,7 +121,7 @@ const measure = (page) => page.evaluate(() => {
   const name = z.querySelector('.f-name');
   const lh = parseFloat(getComputedStyle(name).lineHeight);
   return {
-    card: box(z), vw: innerWidth, vh: innerHeight, parts, doorsOut, cells, reach, content,
+    card: box(z), vw: innerWidth, vh: innerHeight, parts, doorsOut, cells, reach, content, statements, pairs, middle, colW,
     row: row ? box(row) : null, nameLines: Math.round(name.getBoundingClientRect().height / lh),
     links: [...z.querySelectorAll('a.f-link')].map((a) => a.textContent.trim()),
     order: !!z.querySelector('.f-order'), who: !!z.querySelector('.f-who'), spot: !!z.querySelector('.f-chip.spot'),
@@ -165,6 +179,18 @@ for (const size of SIZES) {
         assert.equal(m.reach.bottomEdge[2], '+', `the card's bottom edge under + is + — ${at}`);
         assert.ok(m.reach.above[0] === '−' && m.reach.above[2] === '+', `just above the row is still − and + — ${at}`);
         assert.deepEqual(m.reach.chipTall, ['2 notes', '2 notes'], `the chip's target is the row's full 44px — ${at}`);
+        // Never a break inside a statement (Kevin, 2026-09-26); a pair is one
+        // line with its separator, or stacked without it — never a dot left
+        // at a line's end.
+        for (const st of m.statements) assert.ok(st.h <= st.lh, `"${st.text}" is on one line — ${at}`);
+        for (const p of m.pairs) assert.equal(p.sepShown, p.oneLine, `${p.cls}: separator only on one line — ${at}`);
+        if (size.w >= 390) assert.equal(m.pairs.find((p) => p.cls.includes('f-sub')).oneLine, true, `the window and the order share a line on a ${size.w} zoom — ${at}`);
+        // The middle stands in its column, centred; only the − and + reach the edges.
+        const centre = (m.content.l + m.content.r) / 2;
+        for (const e of m.middle) {
+          assert.ok(e.w <= m.colW + 0.5, `${e.cls} within the ${m.colW}px column — ${at}`);
+          assert.ok(Math.abs(e.mid - centre) <= 1.5, `${e.cls} centred — ${at}`);
+        }
         assert.ok(m.doorsOut.length >= 4 && m.doorsOut.every((d) => d.hit), `every door out is reachable — ${at}`);
         await page.keyboard.press('Escape');
         await sleep(400);

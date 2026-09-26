@@ -196,9 +196,9 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await page.waitForSelector('.join-shelf', { timeout: 4000 });
       await sleep(600); // the zoom has gone back into its card
       await page.keyboard.press('Escape');
-      await sleep(500);
-      assert.equal(await page.locator('.join-shelf').count(), 0, 'Escape took the shelf down');
-      assert.equal(await zoomUp(page), 0, 'and no zoom grew back over the card');
+      await page.waitForFunction(() => !document.querySelector('.join-shelf'), null, { timeout: 4000 });
+      await sleep(400); // the regrown zoom used to appear within 50 ms
+      assert.equal(await zoomUp(page), 0, 'no zoom grew back over the card');
 
       // Now join from the shelf, under a new name.
       const again = await cardAt(page, 'Tove Lo');
@@ -214,8 +214,10 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await page.keyboard.type('Ana');
       const go = await page.locator('.join-shelf .js-go').boundingBox();
       await page.touchscreen.tap(go.x + go.width / 2, go.y + go.height / 2);
-      await page.waitForSelector('#welcome-card', { timeout: 6000 });
-      await sleep(900);
+      await page.waitForSelector('#welcome-card', { timeout: 10000 });
+      await page.waitForFunction(() => document.getElementById('dock-you')?.textContent === 'A', null, { timeout: 5000 });
+      await page.waitForFunction(async () => ((await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections['Tove Lo'] || {}).Ana === 1, null, { timeout: 5000 });
+      await sleep(600);
       assert.match(await page.locator('#welcome-card .bring-sub').textContent(), /Tap any artist to add yours/, 'the just-joined welcome, in a member’s words');
       assert.deepEqual(await page.locator('#welcome-card .bring-actions button').allTextContents(), ['Got it']);
       assert.equal(await page.locator('#dock-you').textContent(), 'A', 'Ana is in');

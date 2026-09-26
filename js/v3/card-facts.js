@@ -439,6 +439,29 @@ const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order 
 // "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
 // Each is a sourceDoor, so a click opens the page and never reaches the
 // card's pick (a click on the zoom picks, by design).
+// A pair's separator: shown only when the pair sits on one line.
+function pairSep() {
+  const dot = document.createElement('span');
+  dot.className = 'f-sep';
+  dot.textContent = '·';
+  dot.setAttribute('aria-hidden', 'true');
+  return dot;
+}
+
+// Each pair (the window · the order; the place · the doors out) goes on ONE
+// line where it fits the card's column, and stacks where it does not — never
+// wrapping inside an item, never leaving a separator at a line's end. Tried
+// on one line, then read: one layout to write, one to read, one to settle.
+// Runs wherever the zoom lays itself out (a bloom, a refresh). A sheet's card
+// never runs it and keeps the stacked form.
+function fitPairs(root) {
+  const pairs = [...root.querySelectorAll('.f-pair')];
+  if (!pairs.length) return;
+  for (const p of pairs) p.classList.add('inline');
+  const over = pairs.filter((p) => p.scrollWidth > p.clientWidth + 0.5);
+  for (const p of over) p.classList.remove('inline');
+}
+
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';
@@ -477,21 +500,33 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true, doorsBelow = 
         sub.appendChild(note);
       }
     } else if (facts.order) {
-      // Two lines in ONE .f-sub (the window, then the order): the bloom's
-      // cascade and the refresh bookkeeping below both key on a single
-      // WHEN element, so the pair travels as one piece.
-      sub.classList.add('f-stack');
+      // The window and the order in ONE .f-sub (the bloom's cascade and the
+      // refresh bookkeeping both key on a single WHEN element, so the pair
+      // travels as one piece) — a PAIR: one line when both fit, stacked
+      // when they do not, never broken inside either (fitPairs).
+      sub.classList.add('f-stack', 'f-pair');
       const line = document.createElement('span');
       line.className = 'f-when';
       line.textContent = facts.when;
-      sub.append(line, orderDoor(facts.order));
+      sub.append(line, pairSep(), orderDoor(facts.order));
     } else {
       sub.textContent = facts.when;
     }
     grown.appendChild(sub);
   }
-  if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
-  if (facts.links) grown.appendChild(linksRow(facts.links));
+  // WHERE and the show's doors out: a pair too (the place, then Tix · Info as
+  // one unit that never splits), one line where they fit (Kevin, 2026-09-26:
+  // "never line-break inside a statement… don't stack four items just
+  // because we allowed multiple rows").
+  const where = facts.where ? placeDoor(facts.where, facts.mapUrl, 'f-where') : null;
+  const links = facts.links ? linksRow(facts.links) : null;
+  if (where && links) {
+    const pair = document.createElement('div');
+    pair.className = 'f-pair f-place';
+    pair.append(where, pairSep(), links);
+    grown.appendChild(pair);
+  } else if (where) grown.appendChild(where);
+  else if (links) grown.appendChild(links);
   // The who-row only when there are people: a pill arriving after a tap
   // slides in and its neighbours make room (the designed event). A reserved
   // empty row was tried on 2026-09-01 to keep the venue door from sliding
@@ -961,6 +996,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   const r0 = rect(el);
   sizeSlot(slot, r0, doors);
   zoomLayer().appendChild(slot);
+  fitPairs(card);
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
@@ -1096,6 +1132,7 @@ function refreshZoomInner(fresh, ctx) {
   const doors = doorsOf(z);
   z.card.classList.toggle('doors', !!doors);
   sizeSlot(z.slot, rect(fresh), doors);
+  fitPairs(z.card);
   place(z.slot, fresh, { floorAt: doors && hadDoors && slotBefore ? slotBefore.bottom : null });
   if (!animate) return;
 

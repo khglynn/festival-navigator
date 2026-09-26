@@ -584,3 +584,29 @@ brings the card), `first-open-welcome` (claiming an existing name: neither
 marker); each fails with its fix removed. Real input:
 `tests/browser/guest-tap-route.test.mjs` now presses a real Escape over the
 shelf and joins from it, in WebKit (iPhone) and Chromium.
+
+**Kevin on the phone renders: the zoom's text (now that a finger's zoom is
+full width).**
+1. **Never a break inside a statement.** Every statement — the window, the
+   order, the place with its pin, "Tix @ AXS", "Info @ DoTheBay" — is
+   nowrap, and Tix · Info are one unit. The statements come in PAIRS (the
+   window · the order; the place · the doors out): a pair is one line
+   wherever it fits the column and stacks where it does not, so a line
+   never breaks between words and never leaves a separator at its end
+   (card-facts.js `fitPairs`: put on one line, read, fall back — run where
+   the zoom lays itself out). At 390 the crowded card went from four meta
+   rows to three ("Fri · Runs 8 PM – ~12 AM · Guessing they're 1st of 3" on
+   one line; the place over "Tix @ AXS · Info @ DoTheBay"); at 320 the pair
+   stacks as before.
+2. **A centred middle column.** The name, the facts, the doors out and the
+   who-row stand in a column at most `--zoom-col` wide (v3-tokens.css,
+   300px); only the − and + reach the zoom's edges. Where the number comes
+   from: the width of a set's two statements on one line (136 + 137px plus
+   the separator, 291px in Inter at 11.5px), so they share a line on a 390
+   phone — about 16px in from each side of the zoom's content. The cost:
+   the crowded who-row wraps its fourth chip at 390 (it spanned edge to
+   edge before).
+Pinned in `tests/browser/zoom-door-row.test.mjs` (every statement one line,
+a pair's separator only when it is one line, the window and order share a
+line at 390, the middle within the column and centred); each fails with its
+rule removed.

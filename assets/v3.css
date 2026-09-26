@@ -1303,15 +1303,26 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .stack-scroll > .venue-grid[data-clock][data-venues="1"] { grid-template-columns: var(--col-w); }
 }
 
-/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
- * piece — the venue's window, then the order as a door to the poster. */
+/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
+ * one piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
+/* A PAIR (the window · the order; the place · the doors out): stacked, and on
+ * ONE line wherever it fits the column (card-facts.js fitPairs) — never broken
+ * inside a statement, never a separator left at a line's end (Kevin,
+ * 2026-09-26: "never line-break inside a statement"). */
+.f-pair { display: flex; flex-direction: column; align-items: center; gap: 3px; max-width: 100%; }
+.f-pair > * { white-space: nowrap; }
+.f-pair > .f-sep { display: none; color: rgba(255, 255, 255, .45); font-size: 11.5px; font-weight: 600; }
+.f-pair.inline { flex-direction: row; gap: 0; }
+.f-pair.inline > .f-sep { display: inline; margin: 0 7px; }
+.f-sub > .f-when, a.f-order, .f-where { white-space: nowrap; }
 a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
-/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): one
- * row under WHERE, in WHERE's voice, each door underlined like the order and
- * the map. A long pair widens the zoom up to its max width, then wraps. */
-.f-links { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 7px;
+/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): in
+ * WHERE's voice, each door underlined like the order and the map, and the two
+ * of them ONE unit that never breaks (171px; the narrowest zoom's column is
+ * 188) — beside WHERE on one line where the column allows (.f-pair). */
+.f-links { display: inline-flex; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: center; gap: 2px 7px;
            color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 600; }
 .f-links .f-dot { color: rgba(255, 255, 255, .45); }
 a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
@@ -1396,9 +1407,13 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .zoom-card .f-name.over-doors { margin-top: auto; }
 /* A step must never move the doors under the hand (card-facts.js sizeSlot):
  * the who-row is the one row a pick changes, so beside the doors it wraps
- * inside the width the rest of the card sets instead of setting it. */
+ * inside the width the rest of the card sets instead of setting it. The
+ * middle — name, facts, doors out, who-row — stands in a centred column
+ * (--zoom-col); only the − and + reach the zoom's edges. */
 .zoom-card.doors .f-grown { align-self: stretch; }
-.zoom-card.doors .f-who { contain: inline-size; align-self: stretch; }
+.zoom-card.doors .f-name,
+.zoom-card.doors .f-grown > * { max-width: min(100%, var(--zoom-col)); }
+.zoom-card.doors .f-who { contain: inline-size; align-self: center; width: 100%; }
 .zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
                                  align-items: center; gap: 0; align-self: stretch; margin-top: auto; }
 .zoom-card .f-chips.f-step-row > .f-step {
