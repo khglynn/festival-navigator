@@ -56,11 +56,17 @@ const stopOf = (plan, id, name) => stops(plan, id).find((s) => s.acts.some((a) =
 
 // ---- 1. golden: the approved prototype's numbers ----------------------------------
 // `node claude-plans/2026-09-25-portola-live/design/ours-r2/print-route.mjs`
-// on this head (portola-2026.json md5 e5fb4ad3…), the made-up nine. The port
-// moves NONE of them — the log says which rule could have moved each and why
-// it did not on this crew.
-const THU = ['most 10:30 PM–12 AM 5 Regency Ballroom'];
-const FRI = ['some 8 PM–9 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
+// on the prototype's head (portola-2026.json md5 e5fb4ad3…), the made-up
+// nine. The port moves NONE of them — the log says which rule could have moved
+// each and why it did not on this crew. Three lines moved since, with the DATA,
+// not the model: main's data release #56 (2026-09-26, md5 af994fcc…) laid the
+// Regency rooms out as concerts, so each Regency act starts earlier (AXS: doors
+// 9, event 10 PM on Saturday). Thursday's Soulwax 10:30 → 9:30 PM starts that
+// stop an hour sooner; Friday's Jyoty 9:15 → 8:45 PM ends the Regency stop
+// there; Saturday's Parcels 10:45 → 10 PM pulls Cy off Soulwax at 10:15, so
+// that stop is some-4, not most-5.
+const THU = ['most 9:30 PM–12 AM 5 Regency Ballroom'];
+const FRI = ['some 8 PM–8:45 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
 const SAT = [
   'some 2:40 PM–3:30 PM 4 Pier Stage (Gelli Haha)',
   'some 3:30 PM–4:30 PM 3 Crane Stage (Tricky)',
@@ -71,7 +77,7 @@ const SAT = [
   'some 8:10 PM–8:30 PM 3 Warehouse (Kettama)',
   'some 8:30 PM–9 PM 3 Crane Stage (Fatboy Slim)',
   'most 9 PM–10:15 PM 8 Pier Stage (Dog Blood)',
-  'most 10:15 PM–10:30 PM 5 Crane Stage (Soulwax)',
+  'some 10:15 PM–10:30 PM 4 Crane Stage (Soulwax)', // Cy is at Parcels (Regency, 10 PM since #56)
   'most 10:30 PM–1:30 AM 6 Public Works',
   'some 1:30 AM–3 AM 4 The Great Northern',
 ];
@@ -161,7 +167,7 @@ test('golden: the Saturday headline stops, the stop shape, and each act\'s occur
   const soulwax = stopOf(plan, sat, 'Soulwax');
   assert.equal(soulwax.leansOnDoubles, true);
   assert.deepEqual(soulwax.alsoAt.map((o) => [o.act, o.nightId, o.place]), [['Soulwax', '2026-09-24', 'Regency Ballroom']]);
-  assert.deepEqual(P.alsoOf(soulwax, plan), [{ nightId: '2026-09-24', from: M(22, 30), sameNight: false }]);
+  assert.deepEqual(P.alsoOf(soulwax, plan), [{ nightId: '2026-09-24', from: M(21, 30), sameNight: false }], 'Thursday\'s Regency Soulwax, 9:30 PM since #56');
   const ga = stopOf(plan, sat, 'Groove Armada');
   assert.deepEqual(P.alsoOf(ga, plan), [{ nightId: sat, from: M(25, 30), sameNight: true }], 'the same night says its time');
 });
@@ -276,18 +282,22 @@ test('windows: every Portola Friday and Saturday act has the same now window as 
   assert.ok(n > 60, `compared ${n} cards`);
 });
 
-test('windows: ACL Friday W1 (an unprinted closer glows +75, the wall\'s rule) and the dated Late night', () => {
+test('windows: every ACL night — both weekends (an unprinted closer glows +75, the wall\'s rule) and every Late night', () => {
   const root = renderBoard('acl-2026');
   const plan = P.planOf(ACL, { picks: { Skrillex: { A: 1, B: 1, C: 1 } }, members: ['A', 'B', 'C'] });
-  const n = checkWindows(root, plan, ['2026-10-02', '2026-10-09'], ['Friday|W1', 'Friday|W2']);
-  assert.ok(n > 50, `compared ${n} cards`);
+  const blocks = ['Friday', 'Saturday', 'Sunday'].flatMap((d) => [`${d}|W1`, `${d}|W2`]);
+  const n = checkWindows(root, plan, plan.nights.map((n) => n.id), [...blocks, 'Late nights']);
   const skrillex = plan.places.find((p) => p.acts[0].name === 'Skrillex');
   assert.deepEqual([q(skrillex.start), q(skrillex.end)], ['8:15 PM', '9:30 PM'], 'start + 75, as the grid cell glows (the prototype said +60)');
-  // The one Late night with a window (Fcukers, Oct 10, doors 10 PM, close 2 AM).
-  const late = plan.places.filter((p) => p.acts.some((a) => a.section === 'Late nights'));
-  assert.equal(late.length, 1);
+  // Since main's data release #56 (2026-09-26) every Late nights show has a
+  // time (posted, or tool-written and marked approx), so all 66 are windows
+  // the plan holds — and checkWindows found each one's card, window for window.
+  const late = plan.places.filter((p) => p.roomKeys.includes('Late nights')).flatMap((p) => p.acts);
+  assert.equal(late.length, 66);
+  assert.equal(n, 49 * 2 + 42 * 2 + 66, 'every grid set on both weekends and every Late night, compared');
+  // Fcukers on Oct 10: Devil May Care posts 11:45 PM (doors 10), close 2 AM.
   const card = root.querySelector('.day-block[data-day="Late nights"] .room[data-iso="2026-10-10"] .card[data-artist="Fcukers"]');
-  assert.deepEqual([Number(card.dataset.nowFrom), Number(card.dataset.nowTo)], [late[0].acts[0].from, late[0].acts[0].to]);
+  assert.deepEqual([Number(card.dataset.nowFrom), Number(card.dataset.nowTo)], [M(23, 45), M(26)]);
 });
 
 test('windows: a set whose stage is not a column takes the stack\'s window, as the wall draws it', () => {
@@ -321,18 +331,18 @@ const ACL_MEMBERS = ['Ada', 'Bo', 'Cal', 'Dee', 'Eve', 'Flo', 'Gil', 'Hux'];
 const ACL_PICKS = {
   'Faouzia': { Ada: 2, Bo: 2, Cal: 1 },              // W1 Miller Lite, W2 American Express: two plays
   'Paris Paloma': { Ada: 3, Dee: 2, Eve: 2 },        // W1 3:15, W2 5:15, both Miller Lite: ONE play
-  'Brandon Flowers': { Bo: 3, Cal: 3, Flo: 2 },      // W1 grid + an Oct 1 Late night with doors only
+  'Brandon Flowers': { Bo: 3, Cal: 3, Flo: 2 },      // W1 grid + an Oct 1 Late night at Stubb's: two plays
   'Turnstile': { Ada: 3, Bo: 2, Gil: 3, Hux: 2 },    // untagged: both weekends
   'Skrillex': { Cal: 4, Dee: 3, Eve: 3, Flo: 2, Gil: 2 },
   'Charli xcx': { Ada: 4, Bo: 3, Hux: 3 },
   'Kings of Leon': { Ada: 2, Dee: 3, Eve: 3, Hux: 2 },
-  'Arcy Drive': { Flo: 3, Gil: 3, Hux: 2 },          // W1 Miller Lite, W2 Beatbox: two plays
-  'Ryan Beatty': { Ada: 2, Bo: 3, Cal: 2 },          // Beatbox both weekends: one play
+  'Arcy Drive': { Flo: 3, Gil: 3, Hux: 2 },          // W1 Miller Lite, W2 Beatbox, Oct 8 Brushy Street: three plays
+  'Ryan Beatty': { Ada: 2, Bo: 3, Cal: 2 },          // Beatbox both weekends (one play) + an Oct 4 Late night: two
   'Lorde': { Ada: 4, Bo: 3, Cal: 3, Dee: 4, Eve: 2, Flo: 3 },
-  'Fcukers': { Bo: 3, Dee: 2, Gil: 3, Hux: 3 },      // Sun Tito's both weekends + Oct 10 Devil May Care
+  'Fcukers': { Bo: 3, Dee: 2, Gil: 3, Hux: 3 },      // Sun Tito's both weekends + Sep 29 Mohawk + Oct 10 Devil May Care
   'The xx': { Ada: 3, Cal: 3, Eve: 4, Flo: 2 },
   'Twenty One Pilots': { Bo: 2, Dee: 3, Gil: 3 },
-  'Jess Williamson': { Cal: 2, Eve: 2 },
+  'Jess Williamson': { Cal: 2, Eve: 2 },             // W1 Miller Lite + Late nights Oct 1 and Oct 8
 };
 const ACL_NIGHTS = ['2026-09-29', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04', '2026-10-05', '2026-10-06', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
 
@@ -346,7 +356,14 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
   assert.deepEqual(byId['2026-10-02'].days.map((d) => d.key), ['Friday|W1']);
   assert.deepEqual(byId['2026-10-02'].extraKeys, ['Late nights'], 'Friday W1 and that date\'s Late nights are one night');
   assert.deepEqual(byId['2026-10-11'].extraKeys, []);
-  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [0, 0, 6, 3, 2, 0, 0, 0, 5, 4, 2]);
+  // Stops per night. Since #56 the Late nights have times, so a picked show is
+  // a stop on its date: Sep 29 Mohawk (Fcukers), Oct 1 Stubb's (Brandon
+  // Flowers), Oct 8 Brushy Street (Arcy Drive), and three on Sun Oct 4 — Ryan
+  // Beatty's Scoot Inn show (a tool guess: 6 PM, from doors at 5) runs while
+  // W1 still plays, so the route leaves it for Fcukers and The xx and comes
+  // back (flagged 2026-09-26: a route across town and back is a model
+  // question, not a data one — see the build log).
+  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 6, 3, 5, 0, 0, 1, 5, 4, 2]);
 });
 
 test('ACL: no two grid places of one weekend overlap on one stage (the prototype had 41)', () => {
@@ -366,19 +383,25 @@ test('ACL: no two grid places of one weekend overlap on one stage (the prototype
   assert.ok(sets.every((p) => /^weekend:W[12]$/.test(p.roomKeys[0])), 'grid places answer to the weekend rows');
 });
 
-test('ACL: a Late nights show with a clock is a place on its date; doors-only shows cannot be (no window on the wall either)', () => {
+test('ACL: a Late nights show with a clock is a place on its date — one room per date and venue, a two-act bill included', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
+  // Before main's data release #56 (2026-09-26) one show here had a clock;
+  // since, all 66 do (posted, or tool-written and marked approx). The
+  // doors-only rule still holds, on a festival made for it (section 4).
+  const shows = ACL.artists.filter((e) => e.day === 'Late nights');
+  assert.equal(shows.length, 66);
+  assert.ok(shows.every((e) => e.time));
   const late = plan.places.filter((p) => p.roomKeys.includes('Late nights'));
-  assert.deepEqual(late.map((p) => p.id), ['2026-10-10|room|Devil May Care']);
+  assert.equal(late.length, 40);
+  assert.deepEqual(late.map((p) => p.id).sort(), [...new Set(shows.map((e) => `${e.date}|room|${e.venue}`))].sort());
+  assert.ok(late.every((p) => p.kind === 'room'));
   const fcukers = stopOf(plan, '2026-10-10', 'Fcukers');
   assert.equal(fcukers.placeKind, 'room');
-  assert.deepEqual([q(fcukers.from), q(fcukers.to), fcukers.count], ['10 PM', '2 AM', 4]);
+  assert.deepEqual([q(fcukers.from), q(fcukers.to), fcukers.count], ['11:45 PM', '2 AM', 4], 'Devil May Care posts 11:45 PM; doors are 10');
   assert.equal(P.tillOf(fcukers), M(26), 'a room\'s NOW row runs to its stop\'s end');
-  // 66 Late nights shows; one prints a window (doors AND close). A date of
-  // doors-only shows is still a night — with no stops.
-  assert.equal(ACL.artists.filter((e) => e.day === 'Late nights').length, 66);
-  assert.equal(plan.night('2026-09-29').stops, 0);
-  assert.deepEqual(plan.night('2026-09-29').items, []);
+  // A Late-nights-only date with a picked show is a night with a stop: Mohawk
+  // on Tue Sep 29 opens with Total Wife at 8, and we arrive for Fcukers.
+  assert.deepEqual(rows(plan, '2026-09-29'), ['some 8:45 PM–12 AM 4 Mohawk Austin']);
 });
 
 test('ACL: hiding weekend:W1 takes W1\'s stops, keeps its bodies and its Late nights dates; a stale :fest hides nothing', () => {
@@ -386,9 +409,20 @@ test('ACL: hiding weekend:W1 takes W1\'s stops, keeps its bodies and its Late ni
   const w1 = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS, folded: ['weekend:W1'] });
   assert.deepEqual(w1.nights.map((n) => n.id), ACL_NIGHTS, 'every W1 date also has Late nights, so none is dropped');
   for (const id of ['2026-10-02', '2026-10-03', '2026-10-04']) {
-    assert.equal(w1.night(id).stops, 0, `${id}: W1's grid stops are gone`);
+    assert.ok(stops(w1, id).every((s) => s.placeKind === 'room'), `${id}: W1's grid stops are gone`);
     assert.deepEqual(w1.nights.find((n) => n.id === id).days, [], `${id}: the hidden weekend day is not listed`);
   }
+  // Sun Oct 4 keeps its Late night (Ryan Beatty at the Scoot Inn, 6 PM since
+  // #56). Ada, Bo and Cal are seated on W1's hidden sets first (rule 8), so
+  // where a hidden set held more of us the stop leaves a gap — it never
+  // re-seats that crowd at the Scoot Inn.
+  assert.deepEqual(rows(w1, '2026-10-04'), [
+    'some 6 PM–6:30 PM 3 Historic Scoot Inn',
+    '··· 6:30 PM–7:30 PM',
+    'some 7:30 PM–8:30 PM 3 Historic Scoot Inn',
+    '··· 8:30 PM–9:45 PM',
+    'some 9:45 PM–10:30 PM 3 Historic Scoot Inn',
+  ]);
   for (const id of ['2026-10-09', '2026-10-10', '2026-10-11']) assert.deepEqual(rows(w1, id), rows(all, id), `${id}: W2 untouched`);
   assert.equal(w1.bar, all.bar);
   const hidden = w1.places.filter((p) => p.nightId === '2026-10-02' && p.kind === 'set');
@@ -403,9 +437,14 @@ test('ACL: hiding weekend:W1 takes W1\'s stops, keeps its bodies and its Late ni
 
 test('ACL: rule 5 — the same stage on the same weekday on the other weekend is one play; another place is another', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
-  assert.deepEqual([...plan.playsAt.keys()].sort(), ['Arcy Drive', 'Faouzia', 'Fcukers']);
+  // Every artist in playsAt has two plays or more (45 on the whole festival
+  // since #56 gave the Late nights times; three before). Of this crew's picks:
+  const plays = (name) => [...new Set(plan.playsAt.get(name).map((o) => o.play))];
+  assert.ok([...plan.playsAt.values()].every((v) => new Set(v.map((o) => o.play)).size >= 2));
+  assert.deepEqual([...plan.playsAt.keys()].filter((k) => ACL_PICKS[k]).sort(), ['Arcy Drive', 'Brandon Flowers', 'Faouzia', 'Fcukers', 'Jess Williamson', 'Ryan Beatty']);
   assert.ok(!plan.playsAt.has('Paris Paloma'), 'W1 3:15 and W2 5:15 at Miller Lite: one play, the time moved');
-  assert.ok(!plan.playsAt.has('Ryan Beatty') && !plan.playsAt.has('Turnstile'));
+  assert.ok(!plan.playsAt.has('Turnstile'));
+  assert.deepEqual(plays('Ryan Beatty'), ['Beatbox|Sat', 'Historic Scoot Inn|2026-10-04'], 'Beatbox on both Saturdays is ONE play; the Scoot Inn is another');
   const paloma = stopOf(plan, '2026-10-02', 'Paris Paloma');
   assert.deepEqual([paloma.maybe, paloma.alsoAt, paloma.leansOnDoubles], [[], [], false]);
   const faouzia = stopOf(plan, '2026-10-02', 'Faouzia');
@@ -413,13 +452,13 @@ test('ACL: rule 5 — the same stage on the same weekday on the other weekend is
   assert.deepEqual(P.alsoOf(faouzia, plan), [{ nightId: '2026-10-09', from: M(14, 45), sameNight: false }]);
   // Fcukers on Oct 10: the Sunday Tito's set is ONE play but two nights.
   const late = stopOf(plan, '2026-10-10', 'Fcukers');
-  assert.deepEqual(late.alsoAt.map((o) => [o.nightId, o.place, o.play]), [['2026-10-04', "Tito's", "Tito's|Sun"], ['2026-10-11', "Tito's", "Tito's|Sun"]]);
-  assert.deepEqual(P.alsoOf(late, plan).map((o) => o.nightId), ['2026-10-04', '2026-10-11']);
+  assert.deepEqual(late.alsoAt.map((o) => [o.nightId, o.place, o.play]), [['2026-09-29', 'Mohawk Austin', 'Mohawk Austin|2026-09-29'], ['2026-10-04', "Tito's", "Tito's|Sun"], ['2026-10-11', "Tito's", "Tito's|Sun"]]);
+  assert.deepEqual(P.alsoOf(late, plan).map((o) => o.nightId), ['2026-09-29', '2026-10-04', '2026-10-11']);
   const sun = stopOf(plan, '2026-10-04', 'Fcukers');
-  assert.deepEqual(sun.alsoAt.map((o) => [o.nightId, o.place]), [['2026-10-10', 'Devil May Care']], 'never the same set on the other weekend');
+  assert.deepEqual(sun.alsoAt.map((o) => [o.nightId, o.place]), [['2026-09-29', 'Mohawk Austin'], ['2026-10-10', 'Devil May Care']], 'never the same set on the other weekend');
   // How many stops carry an "also" on this crew (the log records it).
   const all = plan.nights.flatMap((n) => stops(plan, n.id));
-  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [22, 7]);
+  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [28, 16], 'was [22, 7] before #56');
 });
 
 test('ACL: an unprinted closer\'s NOW row runs to the wall\'s end for it', () => {
@@ -626,6 +665,23 @@ test('a Late-nights-only date with times gets a plan like any night', () => {
   assert.deepEqual(rows(plan, '2026-10-06'), ['most 9:30 PM–1 AM 3 Cellar']);
   const tue = P.peekOf(plan, fest, CT('2026-10-06T22:00:00'));
   assert.deepEqual([tue.tag, tue.night.id, tue.count, tue.today], ['now', '2026-10-06', 3, true]);
+});
+
+test('a Late night with doors and no set time is no place, and a date of such shows is a night with no stops (no window on the wall either)', () => {
+  // ACL's Late nights were like this until main's data release #56 gave every
+  // show a time (2026-09-26); the next festival's may be again.
+  const doorsOnly = { name: 'Doors Only', day: 'Late nights', date: '2026-10-06', venue: 'Cellar', doors: '9 PM' };
+  const fest = { ...synth({ sat: [set('Xa', 'X', '8:00 PM - 9:00 PM')], artists: [doorsOnly] }), id: 'plan-doors' };
+  const plan = planFor(fest, { 'Doors Only': lv(3, 'Ana', 'Ben', 'Cy', 'Dot') });
+  assert.deepEqual(plan.nights.map((n) => n.id), [SATD, '2026-10-06'].sort());
+  assert.equal(plan.night('2026-10-06').stops, 0);
+  assert.deepEqual(plan.night('2026-10-06').items, []);
+  assert.ok(!plan.places.some((p) => p.acts.some((a) => a.name === 'Doors Only')));
+  FESTIVALS['plan-doors'] = fest;
+  FESTIVAL_INDEX.push({ id: 'plan-doors', status: 'scheduled' });
+  const card = renderBoard('plan-doors').querySelector('.day-block[data-day="Late nights"] .card[data-artist="Doors Only"]');
+  assert.ok(card, 'the show has its card');
+  assert.equal(card.dataset.nowFrom, undefined, 'and no window');
 });
 
 test('the people filter is not an input: the plan is the whole crew', () => {

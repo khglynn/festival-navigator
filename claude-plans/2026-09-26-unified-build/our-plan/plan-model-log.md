@@ -146,9 +146,32 @@ Measured by running the prototype's `placesOf` and the port on the same files:
 13. **alsoOf** order: same-night plays first by time, then other nights in date order; each
     night once.
 
+## Since main's data release #56 (merged into live/plan 2026-09-26, ~9 AM PT)
+
+The model did not change; the data under it did, and eight tests moved with it
+(`tests/plan-model.test.mjs` says why at each line).
+
+1. **Portola, Regency laid out as concerts** (`portola-2026.json` md5 e5fb4ad3… → af994fcc…).
+   Each Regency act starts earlier, so three golden lines moved: Thu's Soulwax stop starts
+   9:30 PM (was 10:30); Fri's Regency stop ends 8:45 PM, where Jyoty now starts (it ended at
+   9 PM); Sat's Parcels at
+   10 PM (was 10:45) takes Cy off Soulwax at 10:15, so that stop is some-4, not most-5.
+   Soulwax's "also" now says Thu 9:30 PM.
+2. **ACL Late nights all have times** (posted, or written by `scripts/guess-run-times.mjs` and
+   marked approx). Open question 1 below is answered by data, as it proposed: 40 Late nights
+   rooms (one per date and venue) where there was one; every one of the 66 shows has a card
+   whose window matches the plan's (the windows test now covers every ACL night: 248 cards,
+   exactly the plan's timed acts). The made-up crew's stops per night went
+   `[0,0,6,3,2,0,0,0,5,4,2]` → `[1,1,6,3,5,0,0,1,5,4,2]`; stops with an "also" 7 of 22 → 16 of
+   28; `playsAt` holds 45 artists (was 3); Fcukers on Oct 10 is 11:45 PM–2 AM (Devil May Care
+   posts 11:45; the old 10 PM was doors). The doors-only rule is kept on a synthetic festival.
+3. **New open question 7 below** — a Late night that starts while the festival still plays
+   sends the route across town and back.
+
 ## Open questions (not settled here)
 
-1. **ACL Late nights: 65 of 66 shows print doors only** (no `time`, no `close`), so the wall
+1. *(Answered 2026-09-26 by main's #56 — the Late nights now have times; see the section
+   above.)* **ACL Late nights: 65 of 66 shows print doors only** (no `time`, no `close`), so the wall
    gives them no now window and the plan cannot seat anyone there. Only Fcukers, Oct 10, Devil
    May Care (doors 10 PM, close 2 AM) is a place. The five Late-nights-only dates are nights
    with no stops. The fix is data, not a guessed window in the renderer: closes (and run
@@ -168,6 +191,21 @@ Measured by running the prototype's `placesOf` and the port on the same files:
    only tomorrow's. Before the festival the model points at the first night.
 6. **sw.js**: once app.js imports plan.js, it belongs in APP_CORE and the stamp must be re-run
    (the coordinator's release step; I touched neither).
+7. **A route across town and back (found 2026-09-26, after #56).** Rule 3 seats each person
+   at their highest live pick every five minutes, and a room holds them from their first pick
+   to their last. On Portola the rooms open after the grounds close, so nobody bounced. On ACL,
+   7 of the 41 Late nights shows on festival dates start before that day's grid ends (Malcy
+   and Fancy Hagood at 7 PM and Noga Erez at 8:30 PM are posted; Finn Wolfhard, CMAT and Ryan
+   Beatty are guesses from doors). On the made-up crew, Sun Oct 4 reads Scoot Inn 6 PM →
+   Tito's 6:30 → Scoot Inn 7:30 → T-Mobile 8:30 → Scoot Inn 9:45: Zilker to East Austin and
+   back twice, which no one walks. Candidate rule, not built (it changes Kevin's approved
+   rule 3): **a person changes site — the grounds, or one venue — only for a pick they want
+   more, or when their site has nothing of theirs left, and never goes back to a site they
+   left that night.** Each person then makes at most one trip per site, so the route can still
+   cross town, but never back (not simulated on the example yet). Its cost: it can move
+   Portola's approved lines (a person now leaves the grounds only for a higher pick or after
+   their last grounds set), so it needs the goldens re-derived and Kevin's look. Kevin's call.
+
 
 ## Not verified here
 
