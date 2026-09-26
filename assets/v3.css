@@ -163,14 +163,17 @@ html { touch-action: manipulation; }
   to { opacity: .85; transform: translateX(100%) scaleX(.35); }
 }
 /* Wall-side scan pill: the library read keeps going when you leave the drill —
- * this says so. Above the dock, never interactive. */
+ * this says so. Above the dock, never interactive. It stands above whatever
+ * is down there: the dock and Our plan's peek (--foot-h), Our plan's corner
+ * card on a laptop (--plan-corner-h), or the welcome / bring-picks card that
+ * waits in their place (--offer-top) — all foot.js / plan-shelf.js. */
 .spot-pill {
-  position: fixed; right: 12px; bottom: calc(var(--foot-h) + 25px); /* above the dock and Our plan's peek (foot.js) */
+  position: fixed; right: 12px; bottom: max(calc(var(--foot-h) + 25px), calc(var(--offer-top, 0px) + 10px));
   z-index: 35; padding: 7px 12px; border-radius: var(--r-pill);
   background: rgba(10, 8, 18, .92); border: 1px solid var(--spotify-stroke);
   color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
 }
-@media (min-width: 720px) { .spot-pill { bottom: calc(var(--plan-corner-h, 0px) + 16px); } } /* above Our plan's corner card */
+@media (min-width: 720px) { .spot-pill { bottom: calc(max(var(--plan-corner-h, 0px), var(--offer-top, 0px)) + 16px); } }
 
 /* ---- crew entry: the bring-your-picks offer (2026-09-23) ----------------------
  * One decision, asked once per crew × fest, so it waits above the dock where

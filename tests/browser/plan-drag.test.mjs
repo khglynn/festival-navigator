@@ -529,6 +529,33 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The Spotify scan pill (settings.js scanPill, mounted the same way) beside
+  // the welcome card: the pill must stand clear above it (Sol, 2026-09-26 —
+  // in the corner the card covered it on a laptop, and above the dock it
+  // always had on a phone).
+  const pillOverCard = (page) => page.evaluate(() => {
+    const pill = document.createElement('div');
+    pill.id = 'spot-scan-pill';
+    pill.className = 'spot-pill';
+    pill.textContent = 'Reading your library… 1,200 songs';
+    document.body.appendChild(pill);
+    const p = pill.getBoundingClientRect();
+    const c = document.querySelector('#welcome-card .bring-card').getBoundingClientRect();
+    pill.remove();
+    return { pillBottom: p.bottom, pillLeft: p.left, pillRight: innerWidth - p.right, cardTop: c.top };
+  });
+  const clearAbove = (at) => at.pillBottom <= at.cardTop - 6 && at.pillLeft >= 0 && at.pillRight >= 0;
+
+  test(`${name} 390: the Spotify pill stands above the welcome card, not under it`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { guest: true });
+    try {
+      await sleep(900); // the card's arrival
+      const at = await pillOverCard(page);
+      assert.ok(clearAbove(at), JSON.stringify(at));
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   // Kevin, 2026-09-26, on the welcome frame: "all the cards like that should
   // be lower right justified in the same spot as our now … where that card
   // floats right now is so awk".
@@ -543,6 +570,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(Math.abs(card.right - 20) <= 1 && Math.abs(card.bottom - 20) <= 1 && Math.abs(card.width - 380) <= 1,
         `380px wide, 20px in from the right and the bottom: ${JSON.stringify(card)}`);
       assert.equal(await page.evaluate(() => document.getElementById('plan').hidden), true, 'the plan waits under it');
+      const at = await pillOverCard(page);
+      assert.ok(clearAbove(at), `the Spotify pill stands above the card: ${JSON.stringify(at)}`);
       await page.locator('#welcome-card button', { hasText: 'Look around' }).click();
       await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 5000 });
       await sleep(900);

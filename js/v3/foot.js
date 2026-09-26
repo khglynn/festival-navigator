@@ -17,6 +17,10 @@
 //                 the dock's own height as --dock-h (the plan stands on it).
 //                 CSS reads these: the shell's bottom padding, the toast, the
 //                 Spotify pill.
+//   measureOffer() the card that waits down there instead of the plan — the
+//                 welcome, the bring-your-picks offer — as --offer-top, its
+//                 top edge's distance from the window's bottom. The Spotify
+//                 pill stands above it (v3.css), phone and laptop alike.
 //
 // Above 720px the dock is display:none and the laptop's plan lives in the
 // corner: footTop() is null there and the two variables go back to the
@@ -62,6 +66,17 @@ export function measureFoot() {
   const peekH = shown(plan) ? Number(plan.dataset.peekH) || 0 : 0;
   root.setProperty('--dock-h', `${dockH}px`);
   root.setProperty('--foot-h', `${dockH + peekH}px`);
+}
+
+// Its resting place, not its motion: the card's own rise and a toast's
+// step-up are transforms, and offsetHeight + the computed bottom leave both
+// out. Unset when no card is up, so the pill's other floors stand.
+export function measureOffer() {
+  const root = document.documentElement.style;
+  const box = document.querySelector('#screen-app > .bring-offer');
+  if (!box) { root.removeProperty('--offer-top'); return; }
+  const bottom = parseFloat(window.getComputedStyle(box).bottom) || 0;
+  root.setProperty('--offer-top', `${box.offsetHeight + bottom}px`);
 }
 
 export function sideLeft() {

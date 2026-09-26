@@ -77,7 +77,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
 import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
-import { footTop, measureFoot } from './foot.js';
+import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 import { getLS } from '../util.js';
@@ -4624,6 +4624,7 @@ export function init() {
       measureStickyChrome();
       refitPlanShelf();
       measureFoot();
+      measureOffer();
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -4653,14 +4654,27 @@ export function init() {
   // Our plan waits for the card above the dock — the welcome, the bring-your-
   // picks offer — and rises when it has gone (one thing at a time down there).
   // Both mount into #screen-app and leave by being removed, so their coming
-  // and going is the whole signal.
+  // and going is the whole signal. The Spotify pill stands above the card
+  // (foot.js measureOffer): on its arrival, whenever its size changes (its
+  // text changes after an answer), and on a resize (below).
+  let offerSize = null;
+  const watchOffer = () => {
+    if (offerSize) { offerSize.disconnect(); offerSize = null; }
+    const card = $('screen-app').querySelector(':scope > .bring-offer');
+    if (card && typeof window.ResizeObserver === 'function') {
+      offerSize = new window.ResizeObserver(() => measureOffer());
+      offerSize.observe(card);
+    }
+    measureOffer();
+  };
   const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
   if (typeof Observer === 'function') {
     const isCard = (n) => n.nodeType === 1 && n.classList.contains('bring-offer');
     new Observer((records) => {
-      if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isCard))) paintPlan();
+      if (records.some((r) => [...r.addedNodes, ...r.removedNodes].some(isCard))) { paintPlan(); watchOffer(); }
     }).observe($('screen-app'), { childList: true });
   }
+  watchOffer();
   // The "you" slot opens the people menu (2026-09-26) — a guest's dashed +
   // too, whose menu ends in Join the crew. Jump to top retired with no door
   // (PEOPLE-BUILD.md): its real job was reaching the people row.
