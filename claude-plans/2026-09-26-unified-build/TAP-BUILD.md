@@ -6,7 +6,8 @@
 ## What ships, in one screen
 
 1. **Phone (a finger):** a tap on any card opens ONE shelf from the bottom: the card (name, when, where,
-   the doors out), the − · + step row along the card's floor, the thread, the composer. No zoom, no notes
+   the doors out), − and + in the card's bottom corners (since the 2026-09-26 evening round: level with
+   its last line, nothing between them, no grabber above the card), the thread, the composer. No zoom, no notes
    button. For a member, − / + step the level (never a wraparound). For a guest, − / + and the composer's
    place ask who they are (the join shelf, naming the artist); only + carries the pick through.
 2. **Desktop (a mouse):** unchanged. Hover grows the zoom with its − · note · + row; the note door opens the
@@ -20,10 +21,10 @@
 
 ## Product calls made here (each is Kevin's to overrule)
 
-1. **The step row's middle is YOUR METER** — the resting card's own corner chip (bars, then MUST, in your
-   colour), drawn larger: `−  ▮▮▯  +`. "Each + fills a bar" is then literally what the finger sees.
-   With nothing picked it is three hollow bars; a guest sees the same hollow meter. (Alternative framed:
-   an empty middle, the bare − and + on the edges only.)
+1. ~~**The step row's middle is YOUR METER**~~ — **overruled by Kevin at Portola (2026-09-26 evening):**
+   "Remove the middle of the card 2nd copy of the level of interest bars — and then the cards can be less
+   tall. Don't need that repeated." Your level is your own chip in the who-row; − and + stand in the
+   card's bottom corners, level with its last line (the evening round, below).
 2. **The row is the card's floor, and it never moves under the finger.** The who-row sits above it; when a
    first + makes the who-row appear, the card grows UPWARD (the sheet's top rises; in a tall, scrolled
    sheet the sheet scrolls by the same amount) — the zoom's floor rule, carried into the shelf.
@@ -115,6 +116,13 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    the notice follows within 1ms). Harmless — the notification lands a frame later, and errlog.js already
    drops it as noise — so the tap contract ignores it the same way. The fix, for the rail's owner: re-fit
    only when the observed width differs from the width the last fit left, or fit in the next frame.
+
+7. **Swipe a List row to rate or to note — mobile only, a future phase** (Kevin, from his iPhone at
+   Portola, 2026-09-26: "the swipe in the list view to add ratings and add notes (left reveals ratings,
+   right reveals notes) - mobile only. Future phase"). Not built, not designed: a phone's List row
+   (`.card.row`) would reveal its ratings on a swipe left and its notes on a swipe right, the way mail
+   rows reveal actions. For the List's owner when that phase opens; it will have to live beside the
+   row's own sideways scroll (the stack rows) and the tap that opens the shelf.
 
 ## Steps (commit + push after each)
 
