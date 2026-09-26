@@ -30,7 +30,8 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, refreshCard, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
+const { renderWall, refreshCard, positionNowMarks, roomsOf, nightMinutes, nowLanding } = await import('../js/v3/wall.js');
+const { festivalClock } = await import('../js/v3/now.js');
 const { sectionLayoutOf, timeBandsOf, bandOf, TIME_BANDS, venueGroupsOf, occOf, BY_TIME, BY_VENUE, LAYOUTS, showsOnItsOwn, linksOf } = await import('../js/v3/events.js');
 const { factsFor, timeRange } = await import('../js/v3/card-facts.js');
 const { foldFromShow } = await import('../js/v3/filters.js');
@@ -286,6 +287,72 @@ test('the now mark lights whoever is open right now, in a time list as in a stac
   assert.match(big.getAttribute('aria-label'), /, playing now$/);
   positionNowMarks(root, new Date('2026-09-26T09:30:00Z')); // 2:30 AM: the after-hours party is on
   assert.ok(roomOf(root, 'Friday', 'Parties').querySelector('.card[data-artist="Two AM"]').classList.contains('now'));
+});
+
+// ---- a night runs past the 5 AM rollover (Sol's review of v94, 2026-09-26) ----------
+// The festival clock rolls to the next calendar day at 5 AM; a night's cards
+// stay live until their OWN printed end. Before this, Saturday's after-hours
+// lost its ring, the NOW tab and its stop at 5:00 AM on the dot.
+test('nightMinutes: the clock on a night\'s own axis — that night, or the next calendar day, never further', () => {
+  const tz = 'America/Los_Angeles';
+  const at = (iso, when) => nightMinutes(iso, festivalClock(new Date(when), tz));
+  assert.equal(at('2026-09-26', '2026-09-26T23:30:00-07:00'), 23 * 60 + 30, 'Saturday night, Saturday\'s clock');
+  assert.equal(at('2026-09-26', '2026-09-27T04:59:00-07:00'), 28 * 60 + 59, 'before the rollover: still Saturday\'s day');
+  assert.equal(at('2026-09-26', '2026-09-27T05:00:00-07:00'), 29 * 60, 'after it: Saturday\'s night reads Saturday\'s 29:00');
+  assert.equal(at('2026-09-27', '2026-09-27T05:00:00-07:00'), 5 * 60, 'and Sunday\'s own day reads 5 AM');
+  assert.equal(at('2026-09-25', '2026-09-27T05:00:00-07:00'), null, 'two nights back is over');
+  assert.equal(at('2026-09-28', '2026-09-27T05:00:00-07:00'), null, 'a night that has not started');
+  assert.equal(at(null, '2026-09-27T05:00:00-07:00'), null);
+});
+
+test("Portola's after-hours keep their rings, the NOW tab and its stop across 5 AM, to their own printed end", () => {
+  FESTIVALS['portola-2026'] = portolaFile;
+  if (!FESTIVAL_INDEX.some((f) => f.id === 'portola-2026')) FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' });
+  const { root, ctx } = render('portola-2026');
+  const ringed = (when) => {
+    positionNowMarks(root, new Date(when));
+    return [...root.querySelectorAll('.card.now')].map((c) => c.dataset.artist);
+  };
+  const lit = (when, name) => ringed(when).includes(name);
+  // Aftershock: Saturday night's AFTER-HOURS, 3 to 10 AM Sunday.
+  for (const t of ['2026-09-27T04:59:00-07:00', '2026-09-27T05:00:00-07:00', '2026-09-27T09:59:00-07:00']) assert.ok(lit(t, 'Aftershock'), `Aftershock is on at ${t}`);
+  assert.ok(!lit('2026-09-27T10:00:00-07:00', 'Aftershock'), 'and out at its printed 10 AM');
+  // PERVERT XXL: Saturday 10 PM to 6 AM Sunday.
+  assert.ok(lit('2026-09-27T05:59:00-07:00', 'PERVERT XXL'), 'PERVERT XXL at 5:59 AM');
+  assert.ok(!lit('2026-09-27T06:00:00-07:00', 'PERVERT XXL'), 'out at its printed 6 AM');
+  // MÜLL: Friday 11 PM to 6 AM Saturday — the same rule a night earlier.
+  assert.ok(lit('2026-09-26T05:30:00-07:00', 'MÜLL'), 'MÜLL at 5:30 AM Saturday');
+  assert.ok(!lit('2026-09-26T06:00:00-07:00', 'MÜLL'), 'out at its printed 6 AM');
+  // A party that ends at 5 AM ends at 5 AM.
+  assert.ok(lit('2026-09-27T04:59:00-07:00', 'FOLSOM SLUT SATURDAY') && !lit('2026-09-27T05:00:00-07:00', 'FOLSOM SLUT SATURDAY'));
+  // The ring is the NOW tab's answer and the tap's stop (nowLanding reads the rings).
+  const at = new Date('2026-09-27T09:59:00-07:00');
+  positionNowMarks(root, at);
+  const land = nowLanding(root, ctx, at);
+  assert.ok(land && land.card, 'NOW is there at 9:59 AM Sunday');
+  assert.equal(land.card.dataset.artist, 'Aftershock');
+  assert.equal(land.card.closest('.day-block').dataset.day, 'Saturday', 'under Saturday, where the night belongs');
+});
+
+test('a stack obeys the same rule: an afters set that runs past 5 AM stays on to its own end', () => {
+  const SUNRISE = {
+    id: 'sunrise-fest', name: 'Sunrise', status: 'scheduled', timezone: 'America/Los_Angeles',
+    dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' }, Afters: { date: 'Sep 26' } },
+    artists: [
+      { name: 'Headliner', day: 'Saturday' },
+      { name: 'Sunrise Set', day: 'Afters', stage: 'Sat · The Warehouse', night: 'Sat', venue: 'The Warehouse', time: '4 AM - 7 AM' },
+    ],
+    days: { Saturday: { stages: ['A'], artists: [{ name: 'Headliner', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
+  };
+  FESTIVALS['sunrise-fest'] = SUNRISE;
+  if (!FESTIVAL_INDEX.some((f) => f.id === 'sunrise-fest')) FESTIVAL_INDEX.push({ id: 'sunrise-fest', status: 'scheduled' });
+  const { root } = render('sunrise-fest');
+  const card = () => root.querySelector('.venue-grid .card[data-artist="Sunrise Set"]');
+  assert.ok(card(), 'a stack card, not a time list');
+  for (const [t, on] of [['2026-09-27T04:30:00-07:00', true], ['2026-09-27T05:00:00-07:00', true], ['2026-09-27T06:59:00-07:00', true], ['2026-09-27T07:00:00-07:00', false]]) {
+    positionNowMarks(root, new Date(t));
+    assert.equal(card().classList.contains('now'), on, t);
+  }
 });
 
 test('the show menu and a share link\'s &show= still hide and show the section by its key', () => {

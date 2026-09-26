@@ -240,3 +240,36 @@ block to switch if Kevin prefers B (the rig's `ALT_B`).
 3. The real data carries no `area`, so cards say the venue alone. The
    pick list has a neighbourhood for every party if he wants it (a data
    pass).
+
+### 2026-09-26 ~1:30 AM PT — Sol's blocker: the 5 AM cliff, fixed
+
+**The bug.** Sol 6 reviewed 2cb7a32 and found it. A card's NOW ring needed its
+night's date to equal the festival clock's day, and that clock turns over at
+5 AM. So at 5:00 AM Sunday every Saturday card went out at once, including
+parties still inside their printed hours: Aftershock (3 to 10 AM Sunday) lost
+its ring five hours early, and PERVERT XXL and MÜLL an hour before their 6 AM
+ends. The NOW tab and its stops went with them, because both read the rings.
+The same rule was in the stacks (Afters, ACL's Late nights), since it all
+lives in one function.
+
+**The fix.** `wall.js nightMinutes` puts the clock on each card's own night:
+at 5:00 AM Sunday, a Saturday card reads 29:00. That night and the next
+calendar day are eligible; nothing further back. The card's own window then
+decides, so it holds to the printed end. `positionNowMarks` is the only
+caller: the ring, the NOW tabs (`paintNowTabs` → `nowLanding`), and the tap
+stops all read the ring. Stacks and time lists alike. MODEL-V4 §1.2 now
+records the rule.
+
+**Tests that fail without it** (checked: all four go red when the old rule is
+put back):
+1. `nightMinutes` on its own.
+2. Portola's real file: Aftershock is on at 4:59, 5:00 and 9:59 AM and off
+   at 10:00. PERVERT XXL is on at 5:59 and off at 6:00. MÜLL is on at Sat
+   5:30 AM and off at 6:00. A party ending at 5 AM ends at 5. And NOW lands
+   on Aftershock under Saturday at 9:59.
+3. A synthetic afters stack running 4 to 7 AM, on to its end.
+4. In the browser: at Sun 5:30 AM the NOW tab is there, exactly Aftershock
+   and PERVERT XXL are ringed, and a real tap lands on and pulses them.
+
+The shell test "after the last set, nobody" moved to Monday 6 AM. Sunday
+6 AM is no longer "after the last set", because Aftershock runs to 10.

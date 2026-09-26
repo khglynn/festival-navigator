@@ -1710,15 +1710,31 @@ const NOW_HOSTS = '.venue-grid[data-iso], .time-list[data-iso]';
 // means from the auto-scroll"). A screen reader still hears it — the card's
 // own name ends "playing now" while it is.
 export const PLAYING_NOW = ', playing now';
+// Where the clock stands on a host's OWN night, in that night's minutes — or
+// null when it is not that night or the one after. The festival clock rolls
+// to the next calendar day at 5 AM (now.js), but a night does not end on the
+// clock's say-so: an after-hours party filed under Saturday runs until ITS
+// printed end, and Aftershock prints 3 to 10 AM Sunday. Asking only "is this
+// host today?" put its ring out at 5:00 AM on the dot, five hours early, and
+// took the NOW tab and its stop with it (Sol's review of v94, 2026-09-26 —
+// MÜLL and PERVERT XXL lost theirs an hour before their 6 AM ends). So at
+// 5:00 AM Sunday a Saturday card reads Saturday's 29:00, and its own window
+// decides; a stack under any section obeys the same rule (Afters, a dated
+// Late night), because the rule lives here and nowhere else.
+export function nightMinutes(iso, clock) {
+  if (!iso || !clock) return null;
+  const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
+  return days === 0 || days === 1 ? clock.minutes + days * 24 * 60 : null;
+}
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches(NOW_HOSTS) ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll(NOW_HOSTS)]) {
     const clock = festivalClock(date, grid.dataset.tz || null);
-    const today = grid.dataset.iso === clock.iso;
+    const at = nightMinutes(grid.dataset.iso, clock);
     for (const card of grid.querySelectorAll('.card[data-now-from]')) {
       const from = Number(card.dataset.nowFrom);
       const to = Number(card.dataset.nowTo);
-      const on = today && clock.minutes >= from && clock.minutes < to;
+      const on = at != null && at >= from && at < to;
       card.classList.toggle('now', on);
       const name = card.getAttribute('aria-label') || '';
       if (on && !name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name + PLAYING_NOW);

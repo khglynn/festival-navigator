@@ -96,7 +96,12 @@ holding one `.venue-group` per venue:
   `[start, next member's start)` for a run, `[start, end)` for a ranged show,
   `[doors, close)` for a doors-only show; the 1-minute ticker that moves the
   now line toggles the class without a repaint. Same violet, same ticker,
-  one idea in two places.
+  one idea in two places. **A night runs past the clock's 5 AM rollover**
+  (2026-09-26, v94, Sol's review): the festival clock turns to the next
+  calendar day at 5 AM, but a card is judged on its OWN night's axis
+  (`wall.js nightMinutes`: 5:00 AM Sunday is Saturday's 29:00), so an
+  after-hours party stays lit, and NOW keeps it as a stop, until its own
+  printed end — Aftershock to 10 AM Sunday, not 5:00 on the dot.
 - **One renderer.** `renderEventsTimetable`, `timetableOf`, `earnsColumns`,
   `sectionModeOf`, `tbaBlock` and the deck are deleted. `runFactsOf` stays
   (the zoom's "Runs 10 PM – ~3 AM · Guessing they're 3rd of 4").

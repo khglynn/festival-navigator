@@ -527,9 +527,11 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
 });
 
 test('after the last set, nobody — and a wall with nothing playing costs nothing', () => {
-  // 6 AM the next morning: past the 5 AM rollover, so the festival day has
-  // moved on and no grid claims the clock.
-  atFestivalTime(RealDate.UTC(2026, 8, 27, 13, 0), () => {
+  // 6 AM the morning after the week's LAST night (Monday). Not Sunday 6 AM
+  // any more: a night's cards stay live to their own printed end past the
+  // 5 AM rollover (v94 — Aftershock, Saturday's after-hours, runs to 10 AM
+  // Sunday), and Sunday's last party, Real Bad 37, ends at 5 AM Monday.
+  atFestivalTime(RealDate.UTC(2026, 8, 28, 13, 0), () => {
     tick();
     assert.deepEqual(marked(), []);
     assert.equal([...$('wall-root').querySelectorAll('.card')].filter((c) => (c.getAttribute('aria-label') || '').includes('playing now')).length, 0, '"playing now" goes with the ring');

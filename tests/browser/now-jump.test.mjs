@@ -821,6 +821,26 @@ test('outside the live window there is no NOW (Saturday 9 AM)', { skip }, async 
   } finally { await ctx.close(); }
 });
 
+// Past the festival clock's 5 AM rollover a night is not over (Sol's review of
+// v94, 2026-09-26): Saturday's after-hours run to their own printed ends —
+// PERVERT XXL to 6 AM, Aftershock to 10 AM Sunday. At 5:30 AM Sunday NOW is
+// there, and a real tap lands on and pulses them, under Saturday. Before the
+// fix their rings went out at 5:00 on the dot and NOW left with them.
+test('390, Sunday 5:30 AM: Saturday\'s after-hours are still on — NOW is there and a tap lands on them, under Saturday', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-27T05:30:00-07:00') });
+  try {
+    const shown = await page.evaluate((d) => { const n = document.getElementById(`${d}-now`); return !n.hidden && n.getBoundingClientRect().width > 0; }, door);
+    assert.equal(shown, true, 'NOW is there: parties are open');
+    const rings = await page.evaluate(() => [...document.querySelectorAll('#wall-root .card.now')].map((c) => `${c.dataset.artist}@${c.closest('.day-block').dataset.day}`));
+    assert.deepEqual(rings.sort(), ['Aftershock@Saturday', 'PERVERT XXL@Saturday'], `exactly the two running past 5 AM: ${rings}`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const t = await tapAndLook(page, door);
+    assert.ok(t.pulsed.length > 0, `the tap lands on them and pulses: ${JSON.stringify(t)}`);
+    for (const c of t.pulsed) assert.ok(c.now && c.inView && ['Aftershock', 'PERVERT XXL'].includes(c.artist), `${c.artist}: live and in view`);
+  } finally { await ctx.close(); }
+});
+
 test('320: NOW fits the dock beside the days and the fest name, nothing overlapping', { skip }, async () => {
   const { ctx, page } = await openApp({ width: 320, height: 640 });
   try {
