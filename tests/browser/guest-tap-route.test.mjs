@@ -175,3 +175,52 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
     } finally { await ctx.close(); }
   });
 }
+
+// The two the independent walk of b29aac0 caught, with real input: a REAL
+// Escape key over the shelf a zoom's + opened must not regrow that zoom (the
+// focus handed back to the card used to read as keyboard navigation), and a
+// guest who joins from the shelf gets the just-joined welcome once — it
+// never showed, because the guest card had been read before the join landed.
+for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]]) {
+  test(`${name}: a real Escape over the shelf leaves no zoom behind; joining from the shelf brings the just-joined welcome`, {
+    skip: get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER),
+  }, async () => {
+    const { ctx, page, errors } = await guestPhone(get());
+    try {
+      const at = await cardAt(page, 'Tove Lo');
+      await page.touchscreen.tap(at.x, at.y);
+      await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+      await sleep(600);
+      let plus = await page.locator('#zoom-layer .zoom-slot.shown .f-step.plus').boundingBox();
+      await page.touchscreen.tap(plus.x + plus.width / 2, plus.y + plus.height / 2);
+      await page.waitForSelector('.join-shelf', { timeout: 4000 });
+      await sleep(600); // the zoom has gone back into its card
+      await page.keyboard.press('Escape');
+      await sleep(500);
+      assert.equal(await page.locator('.join-shelf').count(), 0, 'Escape took the shelf down');
+      assert.equal(await zoomUp(page), 0, 'and no zoom grew back over the card');
+
+      // Now join from the shelf, under a new name.
+      const again = await cardAt(page, 'Tove Lo');
+      await page.touchscreen.tap(again.x, again.y);
+      await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+      await sleep(600);
+      plus = await page.locator('#zoom-layer .zoom-slot.shown .f-step.plus').boundingBox();
+      await page.touchscreen.tap(plus.x + plus.width / 2, plus.y + plus.height / 2);
+      await page.waitForSelector('.join-shelf', { timeout: 4000 });
+      await sleep(500);
+      const field = await page.locator('.join-shelf .js-field').boundingBox();
+      await page.touchscreen.tap(field.x + field.width / 2, field.y + field.height / 2);
+      await page.keyboard.type('Ana');
+      const go = await page.locator('.join-shelf .js-go').boundingBox();
+      await page.touchscreen.tap(go.x + go.width / 2, go.y + go.height / 2);
+      await page.waitForSelector('#welcome-card', { timeout: 6000 });
+      await sleep(900);
+      assert.match(await page.locator('#welcome-card .bring-sub').textContent(), /Tap any artist to add yours/, 'the just-joined welcome, in a member’s words');
+      assert.deepEqual(await page.locator('#welcome-card .bring-actions button').allTextContents(), ['Got it']);
+      assert.equal(await page.locator('#dock-you').textContent(), 'A', 'Ana is in');
+      assert.equal(await level(page, 'Tove Lo'), JSON.stringify({ Maya: 4, Ana: 1 }), 'and Tove Lo is her first pick');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

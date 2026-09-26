@@ -103,6 +103,7 @@ test('a member taking their own name on the join screen is not new: no card', as
   assert.equal($('dock-you').textContent, 'D');
   assert.equal(welcome(), null, 'members never get the card');
   assert.equal(localStorage.getItem('fn_welcome_v1'), null);
+  assert.equal(localStorage.getItem('fn_welcome_joined_v1'), null, 'nor the just-joined one: taking your own name is not joining');
 });
 
 test('someone who has just joined under a new name is new: the card, in a member’s words, with no door to join', async () => {
@@ -122,6 +123,7 @@ test('someone who has just joined under a new name is new: the card, in a member
   await settle(20);
   assert.equal(welcome(), null);
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'once per phone');
+  assert.equal(localStorage.getItem('fn_welcome_joined_v1'), '1', 'the just-joined card, once per phone');
 });
 
 test('the words: one table, a clear choice for a guest, and the crews a friend can open onto', () => {

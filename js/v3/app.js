@@ -65,7 +65,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
-import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
+import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
 import { showJoinShelf, joinShelf } from './join-shelf.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
@@ -2591,7 +2591,7 @@ function maybeOfferBringPicks() {
   // for someone new here, the offer does not ask — the welcome's left button
   // asks it. A member who knows the crew never has one, so theirs asks as in
   // v91.
-  if (welcomeCard() || (welcomeHere && !welcomeSeen())) return;
+  if (welcomeCard() || welcomeDue()) return;
   if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
   const plan = planBringPicks(bringContext());
   if (!plan) return;
@@ -2625,13 +2625,17 @@ function offerWhenSheetCloses() {
 }
 
 // ---- the welcome (v92) ------------------------------------------------------------
-// Once per phone, for someone new here only: a guest, or someone who has just
-// joined (welcomeHere, set by enterApp). Like the offer it waits for an open
-// sheet, then arrives with its beat; its left button is when the offer may ask.
+// For someone new here only, each card once per phone: a guest's ('guest'),
+// and a fresh join's ('joined' — a name new to the crew, never someone who
+// took their own existing name). Two markers, because the guest card is read
+// before any join can land (welcome.js). Like the offer it waits for an open
+// sheet, then arrives with its beat; its button is when the offer may ask.
 let welcomeWaiter = null;
-let welcomeHere = false; // this entry is someone new: a guest, or the join screen's answer
+let welcomeHere = null; // 'guest' | 'joined' | null — who this entry is, set by enterApp
+const welcomeDue = () => (welcomeHere === 'guest' ? !welcomeSeen()
+  : welcomeHere === 'joined' ? !joinedWelcomeSeen() : false);
 function maybeWelcome() {
-  if (!welcomeHere || welcomeSeen() || welcomeCard() || !state.getCrewToken()) return;
+  if (!welcomeDue() || welcomeCard() || !state.getCrewToken()) return;
   if ($('screen-app').style.display === 'none') return;
   if (document.getElementById('artist-sheet')) { welcomeWhenSheetCloses(); return; }
   const people = state.activePeople();
@@ -2644,6 +2648,7 @@ function maybeWelcome() {
     const ci = colorIndexOf(name, p);
     return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, name === ctx.meName) };
   });
+  if (welcomeHere === 'joined') rememberJoinedWelcomeSeen(); // once: shown is seen
   showWelcome($('screen-app'), {
     copy, faces, ctx,
     onGotIt: () => { pulseJoinRing(); maybeOfferBringPicks(); },
@@ -2946,7 +2951,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   guestOf = member || crew.me(token) ? null : token;
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
-  welcomeHere = false;                  // decided below, once the name is known
+  welcomeHere = null;                   // decided below, once the name is known
   // A share link's starting view (v92): consumed once, like the fest hint,
   // and only ever for a phone that has never shown the link's festival — read
   // before this entry remembers anything about it.
@@ -3051,7 +3056,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   refreshCtx();
   // New here (v92): a guest, or the join screen's answer. A phone that knows
   // you or recognizes you lands as it did in v91, with no card.
-  welcomeHere = !ctx.meName || joined;
+  welcomeHere = !ctx.meName ? 'guest' : joined ? 'joined' : null;
   renderPersonChips();
   renderYou();
   repaintWall();

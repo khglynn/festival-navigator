@@ -38,6 +38,21 @@ export function rememberWelcomeSeen() {
   try { localStorage.setItem(LS_WELCOME, '1'); } catch { /* memory holds it for this visit */ }
 }
 
+// The just-joined card has its OWN marker (the independent walk of b29aac0):
+// the guest card is marked read the moment a guest touches the wall or asks
+// to join — always before the join lands — so sharing one marker meant the
+// card a new member most needs ("tap any artist to add yours", now that a tap
+// picks) could never show. It shows once per phone, after a fresh join.
+const LS_JOINED = 'fn_welcome_joined_v1';
+let joinedSeenHere = false;
+export function joinedWelcomeSeen() {
+  return joinedSeenHere || getLS(LS_JOINED) != null;
+}
+export function rememberJoinedWelcomeSeen() {
+  joinedSeenHere = true;
+  try { localStorage.setItem(LS_JOINED, '1'); } catch { /* memory holds it for this visit */ }
+}
+
 // ---- the words -------------------------------------------------------------------
 // EVERY word the card says lives in WORDS — one edit here and nowhere else;
 // the join screen's way back reads WORDS.look too. Kevin's words (review
@@ -189,7 +204,7 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   }
 
   yes.addEventListener('click', () => {
-    rememberWelcomeSeen();
+    rememberWelcomeSeen(); // the guest card's marker (a member knows the app now too); the just-joined card was marked when it showed
     dismissWelcome({ ctx });
     if (onGotIt) onGotIt();
   });

@@ -1563,9 +1563,25 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 // Keyboard route (2026-08-29): focusing a card grows it too, so Tab reaches
 // the notes chip inside — the door to a FIRST note needs no pointer at all.
 // focusout only unzooms when focus truly left the card and its overlay.
+// A focus the APP hands back — a layer closing and returning focus to what
+// opened it (the join shelf, a notes sheet) — is not the person navigating.
+// The keyboard route below grows a card on keyboard focus, and the Escape that
+// closed the layer had just set lastInput to 'keyboard', so the returning
+// focus grew a fresh zoom over the card the person had just left (the
+// independent walk of b29aac0 — the same class as click · Escape · click).
+// Every programmatic return goes through here; the route ignores it. A Back
+// with no key pressed was already fine and stays so.
+let quietFocus = null;
+export function focusQuietly(el, opts = { preventScroll: true }) {
+  if (!el || typeof el.focus !== 'function') return;
+  quietFocus = el;
+  try { el.focus(opts); } catch { /* not focusable */ } finally { quietFocus = null; }
+}
+
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
+    if (quietFocus && (quietFocus === el || el.contains(quietFocus))) return; // handed back, not navigated to
     // The stay-away mark is a MOUSE rule and deliberately not read here — Tab
     // is fresh intent, and gating it made keyboard growth look off-by-one-card
     // (real-browser walk, 2026-08-30).

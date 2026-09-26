@@ -561,3 +561,26 @@ scenarios, no failures, no page errors.
    written. (A trap on the way, not a bug: while the dock's day row is still
    gliding to centre its active day, WebKit takes a tap on it as the finger
    stopping that scroll, as an iPhone does; 2 s later the same tap lands.)
+
+**The independent walk of b29aac0 (WebKit, iPhone profile, real input): two
+failures, root-caused by the walker, fixed.**
+1. **Escape over the shelf regrew the zoom it had just closed.** The shelf
+   hands focus back to the card whose + opened it; the Escape keydown had set
+   card-facts' lastInput to 'keyboard', so the keyboard route read the
+   returning focus as navigation and grew a fresh zoom within 50 ms — the
+   click · Escape · click class again. Root fix: card-facts `focusQuietly` —
+   a focus the app hands back is never keyboard navigation, and the route
+   ignores it. Used by the shelf's close and by the notes sheet's close (the
+   same trap, reproduced in its test: note door → Escape regrew the zoom).
+   Settings restores no focus to a card. A Back (no key) was already fine.
+2. **The just-joined welcome never showed.** The guest card is marked read
+   the moment a guest touches the wall or asks to join — always before the
+   join lands — and the just-joined card shared that marker. It has its own
+   now (`fn_welcome_joined_v1`): once per phone, after a fresh join, marked
+   when it shows; never for someone who took their own existing name.
+Tests: `first-open-shelf-close` (Escape over a shelf a zoom's + opened),
+`zoom-door-row` (note door → Escape), `first-open-guest` (the shelf join
+brings the card), `first-open-welcome` (claiming an existing name: neither
+marker); each fails with its fix removed. Real input:
+`tests/browser/guest-tap-route.test.mjs` now presses a real Escape over the
+shelf and joins from it, in WebKit (iPhone) and Chromium.
