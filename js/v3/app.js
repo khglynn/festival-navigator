@@ -2824,6 +2824,7 @@ function openInvite({ moment = false } = {}) {
   // Success mints the per-person claim link (&me=): opening it lands them on
   // their circle with every pick already theirs. Not focused on open: the
   // keyboard would cover the link, which comes first.
+  const token = state.getCrewToken();
   const byName = document.createElement('div');
   byName.className = 'inv-section';
   const byLabel = document.createElement('div');
@@ -2867,7 +2868,7 @@ function openInvite({ moment = false } = {}) {
       const chip = document.createElement('button');
       chip.className = 'btn-tonal';
       chip.textContent = `+ ${name}`;
-      chip.addEventListener('click', () => { if (adding) return; input.value = name; doAdd(); });
+      chip.addEventListener('click', () => { if (waiting) return; input.value = name; doAdd(); });
       chips.appendChild(chip);
     }
     pickWrap.append(pickLabel, chips);
@@ -2875,9 +2876,6 @@ function openInvite({ moment = false } = {}) {
   }
 
   const succeed = (canonical) => {
-    refreshCtx();
-    renderPersonChips();
-    repaintWall();
     sheet.textContent = '';
     // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
     // the moment it becomes the thing you are actually looking at.
@@ -2902,28 +2900,34 @@ function openInvite({ moment = false } = {}) {
     sheet.append(explain, inviteLinkRow(theirs, `${canonical}'s personal invite link`), done);
   };
 
-  // ONE add at a time (Sol's review of b78b274, carried over from the old
-  // add sheet): the button waited for its answer, but a chip or Enter could
-  // start a second POST, and two answers arriving out of order let the older
-  // one replace the crew view and the success sheet show the wrong person's
-  // link. Every way in — the button, Enter, the chips — waits for the answer.
-  let adding = false;
-  const setAdding = (on) => {
-    adding = on;
+  // Every way in — the button, Enter, the chips — waits while this crew has
+  // an add on its way (addInFlight, below: one per crew, for the page, not
+  // for this sheet), and a sheet opened while one is out says so and takes
+  // its answer when it lands.
+  let waiting = false;
+  const setWaiting = (on, who = '') => {
+    waiting = on;
     addBtn.disabled = on;
     input.readOnly = on; // not disabled: the field keeps its focus and the keyboard stays up
     for (const b of sheet.querySelectorAll('.inv-others button')) b.disabled = on;
+    status.textContent = '';
+    if (on) status.appendChild(eqLoader(`Adding ${who}…`));
   };
-  const doAdd = async () => {
-    if (adding) return;
+  const follow = (add) => {
+    setWaiting(true, add.canonical);
+    add.waiters.add((outcome) => {
+      // A sheet that has closed, or a crew that has changed, takes nothing.
+      if (!sheet.isConnected || state.getCrewToken() !== token) return;
+      setWaiting(false);
+      if (outcome.ok) succeed(outcome.canonical);
+      else if (outcome.message) status.textContent = outcome.message;
+    });
+  };
+  const doAdd = () => {
+    if (waiting || addInFlight.has(token)) return;
     const name = input.value.trim();
     const problem = nameProblem(name);
     if (problem) { status.textContent = problem; return; }
-    // Never apply one crew's add to another crew's state (sync.js's own
-    // convention): switching crews while the request is in flight must
-    // abandon the result, or the person lands in the WRONG crew — and the
-    // offline branch would even persist + push it there (Codex arc gate P1).
-    const tokenAtStart = state.getCrewToken();
     const people = state.people();
     const activeMatch = Object.entries(people)
       .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && state.isActivePerson(p));
@@ -2934,43 +2938,73 @@ function openInvite({ moment = false } = {}) {
       .find(([n]) => n.toLowerCase() === name.toLowerCase());
     const canonical = removedMatch ? removedMatch[0] : name;
     const taken = Object.values(people).map((p) => p.colorIndex).filter(Number.isInteger);
-    const person = { colorIndex: nextColorIndex(taken), removed: false };
-    setAdding(true);
-    status.textContent = '';
-    status.appendChild(eqLoader(`Adding ${canonical}…`));
+    follow(addPerson(token, canonical, { colorIndex: nextColorIndex(taken), removed: false }));
+  };
+  const pending = addInFlight.get(token);
+  if (pending) follow(pending);
+  addBtn.addEventListener('click', doAdd);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+}
+
+// ---- adding someone by name: one at a time per crew (Sol's reviews of b78b274, 1b678c0) --
+// The add lives here, not in the sheet that started it: a sheet closed and
+// opened again used to start a second POST alongside the first, and when
+// the older answer landed last it replaced the crew doc and the newer person
+// vanished from this phone. Now a crew has at most one add on its way, a
+// fresh Invite sheet reads it ("Adding Ben…", every way in waiting) and
+// takes its answer; and an answer is applied WHOLE only if nothing newer has
+// reached this phone since it left (state.remoteGeneration — a poll, a push,
+// another add); otherwise only the person it added is written in, so an
+// answer that arrives late can never take anyone or anything away.
+const addInFlight = new Map(); // crew token → { canonical, waiters: Set<(outcome) => void> }
+function addPerson(token, canonical, person) {
+  const add = { canonical, waiters: new Set() };
+  addInFlight.set(token, add);
+  const genAtStart = state.remoteGeneration();
+  const finish = (outcome) => {
+    if (addInFlight.get(token) === add) addInFlight.delete(token);
+    if (outcome.ok) { refreshCtx(); renderPersonChips(); repaintWall(); }
+    for (const w of add.waiters) {
+      try { w(outcome); } catch (e) { record('invite:add', e); }
+    }
+  };
+  (async () => {
     try {
-      const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
+      const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { people: { [canonical]: person } }, sv: 4 }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
-        status.textContent = errorText(body, 'The crew service hiccuped — give it a second and try again.');
+        // Never apply one crew's add to another crew's state (sync.js's own
+        // convention): a crew switched mid-flight abandons the result.
+        if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+        finish({ ok: false, message: errorText(body, 'The crew service hiccuped — give it a second and try again.') });
         return;
       }
       const merged = await res.json();
       // The switch check comes AFTER the last await, or a crew change during
       // the json() parse still slips the old crew's doc into the new crew's
       // state (TOCTOU — commit security review, 2026-07-12).
-      if (state.getCrewToken() !== tokenAtStart) return;
-      state.applyRemoteDoc(merged);
-      succeed(canonical);
+      if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+      if (state.remoteGeneration() === genAtStart) state.applyRemoteDoc(merged);
+      else {
+        state.crewDoc.people[canonical] = (merged.people || {})[canonical] || person;
+        state.persist();
+      }
+      finish({ ok: true, canonical });
     } catch {
-      if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
+      if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
       // Offline: local-first add, sync catches up — same as every pick.
       state.recordPerson(canonical, person);
       state.crewDoc.people[canonical] = person;
       state.persist();
       sync.scheduleSync();
-      succeed(canonical);
-    } finally {
-      setAdding(false);
+      finish({ ok: true, canonical });
     }
-  };
-  addBtn.addEventListener('click', doAdd);
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+  })();
+  return add;
 }
 
 // The heading's ‹ returns to the fest list (Kevin note 5, "like we had

@@ -79,6 +79,27 @@ The tolerance is now the row's own (two pixels in rects).
    to land (`lookAround`, `historySettled`), never a fixed time; 3× under the night clock with eight
    CPU hogs, unit and browser guest cases, all green.
 
+## Sol's re-review of `1b678c0` (P1) and two test waits
+
+1. **P1 — the one-add guard lived in the sheet**, so closing and reopening the Invite sheet reset it:
+   two POSTs, and the older answer landing last replaced the crew doc and the newer person vanished
+   on this phone. Fixed at the mechanism: `addPerson` in app.js keeps **one add in flight per crew
+   for the page** (`addInFlight`); a freshly opened Invite sheet reads it — "Adding Mo…", every way in
+   waiting — and takes the success state when it lands. And an add's answer is applied **whole only
+   if nothing newer has reached this phone since it left** (`state.remoteGeneration()`, counted in
+   `applyRemoteDoc` — a poll, a push, another add); otherwise only the person it added is written in,
+   so a late answer can never take anyone away. Tests (`tests/people-menu.test.mjs`): add Mo → close
+   → reopen (the new sheet waits on Mo; Enter and Add for Nia send nothing) → Mo's answer lands on the
+   reopened sheet with Mo's link → Nia added after, her link; one POST at a time, both present. And
+   out of order both ways: another phone adds Quin and a poll brings him while Pat's answer is in
+   transit, Pat's lands last — Pat and Quin both present; Ria's lands first, then Sol's poll —
+   everyone present. Each test fails without its half of the fix.
+2. `tests/view-menu.test.mjs`'s fixed 40 ms wait after Back (the List build's test) now waits for
+   Settings to leave and the router's entry to go.
+3. `tests/people-menu.test.mjs`: every wait is for a state — the menu open, history still, a sheet and
+   its entry gone — never a fixed settle (the "menu gained Zed" case failed once at 10 ms under load
+   25). 4 runs of the touched files under the night clock with 12 CPU hogs: green.
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line

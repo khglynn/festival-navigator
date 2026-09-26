@@ -63,9 +63,12 @@ async function network(url, opts = {}) {
   if (u.startsWith('/api/crew?')) {
     const t = new URL(u, 'https://x').searchParams.get('t');
     if (!SERVER[t]) return json({ error: 'Crew not found' }, 404);
-    if (method !== 'GET' && holdPosts) await new Promise((r) => heldPosts.push(r));
+    // The server takes a write at once; a held POST is its ANSWER slow in
+    // transit — so it carries the crew as it was when the write landed.
     if (method !== 'GET') SERVER[t] = deepMerge(SERVER[t], JSON.parse(opts.body).data || {});
-    return json(SERVER[t]);
+    const answer = JSON.parse(JSON.stringify(SERVER[t]));
+    if (method !== 'GET' && holdPosts) await new Promise((r) => heldPosts.push(r));
+    return json(answer);
   }
   return json({ error: 'not in this test' }, 503);
 }
@@ -99,10 +102,21 @@ const wrap = () => $('dock-you-wrap');
 const escape = () => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const shelf = () => document.querySelector('.join-shelf');
+// Wait for a state, never the clock (a loaded machine runs late: "the menu
+// gained Zed" once failed at a fixed 10 ms settle under load 25). Any history
+// traversal still on its way closes a menu when it lands (a menu goes with the
+// page on a popstate), so the menu opens only once history is still.
+async function until(check, what, ms = 3000) {
+  for (let t = 0; !check(); t += 5) {
+    if (t > ms) assert.fail(`still waiting for ${what}`);
+    await settle(5);
+  }
+}
+const historyStill = () => !(window.history.state && (window.history.state.joinShelf || (window.history.state.layers || []).length));
 async function openMenu() {
+  await until(historyStill, 'the history to settle');
   if (!isOpen()) $('dock-you').click();
-  await settle(10);
-  assert.ok(isOpen(), 'the menu is open');
+  await until(isOpen, 'the menu to open');
 }
 async function closeMenu() { if (isOpen()) { escape(); await settle(10); } }
 // The join shelf's ways out pop its history entry, and the popstate that
@@ -110,8 +124,12 @@ async function closeMenu() { if (isOpen()) { escape(); await settle(10); } }
 // the next tap, never a fixed time (a loaded machine lands it late — see
 // first-open-guest.test.mjs lookAround).
 async function historySettled() {
-  for (let i = 0; i < 400 && window.history.state && window.history.state.joinShelf; i++) await settle(5);
+  await until(historyStill, 'the shelf’s history entry to go');
   await settle(10);
+}
+// A sheet's Done pops the router's entry for it; wait for that to land.
+async function sheetClosed() {
+  await until(() => !document.getElementById('artist-sheet') && historyStill(), 'the sheet and its history entry to go');
 }
 
 test('the avatar opens HIGHLIGHT, the Show menu’s twin: its label, Everyone, the crew with you marked, a line, then the ways on', async () => {
@@ -347,7 +365,7 @@ test('Add by name is server-first and ends on their own link; a name already her
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
   assert.ok(state.people().Zed, 'and Zed is in the crew here');
   done.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
 });
 
 test('one add at a time: a chip, then Enter, then another chip while the first is on its way — one POST, and the link is the first one’s', async () => {
@@ -380,7 +398,7 @@ test('one add at a time: a chip, then Enter, then another chip while the first i
   assert.ok(state.people().Drew, 'Drew is in the crew');
   assert.equal(state.people().Kat, undefined, 'and Kat, never sent, is not');
   sheet.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
 });
 
 test('one add at a time, the other way round: a typed name and Enter, then a chip and the Add button — one POST, the typed one’s link', async () => {
@@ -410,7 +428,103 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   assert.match(sheet.querySelector('.inv-link input').value, /me=Lu/);
   assert.equal(state.people().Kat, undefined);
   sheet.querySelector('.inv-done').click();
-  await settle(40);
+  await sheetClosed();
+});
+
+// One add per crew, whatever the sheets do (Sol's re-review of 1b678c0: the
+// guard lived in the sheet, so close and reopen reset it, two POSTs went out,
+// and the older answer landing last dropped the newer person locally).
+test('one add per crew across a closed and reopened sheet: the new sheet waits on the add that is out, then takes its answer', async () => {
+  const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew'));
+  const before = posts().length;
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  holdPosts = true;
+  sheet.querySelector('.inv-name input').value = 'Mo';
+  sheet.querySelector('.inv-add').click();
+  await settle(5);
+  assert.equal(posts().length, before + 1, 'Mo is on its way');
+  sheet.querySelector('.inv-done').click(); // closed with Mo still out
+  await sheetClosed();
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'the new sheet says what is out');
+  assert.equal(sheet.querySelector('.inv-add').disabled, true, 'and waits for it');
+  assert.equal(sheet.querySelector('.inv-name input').readOnly, true);
+  assert.ok([...sheet.querySelectorAll('.inv-others button')].every((b) => b.disabled));
+  const input = sheet.querySelector('.inv-name input');
+  input.value = 'Nia';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  sheet.querySelector('.inv-add').click();
+  await settle(20);
+  assert.equal(posts().length, before + 1, 'one POST at a time: Nia waits');
+  holdPosts = false;
+  heldPosts.splice(0).forEach((r) => r());
+  await until(() => /MO IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Mo’s answer on the reopened sheet');
+  sheet = document.querySelector('#artist-sheet');
+  assert.match(sheet.querySelector('.inv-link input').value, /me=Mo/, 'Mo’s own link, on the sheet that was open when it landed');
+  assert.ok(state.people().Mo, 'Mo is in');
+  sheet.querySelector('.inv-done').click();
+  await sheetClosed();
+  // Now Nia, on her own.
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.equal(sheet.querySelector('.inv-add').disabled, false, 'nothing out: the entries are live again');
+  sheet.querySelector('.inv-name input').value = 'Nia';
+  sheet.querySelector('.inv-add').click();
+  await until(() => /NIA IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Nia’s answer');
+  assert.match(document.querySelector('#artist-sheet .inv-link input').value, /me=Nia/);
+  assert.equal(posts().length, before + 2, 'two adds, two POSTs, one after the other');
+  assert.ok(state.people().Mo && state.people().Nia, 'both in, on this phone');
+  document.querySelector('#artist-sheet .inv-done').click();
+  await sheetClosed();
+});
+
+test('an add’s answer that is older than what this phone has since heard never takes anyone away — in either order', async () => {
+  const addHeld = async (name) => {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    holdPosts = true;
+    sheet.querySelector('.inv-name input').value = name;
+    sheet.querySelector('.inv-add').click();
+    await settle(5);
+  };
+  const release = async (name) => {
+    holdPosts = false;
+    heldPosts.splice(0).forEach((r) => r());
+    await until(() => new RegExp(`${name.toUpperCase()} IS IN`).test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), `${name}’s answer`);
+    assert.match(document.querySelector('#artist-sheet .inv-link input').value, new RegExp(`me=${name}`), `${name}’s own link`);
+  };
+  // Another phone adds Quin after Pat's add reached the server, and a poll
+  // brings the crew with Quin while Pat's answer — which never saw him — is
+  // still in transit; it lands last.
+  const anotherPhoneAdds = (name, colorIndex) => {
+    SERVER[CREW] = deepMerge(SERVER[CREW], { people: { [name]: { colorIndex } } });
+    state.applyRemoteDoc(JSON.parse(JSON.stringify(SERVER[CREW]))); // the poll
+  };
+  await addHeld('Pat');
+  anotherPhoneAdds('Quin', 11);
+  await release('Pat');
+  assert.ok(state.people().Pat, 'Pat is in');
+  assert.ok(state.people().Quin, 'and Quin, who the late answer never saw, is still here');
+  document.querySelector('#artist-sheet .inv-done').click();
+  await sheetClosed();
+  // The other order: Ria's answer lands first (whole — nothing newer yet),
+  // then the newer doc with Sol.
+  await addHeld('Ria');
+  await release('Ria');
+  anotherPhoneAdds('Sol', 12);
+  assert.ok(state.people().Ria && state.people().Sol && state.people().Pat && state.people().Quin, 'everyone, either way');
+  document.querySelector('#artist-sheet .inv-done').click();
+  await sheetClosed();
 });
 
 test('the menu gained Zed in place, and a crew-mate who left is gone from it and from the highlight', async () => {
