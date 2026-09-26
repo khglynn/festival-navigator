@@ -7,15 +7,13 @@ how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v90, from `main`** (PR #38, merged 2026-09-25 6:32 PM PT) on fest /
-  festival / crew.kevinhg.com — confirmed by `ops/prod-smoke.mjs` at 6:33 PM
-  PT (festival-nav-v90, ASSET_STAMP aa9f98ba; all three hosts, every APP_CORE
-  file identical, landing + gallery clean in iPhone WebKit, worker installs).
-  Kevin's first Portola notes: stacks under a clock line up with its
-  columns (desktop; on a phone only the timetable's leftovers step in), the
-  notes button matches the search field, Settings → "Get the latest
-  version". Gated by CI, Codex Sol 6 (two rounds) and a real-browser walk.
-  v89 (PR #33) went out at 2:50 PM.
+- **v91, from `main`** (PR #42, merged 2026-09-25 7:59 PM PT) on fest /
+  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS at 8:01 PM
+  (festival-nav-v91, ASSET_STAMP c01adb1c). On a phone the afters line up
+  under the timetable and scroll sideways; NOW slides a row to show its card;
+  search ignores accents. v90 (PR #38, 6:32 PM): stacks under a clock line up
+  on desktop, the notes button matches search, Settings → "Get the latest
+  version". Both gated by CI, Codex Sol 6 rounds and real-browser walks.
 - **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
   (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
   Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
@@ -90,23 +88,28 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. Portola live ops (from 2026-09-25 evening): one session ships friends'
-   feedback while Kevin is on his phone, by
-   `claude-plans/2026-09-25-portola-live/RUNBOOK.md`; items, releases and the
-   Codex model comparison are in the LEDGER beside it. Waiting on Kevin: the
-   round-one review page (OURS directions, first-open flow and copy) and the
-   Folsom-weekend party pick list — both artifacts linked in the LEDGER.
-   Next build: his picks, plus the phone afters lining up (a sideways
-   scroll, as he described) and accent-free search ("mull" finds MÜLL).
+1. Portola live ops — the only festival session from 2026-09-25 ~11:30 PM
+   (Kevin closed the others; city seasons is paused on its branches). Rules:
+   `claude-plans/2026-09-25-portola-live/RUNBOOK.md`; Kevin's calls,
+   releases and reviews: the LEDGER beside it (read "Kevin's calls" first).
+   In flight: v92 (guest first open, join shelf, the − · note · + zoom row;
+   `live/v92`), v93 (NOW as a tab beside the live day, filter menu stays
+   open, gear; `live/v93`), v94 (Folsom by time + every verified party;
+   `live/v94` + `data/folsom-all`). Then the unified build:
+   `claude-plans/2026-09-26-unified-build/PLAN.md` (revise with REVIEW-1.md
+   first; Kevin: order by build quality, not the calendar).
 2. ACL prep before Oct 2: headliner end times (its closers print only a
    start, so the grid draws them 60 min and NOW stops counting them live
    early — add ends, or run a stage's last endless set to the day's close),
    and the dock's FRI flash on open (ACL lights FRI for about a second before
    finding SAT).
-3. Install the app's PostHog → Slack alerts (a new error, an error that came
-   back) from `ops/posthog/` — not installed yet. Slack is connected to
-   project 627900 (2026-09-25) and Kevin's four calls are recorded in that
-   folder's README; a Pen card tracks it.
+3. PostHog → Slack alerts (new error, came back) from `ops/posthog/`:
+   installing 2026-09-25 with the write key `POSTHOG_API_KEY_FESTNAV` in
+   ~/.env (reads: `POSTHOG_API_KEY`); the script's error fields live under
+   `exception_props` — fix it in the repo copy when the install lands.
+   Seen once: an iPhone booted a months-old cached `js/time.js` beside new
+   modules (SyntaxError, 3:47 PM Sep 25) — self-recovery on a failed module
+   import is update-machinery work, after Portola.
 4. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
 5. After Oct 11: the merged wall for two crews
