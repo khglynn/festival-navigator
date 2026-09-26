@@ -2599,26 +2599,29 @@ export function holdDayRowEdges(c, edges, settled) {
 
 // A row that nearly fits, fits: before it scrolls, the air between its tabs
 // tightens, from the row's --gap down to its --gap-min (v3.css). Portola's
-// four days and NOW are 26px too long for a 430 dock, and every scroll of
+// four days and NOW overflow a 430 dock by about 35px, and every scroll of
 // that row left some of THU at the edge (the Pro Max phones, the whole
-// weekend); four days are 16px too long at 375. Past what the gaps can give,
-// the row scrolls at its full gap.
+// weekend); four days overflow 375 by about 15px. Past what the gaps can
+// give, the row scrolls at its full gap.
 function fitDayRowGap(c) {
-  // Mid-slide, the tabs' transforms move what the row can scroll; the fit it
-  // made before the slide stands until the tabs land.
-  if (heldEdges.has(c)) return;
   c.style.removeProperty('--gap');
-  // What the row really scrolls at its full gap — which includes the last
-  // tab's touch reach (v3.css, 2px past its box on a phone), and is nothing
-  // at all for the rail's row, which is as wide as its tabs.
-  const over = c.scrollWidth - c.clientWidth;
-  if (!(over > 1)) return;
+  // Only a row that really overflows at its full gap (the rail's row is as
+  // wide as its tabs, so for it "over" would only ever be rounding — and
+  // fitting to rounding would shrink it into a loop). The end mark holds the
+  // range at the layout's end while tabs slide, so a slide never hides one.
+  if (!(c.scrollWidth - c.clientWidth > 1)) return;
   const css = window.getComputedStyle(c);
   const gap = parseFloat(css.getPropertyValue('--gap'));
   const min = parseFloat(css.getPropertyValue('--gap-min'));
-  const n = [...c.children].filter((k) => !k.hidden).length - 1;
-  // A quarter pixel spare per gap: scrollWidth is whole pixels, text is not.
-  if (gap > min && n > 0 && over <= n * (gap - min)) c.style.setProperty('--gap', `${Math.max(min, gap - over / n - 0.25)}px`);
+  const kids = rowTabs(c);
+  const n = kids.length - 1;
+  if (!(gap > min) || n < 1) return;
+  // How much, from layout: offsets are whole pixels and never moved by a
+  // slide's transform (scrollWidth is, mid-slide — review, 2026-09-25), and a
+  // tab's invisible touch reach past the last box is not worth a gap. A
+  // quarter pixel spare per gap for the text's fractions.
+  const over = kids.reduce((w, k) => w + k.offsetWidth, 0) + n * gap - c.clientWidth;
+  if (over > 0 && over <= n * (gap - min)) c.style.setProperty('--gap', `${Math.max(min, gap - over / n - 0.25)}px`);
 }
 
 // Bring a day row to rest. The ROW scrolls, never the page (it is not ours to
