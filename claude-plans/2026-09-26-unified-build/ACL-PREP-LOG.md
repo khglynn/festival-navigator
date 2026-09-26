@@ -663,3 +663,18 @@ everything else as is). The same "Show = the first act" reading applies
 there, and at the Concourse the posted openers' 9 PM is also the room
 opening. For a multi-act club night, though, the first billed DJ is the one
 playing when doors open.
+
+## Round three — checks and commits
+
+- `node scripts/validate-festivals.mjs`: 0 errors (2 unrelated warnings).
+- `guess-run-times.mjs` on acl-2026 and portola-2026: 0 proposed changes
+  each (both files are exactly what the tool writes); Portola's file is
+  untouched by this round.
+- Dated-room invariants (40 rooms): 0 problems; no event carries a URL
+  `closeSource` any more.
+- `npm test`: 1,134 pass / 0 fail at the default clock, `TZ=Asia/Tokyo`, and
+  `NIGHT_CLOCK=2026-09-27T04:30:00Z` with the night-clock import.
+
+Commits: `93a655f` (issue 2, script + tests), `7108e4e` (issue 1, registry
+by-date close + script + test + docs line), `21c6fa9` (issue 3, Yukimatsu +
+one-act test), then this log entry.
