@@ -6,8 +6,8 @@
 //   this is, once per phone;
 //
 //   a guest's FINGER tap on a card opens its shelf (the tap change,
-//   2026-09-26: the card, − · meter · +, the thread — what a member's tap
-//   opens); a click, or any of the shelf's doors, asks who they are on a
+//   2026-09-26: the card with − and + in its corners, the thread — what a
+//   member's tap opens); a click, or any of the shelf's doors, asks who they are on a
 //   shelf over the wall that never moves (the guest shelf round), and on join
 //   a + (or a click) becomes their pick through the ordinary pick path while
 //   − and the note door just join; "Look around" drops it;

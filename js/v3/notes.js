@@ -1159,7 +1159,10 @@ export function closeSheet() {
   if (back2 && !back2.isConnected && back2.dataset && back2.dataset.restore) {
     const key = back2.dataset.restore;
     const same = [...document.querySelectorAll('[data-restore]')].filter((n) => n.dataset.restore === key);
-    back2 = same.find((n) => n.offsetParent !== null) || same[0] || null;
+    // A shown one first; if the window narrowed so the people row is hidden,
+    // the avatar that opens the people menu (where Invite lives on a phone).
+    const shown = (n) => n && n.offsetParent !== null;
+    back2 = same.find(shown) || [document.getElementById('dock-you'), document.getElementById('rail-you')].find(shown) || same[0] || null;
   }
   if (back2 && back2.isConnected) focusQuietly(back2, {});
   restoreFocusTo = null;
