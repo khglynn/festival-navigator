@@ -245,3 +245,14 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
      side (a capped sheet scrolls now, keeps the focused field in view, and the join shelf's parts no
      longer shrink). Frames: `tap-design/frames/contact-webkit-se-keys.png` (SE portrait and on its side,
      member and guest). Unit + WebKit/Chromium contracts at 375×667 and 667×375.
+  Re-stamped v98 with `--keep` on a clean tree (bc18abc, ASSET_STAMP 12611f2d). Gate: `npm test`
+  1142/1143 at all three clocks (1 skip), `test:browser` 277/277, validate-festivals 0 errors.
+- **15:10 — CI's browser job, red on Linux WebKit only, and not the app.** Three WebKit cases failed
+  across runs 36246451230…36247465311, never on a Mac: the climb ("row moved −6.85px at +1"), the List
+  tap ("+ picked"), and v97's Board ↔ List hold ("Mike D 45.6 → 52"). Each measured a place while an
+  arrival was still at its start — the shelf's parts rise from 8px below, a view's rooms from 6px —
+  after a fixed sleep a loaded runner outran. v97's case had never run on Linux: main's CI installs
+  Chromium only, and this branch's U0 is what brought WebKit to CI. Fixed in the tests (a9ee244):
+  `motionDone` (tests/helpers/browser.mjs) waits out every finite animation on the document's clock
+  before a place is read; list-view launches WebKit through `launchWebkit`, so a missing one fails CI
+  rather than skipping. No app file changed, so no re-stamp.
