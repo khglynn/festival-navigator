@@ -79,6 +79,9 @@ let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 
 export const planShelf = () => el;
 export const planIsOpen = () => mode === 'open';
+// Whether there is a plan on screen to open: the peek or the open plan, not
+// one on its way out (the people menu's "Our plan" row asks, app.js).
+export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
 export function planShowsNow() {
@@ -473,9 +476,12 @@ function play(before, { duration, easing }) {
 
 // ---- opening and closing --------------------------------------------------------
 function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
-export function openPlan({ instant = false } = {}) {
+// `focus`: a keyboard opened it from somewhere else (the people menu's row),
+// so its focus comes along to the grabber, as if Enter had been pressed there.
+export function openPlan({ instant = false, focus = false } = {}) {
   if (!el || mode === 'gone' || leaving) return;
   settleTo(1, { instant });
+  if (focus) grab.focus({ preventScroll: true });
 }
 export function closePlan({ instant = false } = {}) {
   if (!el || mode !== 'open') return;

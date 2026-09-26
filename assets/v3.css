@@ -385,6 +385,7 @@ html { touch-action: manipulation; }
 .hl-pop .mark.on { background: var(--c); }
 .hl-pop .mark.on .tick { opacity: 1; }
 .hl-pop .check.plus { color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+.hl-pop .hl-act.plan { color: var(--tonal-text); } /* the way into Our plan: the first action, in the brand's tonal text (people-shelf design) */
 /* While its menu is open the avatar wears the brand ring — a door that is
  * open (the fest name's three lines turn brand the same way). */
 .you-avatar { transition: box-shadow .12s ease; }

@@ -289,6 +289,47 @@ test('a click with no hand behind it opens the peek (a screen reader’s activat
   assert.equal(plan().dataset.state, 'peek');
 });
 
+// The people menu is the other way in (the people-shelf design: "Our plan ›",
+// first below the line). Opening a menu closes an open plan to its peek, so
+// the row always has somewhere to go; with no plan on screen it is not offered.
+test('the people menu’s Our plan row: above Pick as someone else, it gives way to the plan; Enter takes the focus along; no plan, no row', async () => {
+  await repaint();
+  const you = $('dock-you');
+  const menu = () => $('dock-you-wrap').querySelector('.hl-pop');
+  const row = () => menu().querySelector('[data-act="plan"]');
+  const grab = plan().querySelector('.plan-grab');
+  const len = history.length;
+  you.click();
+  assert.equal(you.getAttribute('aria-expanded'), 'true', 'the menu is open');
+  assert.deepEqual([...menu().querySelectorAll('[data-act]')].map((b) => b.dataset.act), ['plan', 'pick-as', 'invite'],
+    'first below the line, above Pick as someone else');
+  assert.equal(row().querySelector('.nm').textContent, 'Our plan');
+  assert.ok(row().classList.contains('plan'), 'the design’s tonal row');
+  row().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 })); // a hand's tap
+  assert.equal(you.getAttribute('aria-expanded'), 'false', 'the menu gave way');
+  assert.equal(plan().dataset.state, 'open', 'and the plan rose');
+  assert.notEqual(document.activeElement, grab, 'a hand’s tap leaves the focus alone');
+  you.click();
+  assert.equal(plan().dataset.state, 'peek', 'a menu opening closes the open plan to its peek');
+  assert.ok(row(), 'which is still a plan to open');
+  row().focus();
+  row().click(); // no pointer behind it: Enter, Space, a screen reader
+  assert.equal(plan().dataset.state, 'open');
+  assert.equal(document.activeElement, grab, 'the focus came with it, onto the plan’s grabber');
+  grab.click();
+  assert.equal(plan().dataset.state, 'peek');
+  assert.equal(history.length, len, 'neither the menu nor the plan takes a history entry');
+  setClock(TUE_NOON);
+  await repaint();
+  assert.equal(showing(), false);
+  you.click();
+  assert.equal(row(), null, 'no plan on screen, no row');
+  assert.ok(menu().querySelector('[data-act="pick-as"]'), 'the rest of the menu is as it was');
+  you.click();
+  setClock(SAT_940);
+  await repaint();
+});
+
 test('nothing two days before the festival; the day before, tomorrow’s first stop with its weekday', async () => {
   setClock(TUE_NOON);
   await repaint();
@@ -314,4 +355,8 @@ test('the welcome card first: a guest’s peek waits under it and rises when it 
   assert.equal(document.getElementById('welcome-card'), null);
   assert.ok(showing(), 'the card gone, the peek rises');
   assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'a guest sees the crew’s plan');
+  $('dock-you').click();
+  assert.deepEqual([...$('dock-you-wrap').querySelectorAll('.hl-pop [data-act]')].map((b) => b.dataset.act), ['plan', 'join'],
+    'a guest’s menu: Our plan, then Join the crew');
+  $('dock-you').click();
 });

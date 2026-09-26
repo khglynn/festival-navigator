@@ -58,7 +58,7 @@ configureReports({
 });
 import { createSortControl } from './sort-control.js';
 // The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
-import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
+import { buildHighlightMenu, paintHighlightMenu, menuActionRow, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
 import { passesPeople } from './filters.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
 import { footTop, measureFoot } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -2187,10 +2187,18 @@ const YOU_SLOTS = [['dock-you-wrap', 'dock-you', 'dock-days'], ['rail-you-wrap',
 const hlPop = (wrap) => (wrap ? wrap.querySelector(':scope > .hl-pop') : null);
 const highlightOpenIn = (wrap) => !!(openMenu && openMenu.wrap === wrap);
 
-// Our plan's row slots into the menu above Pick as someone else (the Our plan
-// build on live/plan fills this: return people-menu.js menuActionRow(...)
-// wired to open the plan, or null). Nothing here yet — the brief, item 4.
-function peopleMenuPlanRow() { return null; }
+// Our plan's row, above Pick as someone else / Join the crew (the design:
+// "Our plan ›", the other way into where we'll be). The menu gives way and
+// the plan rises from where it already is — the peek over the dock, the
+// laptop's corner card. It is offered only while there is a plan on screen
+// (peopleMenuData); opening a menu closes an open plan to its peek, so the
+// row always has somewhere to go. A click with no pointer behind it (Enter,
+// Space, a screen reader) takes the focus into the plan with it.
+function peopleMenuPlanRow() {
+  const r = menuActionRow({ label: PEOPLE_WORDS.plan, chev: true, act: 'plan', cls: 'plan' });
+  r.b.addEventListener('click', (e) => { closeShowMenu(); openPlan({ focus: e.detail === 0 }); });
+  return r;
+}
 
 function peopleMenuData() {
   const guest = !ctx.meName;
@@ -2203,7 +2211,7 @@ function peopleMenuData() {
     // Nobody else in the crew: nobody to pick as (PEOPLE-BUILD.md).
     pickAs: !guest && active.some(([n]) => n !== ctx.meName),
     invite: !guest,
-    plan: peopleMenuPlanRow,
+    plan: planHere() ? peopleMenuPlanRow : null,
   };
 }
 const PEOPLE_DOORS = {

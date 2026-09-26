@@ -325,6 +325,40 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The people menu is the other way in: "Our plan ›" first below its line.
+  // A finger on the avatar, a finger on the row — the menu gives way and the
+  // plan rises from its peek; no history entry, and the busy mark is given back.
+  test(`${name}: the people menu’s Our plan row — a finger opens the menu, a finger on the row raises the plan`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      const before = await page.evaluate(() => ({ len: history.length, hash: location.hash }));
+      const you = await page.locator('#dock-you').boundingBox();
+      await page.touchscreen.tap(you.x + you.width / 2, you.y + you.height / 2);
+      await sleep(500);
+      const menu = () => page.evaluate(() => {
+        const pop = document.querySelector('#dock-you-wrap .hl-pop');
+        return { open: document.getElementById('dock-you').getAttribute('aria-expanded') === 'true',
+          shown: !!pop && getComputedStyle(pop).display !== 'none',
+          acts: pop ? [...pop.querySelectorAll('[data-act]')].map((b) => b.dataset.act) : [] };
+      });
+      let m = await menu();
+      assert.ok(m.open && m.shown, `the menu is up: ${JSON.stringify(m)}`);
+      assert.deepEqual(m.acts.slice(0, 2), ['plan', 'pick-as'], 'Our plan first, above Pick as someone else');
+      const row = await page.locator('#dock-you-wrap .hl-pop [data-act="plan"]').boundingBox();
+      assert.ok(row && row.height >= 44, `a real row, on the touch floor: ${JSON.stringify(row)}`);
+      await page.touchscreen.tap(row.x + row.width * 0.3, row.y + row.height / 2);
+      await sleep(800);
+      m = await menu();
+      assert.ok(!m.open && !m.shown, `the menu gave way: ${JSON.stringify(m)}`);
+      const g = await geometry(page);
+      assert.equal(g.state, 'open', 'the plan rose');
+      assert.equal(g.running, 0, 'and has settled');
+      assert.equal(g.busy, null, 'nothing is left holding the page busy');
+      assert.deepEqual(await page.evaluate(() => ({ len: history.length, hash: location.hash })), before, 'no history entry');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   // A tap pins the phone's open window at its height (so the tapped row stays
   // put); that pin is the phone's. Widened to a laptop, the panel reaches the
   // bottom again and is the panel (it bounds the zoom); narrowed back, the
@@ -507,6 +541,33 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await sleep(700);
       assert.equal((await geometry(page)).state, 'peek');
       assert.equal((await focus()).grab, true, 'the focus is back on the card');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // From the rail's people menu, by keyboard: Enter on the avatar opens it,
+  // Enter on "Our plan" grows the corner card into the panel and the focus
+  // comes along to its grabber (a mouse click there leaves the focus alone).
+  // The focus is put on each control by script — Safari's Tab skips buttons
+  // — and every activation is a real key.
+  test(`${name} 1280: Enter on the avatar, Enter on Our plan — the panel opens and the focus is on its grabber`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { desk: true });
+    try {
+      await page.evaluate(() => document.getElementById('rail-you').focus());
+      await page.keyboard.press('Enter');
+      await sleep(400);
+      assert.equal(await page.evaluate(() => document.getElementById('rail-you').getAttribute('aria-expanded')), 'true', 'the menu is open');
+      await page.evaluate(() => document.querySelector('#rail-you-wrap .hl-pop [data-act="plan"]').focus());
+      await page.keyboard.press('Enter');
+      await sleep(800);
+      const at = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        const r = el.getBoundingClientRect();
+        return { side: el.dataset.side || null, width: Math.round(r.width), menu: document.getElementById('rail-you').getAttribute('aria-expanded'),
+          grab: !!(document.activeElement && document.activeElement.classList.contains('plan-grab')) };
+      });
+      assert.equal((await geometry(page)).state, 'open');
+      assert.deepEqual(at, { side: 'open', width: 400, menu: 'false', grab: true });
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

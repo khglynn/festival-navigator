@@ -40,6 +40,7 @@ export const PEOPLE_WORDS = {
   pickAs: 'Pick as someone else',
   invite: 'Invite someone',
   join: 'Join the crew',
+  plan: 'Our plan',
   menuName: 'Highlight people’s picks',
   avatar: (me) => (me ? `${me}: highlight people’s picks` : 'Highlight people’s picks, or join the crew'),
   faces: (names) => `Highlighting ${listOf(names)}. Open Highlight`,
@@ -104,10 +105,11 @@ const signatureOf = ({ people, me, guest, pickAs, invite, plan }) =>
   JSON.stringify([people.map((p) => [p.name, p.color]), me || '', !!guest, !!pickAs, !!invite, !!plan]);
 
 // `people`: [{ name, color }] in the crew's order. `highlighted`: names.
-// `plan`: Our plan's row, when that build lands — a function returning a row
-// ({ li, b } from `menuActionRow`) or null. It slots in ABOVE Pick as
-// someone else / Join the crew (the design: "Our plan ›" first, in tonal
-// text). Nothing fills it yet.
+// `plan`: Our plan's row — a function returning a row ({ li, b } from
+// `menuActionRow`), or null while there is no plan to open. It slots in ABOVE
+// Pick as someone else / Join the crew (the design: "Our plan ›" first, in
+// tonal text). The signature reads whether it is there, so a plan arriving
+// or leaving draws the menu again.
 // `animate`: a mark that turns on or off moves (never under Reduce Motion or
 // Low Power — the caller asks canAnimate).
 export function paintHighlightMenu(pop, opts) {
