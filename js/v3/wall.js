@@ -1836,7 +1836,7 @@ export function nowStops(root, ctx, date, geo) {
     m.target = landingTarget(m, geo);
     m.span = spanIn(m, geo);
     m.rowSpan = rowSpanIn(m, geo);
-    m.x = m.span ? m.span.lo : m.rowSpan ? m.rowSpan.lo : geo.box(m.card || m.line).left;
+    m.x = m.span ? m.span.lo : geo.box(m.card || m.line).left;
   }
   members.sort((a, b) => a.target - b.target || a.x - b.x);
   // Room across: a frame holds its cells side by side with 8px either side.
