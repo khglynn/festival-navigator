@@ -1,31 +1,30 @@
 # City seasons: progress
 
-**last-updated: 2026-09-25 ~3:30 PM PT · status: your move (two asks)**
+**last-updated: 2026-09-25 ~6:45 PM PT · status: rolling (go-live Monday)**
 
 *(Times are Pacific, from this Mac's clock.)*
 
-## For Kevin: where this stands (Fri Sep 25, ~3:30 PM PT)
+## For Kevin: where this stands (Fri Sep 25, evening)
 
-1. **Austin season v0 is built and on a preview**, all on branch
-   `seasons/austin-v0` (the view branch is folded in). CI green (unit and
-   real-browser suites). Plan and rules: `claude-plans/2026-09-25-season-v0/`
-   there (PLAN.md, UX.md, VIEW-NOTES.md).
-   a. The feed: 752 Austin shows at 70 locations from Do512, JamBase and
-      Ticketmaster (`scripts/season-feed.mjs`), every merge rule tested.
-   b. The view: months as lineups cut into weeks, YOURS for Spotify people,
-      a location filter, the zoom with Tix/Info, on-sale in CT.
-   c. The alert (`scripts/season-alert.mjs`): 7 shows for you today; the bot
-      is in #dont-miss.
-   d. An independent review found no festival regressions; its fixes are in.
-2. **Live usage:** production stays on v89 through Portola. The preview is
-   shown with the demo crew only: opening Austin in a real crew there
-   confuses that crew on production (UX.md, "Live usage").
-3. **Promotion window:** Mon Sep 28 – Thu Oct 1, on your word, before ACL.
+1. **Austin seasons are built and ready to go live Monday, after Portola**
+   (your go, 2026-09-25). Everything is on branch `seasons/austin-v0`
+   (commit c852b4b, CI green on unit and real-browser suites). Plan and
+   rules: `claude-plans/2026-09-25-season-v0/` there.
+   a. Four entries, each with its window and archived when over: Austin
+      Fall '26, Winter '27, Spring '27, Summer '27 (752 shows). The lists
+      show the season in progress and the next; the rest are tucked.
+   b. ‹ › arrows beside the months turn to the next or previous season
+      with a slide. The description line says when the data was updated.
+   c. Two independent reviews: no festival regressions; their fixes are in.
+   d. The Slack digest went to #dont-miss with Tix / Info / Add to
+      calendar buttons.
+2. **Monday, 8:07 AM PT:** this session has a one-shot job to merge main's
+   weekend fixes in, re-check, merge to production, and tell you. If this
+   session isn't running then, any session can do it from these notes.
 
 ## Need from you
 
-1. **Say go** for the one-time Austin digest in #dont-miss.
-2. **Your word on promoting** in the Mon–Thu window, after Portola.
+Nothing. You'll get the live link Monday.
 
 ## My read-back
 
