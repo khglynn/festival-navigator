@@ -1316,22 +1316,50 @@ function renderDayNav() {
 const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
 let openMenu = null;
 
+// A menu on its way out (the fade after a close): at most one. Its end hides
+// the menu and lets its bar step back — unless that same menu is open again
+// by then. Closed and reopened inside the 130 ms fade, the old fade's end used
+// to hide the NEW menu while aria-expanded said open and the dock stayed
+// raised (the re-review of b29aac0). Now a fade ends early the moment the
+// menu is reopened (or another fade starts), and its end never touches the
+// menu that is open.
+let menuExit = null; // { pop, bar, anim }
+function hideShowMenu(pop, bar) {
+  if (!(openMenu && openMenu.pop === pop)) pop.style.display = 'none';
+  if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up');
+}
+function settleMenuExit() {
+  const x = menuExit;
+  if (!x) return;
+  menuExit = null;
+  x.anim.onfinish = null;
+  x.anim.oncancel = null;
+  try { x.anim.cancel(); } catch { /* already done */ }
+  hideShowMenu(x.pop, x.bar);
+}
+
 function closeShowMenu({ instant = false } = {}) {
-  if (!openMenu) return;
+  // Nothing open: an instant close still ends a fade in flight (a crew switch,
+  // the shelf rising), so the bar is never left raised behind it.
+  if (!openMenu) { if (instant) settleMenuExit(); return; }
   const { pop, link, bar } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
-  const hide = () => { pop.style.display = 'none'; if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up'); };
+  settleMenuExit(); // an earlier menu still fading ends now
   // The way out is quick and plain.
-  if (instant || !canAnimate(pop, ctx)) { hide(); return; }
-  const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
+  if (instant || !canAnimate(pop, ctx)) { hideShowMenu(pop, bar); return; }
+  const anim = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
     { duration: OUT_MS, easing: EASE_LEAVE });
-  a.onfinish = hide;
-  a.oncancel = hide;
+  const exit = { pop, bar, anim };
+  menuExit = exit;
+  const done = () => { if (menuExit !== exit) return; menuExit = null; hideShowMenu(pop, bar); };
+  anim.onfinish = done;
+  anim.oncancel = done;
 }
 
 function openShowMenu(wrap, link, pop) {
   closeShowMenu({ instant: true });
+  settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
   // The bar the menu lives in (the dock, the day rail) is a stacking context:
   // its menu paints at the bar's own level, which put the dock's upward menu
   // UNDER the welcome card and the bring-picks offer (z38) — a guest tapping
@@ -1416,6 +1444,14 @@ function buildShowMenu(rooms, folded) {
   return pop;
 }
 
+// A menu leaving the page (its rooms changed): closed and its fade ended
+// first, so neither an open state nor a raised bar outlives it.
+function dropShowMenu(pop) {
+  if (openMenu && openMenu.pop === pop) closeShowMenu({ instant: true });
+  if (menuExit && menuExit.pop === pop) settleMenuExit();
+  pop.remove();
+}
+
 function paintShowMenus() {
   // A search wall has no rooms, and the fest name must not change what it
   // does while someone is typing — the festival's rooms are the same rooms.
@@ -1429,7 +1465,7 @@ function paintShowMenus() {
     if (!wrap || !link) continue;
     const existing = wrap.querySelector('.sort-pop');
     if (rooms.length < 2) {
-      if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+      if (existing) dropShowMenu(existing);
       link.removeAttribute('aria-haspopup');
       link.removeAttribute('aria-expanded');
       link.setAttribute('aria-label', 'Open settings');
@@ -1447,7 +1483,7 @@ function paintShowMenus() {
       }
       continue;
     }
-    if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+    if (existing) dropShowMenu(existing);
     link.setAttribute('aria-expanded', 'false');
     wrap.appendChild(buildShowMenu(rooms, folded));
   }

@@ -75,6 +75,16 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         return rows.every((b) => { const r = b.getBoundingClientRect(); const u = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return u && b.contains(u); });
       });
       assert.equal(rowHit, true, 'every row of the menu is reachable');
+      // Closed and reopened faster than its 130 ms fade: the old fade's end
+      // must not hide the reopened menu (the re-review of b29aac0).
+      const link = await page.locator('#dock-fest-link').boundingBox();
+      const lx = link.x + link.width / 2, ly = link.y + link.height / 2;
+      await page.touchscreen.tap(lx, ly); // close
+      await page.touchscreen.tap(lx, ly); // reopen, mid-fade
+      await sleep(450);
+      assert.equal(await page.locator('#dock .sort-pop').isVisible(), true, 'the reopened menu is still up after the old fade ended');
+      assert.equal(await page.locator('#dock-fest-link').getAttribute('aria-expanded'), 'true');
+      assert.equal(await page.locator('#dock.menu-up').count(), 1, 'and the dock is still above the cards');
       // It steps back once the menu has gone.
       await page.keyboard.press('Escape');
       await sleep(500);
