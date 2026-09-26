@@ -303,8 +303,8 @@ the people menu and the wall's left-edge fix. Built from the brief above:
    whole timeline, a fork's peak crowd) and `peekOf(…, { people })`: NOW only for a stop
    the highlighted people are in, else their next stop (MOST first), else their next
    night's, else no peek. Rows, grown cards and forks none of them is in dim (`.dim` on
-   the row's content, `--plan-dim: .28`, the wall card's value; the row's own opacity stays the window's), faded in
-   place by `play()`. `paintNowTabs` lost its highlight exception: one NOW always — the
+   the row's content, `--plan-dim: .28`, the wall card's value; the row's own opacity
+   stays the window's), faded in place by `play()`. `paintNowTabs` lost its highlight exception: one NOW always — the
    dock's comes back exactly when the peek is not saying NOW, as "what is on for Gus".
    On Portola Sat 9:40 PM, Gus highlighted: NEXT The Great Northern ~1:30 AM, Dog Blood,
    Soulwax and Public Works dim, his Warehouse and Audio forks stay bright (forks are
@@ -326,3 +326,40 @@ the people menu and the wall's left-edge fix. Built from the brief above:
    D-welcome-1280 shows the card in the corner. No review-page republish (Kevin: "good to
    wrap without artifacts").
 5. Merged `origin/live/people` at 139c0a7 (e3c6b1b, clean); `origin/main` had nothing new.
+
+## Gate, round three (2026-09-26, ~11:00 AM–)
+
+1. **The first gate on e3c6b1b** (three clocks, the browser suite 290/290) had one real
+   red: `tests/wall-filters.test.mjs`'s "one .dim rule" counted every `.dim` in v3.css,
+   comments included, so Our plan's own dim broke it. The test now reads selectors with
+   comments stripped and allows only Our plan's `plan-*` classes besides `.card.dim`;
+   the plan's dim took the wall card's .28 (04e6c6a).
+2. **Sol, first pass** on the round (26f7432, 0c9f85f, e5f3bde), four findings, all fixed:
+   a. The trip weighed a room by its best pick until the last pick there ended, so a
+      finished must held people in it. Now `levelAt` (not over yet) and `worthTheTrip`
+      (a pick they would catch). The model log's "Rule 3's trip" item 5 has the numbers
+      (f06d651).
+   b. The "never back" test could not fail: nothing drew the crew back to the site it
+      left. It now has a Club pick that every other rule would return for (f06d651).
+   c. The Spotify scan pill sat under the welcome / bring-picks card: in the laptop's
+      corner (this round's move) and above the phone's dock (older). `measureOffer` in
+      foot.js writes `--offer-top`; the pill stands above the card. Two browser checks
+      (c28784c).
+   d. The model log claimed hidden rooms pull fewer people off the grounds; corrected.
+3. **Merged `origin/live/people` 6cea2e2** (v99, which carries main's v98, the tap
+   change) at 33f62bf. app.js: both blocks kept (Our plan's cache, the hold's click
+   eater); `tests/browser/stack-row.test.mjs` took people's side (the tap opens a shelf,
+   no zoom). A finger's tap and a bare `el.click()` open the card's shelf now, so the
+   plan's shelf test picks Dog Blood with a mouse's click (b2c9d27).
+4. **Sol, second pass** on the fixes and the merge: the approach holds (no hole found in
+   `levelAt`/`worthTheTrip` across rooms, parties, missing ends and first placement).
+   Two findings:
+   a. The dock's resize path re-measured the floor but not the waiting card, so a dock
+      that changes height while a card is up left the pill's number stale. Fixed: the
+      card stands on the floor, so `measureFoot` measures it too.
+   b. **Banked, a product call:** a grown card inside the plan has no tap. Before the tap
+      change nothing in the plan picked either, but now the wall's cards open a shelf
+      with − and +, and the plan's cards, which look the same, don't. Wiring a finger's
+      tap on a grown card to the same shelf (over the plan, Back closes it through the
+      router) is a new behaviour on an approved surface, so it goes to Kevin, not into
+      this release.
