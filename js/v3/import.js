@@ -164,7 +164,7 @@ export async function readImage(file, token, { fetchImpl = (...a) => fetch(...a)
 }
 
 // ---- the sheet ------------------------------------------------------------------
-// opts: { ctx, fest, token, me, record(name, level) -> bool, done(count),
+// opts: { ctx, fest, token, me, record(name, level) -> bool, done(count, { first, added, stay }),
 //         read? (tests pass a stub reader) }
 export function openImportSheet(opts) {
   const { ctx, fest, token, me } = opts;
@@ -619,7 +619,7 @@ export function openImportSheet(opts) {
       n++;
     }
     end();
-    opts.done(n, { first: writes[0] ? writes[0].name : null });
+    opts.done(n, { first: writes[0] ? writes[0].name : null, added: writes.map((w) => w.name) });
   });
 
   // Picks that became yours while the sheet was open move to "Already yours".

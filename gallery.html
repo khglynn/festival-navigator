@@ -981,9 +981,15 @@ let folded = [];
 // now line on Saturday's grid and the now mark on Saturday's run. 11:30 PM on
 // the 26th, in the festival's own zone.
 const NOW = new Date('2026-09-27T06:30:00Z');
+// The past (Phase 1) is judged at a moment BEFORE the week, so every day of
+// this wall stays on it: at 11:30 PM Saturday the real wall would fold
+// Thursday and Friday behind one line, and the browser contracts that walk
+// this gallery measure cards on every day. The fold and the List have their
+// own contract (tests/browser/list-view.test.mjs) on the real app.
 const ectx = {
   fid: EFID, meName: 'Kevin', picks: {}, affinity: null, lowPower: false,
   sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [], now: NOW,
+  pastAt: new Date('2026-09-20T12:00:00Z'),
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
   onOpenDayNotes: (target, label) => eventsStatus(`notes tapped for ${label} (${target}) — the sheet is not wired in the gallery`),
   onOpenFestNotes: () => {},

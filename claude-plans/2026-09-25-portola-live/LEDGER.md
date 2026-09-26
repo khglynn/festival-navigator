@@ -20,6 +20,8 @@ each table; the rules live in RUNBOOK.md.
 
 | Version | What | PR | Rollback target | Shipped | Verified |
 |---|---|---|---|---|---|
+| v97 | the List view (Board · List per phone per festival; `&view=list` in links and the address), the past folded behind EARLIER / HIDE EARLIER, the menu bar `dot · FEST '26 · ☰` | #54 | `dpl_GPBW4L7gTmcAwgo778XRHjh32bBT` (`5n64xt1rm`, v96) | 2026-09-26 6:42 AM | smoke PASS (festival-nav-v97 / 07ca84c4, 43 APP_CORE files identical on 3 hosts); walker SHIP 12/12 + the three fixes; 0 PostHog errors after |
+| v96 | NOW as a tab in the day row; the Show menu a popover that stays open across ticks with no history entry; "+ Invite someone"; import picks from the Portola app's exported images (Settings, level 2, never lowering); the wall's address keeps its festival (`/f/<id>#g=…`) so link previews name the fest; a festival switch that finishes after you left Settings does nothing | #53 | `dpl_EDgPZyK9w7RhDm11VP2PL9nt3b9i` (`jpns9fsmj`, v95 + docs #50–#52) | 2026-09-26 5:36 AM | smoke PASS (festival-nav-v96 / 7117a248); `/api/import-schedule` answers GET with 405; `/f/portola-2026` carries the OG tags; 0 PostHog errors after |
 | v95 | ticket doors read Tix / Tix $69 / Tix free / Info, never the seller; a one-time price + sold-out check (27 priced, 13 sold out → Info only, 40 bare Tix; resale sites never used) | #49 | `dpl_Y7BdTNbi4gpNXF5JVMgnXqYRbcTy` (`kgz0o4y3l`, v94) | 2026-09-26 2:12 AM | smoke 2:14 AM PASS (first run: one transient fonts.css fetch error on one host; rerun clean); prod JSON: PERVERT XXL 154, Magnitude 111 |
 | v94 | Folsom weekend by time (declared `layout: by-time`), every verified party (64 entries / 65 cards), NOW rings to each party's own end across the 5 AM rollover (stacks too) | #48 | `dpl_EDA2vjKpcVWde2e8g8MF7mRziMDM` (`4x6htg8zq`, v92) | 2026-09-26 1:44 AM | smoke 1:44 AM PASS; prod Portola 195 entries, Folsom 64; local browser 210/210 incl. WebKit. Ships before live/v93, so the build skips v93 |
 | v92 | guest first open: wall first, welcome card, join shelf, bare − · note · + zoom row; zoom text pairs + centred column, refit on resize/fonts | #43 | `dpl_o6xpnbLTxuMN9NJqQajcqLsdCZDG` (`jcq5094s8`, v91 + #47 docs) | 2026-09-26 1:26 AM | smoke 1:27 AM PASS (festival-nav-v92 / e82e2e1c) |
@@ -52,6 +54,13 @@ each table; the rules live in RUNBOOK.md.
 | 33164a3 | v93 merged with v92 | Sol 6 · xhigh | ~9 | 1 BLOCKER: a crew 404 with the Show menu open left body[data-busy] set (blocks every update reload) | — |
 | 7332366 · c8230b1 | v93 retire fix; history rework + anchor | Sol 6 · high / xhigh | ~6 / ~12 | 1 BLOCKER each: dead duplicate history entries (a Back that does nothing); then join-shelf duplicates + URL-only skipping; 1 IMPORTANT (an interrupted fold overrides a newer jump) | the independent walker caught the menu-tick jump to the day's top |
 | ba0be43 · 8ba6c49 · d4c928f | v95 ticket prices | Sol 6 · high / high / medium | ~5 / ~2 / ~2 | 1 IMPORTANT (a cached price without its date, or $2001, rendered), then unreal dates, then the year range — each fixed | — |
+| 9548b48 | v93 descoped (menu popover, no history entry) | Terra 5.6 · xhigh | ~10 | 0 — the one Terra trial; Kevin then settled on Sol 6 high | — |
+| 4c9c7b3 · ccde52a · e4cba91 | v96 (v93 + import + the address fix) | Sol 6 · high | ~6 / ~4 / ~4 | 1 BLOCKER (the address kept the old fest after a switch in Settings; reload bounced back) → fixed; then 1 BLOCKER (a switch finishing after you left Settings wrote over the landing) → guarded; then 0. 1 IMPORTANT: the import's rate limit is per server instance → follow-up | the v96 walker found the same switch bug independently |
+| bd98c12 · 8da4631 | v97 List view | Sol 6 · high | ~6 | 1 NIT (the name clamp) — and the Our plan session found the List's stacked-room rings disagreeing with the Board's → both fixed | — |
+| 0d19e6e | v97 after v96 merged in | Sol 6 · high | ~5 | 3 IMPORTANT (the address bar dropped List; a festival switch kept the old past clock and open folds; the import could land on a folded pick) + 1 NIT (stale "caret" words) → fixed in 930f186 | — |
+| 19df64b | v97 fix round | Sol 6 · high | ~5 | 0 blocking; 2 NITs (a fold closing mid-switch repaints once more; a folded import landing renders the wall twice) → follow-ups | — |
+| 370952c | v97 walk | Sonnet walker, real input | ~50 | SHIP: 12/12 on 0d19e6e, the address / switch / import fixes re-walked on 370952c; harness notes only | — |
+| db9bf2c | the tap change | Sol 6 · high | ~7 | 1 BLOCKER (VoiceOver's double-tap picks instead of opening the shelf), 1 IMPORTANT (the composer has no ride over the iOS keyboard), 1 NIT (the one-time line checks only this fest's picks) → with the builder | the Opus reviewer and the walker had passed it |
 
 ### Model comparison so far (Kevin's ask)
 
@@ -76,6 +85,11 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 11. **"Invite someone", not "Add someone"** (12:28 AM) — the chip, its sheet and How it works say Invite (v93; the sheet's own button still says Add, since that tap adds the name and then shows their link).
 12. *(A default shipped in v94, not yet Kevin's call:)* **Folsom on a phone keeps its own two columns** under the Portola timetable (a time list is read across, so stepping in under the clock would hide half of every pair); flipping to the stepped-in version is one CSS block.
 
+13. **Models and effort** (~3:50 AM): HIGH by default for every agent; Opus (high) for design and key build work (Sonnet lacks the taste; fine for walkers and research); Codex reviews on Sol 6 at high; batch work into larger phases with one full gate each; on a third round of the same kind of blocker, cut the mechanism, not the feature.
+14. **List view + menu bar approved** (~3:45 AM, review page r5/r5b): full-width one-flow rows, a 560px laptop column, the three-line icon right of the fest name with the sync dot left, the past folded behind EARLIER that flips to HIDE EARLIER (no menu option), Board · List glyph row, small-caps stages. The hour pin ("Sunday at 2 — Folsom or Portola?") and the moment lens are PUNTED for their own design thinking (the moment lens is his favourite).
+15. **Before Portola ends** (~4:40 AM): the List, the tap change, the people menu + Invite sheet (crew link first), and Our plan (a sibling session). The tap change ships alone, only after his iPhone test on a preview, with a rollback prepared: "as long as we bank and are prepped to maybe roll back those parts of the code (tap) let's do it and I'll test it for you when I wake up."
+16. **Import from the Portola app** (~2:55 AM): picks land at level 2 and he adjusts; add-an-event is BANKED (`claude-plans/2026-09-02-add-a-show.md`) until its place on the wall is clear.
+
 ## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
 
 1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
@@ -84,3 +98,9 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 4. v92 minors (Sol): a resize mid-bloom can shift the bloom's origin; a font load and a resize in the same frame can relayout twice.
 5. Tests: a shared real-hold helper for every browser test (hold until the zoom stands — five files still hold a fixed 650 ms under page.clock); the CDP flick must end without a fling before a quick tap.
 6. Folsom neighbourhoods: the pick list has one for every party; the data has none — offered to Kevin.
+7. **The import's rate limit is per server instance** (Sol on v96): move to a shared per-crew quota (the crew row) before the import gets popular.
+8. **fold-intent on Linux WebKit only**: "NOW tapped during a tick's fade" moves the page 1350px there (skipped on Linux WebKit, dated, in the tap branch); check on a real iPhone.
+9. **v97 NITs** (Sol on 19df64b): settle a closing fold's animation before a festival switch (one extra repaint today); a folded import landing renders the wall twice (227 ms in jsdom — measure on a throttled phone).
+10. **The address carries the view but not the room checks** (`&show=`) that the invite link carries — make them match if a friend ever shares from the address bar with rooms hidden.
+11. **ACL prep**: Late nights print doors only (65 of 66) and the Zilker headliners print no end — a data job on `data/acl-prep` (guess-run-times + the venue registry + printed ends), before Sep 29.
+12. **The Board's in-room fold** was not built in v97 (only whole past days fold on Board); the gallery has no List section yet; a Late nights date that is over folds as a whole day only on the next held clock.

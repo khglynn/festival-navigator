@@ -6,7 +6,13 @@
 // bootShell() per file: the module graph (and its boot) runs once.
 //
 // `fetch` is the whole network. `storage` seeds localStorage before app.js
-// reads it. `reportKey` fills index.html's fn-report-key meta, as a build
+// reads it. `now` (an ISO instant) pins this process's clock there — time
+// still moves from it — for a file about the week's SHAPE rather than the
+// hour: since the past folds (Phase 1, 2026-09-26), a wall booted on a live
+// festival day opens with the days that are over behind one line, and a
+// test of the whole week run at 9:30 PM on Portola Saturday (the CI night
+// clock) would see two of its four days. It wins over tests/helpers/
+// night-clock.mjs, as a test's own pin always does. `reportKey` fills index.html's fn-report-key meta, as a build
 // with crash reports switched on ships it (js/errlog.js). Browser primitives
 // jsdom lacks are supplied, never app behaviour.
 import { JSDOM } from 'jsdom';
@@ -16,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch, reportKey = '' } = {}) {
+export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch, reportKey = '', now = null } = {}) {
+  if (now) pinClock(now);
   // The shipped key is overwritten either way: a test sends reports only when
   // it asks to, and never with the real project's key.
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
@@ -52,6 +59,8 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   // the shell lands on a day rule after the wall changes shape, and that is
   // a scroll the layout-less DOM can only take quietly.
   dom.window.scrollTo = () => {};
+  // …nor scrollIntoView, which a day tab's jump calls on its day's block.
+  dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
   // jsdom has no canvas; the living favicon draws on one once a wall opens.
   dom.window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => ({ addColorStop() {} }) });
   dom.window.HTMLCanvasElement.prototype.toDataURL = () => 'data:image/png;base64,';
@@ -62,6 +71,24 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   const close = () => { for (const h of intervals) clearInterval(h); dom.window.close(); };
   await import('../../js/v3/app.js');
   return { dom, close, $: (id) => dom.window.document.getElementById(id) };
+}
+
+function pinClock(iso) {
+  const Base = globalThis.Date;
+  const at = Base.parse(iso);
+  if (Number.isNaN(at)) throw new Error(`shell-rig: now is not a date: ${iso}`);
+  const offset = at - Base.now();
+  const pinnedNow = () => Base.now() + offset;
+  function PinnedDate(...args) {
+    if (!new.target) return new Base(pinnedNow()).toString();
+    const nt = new.target === PinnedDate ? Base : new.target;
+    return Reflect.construct(Base, args.length === 0 ? [pinnedNow()] : args, nt);
+  }
+  Object.setPrototypeOf(PinnedDate, Base);
+  Object.defineProperty(PinnedDate, 'prototype', { value: Base.prototype, writable: false });
+  Object.defineProperty(PinnedDate, 'now', { value: pinnedNow, writable: true, configurable: true });
+  Object.defineProperty(PinnedDate, 'name', { value: 'Date' });
+  globalThis.Date = PinnedDate;
 }
 
 // Resolve every pending microtask and short timer the boot chain queued.

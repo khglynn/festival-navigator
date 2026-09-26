@@ -88,7 +88,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // (`meName`) additionally carries WHO it's for: someone added on another
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
-export function crewLink(token, festId, meName, show = null) {
+export function crewLink(token, festId, meName, show = null, view = null) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
   //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
@@ -123,7 +123,12 @@ export function crewLink(token, festId, meName, show = null) {
   // and last, so every older parser still reads the parts before it.
   const slugs = ok && Array.isArray(show) ? show.filter((s) => SHOW_SLUG_RE.test(s)) : [];
   const v = slugs.length ? `&show=${slugs.join(',')}` : '';
-  return `${base}#g=${token}${f}${m}${v}`;
+  // The sharer's view of the wall (Phase 1, 2026-09-26): `&view=list` when
+  // they are reading it as a List. Board is the default and sends nothing —
+  // the same rule as `show` — and it goes LAST, so every parser before it
+  // (an older build's included) reads the link exactly as it did.
+  const l = ok && view === 'list' ? '&view=list' : '';
+  return `${base}#g=${token}${f}${m}${v}${l}`;
 }
 
 const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
@@ -151,6 +156,15 @@ export function showFromHash() {
 }
 
 
+
+// The view riding a share link (#g=…&show=…&view=list). Read at boot beside
+// showFromHash, BEFORE enterApp's replaceState strips the hash. 'list' or
+// 'board', or null — anything else is dropped, never guessed at. Only a view:
+// app.js decides whether it may seed this phone (seedViewOnce).
+export function viewFromHash() {
+  const m = (location.hash || '').match(/[#&]view=(list|board)(?:&|$)/);
+  return m ? m[1] : null;
+}
 
 // The member a personal invite link is for (#g=<token>&me=<name>). Read at
 // boot, BEFORE enterApp's replaceState strips the hash down to #g=.
