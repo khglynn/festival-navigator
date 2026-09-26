@@ -297,6 +297,14 @@ html { touch-action: manipulation; }
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
   font-weight: 700; font-size: 11.5px; padding: 6px 12px; border-radius: var(--r-bubble); cursor: pointer;
 }
+/* Beside the search field it is the field's height, so the two read as one
+ * row of controls (Kevin at Portola, 2026-09-25: "the same height, so it's
+ * just a little notes button. Same kind of shape, just taller"). The outline
+ * and the bubble corner stay; only the height changes. On a phone that height
+ * is the touch floor both of them wear (the notes chip left the borrowed-space
+ * list below: it takes 44px of REAL height now, like the field beside it); on
+ * a desktop it stretches to the field's own height on their shared line. */
+.toolbar .notes-chip { align-self: stretch; box-sizing: border-box; }
 .notes-chip .count { background: rgba(139, 123, 255, .25); border-radius: var(--r-pill);
                      padding: 0 6px; font-size: 10px; }
 .toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
@@ -542,7 +550,7 @@ button.room-head { cursor: pointer; }
   .list-row { min-height: 44px; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
@@ -551,7 +559,7 @@ button.room-head { cursor: pointer; }
   .card button {
     min-height: 0;
   }
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
@@ -561,7 +569,7 @@ button.room-head { cursor: pointer; }
    * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
-  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
+  .person-chip::after, .note-action::after, .f-chip::after,
   .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
