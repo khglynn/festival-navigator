@@ -33,6 +33,7 @@ const TUE_NOON = '2026-09-22T19:00:00Z'; // two days before
 setClock(SAT_940);
 
 const { bootShell, settle } = await import('./helpers/shell-rig.mjs');
+const { pointerClick } = await import('./helpers/pointer-click.mjs');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
 const INDEX = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
@@ -131,13 +132,19 @@ test('one NOW: the dock’s NOW steps aside while the peek says NOW, and comes b
   assert.equal($('dock-now').hidden, true);
 });
 
-test('a pick counts at once: tapping Dog Blood makes it nine of us on the peek', async () => {
-  const card = $('wall-root').querySelector('.card[data-artist="Dog Blood"]');
-  assert.ok(card);
-  card.click();
+// A mouse's click on Dog Blood's card steps its level (a finger's tap opens
+// the card's shelf since the tap change, and its + picks there:
+// tests/tap-shelf.test.mjs). Five steps round it back to none.
+const pickDog = (times = 1) => {
+  for (let i = 0; i < times; i++) pointerClick(dom.window, $('wall-root').querySelector('.card[data-artist="Dog Blood"]'), 'mouse', { engine: 'chromium' });
+};
+
+test('a pick counts at once: picking Dog Blood makes it nine of us on the peek', async () => {
+  assert.ok($('wall-root').querySelector('.card[data-artist="Dog Blood"]'));
+  pickDog();
   await settle(40);
   assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 of us');
-  card.click(); card.click(); card.click(); card.click(); // round the levels back to none
+  pickDog(4); // round the levels back to none
   await settle(40);
   assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');
 });
@@ -228,8 +235,7 @@ test('a new answer under a hand waits for it: the drag keeps its place, and the 
   pointer('pointerdown', tagged(), 700);
   pointer('pointermove', plan(), 600); // up past the slop: open, under the finger
   assert.equal(document.body.dataset.busy, 'plan-drag');
-  const card = $('wall-root').querySelector('.card[data-artist="Dog Blood"]');
-  card.click(); // a pick lands mid-drag: the plan's answer changes (nine of us)
+  pickDog(); // a pick lands mid-drag: the plan's answer changes (nine of us)
   await settle(20);
   assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'the rows wait for the hand');
   await new Promise((r) => setTimeout(r, 120)); // the hand stops, then lets go: no flick, the place decides
@@ -239,7 +245,7 @@ test('a new answer under a hand waits for it: the drag keeps its place, and the 
   assert.equal(document.body.dataset.busy, undefined);
   await new Promise((r) => setTimeout(r, 450)); // the click that follows a drag is swallowed for a moment
   plan().querySelector('.plan-grab').click();
-  card.click(); card.click(); card.click(); card.click(); // round the levels back to none
+  pickDog(4); // round the levels back to none
   await settle(40);
   assert.equal(plan().dataset.state, 'peek');
 });
@@ -274,13 +280,12 @@ test('a keyboard on a stop the minute folds into Earlier: the focus goes to the 
   assert.equal(dog.dataset.stop, 'Pier Stage|1260');
   dog.focus();
   setClock('2026-09-27T05:20:00Z'); // 10:20 PM: Dog Blood is over
-  const card = $('wall-root').querySelector('.card[data-artist="Dog Blood"]');
-  card.click(); // a pick repaints the plan on the new clock (the minute tick's path)
+  pickDog(); // a pick repaints the plan on the new clock (the minute tick's path)
   await settle(20);
   assert.equal(plan().dataset.state, 'open');
   assert.equal(plan().querySelector('.plan-row[data-stop="Pier Stage|1260"]'), null, 'Dog Blood has folded into Earlier');
   assert.ok(document.activeElement && document.activeElement.classList.contains('earlier'), `the focus is on the Earlier line: ${document.activeElement && document.activeElement.className}`);
-  card.click(); card.click(); card.click(); card.click(); // round the levels back to none
+  pickDog(4); // round the levels back to none
   setClock(SAT_940);
   document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await repaint();
