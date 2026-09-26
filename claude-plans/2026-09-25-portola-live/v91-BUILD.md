@@ -184,8 +184,8 @@ other: swiping SAT AFTERS leaves SAT FOLSOM where it was (see calls).
    box with no vertical overflow inside the page), which Kevin already
    swipes on his iPhone every day; if a vertical swipe on the afters ever
    feels sticky on his phone, the timetable would too.
-5. The NOW jump does not slide a stack row to frame a NOW card in the right
-   column (the grid gets that); at rest such a card is ≥79% on screen.
+5. ~~The NOW jump does not slide a stack row to frame a NOW card in the
+   right column.~~ Fixed in the review round below: it does now.
 
 ### Wrap-up (2026-09-25, builder)
 
@@ -198,3 +198,82 @@ before the last comment-only tidy; `stack-row` re-run after it, 6/6. No PR,
 merge or stamp; no crew-data, sync, merge, artist-name or update-machinery
 change; nothing loaded production or wrote to the database (a static server
 and a made-up crew throughout).
+
+### Review round (Codex Sol 6 on 71d2d5a) — on top of the stamp, unstamped
+
+**The should-fix: NOW could land on a partly clipped stack card.** NOW only
+slid cards that sit inside a `.times-scroll`, and a stack card counted as
+shown by its height alone. So at 320, NOW's jump to Ross's right-hand afters
+card (Milli Meng, Public Works) left its right 38px, crew corner included,
+off the screen.
+
+**What changed.**
+- `js/v3/wall.js` NOW section:
+  - `rowSpanIn` gives a stack card's place in its `.stack-scroll`.
+  - `rowSlide` is the least slide that shows a span whole: none when it
+    already is, else just far enough, clamped to the row.
+  - `wholeAcross` says whether a card is whole inside its row as the row
+    stands.
+  - `nowStops` gives each stop `rows: [{ el, key, slide }]`, one per row
+    its cards sit in. A row never splits a stop (its scroll is exactly its
+    lead space, so both columns fit at the far end).
+  - `nowStep`'s "the repeat tap stays" also needs every stack card whole
+    across.
+  - `stillThere` reads `cycle.rows`, so a row swiped by hand after the
+    landing makes the next tap fresh, as a grid does, and a gone row ends
+    the cycle.
+  - `stackRowKey` is exported.
+- `js/v3/app.js`:
+  - `pageGeo` gains `row(card)` and `rowLeft(key)`.
+  - `jumpToNow` slides each of the stop's rows that needs it, smoothly
+    (instantly under Reduce Motion or Low power, through the same
+    `behavior` the grid's slide uses).
+  - Each row slide counts as a glide in the "still gliding" grace, with
+    its own `scrollend` listener; the 1.6 s cap cleans those up too.
+  - The cycle records the rows.
+  - "Moved nothing" (the line pulse, the in-place card pulse) now counts
+    a row slide as moving.
+- **Found on the way.** The first cut measured the card itself. A NOW tap
+  made during the last tap's pulse (a scale) saw the two columns 3px too
+  wide, and one afters stop split into two; the browser cycle test caught
+  it (390, 430, WebKit). The measurement now uses the card's COLUMN (its
+  venue group), which a pulse does not scale.
+
+**Checked.**
+- `tests/now-jump.test.mjs` +5 (30 total):
+  - `rowSlide`'s cases.
+  - Ross's right-hand card: one row, slide 38, keyed; already swiped means
+    no move.
+  - A pair in one row stays one stop and adds no stops; only a right-hand
+    card slides a row.
+  - The repeat tap: still there with the row at 38; a hand swipe back makes
+    the tap fresh and the landing slides it out again; a gone row ends the
+    cycle.
+  - A pulsed (scaled) card changes neither the stops nor the slides. This
+    one fails when measured off the card.
+- `tests/browser/now-jump.test.mjs` +3:
+  - 320, Chromium and WebKit: Ross highlighted, the card runs off its row
+    at rest; after NOW it is whole inside the row and on screen, the row is
+    at its far end, the card is in view top to bottom, and there was
+    exactly one smooth slide. A second tap asks no row to move.
+  - 320 under Reduce Motion: one slide with `behavior: 'auto'`, and the
+    card is whole one frame after the tap.
+  - The Chromium and WebKit 320 cases fail with the app's row slide
+    removed.
+  - `settled` and `place` now watch stack rows too.
+- `tests/browser/stack-row.test.mjs` +2 (the reviewer's other two):
+  - A row swiped to 38 stays at 38 when a crew-mate's pick repaints the
+    wall (a real poll), and SAT FOLSOM stays at 0.
+  - A touch hold on the right-hand card of SAT AFTERS' last line, placed
+    16px above the dock and running off the screen at rest, opens the zoom
+    on screen and clear of the dock.
+- Browser suite, one file at a time: 191/191. Full `npm test` on the final
+  head: 927 tests, 925 pass, 1 skipped (DATABASE_URL-gated), 1 fail — the
+  ASSET_STAMP check, expected (`js/v3/app.js` and `js/v3/wall.js` changed
+  after the stamp; the re-stamp `--keep` is the orchestrator's).
+
+**Behaviour to know.** With nobody highlighted, the FIRST tap's stop (the
+now line) also holds the afters cards visible under it, so it slides SAT
+AFTERS to its end when one of them is right-hand. That is "show what the
+stop shows, whole". The row stays there; later stops in that row find
+their cards already whole and do not move it.
