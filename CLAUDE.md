@@ -288,6 +288,18 @@ Non-inferable facts only (the code answers everything else — read it).
   saying its own place; the same card, the same now window except that a
   party's printed end wins, the same doors. On a phone it keeps the shell's
   two columns and never scrolls sideways (a time list is read across).
+- **The List is a VIEW the reader picks, not a presentation the data picks**
+  (Phase 1 of the unified build, 2026-09-26): the Show menu's Board · List
+  row, per phone per festival (`fn_view_v1_<fid>`), `&view=list` in a share
+  link, never in the crew doc. In the List every room is a time list of rows
+  (`.card.row` — the same card on a grid; `--list-w`, the 560px reading
+  column from 720 up): the grid and afters on hours, a declared by-time
+  section on its own ladder, and a ring never changes with the view (stacked
+  rooms keep the Board's next-start rule). **What is over folds**
+  (`js/v3/wall.js` pastOf / foldPast): over = the ring can never light again,
+  judged at a held clock (`ctx.pastAt`: boot, resume, the festival day
+  turning — never the tick), folded cards are not in the DOM, and a reveal is
+  page memory only.
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
   time** (the model doc is
   `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is

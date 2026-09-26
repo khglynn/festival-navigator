@@ -1,38 +1,40 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-26 2:20 AM PT (v95 live; v93 in flight as v96) · mode: live**
+**last-updated: 2026-09-26 5:50 AM PT (v96 live; v97 List in release) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v95, from `main`** (PR #49, merged 2026-09-26 2:12 AM PT) on fest /
-  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS (festival-nav-v95 /
-  376ec98a). Tonight's releases, in order: v92 (1:26 AM — a guest's first
-  open: wall first, join shelf, the − · note · + zoom row), v94 (1:44 AM —
-  Folsom weekend by time, every verified party, NOW to each party's own
-  end), v95 (2:12 AM — ticket doors say the price, never the seller). What
-  each carries and how it was checked: the LEDGER below.
+- **v96, from `main`** (PR #53, merged 2026-09-26 5:36 AM PT) on fest /
+  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS (festival-nav-v96 /
+  7117a248): NOW as a tab in the day row, the Show menu as a popover that
+  stays open across ticks (no history entry), "+ Invite someone", import
+  picks from the Portola app's exported images, and link previews from the
+  address bar (the wall's address keeps its festival: `/f/<id>#g=…`).
+  Earlier tonight: v92 (guest first open), v94 (Folsom by time), v95 (ticket
+  doors say the price). What each carries and how it was checked: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), each saying what the error means in plain words.
 
-## In flight (Portola live ops, 2026-09-26)
+## In flight (Portola live ops + the unified build, 2026-09-26)
 
-One session runs this lane (city seasons is paused on its branches — leave
-them). Rules: `claude-plans/2026-09-25-portola-live/RUNBOOK.md`. Kevin's
-calls, releases and reviews: the LEDGER beside it — read "Kevin's calls"
-first. A release ships on CI green + a Sol 6 review + a real-browser walk +
-prod smoke.
+One coordinator session releases; rules in
+`claude-plans/2026-09-25-portola-live/RUNBOOK.md`, calls and reviews in the
+LEDGER beside it, the build's cursor in
+`claude-plans/2026-09-26-unified-build/NOW.md`. A release ships on CI green
++ a Sol 6 review + an independent real-browser walk + prod smoke.
 
-1. **v93 → ships as build v96** (`live/v93`, main merged in): NOW as a tab
-   in the day row, the Show menu staying open across ticks (a tick keeps
-   your place), "+ Invite someone", the caret and gear. Its menu's own
-   history entry is the last open problem (Sol found Back holes twice);
-   fallback if it can't be made airtight: the menu closes on each tick as
-   before, and the multi-toggle menu moves to the unified build.
-2. Then the unified build (`claude-plans/2026-09-26-unified-build/PLAN.md` +
-   REVIEW-1.md + the calls at its top), ordered by build quality.
+1. **v97 — List view + the folded past + the menu bar** (`live/list`,
+   stamped festival-nav-v97): gating now — Sol's re-review of the review
+   round, an independent walk, CI, then merge and smoke.
+2. **The tap change** (`live/tap`): a phone tap opens the notes shelf with
+   full controls; desktop keeps hover. Ships ALONE, only after Kevin tries
+   it on his iPhone from a preview link, with its rollback written down.
+3. **Our plan** (`live/plan`, a sibling session): the peek above the dock
+   and the day plan; it hands a gated head to the coordinator to release.
+4. **People menu + Invite sheet** (crew link first) — next build after v97.
 
 ## Open with Kevin
 
