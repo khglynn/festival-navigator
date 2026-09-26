@@ -45,7 +45,7 @@ test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the r
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
   const sat = dayArtistsFor('Saturday');
-  assert.equal(sat.length, 31 + 1 + 15 + 4, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom (Big Muscle by day, Magnitude, PERVERT XXL, Aftershock)');
+  assert.equal(sat.length, 31 + 1 + 15 + 15, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom (Big Muscle, Magnitude, PERVERT XXL and Aftershock, plus the eleven Saturday parties added 2026-09-25 — the GearedUp Alley Party\'s Saturday is one of them)');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
   // Saturday's afters open with whoever plays FIRST — every room is a run, so
   // the export leads with the earliest set, not the biggest name. Derived from
@@ -59,10 +59,15 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   // under Saturday night on purpose (an event time before 9 AM is after
   // midnight of the night it is filed under), so it closes Saturday's image,
   // after PERVERT XXL — never Sunday's, where it would read as Monday 3 AM.
-  assert.deepEqual(sat.slice(-2), [
-    { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' },
-    { name: 'Aftershock', time: 'Folsom · City Nights SF · 3 AM - 10 AM' },
-  ]);
+  // Since 2026-09-25 other 10 PM parties share PERVERT XXL's start (CHUNK at
+  // F8), so the pin is what the comment claims: Aftershock is LAST, after
+  // PERVERT XXL, and never on Sunday. NOCTURNAL EXTREME (Mon Sep 28, 3 AM) is
+  // the same rule one night on: filed under Sunday, it closes Sunday's image.
+  assert.deepEqual(sat.at(-1), { name: 'Aftershock', time: 'Folsom · City Nights SF · 3 AM - 10 AM' });
+  assert.ok(sat.findIndex((a) => a.name === 'PERVERT XXL' && a.time === 'Folsom · The Midway · 10 PM - 6 AM') > -1, 'PERVERT XXL is on Saturday, before it');
+  const sun = dayArtistsFor('Sunday');
+  assert.ok(!sun.some((a) => a.name === 'Aftershock'), 'Aftershock is never Sunday\'s, where it would read as Monday 3 AM');
+  assert.deepEqual(sun.at(-1), { name: 'NOCTURNAL EXTREME', time: 'Folsom · Halcyon · 3 AM' });
   // Thursday is two rooms, each a run: the Regency (doors 7 PM) before Club
   // Six (doors 10 PM), each in play order, every start a guess wearing its
   // tilde. Club Six printed doors only; while Black Rave Culture was its one
@@ -109,7 +114,7 @@ test('a share image is the wall you see: a hidden room is not in a day\'s image,
     filters.saveFolded('portola-2026', []);
   }
   assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
-  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 4);
+  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 15);
 });
 
 test('a lineup-only fest still exports by billing group', () => {
