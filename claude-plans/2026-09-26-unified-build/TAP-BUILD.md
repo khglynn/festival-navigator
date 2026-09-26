@@ -99,6 +99,16 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    has never ridden the visual viewport the way the join shelf does. Kevin's iPhone check covers it; if
    the keys cover the box, lift the join shelf's `fitKeys` into the notes sheet (U5 owns the one ride).
 
+4. **Safari's Tab skips buttons** (macOS default, without "Press Tab to highlight each item"): the
+   sheets' Tab trap (`dialogize`, and the join shelf's) waits for focus to reach its last button, which
+   Safari's Tab never lands on, so Tab walks out of any sheet into the page (the walk's item 9, WebKit).
+   Not new with the tap change — every sheet has it — but the shelf is used more now. U5's one Tab trap
+   should move focus itself from an ordered list instead of waiting at the boundary.
+5. **A screen reader's activation** (VoiceOver's double-tap sends a click with no pointer press) follows
+   the last real press, 'mouse' at boot: it picks, as it always has; the shelf is reachable through the
+   notes chip or the zoom. Not a regression; the review suggests "a finger only if a touch press landed on
+   this card within a second" if it ever matters.
+
 ## Steps (commit + push after each)
 
 1. [x] This log (e700c10).
@@ -161,3 +171,15 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   on the overshoot curve and lifted its bottom ~25px off the screen for a few frames — it rises on the
   surface curve now, measured at 0px in both engines, and the join shelf rises the same way (c3980b2,
   a3517c2). An Opus reviewer is reading the diff in parallel.
+- **09:30** The Opus review of the diff (read-only, real-engine probes) and the Sonnet walk's findings,
+  all fixed with tests in 6ddcc85: a guest's quick + + dropped the question it raised (the join shelf's
+  dimmed wall now settles 700ms, the zoom's DOOR_SETTLE beat); a close during the rise snapped up to rest
+  before dropping (it now leaves from the live transform); a leaving sheet is inert; a crew-mate's
+  repaint rebuilt the shelf's card and dropped a key's focus (now in place); the sticky composer rule hit
+  All notes (now only the shelf's foot); the step row could start WebKit's selection; the zoom's note
+  door left focus on <body> after Escape (the walk's item 8: focus now goes to the card the zoom stood
+  on); a pending hover intent could grow a zoom under a sheet on a touch screen with a trackpad; a
+  finger's tap through a card a repaint replaced could pick; the hold's click-eater could eat an Enter.
+  The walk's item 10 ("first tap after the ACL weekend jump is swallowed") was the harness: at 390 the
+  SAT 10 tab sits under the fest name, the tap opened the Show menu, and by design the next card tap only
+  closes it.
