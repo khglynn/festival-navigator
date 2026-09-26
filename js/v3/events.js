@@ -622,31 +622,61 @@ export function findEventEntry(fest, name, occ) {
 }
 
 
-// ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24) ------------
+// ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24;
+// prices 2026-09-26) ------------
 // "when it's afters or shows like this I naturally want to click through to
 // the event page. we have tix but do those always have details… and what
 // about before tix are available." So a show that is not the festival's own
-// set can carry two links, each `{ url, at }`, and the zoom says each in
-// Kevin's words ("For all of these lets do 'Tixs @ [location]' - tigher and
-// clearer"):
+// set can carry two links, each at least `{ url, at }`, and the zoom says
+// each as a plain word — "Tix $69 · Info" — never the seller's name (Kevin,
+// 2026-09-26, from Portola: "I actually think we never need to see the name
+// of the site where the tix are sold. No necessary info. Just tix if we
+// don't know price or Tix $69 for example… some of these events are
+// expensive"):
 //
 //   `page`    the show's own page for people — details, the whole bill, and
-//             the one place to look before tickets exist: "Info @ DoTheBay".
+//             the one place to look before tickets exist: "Info".
 //   `tickets` the buy link exactly as the listing printed it (a referral tag
-//             stays: it pays the small company that listed the show) and the
-//             seller it lands on: "Tix @ AXS".
+//             stays: it pays the small company that listed the show):
+//             "Tix" with no price on file, "Tix $69" with one, "Tix free"
+//             for a $0 ticket/RSVP.
 //
-// `at` is data, never parsed from the URL at render: a referral wrapper hides
-// the seller's domain, and a venue's domain is not its name. Both URLs must
-// be https (the validator refuses anything else). A cancelled show keeps its
-// page (what happened, refunds) and loses its tickets. When the page IS the
-// ticket page, one door says it. An entry without links has no doors, which
-// is every festival grid set.
+// `at` (the seller the link lands on, e.g. "AXS") stays in the data and
+// stays REQUIRED — it is provenance, since a referral wrapper hides the
+// seller's domain and a venue's domain is not its name — it is just no
+// longer shown; sourceDoor (card-facts.js) folds it into the accessible
+// label instead ("Tix $69 — buy tickets at AXS"), which nobody sees. Both
+// URLs must be https (the validator refuses anything else). A cancelled show
+// keeps its page (what happened, refunds) and loses its tickets. When the
+// page IS the ticket page, one door says it. An entry without links has no
+// doors, which is every festival grid set.
 const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
+// The cheapest ticket on file, in Kevin's words: no price → "Tix", $0 → "Tix
+// free", a whole dollar amount → "Tix $69" (no decimals, no thousands
+// separator). A price shows only with its `checked` date and inside the
+// validator's range — the same shape the validator enforces, held here too
+// because a phone can render a festival file its cache kept (Sol's review,
+// 2026-09-26: a price without its date, or $2001, rendered). Anything else
+// falls back to the bare word rather than a number nobody vouched for.
+// A real calendar date, the validator's rule (festival-rules.mjs realDate):
+// years 1900–2199, and 2026-13-40 is shaped like a date and is not one.
+const realDate = (d) => {
+  const m = typeof d === 'string' && /^((?:19|20|21)\d{2})-(\d{2})-(\d{2})$/.exec(d);
+  if (!m) return false;
+  const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
+};
+const tixWord = ({ price, checked }) => {
+  if (!Number.isInteger(price) || price < 0 || price > 2000) return 'Tix';
+  if (!realDate(checked)) return 'Tix';
+  return price === 0 ? 'Tix free' : `Tix $${price}`;
+};
 const linkOf = (l, kind, word) => {
   if (!l || typeof l !== 'object' || !httpsUrl(l.url)) return null;
   const at = typeof l.at === 'string' ? l.at.trim() : '';
-  return at ? { kind, text: `${word} @ ${at}`, url: l.url } : null;
+  if (!at) return null;
+  const text = kind === 'tix' ? tixWord(l) : word;
+  return { kind, text, url: l.url, at };
 };
 const sameTarget = (a, b) => {
   try {

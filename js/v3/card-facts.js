@@ -93,8 +93,8 @@ export function factsFor(artistName, ctx, occ = null) {
     note: typeof offEntry.cancelled.note === 'string' ? offEntry.cancelled.note : null,
   } : null;
   const run = occ && !cancelled ? runFactsOf(entry) : null;
-  // The show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf):
-  // only from the entry this card IS. A card that knows only a name (a list,
+  // The show's doors out, "Tix $69 · Info" (events.js linksOf): only from
+  // the entry this card IS. A card that knows only a name (a list,
   // an old link's notes sheet) takes its when and where from the grid, so
   // borrowing another show's links by name would put an afters' tickets under
   // a festival set (the review of #29: Overmono "Sun · Warehouse" with the
@@ -427,23 +427,23 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // Once the venue posts the order the word goes and the door stays.
 // The cancellation's "Announced Sep 21" is the same kind of door, to the
 // report it came from.
-function sourceDoor({ text, url }, className, why) {
+function sourceDoor({ text, url, at }, className, why) {
   const w = document.createElement(url ? 'a' : 'span');
   w.className = className;
   if (url) {
     w.href = url;
     w.target = '_blank';
     w.rel = 'noopener';
-    w.setAttribute('aria-label', `${text} — ${why}`);
+    // Nobody sees the seller (events.js, 2026-09-26) — but the accessible
+    // label may still name it ("Tix $69 — buy tickets at AXS"), since that
+    // is not something a sighted person reads off the card.
+    w.setAttribute('aria-label', at ? `${text} — ${why} at ${at}` : `${text} — ${why}`);
     w.addEventListener('click', (e) => e.stopPropagation());
   }
   w.textContent = text;
   return w;
 }
 const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order came from');
-// "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
-// Each is a sourceDoor, so a click opens the page and never reaches the
-// card's pick (a click on the zoom picks, by design).
 // A pair's separator: shown only when the pair sits on one line.
 function pairSep() {
   const dot = document.createElement('span');
@@ -493,6 +493,9 @@ function watchFonts() {
   if (f.ready && typeof f.ready.then === 'function') f.ready.then(refitForFonts, () => {});
 }
 
+// "Tix $69 · Info": the show's doors out, one row under WHERE. Each is a
+// sourceDoor, so a click opens the page and never reaches the card's pick (a
+// click on the zoom picks, by design).
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';

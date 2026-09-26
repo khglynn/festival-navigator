@@ -32,7 +32,7 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
-const { parseEventTime, venueGroupsOf, occOf } = await import('../js/v3/events.js');
+const { parseEventTime, venueGroupsOf, occOf, linksOf } = await import('../js/v3/events.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -763,8 +763,12 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   assert.equal(facts.zoomedCard(), runCard, 'the hover grew the run card');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-pair', 'f-chips'], 'unpicked: no who-row, no hole');
   assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'the venue is a map door');
-  // The show's doors out (2026-09-24): tickets first, then its page.
-  assert.deepEqual([...overlay().querySelectorAll('.f-links a.f-link')].map((a) => a.textContent), ['Tix @ AXS', 'Info @ DoTheBay']);
+  // The show's doors out (2026-09-24): tickets first, then its page — the
+  // door's word is derived from the live data's own price (2026-09-26), not
+  // hardcoded, so a re-priced show doesn't break this.
+  const gelli = portola.artists.find((a) => a.name === 'Gelli Haha' && a.venue === 'Regency Ballroom');
+  const wantLinks = linksOf({ page: gelli.page, tickets: gelli.tickets }).map((l) => l.text);
+  assert.deepEqual([...overlay().querySelectorAll('.f-links a.f-link')].map((a) => a.textContent), wantLinks);
   assert.ok([...overlay().querySelectorAll('.f-links a.f-link')].every((a) => a.target === '_blank' && a.href.startsWith('https://')), 'each opens its page in a new tab');
   click(overlay().querySelector('.f-name'));
   assert.equal(level('Gelli Haha'), 1, 'click 1 picks');
