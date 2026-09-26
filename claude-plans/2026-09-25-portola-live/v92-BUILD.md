@@ -447,3 +447,59 @@ the stamp the only failure; `npm run test:browser` 191/191; the walk: the
 guest `390 14` request log 0 writes (an earlier owner's pick still queued,
 real `sendBeacon` fired), guest 390 0 writes, join as Sam today's four
 writes, members no card and the same landing.
+
+**Round 3 accepted — A and B (commits e1504d1, 99a8aa2, abe7205).**
+A: `crew.me` keeps a per-page memory of the name it last read, so a member
+whose storage fails mid-session keeps their name on the wall and keeps
+picking (test: storage throws after paint → the tap still sends). B: the
+guest shelf — a guest's finger tap opens the card's zoom, a tap on another
+card only closes it, the join asks on a shelf over the wall (the production
+bottom sheet, its own history entry so Back closes it, keyboard-aware), two
+taps to claim a name, every join safety carried over (`joinAnswers`, shared
+with the full join screen, which stays for personal links, the ambiguous
+person and Not me).
+
+**Kevin's round-3 frame changes (relayed 2026-09-25, late), then the button
+study, then Kevin on the study.** Where it landed:
+1. **The zoom's door row, for everyone:** a bare − at the far left, a bare +
+   at the far right, and the notes chip between them exactly as the zoom has
+   always drawn it ("+ note" / "2 notes"). No shape, no container — Kevin on
+   the study's segmented pill: "all misaligned and jacked and too much in the
+   middle… I like the left and right just − + no button shape." The glyphs
+   stand on the zoom's content edges (the who-row's edges); their invisible
+   targets own everything left and right of the chip, out to the card's edges
+   and bottom, 44px tall; the chip is its own 44px target. 24px glyphs with a
+   soft shadow; at a limit (− at nothing, + at must) the glyph dims in place.
+   It is the card's floor (the name and facts stay centred above it).
+2. **Members:** + raises 1→2→3→must and stops; − lowers to not picked and
+   stops (`stepPick`, the ordinary pick path, sync unchanged). The note door
+   is the notes chip (v89's first-tap fix untouched; its WebKit test now
+   detects the sheet by id instead of a journal line the meant-close no
+   longer writes). A tap on a RESTING card still cycles exactly as v91.
+3. **Guests:** the same row. −, + and an EMPTY note door open the join shelf
+   naming the artist; only + carries the pick through the join ("Pick X as…"
+   vs "Join the plan for X as…"). Judgment call, flagged: a note door that
+   HAS notes opens them to read (the sheet's own "Add yourself" door waits
+   under them) rather than asking — reading is what looking around is for.
+4. **Desktop:** the row is in hover zooms too; click-to-pick on the wall is
+   unchanged; Tab walks the live doors in order.
+5. **A step never moves the doors (found by the walk):** a pick widened the
+   zoom and slid the + 22px sideways between two taps. Now the who-row wraps
+   inside the width the rest of the card sets (`contain: inline-size`), a
+   finger's zoom is as wide as the screen allows, and a step's refresh holds
+   the zoom by its floor. Pinned in the browser suite on a card built to
+   bite (gallery 20c); removing the rule turns it red.
+6. **Welcome card:** Pick shows (filled) LEFT, Look around (outlined) right,
+   More info ends the line. **Shelf:** "Add your name"; Join as Sam LEFT, Look
+   around right. Both with the app's existing button styles (the study's
+   restyle was dropped with it; its tokens were never kept).
+7. **Crowded card:** Femme Jatale b2b erika (Portola's own entry: doors, the
+   order door, map, Tix and Info) with a crowd at every level, notes and
+   Spotify, plus the same show under a two-line bill — gallery.html 20a/20b,
+   and `tests/browser/zoom-door-row.test.mjs` grows them at 390, 320 (hold)
+   and 1280 (hover): nothing clipped, nothing overlapping, every door the
+   thing under its centre, the reach at the card's edges.
+Verified so far: `npm test` 984/986 (the stamp and one skip), browser suite
+197/197; walk 22/23/24/25 (member + + −, must stops, note opens notes, a
+resting tap still cycles; crowded at 390/320/1280 no overlap, no clip, clear
+of the dock; guest + → "Pick Tove Lo as…"; guests 0 writes).

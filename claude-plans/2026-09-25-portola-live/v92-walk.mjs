@@ -1,11 +1,16 @@
 // v92 walk (2026-09-25): first open, wall first, in a real Chromium with real
 // touch (hasTouch + isMobile, locator.tap), at 390 and 320. Every state the
-// brief names: a new link (the guest wall + welcome), "Just looking", a guest's tap
-// (the join screen, "Pick … as"), "Just looking" (back where you were), a
-// join (the first pick lands), a returning member, a recognized member, a
-// crew with nobody in it, the share link with and without `show`, Settings as
-// a guest, and Reduce Motion. NEVER production: this server answers /api from
-// memory (made-up crews), /fn-i is swallowed, the service worker is blocked.
+// brief names, as the flow stands after Kevin's round-3 changes: a new link
+// (the guest wall + welcome, "Pick shows" left and filled, "Look around"
+// right), a guest's tap (the card's zoom, − · note · + along its floor), any
+// door asking on the join shelf ("Pick … as", "Join the plan for … as"),
+// "Look around" (back where you were), a join (a +'s pick lands), a
+// member's hold (+ + − and the meter follows; note opens notes), the most
+// crowded real card at 390/320/1280, a returning member, a recognized member,
+// a crew with nobody in it, the share link with and without `show`, Settings
+// as a guest, and Reduce Motion. NEVER production: this server answers /api
+// from memory (made-up crews), /fn-i is swallowed, the service worker is
+// blocked.
 // Run from the repo: node claude-plans/2026-09-25-portola-live/v92-walk.mjs [only]
 // Shots and the report land in v92-shots/ (git-ignored).
 import http from 'node:http';
@@ -42,6 +47,8 @@ function demoDoc(kind = 'crew') {
   put('Four Tet', { Kevin: 4, Jonah: 4, Theo: 3 });
   put('Parcels', { Maya: 3, Rosa: 3, Kevin: 2 });
   put('Overmono', { Jonah: 3, Kevin: 3 });
+  // The most crowded real card (Great American Music Hall, Friday afters).
+  put('Femme Jatale b2b erika', { Maya: 4, Jonah: 4, Priya: 3, Theo: 2, Rosa: 1 });
   return { v: 4, meta: { name: 'The Portola Crew', inviteFestId: FID }, spotify: {}, affinity: {}, people, festivals: { [FID]: { selections: sel } } };
 }
 
@@ -122,6 +129,97 @@ const openWall = async (page, hash, { wait = '#screen-app' } = {}) => {
   await page.waitForSelector(wait, { state: 'visible', timeout: 20000 });
   await sleep(900);
 };
+// The welcome's two halves since Kevin's flip: "Pick shows" left (filled),
+// "Look around" right (outlined).
+const lookAroundWelcome = (page) => page.locator('#welcome-card .bring-actions .btn-ghost').tap();
+// A guest's way in: tap a card (its zoom opens), then one of its doors.
+async function guestDoor(page, artist, door = '.f-step.plus') {
+  const card = page.locator(`#wall-root .card[data-artist="${artist}"]`).first();
+  await card.scrollIntoViewIfNeeded();
+  await sleep(150);
+  await card.tap();
+  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+  await sleep(500);
+  await page.locator(`#zoom-layer .zoom-slot.shown .f-step-row > ${door}`).tap();
+  await page.waitForSelector('.join-shelf', { timeout: 4000 });
+  await sleep(450);
+}
+const shelfLook = async (page) => { await page.locator('.join-shelf .js-look').tap(); await sleep(500); };
+// A real hold: touch down, wait past the long-press, lift.
+async function hold(ctx, page, sel) {
+  const card = page.locator(sel).first();
+  await card.scrollIntoViewIfNeeded();
+  await sleep(150);
+  const b = await card.boundingBox();
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }] });
+  await sleep(700);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+  await sleep(700);
+}
+// A phone keyboard (Chromium has none): the page's visualViewport is swapped
+// for one this rig can shrink, so the shelf's OWN listener (join-shelf.js
+// fitKeys) moves it; the keys are drawn only for the picture.
+const fakeViewport = { fn: () => {
+  const et = new EventTarget();
+  const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, scale: 1, kb: 0,
+    get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
+    addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+  Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
+  window.__keys = (kb) => { vv.kb = kb; et.dispatchEvent(new Event('resize')); };
+}, arg: null };
+async function keyboardUp(page, kb) {
+  await page.evaluate((kb) => {
+    window.__keys(kb);
+    const k = document.createElement('div');
+    k.id = 'kb-mock';
+    k.style.cssText = `position:fixed;left:0;right:0;bottom:0;height:${kb}px;z-index:100;background:#2C2C2E;padding:8px 3px 0;box-sizing:border-box;font:500 22px -apple-system,system-ui,sans-serif;color:#fff;`;
+    const bar = document.createElement('div');
+    bar.style.cssText = 'height:36px;display:flex;justify-content:space-around;align-items:center;color:#d0d0d4;font-size:16px;margin-bottom:6px;';
+    bar.textContent = '"Sam"   |   Same   |   Sammy';
+    k.appendChild(bar);
+    for (const [i, r] of ['qwertyuiop', 'asdfghjkl', '⇧zxcvbnm⌫'].entries()) {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;justify-content:center;gap:6px;margin:0 0 11px;padding:0 ${i === 1 ? 20 : 0}px;`;
+      for (const ch of r) {
+        const key = document.createElement('span');
+        key.textContent = ch;
+        key.style.cssText = 'flex:1;height:43px;border-radius:5px;background:#6B6B70;display:flex;align-items:center;justify-content:center;max-width:34px;';
+        row.appendChild(key);
+      }
+      k.appendChild(row);
+    }
+    document.body.appendChild(k);
+  }, kb);
+  await sleep(250);
+}
+// Every row of a standing zoom, with the checks Kevin named for the crowded
+// card: nothing clipped, nothing overlapping, every door reachable, 44px on a
+// finger, and the zoom clear of the dock and the sticky chrome.
+const zoomGeometry = (page) => page.evaluate(() => {
+  const z = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+  if (!z) return null;
+  const box = (el) => { const r = el.getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; };
+  const parts = [];
+  for (const c of z.children) {
+    if (c.classList.contains('z-surface') || c.classList.contains('f-parked')) continue;
+    if (c.classList.contains('f-grown')) for (const g of c.children) parts.push({ c: g.className.split(' ')[0], ...box(g) });
+    else parts.push({ c: c.className.split(' ').slice(-1)[0], ...box(c) });
+  }
+  const card = box(z);
+  const ov = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
+  const overlaps = [];
+  for (let i = 0; i < parts.length; i += 1) for (let j = i + 1; j < parts.length; j += 1) if (ov(parts[i], parts[j]) >= 1) overlaps.push(`${parts[i].c}×${parts[j].c}`);
+  const clipped = parts.filter((p) => p.l < card.l || p.r > card.r || p.t < card.t || p.b > card.b).map((p) => p.c);
+  const hit = (el) => { const r = el.getBoundingClientRect(); const u = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!u && (u === el || el.contains(u)); };
+  const doors = [...z.querySelectorAll('a.f-link, a.f-where, a.f-order, .f-step-row > *')].map((d) => [d.textContent.trim().slice(0, 18), hit(d), Math.round(d.getBoundingClientRect().height)]);
+  const dock = document.getElementById('dock');
+  const dockTop = dock && dock.offsetParent !== null ? Math.round(dock.getBoundingClientRect().top) : null;
+  const strip = [...document.querySelectorAll('#wall-root .stage-strip, .day-rail, #topbar')].map((n) => n.getBoundingClientRect()).filter((r) => r.height && r.bottom > 0 && r.top < 10).reduce((m, r) => Math.max(m, Math.round(r.bottom)), null);
+  return { card, vw: innerWidth, vh: innerHeight, dockTop, chromeBottom: strip, parts: parts.map((p) => `${p.c}[${p.t}-${p.b}]`), overlaps, clipped, doors };
+});
+
 const scenario = async (name, fn) => {
   if (only && !name.startsWith(only)) return;
   note(`\n== ${name}`);
@@ -150,65 +248,42 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     note(`buttons (label, left, top, right) ${JSON.stringify(rects)}; card right ${cardR}`);
     note(`writes: ${JSON.stringify(writes)}`);
     await shot(page, `${tag}-01-guest-welcome.png`);
-    // Just looking: the card leaves, the + pulses.
-    await page.locator('#welcome-card .bring-actions button').first().tap();
+    // Look around (the right half): the card leaves, the + pulses.
+    await lookAroundWelcome(page);
     await sleep(250);
     await shot(page, `${tag}-02-got-it-pulse.png`);
     await sleep(700);
-    note(`after Just looking: card gone=${!(await page.locator('#welcome-card').count())}; seen=${await page.evaluate(() => localStorage.getItem('fn_welcome_v1'))}`);
+    note(`after Look around: card gone=${!(await page.locator('#welcome-card').count())}; seen=${await page.evaluate(() => localStorage.getItem('fn_welcome_v1'))}`);
     await shot(page, `${tag}-03-guest-wall.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();
   });
 
-  await scenario(`${tag} 2 guest tap: join, just looking, join as Sam`, async () => {
+  await scenario(`${tag} 2 guest: card → zoom → + → shelf; Look around keeps the place; the other doors ask too`, async () => {
     resetDocs(); writes.length = 0;
     const { ctx, page, errors } = await phone({ width: W, height: H, init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
     await openWall(page, `#g=${T.crew}&f=${FID}`);
-    // Scroll the Saturday timetable sideways a little and the page down, so
-    // "back where you were" has something to prove.
+    // Scroll the Saturday timetable sideways a little, so "back where you
+    // were" has something to prove.
     await page.evaluate(() => {
       const s = [...document.querySelectorAll('#wall-root .times-scroll')].find((x) => !x.closest('.stage-strip') && x.scrollWidth > x.clientWidth);
       if (s) s.scrollLeft = 120;
     });
     await sleep(200);
-    const target = page.locator('#wall-root .card[data-artist="Kettama"]').first();
-    await target.scrollIntoViewIfNeeded();
+    await page.locator('#wall-root .card[data-artist="Kettama"]').first().scrollIntoViewIfNeeded();
     await sleep(300);
     const before = await place(page);
-    note(`place before tap: ${JSON.stringify(before)}`);
-    await target.tap();
-    await page.waitForSelector('#screen-join', { state: 'visible', timeout: 5000 });
-    await sleep(300);
-    note(`join-for: "${await page.locator('#join-for').textContent()}"; just looking visible: ${await visible(page, '#join-look')}`);
-    const look = await page.locator('#join-look').boundingBox();
-    note(`Just looking box ${JSON.stringify(look)}`);
-    await shot(page, `${tag}-04-join-from-tap.png`, { fullPage: true });
-    await page.locator('#join-look').tap();
-    await page.waitForSelector('#screen-app', { state: 'visible' });
-    await sleep(300);
+    await guestDoor(page, 'Kettama', '.f-step.plus');
+    note(`+ → shelf "${await page.locator('.join-shelf .js-line').textContent()}"; join screen ${await visible(page, '#screen-join')}`);
+    await shelfLook(page);
     const back = await place(page);
-    note(`place after Just looking: ${JSON.stringify(back)} (same: ${JSON.stringify(back) === JSON.stringify(before)})`);
-    note(`writes so far: ${JSON.stringify(writes)}`);
-    // Now join as Sam from the same tap.
-    await target.tap();
-    await page.waitForSelector('#screen-join', { state: 'visible' });
-    await page.locator('#join-name-input').tap();
-    await page.keyboard.type('Sam');
-    await page.locator('#join-add-btn').tap();
-    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 8000 });
-    await sleep(900);
-    const after = await place(page);
-    note(`place after join: ${JSON.stringify(after)} (same: ${JSON.stringify(after) === JSON.stringify(before)})`);
-    const lvl = await page.evaluate(async () => {
-      const st = await import('/js/state.js');
-      return st.crewDoc.festivals['portola-2026'].selections.Kettama;
-    });
-    note(`Kettama picks now: ${JSON.stringify(lvl)}`);
-    note(`dock you: "${await page.locator('#dock-you').textContent()}" guest=${await page.locator('#dock-you').evaluate((n) => n.classList.contains('guest'))}`);
-    await shot(page, `${tag}-05-joined-first-pick.png`);
-    await sleep(1800);
-    note(`writes: ${JSON.stringify(writes)}`);
+    note(`place ${JSON.stringify(before)} → after Look around ${JSON.stringify(back)} (same: ${JSON.stringify(back) === JSON.stringify(before)})`);
+    for (const door of ['.f-step.minus', '.f-chip.notes']) {
+      await guestDoor(page, 'Kettama', door);
+      note(`${door} → shelf "${await page.locator('.join-shelf .js-line').textContent()}"`);
+      await shelfLook(page);
+    }
+    note(`writes: ${JSON.stringify(writes)} (expect none)`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();
   });
@@ -222,11 +297,10 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
       note(`${kind}: ${await page.locator('#welcome-card .bring-line').textContent()} | ${await page.locator('#welcome-card .bring-sub').textContent()}`);
       await shot(page, `${tag}-06-${kind}-welcome.png`);
       if (kind === 'empty') {
-        await page.locator('#welcome-card .bring-actions button').first().tap();
-        await page.locator('#wall-root .card[data-artist="Robyn"]').first().tap();
-        await page.waitForSelector('#screen-join', { state: 'visible' });
-        await sleep(200);
-        await shot(page, `${tag}-07-empty-join.png`, { fullPage: true });
+        await lookAroundWelcome(page);
+        await guestDoor(page, 'Robyn');
+        note(`empty crew: shelf "${await page.locator('.join-shelf .js-line').textContent()}"; names ${await page.locator('.join-shelf .js-name').count()}`);
+        await shot(page, `${tag}-07-empty-shelf.png`);
       }
       note(`errors: ${JSON.stringify(errors)}`);
       await ctx.close();
@@ -345,11 +419,11 @@ await scenario('1440 8 desktop: the guest ring on the rail, the card bottom-cent
   note(`rail you: "${await page.locator('#rail-you').textContent()}" guest=${await page.locator('#rail-you').evaluate((n) => n.classList.contains('guest'))}`);
   note(`card box ${JSON.stringify(await page.locator('#welcome-card .bring-card').boundingBox())}`);
   await shot(page, '1440-15-desktop-guest.png');
-  // A mouse click on a card: the same question.
-  await page.locator('#welcome-card .bring-actions button').first().click();
+  await page.locator('#welcome-card .bring-actions .btn-ghost').click();
+  await sleep(500);
   await page.locator('#rail-you').click();
-  await page.waitForSelector('#screen-join', { state: 'visible' });
-  note('rail + opens the join screen');
+  await page.waitForSelector('.join-shelf', { timeout: 4000 });
+  note(`rail + opens the shelf: "${await page.locator('.join-shelf .js-line').textContent()}"`);
   note(`errors: ${JSON.stringify(errors)}`);
   await ctx.close();
 });
@@ -358,24 +432,17 @@ await scenario('390 9 hold a card, then tap the grown card as a guest', async ()
   resetDocs(); writes.length = 0;
   const { ctx, page, errors } = await phone({ init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
   await openWall(page, `#g=${T.crew}&f=${FID}`);
-  const card = page.locator('#wall-root .card[data-artist="Tove Lo"]').first();
-  await card.scrollIntoViewIfNeeded();
-  const b = await card.boundingBox();
-  const cx = b.x + b.width / 2; const cy = b.y + b.height / 2;
-  // A real hold: touch down, wait past the long-press, lift.
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] });
-  await sleep(700);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await sleep(500);
-  const zoomed = await page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot, #zoom-layer .zoom-card'));
-  note(`held: zoom up = ${zoomed}`);
-  await shot(page, '390-16-guest-zoom.png');
+  await hold(ctx, page, '#wall-root .card[data-artist="Tove Lo"]');
+  note(`held: zoom up = ${await page.locator('#zoom-layer .zoom-slot.shown').count()}; doors ${JSON.stringify(await page.locator('#zoom-layer .f-step-row > *').allTextContents())}`);
+  await shot(page, '390-16-guest-zoom-held.png');
   const z = await page.locator('#zoom-layer .zoom-card').first().boundingBox().catch(() => null);
   if (z) await page.touchscreen.tap(z.x + z.width / 2, z.y + 20);
   await sleep(400);
-  note(`tap on the grown card: join visible = ${await visible(page, '#screen-join')}; join-for "${await page.locator('#join-for').textContent()}"; zoom left behind = ${await page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot'))}`);
-  await shot(page, '390-17-zoom-tap-join.png');
+  note(`tap on the grown card's body: shelf ${await page.locator('.join-shelf').count()} (expect 0 — reading never asks); zoom up ${await page.locator('#zoom-layer .zoom-slot.shown').count()}`);
+  await page.locator('#zoom-layer .zoom-slot.shown .f-step.plus').tap();
+  await page.waitForSelector('.join-shelf', { timeout: 3000 });
+  note(`+ → shelf "${await page.locator('.join-shelf .js-line').textContent()}"`);
+  await shot(page, '390-17-held-plus-shelf.png');
   note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
   await ctx.close();
 });
@@ -404,15 +471,12 @@ await scenario('390 11 storage blocked: the getters throw, and a guest still get
   const { ctx, page, errors } = await phone({ init: blocked });
   await openWall(page, `#g=${T.crew}&f=${FID}`);
   note(`blocked: wall visible ${await visible(page, '#screen-app')}; welcome ${await page.locator('#welcome-card').count()}`);
-  await page.locator('#welcome-card .bring-actions button').first().tap();
+  await lookAroundWelcome(page);
   await sleep(300);
-  note(`blocked: after Just looking card gone ${!(await page.locator('#welcome-card').count())}`);
-  await page.locator('#wall-root .card[data-artist="Robyn"]').first().tap();
-  await page.waitForSelector('#screen-join', { state: 'visible' });
-  await page.locator('#join-look').tap();
-  await page.waitForSelector('#screen-app', { state: 'visible' });
-  await sleep(200);
-  note(`blocked: tap → join → Just looking ok; welcome back? ${await page.locator('#welcome-card').count()}; toast "${await page.locator('#toast-root').textContent()}"`);
+  note(`blocked: after Look around card gone ${!(await page.locator('#welcome-card').count())}`);
+  await guestDoor(page, 'Robyn');
+  await shelfLook(page);
+  note(`blocked: tap → zoom → + → shelf → Look around ok; welcome back? ${await page.locator('#welcome-card').count()}; toast "${await page.locator('#toast-root').textContent()}"`);
   note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
   await ctx.close();
 });
@@ -439,10 +503,12 @@ await scenario('390 12 a phone afters row (v91) scrolled sideways comes back whe
   await page.evaluate(() => document.addEventListener('pointerdown', () => { window.__yAtTap = Math.round(scrollY); }, { capture: true, once: true }));
   await card.tap();
   before.y = await page.evaluate(() => window.__yAtTap);
-  await page.waitForSelector('#screen-join', { state: 'visible' });
-  await page.locator('#join-look').tap();
-  await page.waitForSelector('#screen-app', { state: 'visible' });
-  await sleep(300);
+  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+  await sleep(500);
+  await page.locator('#zoom-layer .zoom-slot.shown .f-step.plus').tap();
+  await page.waitForSelector('.join-shelf', { timeout: 4000 });
+  await sleep(400);
+  await shelfLook(page);
   const after = await page.evaluate(() => {
     const rows = [...document.querySelectorAll('#wall-root .stack-scroll')];
     return { y: Math.round(scrollY), lefts: rows.map((r) => Math.round(r.scrollLeft)).filter(Boolean) };
@@ -474,13 +540,18 @@ await scenario('390 13 recording: a guest lands, the card arrives, taps an artis
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
   const wallAt = (Date.now() - t0) / 1000;
   await page.waitForSelector('#welcome-card', { timeout: 5000 });
-  await sleep(2600);                                           // the card arrives; read it
+  await sleep(2200);                                           // the card arrives; read it
   await page.locator('#wall-root .card[data-artist="Fcukers"]').first().tap();
-  await page.waitForSelector('#screen-join', { state: 'visible' });
-  await sleep(2600);                                           // "Pick Fcukers as…"
-  await page.locator('#join-look').tap();
-  await page.waitForSelector('#screen-app', { state: 'visible' });
-  await sleep(2400);                                           // back on the wall, where they were
+  await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+  await sleep(1700);                                           // the card opens: − · note · +
+  await page.locator('#zoom-layer .zoom-slot.shown .f-step.plus').tap();
+  await page.waitForSelector('.join-shelf', { timeout: 4000 });
+  await sleep(1300);                                           // "Pick Fcukers as…"
+  await page.locator('.join-shelf .js-field').tap();
+  await page.keyboard.type('Sam', { delay: 120 });
+  await sleep(1300);                                           // "Join as Sam"
+  await page.locator('.join-shelf .js-look').tap();
+  await sleep(1800);                                           // back on the wall, where they were
   const end = (Date.now() - t0) / 1000;
   const video = page.video();
   await ctx.close();
@@ -505,11 +576,11 @@ await scenario('390 14 a guest sends nothing — the rig logs every request that
   const { ctx, page, errors } = await phone({ init: leftover });
   await openWall(page, `#g=${T.crew}&f=${FID}`);
   await page.waitForSelector('#welcome-card', { timeout: 5000 });
-  await page.locator('#welcome-card .bring-actions button').first().tap(); // Look around
-  await page.locator('#wall-root .card[data-artist="Tove Lo"]').first().tap();
-  await page.waitForSelector('#screen-join', { state: 'visible' });
-  await page.locator('#join-look').tap();
-  await page.waitForSelector('#screen-app', { state: 'visible' });
+  await lookAroundWelcome(page);
+  for (const door of ['.f-step.plus', '.f-step.minus', '.f-chip.notes']) {
+    await guestDoor(page, 'Tove Lo', door);
+    await shelfLook(page);
+  }
   await sleep(2600); // past the 1.2 s push debounce, and a poll's worth
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); // the unload beacon path (sendBeacon is real here)
   await sleep(800);
@@ -523,9 +594,9 @@ await scenario('390 14 a guest sends nothing — the rig logs every request that
 // shows asks on a shelf over the wall ----------------------------------------
 for (const [W, H] of [[390, 844], [320, 568]]) {
   const tag = `${W}`;
-  await scenario(`${tag} 20 shelf: welcome halves, tap → zoom → Pick shows → shelf → type → Look around`, async () => {
+  await scenario(`${tag} 20 shelf: welcome halves, tap → zoom → + → shelf → type (keyboard up) → Look around`, async () => {
     resetDocs(); writes.length = 0;
-    const { ctx, page, errors } = await phone({ width: W, height: H });
+    const { ctx, page, errors } = await phone({ width: W, height: H, init: fakeViewport });
     await openWall(page, `#g=${T.crew}&f=${FID}`);
     await page.waitForSelector('#welcome-card', { timeout: 5000 });
     await sleep(900);
@@ -556,7 +627,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
       await card.tap();
       await sleep(700);
     }
-    await page.locator('#zoom-layer .f-pick').tap();
+    await page.locator('#zoom-layer .f-step.plus').tap();
     await sleep(700);
     const shelf = await page.evaluate(() => {
       const s = document.querySelector('.join-shelf');
@@ -564,7 +635,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
       const r = s.getBoundingClientRect();
       return { line: s.querySelector('.js-line').textContent, names: [...s.querySelectorAll('.js-name')].map((b) => b.textContent), go: s.querySelector('.js-go').textContent, goOff: s.querySelector('.js-go').disabled, top: Math.round(r.top), bottom: Math.round(r.bottom), zoom: !!document.querySelector('#zoom-layer .zoom-card'), y: Math.round(scrollY) };
     });
-    note(`Pick shows → shelf ${JSON.stringify(shelf)} (wall before ${yBefore})`);
+    note(`+ → shelf ${JSON.stringify(shelf)} (wall before ${yBefore}); placeholder "${await page.locator('.join-shelf .js-field').getAttribute('placeholder')}"`);
     await shot(page, `${tag}-22-shelf.png`);
     await page.locator('.join-shelf .js-name').nth(1).tap();
     await sleep(250);
@@ -574,7 +645,16 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await page.keyboard.type('Sam');
     await sleep(250);
     note(`typed → go "${await page.locator('.join-shelf .js-go').textContent()}"; typing class ${await page.locator('.join-shelf.typing').count()}`);
-    await shot(page, `${tag}-24-shelf-typed.png`);
+    await keyboardUp(page, W >= 390 ? 336 : 260);
+    const kb = await page.evaluate(() => {
+      const s = document.querySelector('.join-shelf'); const f = s.querySelector('.js-field'); const k = document.getElementById('kb-mock');
+      const r = (n) => { const b = n.getBoundingClientRect(); return [Math.round(b.top), Math.round(b.bottom)]; };
+      return { shelf: r(s), field: r(f), keys: r(k), goVisible: s.querySelector('.js-go').getBoundingClientRect().bottom <= k.getBoundingClientRect().top };
+    });
+    note(`keyboard up: ${JSON.stringify(kb)} (the shelf rides on the keys: shelf bottom ≤ keys top, the Join button above them)`);
+    await shot(page, `${tag}-24-shelf-keyboard.png`);
+    await page.evaluate(() => { document.getElementById('kb-mock')?.remove(); window.__keys(0); });
+    await sleep(200);
     await page.locator('.join-shelf .js-look').tap();
     await sleep(500);
     note(`Look around → shelf gone ${!(await page.locator('.join-shelf').count())}; backdrop gone ${!(await page.locator('#sheet-backdrop').count())}; wall y ${await page.evaluate(() => Math.round(scrollY))}; history state ${JSON.stringify(await page.evaluate(() => history.state))}`);
@@ -582,7 +662,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await ctx.close();
   });
 
-  await scenario(`${tag} 21 shelf join: Pick shows → Join as Sam — today's four writes, the pick lands`, async () => {
+  await scenario(`${tag} 21 shelf join: + → Join as Sam — today's four writes, the + lands as the first pick`, async () => {
     resetDocs(); writes.length = 0;
     const { ctx, page, errors } = await phone({ width: W, height: H, init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
     await openWall(page, `#g=${T.crew}&f=${FID}`);
@@ -592,7 +672,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     const before = await place(page);
     await card.tap();
     await sleep(600);
-    await page.locator('#zoom-layer .f-pick').tap();
+    await page.locator('#zoom-layer .f-step.plus').tap();
     await page.waitForSelector('.join-shelf', { timeout: 3000 });
     await sleep(400);
     await page.locator('.join-shelf .js-field').tap();
@@ -608,6 +688,182 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await ctx.close();
   });
 }
+
+// ---- Kevin's round-3 changes (2026-09-25): − · note · + for everyone -------------
+const memberInit = { fn: ([t]) => { try {
+  localStorage.setItem('fn_welcome_v1', '1'); localStorage.setItem('fn_coach_v1', '1');
+  localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'The Portola Crew' }]));
+  localStorage.setItem(`fn_me_v3_${t}`, 'Kevin'); localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+} catch {} }, arg: [T.crew] };
+const levelOf = (page, artist) => page.evaluate(async (a) => ((await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections[a] || {}).Kevin || 0, artist);
+const rowState = (page) => page.evaluate(() => {
+  const z = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+  const cs = getComputedStyle(z);
+  const content = [Math.round(z.getBoundingClientRect().left + parseFloat(cs.paddingLeft)), Math.round(z.getBoundingClientRect().right - parseFloat(cs.paddingRight))];
+  const doors = [...z.querySelectorAll('.f-step-row > *')].map((b) => {
+    const r = b.getBoundingClientRect();
+    const g = b.querySelector('.f-step-dot');
+    const gr = g ? g.getBoundingClientRect() : null;
+    return [b.textContent, b.disabled ? 'off' : 'on', Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.height), gr ? `glyph ${Math.round(gr.left)}-${Math.round(gr.right)}` : ''];
+  });
+  const who = z.querySelector('.f-who');
+  return { content, who: who ? [Math.round(who.getBoundingClientRect().left), Math.round(who.getBoundingClientRect().right)] : null, doors };
+});
+for (const [W, H] of [[390, 844], [320, 568]]) {
+  const tag = `${W}`;
+  await scenario(`${tag} 22 member: hold → zoom → + + − → the level and the meter follow; must stops; note opens notes`, async () => {
+    resetDocs(); writes.length = 0;
+    const { ctx, page, errors } = await phone({ width: W, height: H, init: memberInit });
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    const sel = '#wall-root .card[data-artist="Tove Lo"]';
+    await hold(ctx, page, sel);
+    note(`level ${await levelOf(page, 'Tove Lo')}: row ${JSON.stringify(await rowState(page))}`);
+    await shot(page, `${tag}-30-member-zoom-0.png`);
+    const tap = async (door) => {
+      const b = await page.locator(`#zoom-layer .zoom-slot.shown .f-step-row > ${door}`).boundingBox();
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await sleep(550);
+      return b;
+    };
+    const p1 = await tap('.f-step.plus');
+    note(`+ → level ${await levelOf(page, 'Tove Lo')}; resting card "${await page.locator(sel).first().getAttribute('aria-label')}"; row ${JSON.stringify(await rowState(page))}`);
+    await shot(page, `${tag}-31-member-zoom-1.png`);
+    const p2 = await tap('.f-step.plus');
+    note(`+ → level ${await levelOf(page, 'Tove Lo')}; the + moved ${Math.round(Math.abs(p2.y - p1.y))}px down / ${Math.round(Math.abs(p2.x - p1.x))}px across between taps`);
+    await tap('.f-step.minus');
+    note(`− → level ${await levelOf(page, 'Tove Lo')}; meter on the card: ${await page.locator(sel).first().evaluate((c) => c.querySelector('.meter, [class*="meter"]')?.getAttribute('aria-label') || c.querySelector('.meter, [class*="meter"]')?.className || '(none)')}`);
+    await tap('.f-step.plus'); await tap('.f-step.plus'); await tap('.f-step.plus');
+    note(`+ + + → level ${await levelOf(page, 'Tove Lo')}; row ${JSON.stringify(await rowState(page))}`);
+    await tap('.f-step.plus');
+    note(`a tap on the spent + → level ${await levelOf(page, 'Tove Lo')} (expect 4: no wraparound); zoom up ${await page.locator('#zoom-layer .zoom-slot.shown').count()}`);
+    await shot(page, `${tag}-32-member-zoom-must.png`);
+    await page.locator('#zoom-layer .zoom-slot.shown .f-chip.notes').tap();
+    await sleep(600);
+    note(`note → notes sheet ${await page.evaluate(() => { const s = document.getElementById('artist-sheet'); return !!s && !s.classList.contains('join-shelf'); })}; composer ${await page.locator('#artist-sheet textarea').count()}`);
+    await shot(page, `${tag}-33-member-note-opens-notes.png`);
+    await page.goBack().catch(() => {});
+    await sleep(500);
+    // Closed: the resting card shows your meter at must.
+    await page.mouse.click(4, 4).catch(() => {});
+    await sleep(400);
+    await page.locator(sel).first().scrollIntoViewIfNeeded();
+    await shot(page, `${tag}-34-member-closed-must.png`);
+    // v91's tap still cycles on a resting card.
+    await page.locator(sel).first().tap();
+    await sleep(500);
+    note(`a tap on the resting card at must → level ${await levelOf(page, 'Tove Lo')} (v91's cycle: must → not picked); zoom opened by the tap ${await page.locator('#zoom-layer .zoom-slot.shown').count()} (expect 0)`);
+    await sleep(1500);
+    note(`writes: ${JSON.stringify(writes.filter((w) => w.includes('/api/crew')).map((w) => w.slice(0, 140)))}`);
+    note(`errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+  });
+
+  await scenario(`${tag} 23 crowded real card: Femme Jatale b2b erika held open, every row, the doors, the dock`, async () => {
+    resetDocs(); writes.length = 0;
+    const { ctx, page, errors } = await phone({ width: W, height: H, init: memberInit });
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    await hold(ctx, page, '#wall-root .card[data-artist="Femme Jatale b2b erika"]');
+    const g = await zoomGeometry(page);
+    note(`crowded ${W}: ${JSON.stringify(g)}`);
+    note(`  clear of the dock: ${g.dockTop === null || g.card.b <= g.dockTop} (zoom bottom ${g.card.b}, dock top ${g.dockTop}); clear of the chrome: ${g.chromeBottom === null || g.card.t >= g.chromeBottom} (zoom top ${g.card.t}, chrome ${g.chromeBottom}); overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors all reachable ${g.doors.every((d) => d[1])}; row ≥44 ${g.doors.slice(-3).every((d) => d[2] >= 44)}`);
+    await shot(page, `${tag}-35-crowded-real-card.png`);
+    note(`errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+  });
+}
+
+for (const [W, H] of [[390, 844], [320, 568]]) {
+  await scenario(`${W} 25 the look: an unpicked card (member), a pale wash (guest)`, async () => {
+    resetDocs(); writes.length = 0;
+    let { ctx, page, errors } = await phone({ width: W, height: H, init: memberInit });
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    await hold(ctx, page, '#wall-root .card[data-artist="Airwolf Paradise"]');
+    const g = await zoomGeometry(page);
+    note(`unpicked ${W}: row ${JSON.stringify(await rowState(page))}; card ${JSON.stringify(g.card)}; overlaps ${g.overlaps.length}; clipped ${g.clipped.length}`);
+    await shot(page, `${W}-40-unpicked-member.png`);
+    note(`errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+    writes.length = 0; // the member's own first-open writes (its person) are not the guest's
+    ({ ctx, page, errors } = await phone({ width: W, height: H, init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } }));
+    await openWall(page, `#g=${T.crew}&f=${FID}`);
+    const card = page.locator('#wall-root .card[data-artist="Tove Lo"]').first();
+    await card.scrollIntoViewIfNeeded();
+    await sleep(150);
+    await card.tap();
+    await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+    await sleep(700);
+    note(`pale, guest ${W}: row ${JSON.stringify(await rowState(page))}`);
+    await shot(page, `${W}-41-pale-guest.png`);
+    note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+    await ctx.close();
+  });
+}
+
+await scenario('1280 24 desktop: the door row in a hover zoom — a member clicks + and −, a click on the wall still picks; a guest\'s + asks', async () => {
+  resetDocs(); writes.length = 0;
+  const desk = async (init) => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, serviceWorkers: 'block' });
+    await ctx.addInitScript((t) => {
+      const T0 = new Date(t).getTime(); const start = Date.now(); const RealDate = Date;
+      // eslint-disable-next-line no-global-assign
+      Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [T0 + (RealDate.now() - start)])); } static now() { return T0 + (RealDate.now() - start); } };
+    }, SAT_315PM);
+    if (init) await ctx.addInitScript(init.fn, init.arg);
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    return { ctx, page, errors };
+  };
+  const hover = async (page, sel) => {
+    const card = page.locator(sel).first();
+    await card.scrollIntoViewIfNeeded();
+    await sleep(200);
+    const b = await card.boundingBox();
+    await page.mouse.move(b.x - 20, b.y - 20);
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+    await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+    await sleep(700);
+  };
+  const click = async (page, door) => {
+    const b = await page.locator(`#zoom-layer .zoom-slot.shown .f-step-row > ${door}`).boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 });
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await sleep(500);
+  };
+  let { ctx, page, errors } = await desk(memberInit);
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  await hover(page, '#wall-root .card[data-artist="Femme Jatale b2b erika"]');
+  const g = await zoomGeometry(page);
+  note(`crowded 1280 (hover): ${JSON.stringify(g)}`);
+  note(`  overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors reachable ${g.doors.every((d) => d[1])}`);
+  await shot(page, '1280-36-crowded-hover.png');
+  await click(page, '.f-step.plus');
+  const l1 = await levelOf(page, 'Femme Jatale b2b erika');
+  await click(page, '.f-step.plus');
+  const l2 = await levelOf(page, 'Femme Jatale b2b erika');
+  await click(page, '.f-step.minus');
+  note(`member clicks + + − → ${l1}, ${l2}, ${await levelOf(page, 'Femme Jatale b2b erika')}; zoom still up ${await page.locator('#zoom-layer .zoom-slot.shown').count()}`);
+  await shot(page, '1280-37-member-hover-row.png');
+  await page.mouse.move(640, 20, { steps: 5 });
+  await sleep(600);
+  const before = await levelOf(page, 'Tove Lo');
+  await page.locator('#wall-root .card[data-artist="Tove Lo"]').first().click();
+  await sleep(400);
+  note(`a click on a resting card still picks: Tove Lo ${before} → ${await levelOf(page, 'Tove Lo')}`);
+  note(`errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+  ({ ctx, page, errors } = await desk({ fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null }));
+  writes.length = 0;
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  await hover(page, '#wall-root .card[data-artist="Tove Lo"]');
+  note(`guest hover row: ${JSON.stringify(await rowState(page))}`);
+  await click(page, '.f-step.plus');
+  await page.waitForSelector('.join-shelf', { timeout: 3000 });
+  note(`guest + → shelf "${await page.locator('.join-shelf .js-line').textContent()}"`);
+  await shot(page, '1280-38-guest-hover-plus-shelf.png');
+  note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
 
 await browser.close();
 server.close();
