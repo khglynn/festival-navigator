@@ -53,6 +53,14 @@ no ✕; Everyone in the menu clears. A highlight then costs the row nothing the 
 sweep (320 → 430, Portola and ACL, Mac and wide glyphs, each step a real resize) holds the rule: the
 promise at every width, and never fewer discs for more room. Frame: `people-shots/sheet-compact.png`.
 
+**Third CI round (run 36249092116, on `4a6b57c`):** two test faults, reproduced locally with the
+glyphs widened 1.4px (a Mac drawing like CI's Linux plus its 0.7px): the first test cleared with the
+✕, which a folded pill does not carry (it now clears through Everyone when folded — a path worth
+having under test anyway); and "whole" was read from fractional rects at 1px where the row's own rule
+(restingLeft) allows a pixel in whole-pixel layout positions — ACL at 320 sat 1.2px past the edge
+with the pill folded to exactly the avatar's width, so the row was as it is with no highlight at all.
+The tolerance is now the row's own (two pixels in rects).
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line

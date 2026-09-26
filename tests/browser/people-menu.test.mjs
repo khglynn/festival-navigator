@@ -172,8 +172,10 @@ const pillRead = (page) => page.evaluate(() => {
   };
 });
 const BARE = pillWidth(0); // the avatar's width, and the folded pill's
+// "Whole" is the day row's own word (wall.js restingLeft): a pixel of slack
+// in whole-pixel layout positions, so up to about two in the rects read here.
 function assertPillPromise(r, people, label) {
-  const whole = (x) => !!x && x[0] >= r.row[0] - 1 && x[1] <= r.row[1] + 1;
+  const whole = (x) => !!x && x[0] >= r.row[0] - 2 && x[1] <= r.row[1] + 2;
   assert.equal(r.slot, 'pill', `${label}: the slot is the pill`);
   assert.equal(r.count, people.length, `${label}: the discs and the +n add up to ${people.length} (${JSON.stringify(r)})`);
   assert.deepEqual(r.named, people.slice(0, r.named.length), `${label}: the faces are the first of the highlighted, in the crew's order`);
@@ -258,10 +260,16 @@ for (const [name, get, width, wide = null] of ENGINES) {
       await page.keyboard.press('Escape');
       await sleep(400);
       assert.equal((await menuState(page, bar)).open, false, 'Escape');
-      // The ✕: one tap, from anywhere.
+      // The ✕: one tap, from anywhere — or, where the pill has folded to the
+      // avatar's size for want of room (Linux's glyphs at 320), Everyone in
+      // the menu the faces open.
       await page.evaluate(() => window.scrollBy(0, 1400));
       await sleep(400);
-      await press(`${w} .hl-x`);
+      if (await page.evaluate((sel) => document.querySelector(`${sel} .hl-pill`).hasAttribute('data-compact'), w)) {
+        await press(`${w} .hl-faces`);
+        await press(`${w} .hl-pop [data-person=""]`);
+        await press(`#${bar}-you`);
+      } else await press(`${w} .hl-x`);
       s = await menuState(page, bar);
       assert.deepEqual([s.open, s.slot, s.dim, s.stored], [false, 'avatar', 0, []], `the ✕ cleared it: ${JSON.stringify(s)}`);
       assert.ok(await page.locator(`#${bar}-you`).isVisible(), 'your avatar back');
