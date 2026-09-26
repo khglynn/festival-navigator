@@ -113,6 +113,8 @@ const ctx = {
     router.push('sheet:fest');
   },
   onNotesChange: () => onNotesChange(),
+  // A guest's door in from a notes sheet (v92): the join screen, no pick waiting.
+  onJoin: () => joinFromLayer(),
   // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
   // wall.js hands every card here; card-facts.js owns the timing and the grow.
   wireZoom: (el, artist, occ) => {
@@ -464,6 +466,18 @@ function lookAround(token, doc) {
     return;
   }
   enterApp(token, doc).catch((e) => { record('join:look', e); renderFatal(); });
+}
+
+// "Add yourself" from inside a layer — Settings → You, a notes sheet's door.
+// The layer is dropped from the model first (its history entry stays, and
+// reconciles to nothing), so "Just looking" comes back to the wall, never to
+// a layer the history no longer holds.
+function joinFromLayer() {
+  router.reset();
+  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+  closeSheet();
+  show('screen-app');
+  askToJoin(null);
 }
 
 // The dashed + where a guest's avatar will be: one soft pulse after "Got it",
@@ -1983,12 +1997,7 @@ function openSettings() {
     // A guest's "Add yourself" (v92): the join screen, from Settings. The
     // settings layer is dropped from the model first — "Just looking" comes
     // back to the wall, never to a Settings the history no longer holds.
-    join: () => {
-      router.reset();
-      history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
-      show('screen-app');
-      askToJoin(null);
-    },
+    join: () => joinFromLayer(),
     // FLOW-8: identity change is an explicit, named action — never a chip tap.
     switchIdentity: (name) => switchIdentity(name),
     // Add-on-their-behalf (note 5): the sheet opens OVER settings.

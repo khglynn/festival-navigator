@@ -691,6 +691,19 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
 // state retired 2026-08-30 — replying now happens inline, at the thread you
 // pressed, so this box can no longer silently re-aim an already-typed draft at
 // a root you have scrolled away from.
+// A guest has no composer (v92, first open): in its place, the door in —
+// the same question a tap on an artist asks. Only where the shell offers one
+// (ctx.onJoin), and never on a thread nobody writes to (a legacy key).
+function joinDoor(ctx) {
+  if (ctx.meName || typeof ctx.onJoin !== 'function') return null;
+  const b = document.createElement('button');
+  b.className = 'btn-ghost join-door';
+  b.style.cssText = 'font-size: 12px; padding: 9px 15px; align-self: center;';
+  b.textContent = 'Add yourself to write a note';
+  b.addEventListener('click', () => ctx.onJoin());
+  return b;
+}
+
 function composer(placeholder, onSave) {
   const wrap = document.createElement('div');
   wrap.className = 'composer-wrap';
@@ -906,6 +919,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   };
   paint();
   if (box) sheet.appendChild(box);
+  else if (!readOnly) { const door = joinDoor(ctx); if (door) sheet.appendChild(door); }
   document.body.append(backdrop, sheet);
   const spoken = scope === 'artist' ? target
     : scope === 'day' ? (opts.label || dayTargetLabel(ctx, target))
@@ -974,6 +988,7 @@ export function openAllNotes(ctx) {
     ctx.onNotesChange();
   }) : null;
   if (box) sheet.appendChild(box);
+  else { const door = joinDoor(ctx); if (door) sheet.appendChild(door); }
   const body = document.createElement('div');
   body.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
   sheet.appendChild(body);

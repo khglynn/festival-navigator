@@ -148,6 +148,28 @@ test('the dashed + opens the same question, with no artist waiting', async () =>
   assert.deepEqual(shown(), ['screen-app']);
 });
 
+test('a notes sheet, as a guest: read-only, with the door in where the composer would be', async () => {
+  // Forward into a day's notes, the way history reopens a sheet.
+  const { dom } = shell;
+  dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate', { state: { layers: ['sheet:day:2026-09-26'] } }));
+  await settle(20);
+  const sheet = document.getElementById('artist-sheet');
+  assert.ok(sheet, 'the day’s notes are open');
+  assert.equal(sheet.querySelector('.composer'), null, 'no composer for a guest');
+  const door = sheet.querySelector('button.join-door');
+  assert.ok(door, 'the door in');
+  assert.equal(door.textContent, 'Add yourself to write a note');
+  door.click();
+  await settle(20);
+  assert.deepEqual(shown(), ['screen-join']);
+  assert.equal(document.getElementById('artist-sheet'), null, 'the sheet went with the wall');
+  assert.equal($('join-for').style.display, 'none');
+  $('join-look').click();
+  await settle(40);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.deepEqual(writes, []);
+});
+
 test('Settings, as a guest: no door writes into the crew, and You says how to join', async () => {
   $('gear-btn').click();
   await settle(20);
