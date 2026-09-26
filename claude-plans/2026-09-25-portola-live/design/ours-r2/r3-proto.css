@@ -1,0 +1,185 @@
+/* OURS round three — design prototype styles (2026-09-25, late). Tokens only.
+ *
+ * Kevin on round two: "Left float the now and next to the right side to the
+ * left of the number of people going … R1 flow doesn't need extra big times
+ * … bigger artist names or similar is chill. And then again now on the
+ * right." So the row keeps ONE grid, rearranged:
+ *   1 the node on the path (the stop's aura; the path is one rail)
+ *   2 what and where — the artist is the biggest thing on the row
+ *   3 when — a quiet time, or the NOW / NEXT tag over its time
+ *   4 how many of us — the only number that is not a time
+ * The peek is one of these rows; the opened plan is a column of them. */
+:root { --q-nw: 16px; --q-ww: 72px; --q-cw: 48px; --q-gap: 10px; }
+@media (max-width: 359px) { :root { --q-ww: 64px; --q-cw: 44px; --q-gap: 8px; } }
+
+.q-plan { display: flex; flex-direction: column; min-width: 0; }
+.q-row { position: relative; display: grid; min-width: 0; align-items: baseline;
+         grid-template-columns: var(--q-nw) minmax(0, 1fr) var(--q-ww) var(--q-cw);
+         column-gap: var(--q-gap); padding: 8px 0; }
+.q-row::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; border-radius: 1px;
+                 left: calc(var(--q-nw) / 2 - 1px); background: rgba(var(--brand), .26); }
+.q-row.first::before { top: 18px; }
+.q-row.last::before { bottom: auto; height: 18px; }
+.q-row.first.last::before, .q-bar .q-row::before, .q-corner .q-row::before { display: none; }
+.q-row.scattered::before { background: repeating-linear-gradient(to bottom, rgba(var(--brand), .38) 0 3px, transparent 3px 7px); }
+
+/* 1 · node */
+.q-node { position: relative; z-index: 1; justify-self: center; align-self: start; margin-top: 3px;
+          width: 16px; height: 16px; border-radius: var(--r-pill); overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(255, 255, 255, .38), 0 0 0 4px var(--q-bg, var(--dock)); }
+.q-node.animated { background-size: 180% 180% !important; animation: gradShift 12s ease-in-out infinite; }
+.q-row.some .q-node { width: 10px; height: 10px; margin-top: 5px; background: var(--q-bg, var(--dock)) !important;
+                      box-shadow: 0 0 0 1.5px rgba(var(--brand), .7), 0 0 0 4px var(--q-bg, var(--dock)); }
+.q-row.or .q-node, .q-row.earlier .q-node { width: 7px; height: 7px; margin-top: 5px; background: var(--q-bg, var(--dock)) !important;
+                     box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--q-bg, var(--dock)); }
+.q-row.scattered .q-node { visibility: hidden; }
+.q-row.live .q-node { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 0 0 4px var(--q-bg, var(--dock)), 0 0 12px rgba(var(--brand), .85); }
+
+/* 2 · what and where: the artist leads */
+.q-what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.q-what .nm { color: var(--text-primary); font-size: 17px; font-weight: 800; line-height: 1.18; letter-spacing: -.005em;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* THE SECOND LINE (Kevin, round three: "same size for place and time"): the
+ * place under the artist and the time under NOW / NEXT are one style, so the
+ * row has exactly two text sizes, the artist and everything else. */
+:root { --q-line: 600 12px/1.3 var(--font-ui); }
+.q-what .pl { color: var(--text-secondary); font: var(--q-line);
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-what .pl .also { color: var(--text-tertiary); }
+.q-what .pl .also::before { content: ' · '; }
+.q-row.some .q-what .nm { font-size: 14.5px; font-weight: 700; color: var(--text-body); }
+/* (a smaller group's place keeps the second line's size, weight and colour) */
+.q-row.or { padding-top: 0; }
+.q-row.or .q-what .nm { font-size: 13px; font-weight: 600; color: var(--text-body); }
+.q-row.or .q-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
+.q-row.or .q-what .nm .pl-inline { color: var(--text-tertiary); font: var(--q-line); }
+.q-row.earlier .q-what .nm, .q-row.scattered .q-what .nm { font-size: 12px; font-weight: 600; color: var(--text-tertiary); }
+.q-row.earlier .q-what .nm b { color: var(--text-secondary); }
+.q-row.scattered .q-what .nm { font-style: italic; }
+.q-who { display: flex; margin-top: 5px; }
+.q-who .avatar { width: 15px; height: 15px; font-size: 7.5px; box-shadow: 0 0 0 1.5px var(--q-bg, var(--dock)); }
+.q-who .avatar + .avatar { margin-left: -4px; }
+
+/* 3 · when: quiet — Inter, small, secondary. The tag sits on the name's line. */
+.q-when { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
+.q-when .t { font: var(--q-line); color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.q-when .t.soft { color: var(--text-tertiary); font-weight: 600; }
+.q-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; letter-spacing: .1em;
+         padding: 3px 7px; border-radius: var(--r-pill); line-height: 1; white-space: nowrap; }
+.q-tag.now { background: rgb(var(--brand)); color: var(--page); }
+.q-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
+.q-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
+.q-row.past { opacity: .42; }
+
+/* 4 · how many of us */
+.q-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
+.q-n b { font-family: var(--font-display); letter-spacing: var(--track-display); font-weight: 400; font-size: 17px;
+         color: var(--text-primary); margin-right: 3px; }
+.q-row.some .q-n b, .q-row.or .q-n b { font-size: 14px; color: var(--text-body); }
+.q-row .chev { justify-self: end; color: var(--text-tertiary); font-size: 12px; }
+
+/* A grown row: the real sheetCard spans 2-4, left edge on the names' line,
+ * right edge on the counts' line. */
+.q-grow { grid-column: 2 / 5; margin-top: 8px; min-width: 0; }
+.q-grow .sheet-card { padding: 13px 12px 14px; }
+.q-grow .sheet-card .f-name { font-size: 17px; }
+
+/* ---- the phone peek: one row on the dock's top edge ------------------------ */
+.q-bar { position: fixed; left: 0; right: 0; z-index: 31; --q-bg: var(--dock);
+         background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
+         box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); padding: 5px var(--sp-gutter) 6px; }
+.q-bar .grabber, .q-corner .grabber { width: 30px; height: 3px; border-radius: var(--r-pill); background: var(--border-card); margin: 0 auto 3px; }
+.q-bar .q-row { padding: 4px 0; }
+
+/* ---- the opened plan (phone: the shelf; desktop: the panel) ----------------- */
+.sheet.q-sheet { --q-bg: var(--dock); padding: 10px var(--sp-gutter) 16px; gap: 8px; max-height: 88vh; }
+.q-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.q-head .room-head { flex: 1 1 auto; }
+.q-send { display: flex; flex-direction: column; gap: 7px; position: sticky; bottom: -16px; z-index: 3;
+          padding: 14px 0 16px; margin: 4px 0 -16px; background: linear-gradient(to bottom, transparent, var(--dock) 16px); }
+.q-send .btn-tonal { font-size: 14px; padding: 13px 18px; }
+.q-send .hint { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; text-align: center; }
+
+/* ---- desktop: companions live in the corner --------------------------------
+ * Every footer shelf that keeps you company (the plan's peek, the welcome
+ * card) is a card in the bottom-right corner, 380px, one right edge, stacked
+ * upward. Shelves that ask a question (join, notes) stay the centred dialog
+ * every sheet already becomes at 720+. */
+.q-stack { position: fixed; right: 20px; bottom: 20px; width: 380px; z-index: 31;
+           display: flex; flex-direction: column; gap: 10px; }
+.q-corner { --q-bg: var(--dock); position: relative; background: var(--dock); border: 1px solid var(--border-card);
+            border-radius: 16px; padding: 8px 14px 10px; cursor: pointer;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, .55); transition: transform .15s ease, border-color .15s ease; }
+/* The mouse's affordance, visible without hovering: the name on the left,
+ * an Open button with its chevron on the right. Hover lifts the card. */
+.q-ch { display: flex; align-items: center; gap: 8px; padding: 2px 0 4px; border-bottom: 1px solid var(--hairline); margin-bottom: 2px; }
+.q-ch .k { color: rgb(var(--brand)); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.q-ch .c { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.q-open { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px 0 11px;
+          border-radius: var(--r-pill); border: 1px solid var(--border-input); background: none; cursor: pointer;
+          color: var(--text-body); font: 700 11.5px var(--font-ui); }
+.q-open svg { transition: transform .2s ease; }
+.q-corner.hover { transform: translateY(-2px); border-color: rgba(var(--brand), .55); box-shadow: 0 18px 42px rgba(0, 0, 0, .6); }
+.q-corner.hover .q-open { border-color: rgba(var(--brand), .7); color: var(--tonal-text); background: rgba(var(--brand), .12); }
+.q-tip { position: absolute; right: 6px; bottom: calc(100% + 8px); background: #fff; color: var(--page); border-radius: 6px;
+         padding: 5px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 6px 16px rgba(0, 0, 0, .4); }
+.q-cursor { position: fixed; z-index: 90; width: 18px; height: 18px; pointer-events: none; }
+
+/* The opened plan on desktop: a companion panel on the right, under the rail.
+ * It grows up out of the corner card (its right and bottom edges stay put).
+ * No backdrop: the wall stays usable beside it. */
+.q-panel { --q-bg: var(--dock); position: fixed; right: 0; bottom: 0; width: 400px; z-index: 31;
+           background: var(--dock); border-left: 1px solid var(--hairline); box-shadow: -14px 0 40px rgba(0, 0, 0, .45);
+           padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; box-sizing: border-box; }
+.q-panel .q-send { bottom: -16px; }
+.q-shut { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: var(--r-pill);
+          border: 1px solid var(--border-input); background: none; color: var(--text-body); font: 700 11.5px var(--font-ui); cursor: pointer; }
+
+/* The welcome card, in the corner stack (the guest-shelf round's words and
+ * two equal doors; the crew row on top). */
+.q-welcome { background: var(--dock); border: 1px solid var(--border-card); border-radius: 16px; padding: 14px 16px 16px;
+             box-shadow: 0 14px 36px rgba(0, 0, 0, .55); display: flex; flex-direction: column; gap: 9px; }
+.q-welcome .crew { display: flex; align-items: center; gap: 9px; }
+.q-welcome .crew .avatar { width: 20px; height: 20px; font-size: 8.5px; box-shadow: 0 0 0 1.5px var(--dock); }
+.q-welcome .crew .avatar + .avatar { margin-left: -5px; }
+.q-welcome .crew .nm { color: var(--text-secondary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.q-welcome h3 { margin: 0; color: var(--text-header); font-size: 16px; font-weight: 800; }
+.q-welcome p { margin: 0; color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }
+.q-welcome p a { color: var(--tonal-text); font-weight: 700; text-decoration: none; }
+.q-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 3px; }
+.q-two button { height: 40px; border-radius: var(--r-pill); font: 700 13px var(--font-ui); cursor: pointer; }
+.q-two .ghost { background: none; border: 1px solid var(--border-input); color: var(--text-body); }
+.q-two .tonal { background: var(--tonal-fill); border: 0; color: var(--tonal-text); }
+
+/* The join shelf on desktop: the centred dialog (.sheet at 720+). */
+.sheet.q-join { gap: 12px; padding: 22px 24px; }
+.q-join h3 { margin: 0; font-size: 19px; font-weight: 800; color: var(--text-header); }
+.q-join .sub { color: var(--text-secondary); font-size: 12.5px; margin-top: -6px; }
+.q-join .names { display: flex; flex-wrap: wrap; gap: 8px; }
+.q-join .names .person-chip { font-size: 13px; padding: 8px 14px; }
+.q-join input { background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px;
+                color: #fff; font: 14px var(--font-ui); }
+
+/* ---- the zoom's − · note · + as ghost buttons -------------------------------
+ * Kevin: semi-transparent ghost buttons. All three are one family: a thin
+ * scrim that lets the card's wash through, a hairline, white glyphs. + keeps
+ * a brighter ring (the way up) instead of the solid white disc; − and the
+ * notes door are the quiet pair. The mouse gets a hover fill; the finger
+ * keeps the whole third of the row as its target (guest-shelf round). */
+.zoom-card .f-chips.q-step-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0;
+                                 align-self: stretch; margin: 2px -14px -10px; }
+.zoom-card .f-grown:has(.q-step-row) { align-self: stretch; }
+.q-step { display: flex; align-items: center; min-height: 52px; padding: 0; background: none; border: 0; cursor: pointer; color: #fff; }
+.q-step.minus { justify-content: flex-end; padding-right: 10px; }
+.q-step.plus { justify-content: flex-start; padding-left: 10px; }
+.q-step .dot { width: 36px; height: 36px; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center;
+               font: 500 22px/1 var(--font-ui); color: #fff;
+               background: rgba(12, 10, 20, .26); border: 1px solid rgba(255, 255, 255, .5);
+               -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.q-step.plus .dot { border-color: rgba(255, 255, 255, .85); background: rgba(255, 255, 255, .14); }
+.zoom-card .q-step-row .f-chip.notes { height: 32px; padding: 0 14px; font-size: 12px; font-weight: 800;
+                                        background: rgba(12, 10, 20, .26); border: 1px solid rgba(255, 255, 255, .45);
+                                        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+/* A mouse's hover: the circle fills a little; nothing moves. */
+.q-step.hover .dot { background: rgba(255, 255, 255, .26); border-color: #fff; }
+@media (min-width: 720px) { .q-step .dot { width: 32px; height: 32px; font-size: 20px; } .q-step { min-height: 44px; } }
