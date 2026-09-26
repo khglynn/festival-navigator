@@ -203,4 +203,17 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   v92 fixed. The first run had three load flakes (the guest-tap-route shelf Escape in both
   engines, show-links' door-under-pointer); each passes alone. The walk's people, menu and
   how scenarios were clean at 390/320/1280.
+- **Sol 6 blocker fixed** (584edf4): the crew deleted on the server (the poll's JSON 404) with
+  the Show menu up went to the fest list and left the menu showing, `body[data-busy]` held
+  (refusing every future update reload on that phone) and history on the menu's entry —
+  reproduced in Chromium on 33164a3. Root fix: `show()` retires the menu for any screen but the
+  wall, `boot()` retires it first, `router.forget()` drops its layer from the model and the
+  current entry without a traversal, and the minute tick clears a stale `show-menu` flag. A
+  hashchange already closed it (a fragment navigation fires popstate); the fest list's button
+  already did (an outside tap). Tests failing before / passing after:
+  `tests/show-menu-retire.test.mjs` (404, boot, stale flag; fest list pinned), a router
+  `forget` case, and the browser contract's 404-while-open. `npm test` 1019/1020 three runs in
+  a row (stamp only; shell-v4's fold-motion case flaked once under load earlier and not
+  since); `npm run test:browser` 207/207 before the new contract, which passes alone and in its
+  file.
 
