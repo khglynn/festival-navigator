@@ -772,7 +772,7 @@ function slideTabs(row, before, edges, { out = false } = {}) {
     slides.push(t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }],
       { duration: CASCADE_MS, easing: out ? EASE_SURFACE : EASE_ARRIVE }));
   }
-  if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => a.finished.catch(() => {}))));
+  if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => Promise.resolve(a && a.finished).catch(() => {}))));
 }
 const edgesOf = (row) => EDGES.filter((k) => row.classList.contains(k));
 // `day`: the live day's key (NOW belongs after its tab), '' (live, but on no
@@ -1271,7 +1271,15 @@ function renderDayNav() {
 // The sort chip's popover component, reused (`.sort-wrap` + `.sort-pop`) —
 // one control vocabulary. On the phone it opens upward above the dock; on
 // desktop it hangs under the rail (both from the CSS).
+//
+// It STAYS OPEN while you choose (v93, Kevin: tick a room, the wall changes
+// behind it, tick another): a row toggles its room and the menu stays up.
+// It closes on a tap or click outside it, on Escape, on the fest name again,
+// and on Back — it holds a history entry of its own (the router's `menu:`
+// layer), which each of those ways out takes back, and which Settings, its
+// last row, turns into its own. History ends as the menu found it.
 const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
+const MENU_LAYER = 'menu:show';
 let openMenu = null;
 
 function closeShowMenu({ instant = false } = {}) {
@@ -1279,7 +1287,8 @@ function closeShowMenu({ instant = false } = {}) {
   const { pop, link } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
-  const hide = () => { pop.style.display = 'none'; };
+  // A menu opened again before its way out finished stays open.
+  const hide = () => { if (!openMenu || openMenu.pop !== pop) pop.style.display = 'none'; };
   // The way out is quick and plain.
   if (instant || !canAnimate(pop, ctx)) { hide(); return; }
   const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
@@ -1298,6 +1307,37 @@ function openShowMenu(wrap, link, pop) {
     pop.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
       { duration: CASCADE_MS, easing: EASE_ARRIVE, fill: 'backwards' });
   }
+  router.push(MENU_LAYER);
+}
+// The menu's ways out that are not Back (a tap outside, Escape, the fest name
+// again) take its history entry back; the popstate that follows closes it
+// (the router's `menu:` layer). Without the entry — a desynced stack — it
+// just closes.
+function leaveShowMenu() {
+  if (!openMenu) return;
+  if (router.top() === MENU_LAYER && router.requestClose()) return;
+  closeShowMenu();
+}
+
+// The Settings row's gear (v93, Kevin: "a little gear to the left of the
+// settings line"): the header's own gear (index.html, #gear-btn) drawn at the
+// row's text size, in the check column, so "Settings" lines up with the room
+// names above it. currentColor: v3.css gives it the secondary text colour.
+const GEAR_PATH = 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z';
+function gearIcon() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'gear');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '12'); svg.setAttribute('height', '12');
+  svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.4'); svg.setAttribute('stroke-linecap', 'round');
+  const hub = document.createElementNS(NS, 'circle');
+  hub.setAttribute('cx', '12'); hub.setAttribute('cy', '12'); hub.setAttribute('r', '3');
+  const teeth = document.createElementNS(NS, 'path');
+  teeth.setAttribute('d', GEAR_PATH);
+  svg.append(hub, teeth);
+  return svg;
 }
 
 // A row is a native <button>, which is where its keyboard and its 44px floor
@@ -1316,7 +1356,8 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   if (settings) row.className = 'settings';
   const check = document.createElement('span');
   check.className = 'check';
-  check.textContent = on ? '✓' : '';
+  if (settings) check.appendChild(gearIcon());
+  else check.textContent = on ? '✓' : '';
   check.setAttribute('aria-hidden', 'true');
   const text = document.createElement('span');
   text.textContent = label;
@@ -1346,9 +1387,15 @@ function buildShowMenu(rooms, folded) {
   pop.appendChild(head);
   for (const room of rooms) {
     const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
-    // A row tap closes the menu and moves the room — the fold flow owns the
-    // motion from there, on every day at once.
-    row.addEventListener('click', () => { closeShowMenu(); toggleFoldFlow(room.key); });
+    // A row tap moves the room and the menu stays up for the next one (v93):
+    // its check turns at once, and the fold flow owns the wall's motion
+    // behind it, on every day at once (the repaint re-reads every check).
+    row.addEventListener('click', () => {
+      const on = row.getAttribute('aria-selected') !== 'true';
+      row.setAttribute('aria-selected', on ? 'true' : 'false');
+      row.querySelector('.check').textContent = on ? '✓' : '';
+      toggleFoldFlow(room.key);
+    });
     pop.appendChild(row.parentElement);
   }
   const divider = document.createElement('li');
@@ -1357,6 +1404,8 @@ function buildShowMenu(rooms, folded) {
   divider.setAttribute('aria-hidden', 'true');
   pop.appendChild(divider);
   const settings = showMenuRow('Settings', { settings: true });
+  // Settings takes the menu's history entry for its own (router.push swaps a
+  // menu layer), so Back from Settings lands on the wall.
   settings.addEventListener('click', () => {
     closeShowMenu({ instant: true });
     openSettings();
@@ -3379,6 +3428,14 @@ export function init() {
       if (d) openArtistSheet(d.artist, ctx, onNotesChange, d.occ);
     }
   }, () => closeSheet());
+  // The show menu (v93): Back closes it; forward, or a refresh that had it
+  // open, opens it again in the door this screen has (the rail from 720px).
+  router.registerKind('menu:', () => {
+    if ($('screen-app').style.display === 'none') return;
+    const [wrapId, linkId] = SHOW_MENUS[window.innerWidth >= 720 ? 1 : 0];
+    const pop = $(wrapId) && $(wrapId).querySelector('.sort-pop');
+    if (pop && !(openMenu && openMenu.pop === pop)) openShowMenu($(wrapId), $(linkId), pop);
+  }, () => closeShowMenu());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
   // The system Back with the join shelf up takes the shelf down (v92): the
   // question is dropped, the wall is where it was.
@@ -3443,14 +3500,21 @@ export function init() {
       const wrap = $(wrapId);
       const pop = wrap && wrap.querySelector('.sort-pop');
       if (!pop) { openSettingsLayer(); return; }
-      if (openMenu && openMenu.pop === pop) closeShowMenu();
+      if (openMenu && openMenu.pop === pop) leaveShowMenu();
       else openShowMenu(wrap, $(linkId), pop);
     });
   }
-  // A tap outside closes it, like every other popover in the app.
+  // A tap or click outside closes it — and does only that (v93). The menu
+  // now stays up while you choose, so the tap that puts it away is often a
+  // tap on the wall; reaching the card underneath too would make a pick
+  // under your name on the way out. Taken in the capture phase, before any
+  // card hears it. A scroll is not a tap: the wall scrolls behind the menu.
   document.addEventListener('click', (e) => {
-    if (openMenu && !openMenu.wrap.contains(e.target)) closeShowMenu();
-  });
+    if (!openMenu || openMenu.wrap.contains(e.target)) return;
+    e.stopPropagation();
+    e.preventDefault();
+    leaveShowMenu();
+  }, true);
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
@@ -3501,11 +3565,10 @@ export function init() {
   window.addEventListener('offline', () => { sync.setSyncStatus('offline'); updateMigrationBanner(); });
   // Escape is universal back: pops the top layer through history so the
   // browser's back button and the keyboard always agree (FLOW-2). The show
-  // menu is not a history layer — it is a popover, so Escape takes it first
-  // and nothing below it moves.
+  // menu is the top layer while it is open, and Escape takes it first.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (openMenu) { closeShowMenu(); return; }
+    if (openMenu) { leaveShowMenu(); return; }
     if (!router.requestClose()) closeSheet();
   });
   // Last-resort net (FLOW-4): an early crash used to leave every screen

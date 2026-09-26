@@ -31,6 +31,7 @@ function harness() {
   router.registerKind('settings', () => log.push('open settings'), () => log.push('close settings'));
   router.registerKind('sub:', (k) => log.push(`open ${k}`), (k) => log.push(`close ${k}`));
   router.registerKind('sheet:', (k) => log.push(`open ${k}`), (k) => log.push(`close ${k}`));
+  router.registerKind('menu:', (k) => log.push(`open ${k}`), (k) => log.push(`close ${k}`));
   return { router, hist, log, entries: () => entries.length, idx: () => idx };
 }
 
@@ -70,6 +71,34 @@ test('sheets swap instead of stacking — one back exits the sheet', () => {
   assert.equal(h.entries(), 2); // base + one sheet entry, not three
   h.hist.back();
   assert.deepEqual(h.router.current(), []);
+});
+
+// The show menu (v93) is a popover with a history entry of its own, so Back
+// closes it. Like a sheet it never sits under anything: what opens over it
+// (Settings from its last row, a sheet from a card's zoom) takes its entry,
+// and closes it — so Back from there lands on the wall, not on a menu that
+// is no longer open.
+test('a menu is swapped out, and closed, by whatever opens over it', () => {
+  const h = harness();
+  h.router.push('menu:show');
+  assert.deepEqual(h.router.current(), ['menu:show']);
+  assert.equal(h.entries(), 2, 'the menu has an entry of its own');
+  h.router.push('settings');
+  assert.deepEqual(h.router.current(), ['settings'], 'Settings took its place');
+  assert.equal(h.entries(), 2, 'and its entry — no second one');
+  assert.deepEqual(h.log, ['close menu:show'], 'the menu was closed by what replaced it');
+  h.hist.back();
+  assert.deepEqual(h.router.current(), [], 'one back: the wall');
+  assert.deepEqual(h.log, ['close menu:show', 'close settings']);
+});
+
+test('a menu\'s way out is history: requestClose, and the pop closes it', () => {
+  const h = harness();
+  h.router.push('menu:show');
+  assert.equal(h.router.requestClose(), true);
+  assert.deepEqual(h.router.current(), []);
+  assert.deepEqual(h.log, ['close menu:show']);
+  assert.equal(h.idx(), 0, 'back on the entry it found');
 });
 
 test('requestClose drives history; nothing to close returns false', () => {

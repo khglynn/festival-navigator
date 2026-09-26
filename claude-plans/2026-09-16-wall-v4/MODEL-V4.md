@@ -215,6 +215,15 @@ one room has no menu: the tap goes straight to Settings, as today. Escape,
 a tap outside and a row tap all close it; the way in has the beat, the way
 out is quick.
 
+**Since v93 (Kevin, 2026-09-25):** the menu stays up while you choose — a
+row tap toggles its room, the wall changes behind it, and the menu waits
+for the next. It closes on a tap or click outside it (which does nothing
+else: it never reaches the card underneath), on Escape, on the fest name
+again, and on Back — it holds a history entry of its own (the router's
+`menu:` layer) that each way out takes back, and that Settings takes over,
+so history ends as the menu found it. `Settings` wears the header's gear in
+the check column.
+
 **Since the ship round (2026-09-17):**
 - **A hidden part renders nothing.** No header, no quiet label, no whisper,
   no note door: the plan (`wallPlanFor`) applies the fold, so a hidden

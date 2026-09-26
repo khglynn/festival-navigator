@@ -298,8 +298,12 @@ html { touch-action: manipulation; }
   background: none; border: 0; text-align: left; font-family: inherit;
   color: var(--text-body); font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {
-  background: rgba(255, 255, 255, .08);
+.sort-pop [role="option"].kb-active { background: rgba(255, 255, 255, .08); }
+/* Hover only where there is a pointer that hovers: a finger's tap leaves
+ * :hover stuck on the row it touched, and in a menu that stays up while you
+ * choose (the show menu, v93) that grey read as the row being the choice. */
+@media (hover: hover) {
+  .sort-pop [role="option"]:hover { background: rgba(255, 255, 255, .08); }
 }
 /* Brand, not fest accent: a selected sort option is app chrome. The accent is
  * reserved for fest name / active day tab / stage headers / current-fest border. */
@@ -314,6 +318,10 @@ html { touch-action: manipulation; }
 }
 .sort-pop .pop-div { height: 1px; margin: 5px 7px; background: var(--hairline); }
 .sort-pop .chev { color: var(--text-tertiary); margin-left: auto; padding-left: 10px; }
+/* Settings wears the header's gear in the check column (v93), so its word
+ * lines up with the rooms' names above it. */
+.sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
+.sort-pop .settings .gear { display: block; }
 /* The dock is fixed to the bottom of the phone, so a popover it carries opens
  * UPWARD — downward is off the screen. The rail's is at the top of the page
  * and keeps the default. One rule, on the one bottom-anchored wrap. The

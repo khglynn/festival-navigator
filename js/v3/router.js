@@ -67,16 +67,23 @@ export function createRouter(hist) {
   return {
     registerKind(prefix, open, close) { kinds.push({ prefix, open, close }); },
 
-    // Record a layer the UI just opened. Sheets never sit under anything —
-    // opening while a sheet is on top swaps it instead of stacking (the UI
-    // open path already closed the old sheet).
+    // Record a layer the UI just opened. Sheets and menus never sit under
+    // anything — opening while one is on top swaps it instead of stacking.
+    // The UI open path already closed an old sheet; a menu (the show menu,
+    // v93: a popover with a history entry of its own, so Back closes it) is
+    // closed here, by whatever replaced it — Settings from its last row, a
+    // sheet from a card's zoom — so its entry becomes that layer's, and Back
+    // from there lands on the wall, never on a menu that is no longer open.
     push(key) {
       if (navigating) return;
       const top = stack[stack.length - 1];
       if (top === key) return;
-      if (top && top.startsWith('sheet:')) {
+      if (top && (top.startsWith('sheet:') || top.startsWith('menu:'))) {
         stack[stack.length - 1] = key;
         hist.replaceState({ layers: [...stack] }, '');
+        if (top.startsWith('menu:')) {
+          try { kindOf(top)?.close(top); } catch (e) { console.warn('layer close failed:', top, e); }
+        }
       } else {
         stack.push(key);
         hist.pushState({ layers: [...stack] }, '');

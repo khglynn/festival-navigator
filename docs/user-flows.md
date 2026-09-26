@@ -140,7 +140,9 @@ viewport (no vast dead space on desktop).
    and a day with nothing visible left on it has no rule and no tab (never
    an empty shell). Remembered per fest, on this device only, and it is the
    ONE way to hide a part of the week; the menu still lists every room, which
-   is where the state is visible.
+   is where the state is visible. The menu stays open while you tick rooms
+   (the wall changes behind it); a tap outside, Escape, the fest name again
+   or Back puts it away, and a tap outside does nothing else.
    A fest with one room goes straight to Settings, as it always did.
 8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
    date (TUE · SEP 29) with its venue groups under each rule. Its cards pick
