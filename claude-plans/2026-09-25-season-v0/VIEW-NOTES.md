@@ -88,6 +88,21 @@ here and the last commit.
       a browser test walks the landing's rows and Winter opening on
       December. No code or test refers to the retired `austin` id.
 
+- [x] `npm test` 935/935 (1 skip) and `npm run test:browser` 188/188 on
+      7348aea; stamp v90 fresh (4927b7e7); pushed once. Preview:
+      festival-navigator-er0n2y9z7-kevinhg.vercel.app.
+- [x] Demo crew re-pointed the way a person would: opened with
+      `&f=austin-fall-2026` on a fresh device, joined as Kevin, Share invite
+      → its invite is `austin-fall-2026`; Winter, Spring and Summer opened once
+      each so its landing holds all four. Its doc still carries the retired
+      `austin` key (and a stray `portola-2026`): merges never delete, so on
+      its landing an "Austin" row sits under "More" (demo crew only).
+- [x] Walked the preview at 390 (touch) and 1280 (mouse): Fall lands on
+      SEP 25 – 27 THIS WEEK under YOURS (11), header "Sep – Nov 2026 · updated
+      today"; the landing shows CITY SEASONS · Fall, Winter, "Later seasons ·
+      2" (opens to Spring, Summer); Winter from its row opens on December
+      (DEC 1 – 6) under YOURS (3), tabs YOURS DEC JAN FEB. No console errors.
+
 ## Decisions (and why)
 
 1. **The season shows from today on.** Past months drop off (brief), and so
