@@ -1338,6 +1338,9 @@ function planAnswer(date) {
     sub: [when, `${plan.us.length} picking`].filter(Boolean).join(' · '),
     dayWord: peek.today ? '' : (entry.wd || ''),
     nightLabelOf,
+    // The Share's words (plan-rows.js planText): "for Sat Portola", the night
+    // called what tells it apart, and the link that opens on the plan.
+    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink,
   };
 }
 const isoAfter = (iso) => {
@@ -2789,6 +2792,12 @@ function shareView() {
 function inviteLink(meName = null) {
   const view = shareView();
   return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null, view && view.list ? LIST : null);
+}
+// The open plan's Share: the same link and view, opening on Our picks
+// (`&plan=open`, read once at boot). It says no one's name (no `&me=`).
+function planLink() {
+  const view = shareView();
+  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, null, view ? view.show : null, view && view.list ? LIST : null, { plan: true });
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
