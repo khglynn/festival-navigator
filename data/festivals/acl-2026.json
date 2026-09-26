@@ -674,7 +674,18 @@
       "tickets": {
         "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F97085640%2Ffcuckers-austin-resound-presents",
         "at": "Etix"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Total Wife",
@@ -690,7 +701,17 @@
       "tickets": {
         "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F97085640%2Ffcuckers-austin-resound-presents",
         "at": "Etix"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Brandon Flowers",
@@ -706,7 +727,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDAEAD9948",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true
     },
     {
       "name": "Jess Williamson",
@@ -722,7 +751,14 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDAEAD9948",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM"
     },
     {
       "name": "Palace",
@@ -738,7 +774,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD3B1E691",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/palace-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "The 4411",
@@ -754,7 +801,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD3B1E691",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/palace-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Montclair",
@@ -770,7 +828,8 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBB2FBC0A",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "9:30 PM"
     },
     {
       "name": "The Chainsmokers",
@@ -782,7 +841,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Austin Ashtin",
@@ -794,7 +864,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Finn Wolfhard",
@@ -810,7 +891,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC71CD5F3",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "approx": true
     },
     {
       "name": "Malcy",
@@ -826,7 +915,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC71CD5F3",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM",
+      "approx": true
     },
     {
       "name": "Bleachers",
@@ -842,7 +939,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB1009EA6",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true
     },
     {
       "name": "This Is Lorelei",
@@ -858,7 +963,14 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB1009EA6",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM"
     },
     {
       "name": "Villanelle",
@@ -874,7 +986,12 @@
       "tickets": {
         "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "BUNT.",
@@ -890,7 +1007,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD4C8E83E",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Sarah Pederzani",
@@ -906,7 +1034,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD4C8E83E",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Hunx and his Punx",
@@ -924,7 +1063,18 @@
         "at": "Eventim",
         "price": 29,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "CorMae",
@@ -942,7 +1092,17 @@
         "at": "Eventim",
         "price": 29,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Night Tapes",
@@ -958,7 +1118,12 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCB41EA73",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Steve Aoki",
@@ -976,7 +1141,18 @@
         "at": "Eventim",
         "price": 70,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Elephante",
@@ -994,7 +1170,18 @@
         "at": "Eventim",
         "price": 70,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "confirmed": false
+      },
+      "time": "10:45 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Riot Ten",
@@ -1012,7 +1199,17 @@
         "at": "Eventim",
         "price": 70,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Grocery Bag",
@@ -1028,7 +1225,8 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650DAE3A9B91",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "10:30 PM"
     },
     {
       "name": "Rebecca Black",
@@ -1040,7 +1238,15 @@
       "page": {
         "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
+        "confirmed": false
+      },
+      "time": "11:45 PM",
+      "close": "2 AM"
     },
     {
       "name": "Bambi",
@@ -1052,7 +1258,16 @@
       "page": {
         "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true,
+      "close": "2 AM"
     },
     {
       "name": "CMAT",
@@ -1068,7 +1283,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC8BBD830",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "approx": true
     },
     {
       "name": "Fancy Hagood",
@@ -1084,7 +1307,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC8BBD830",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM",
+      "approx": true
     },
     {
       "name": "Parcels",
@@ -1100,7 +1331,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB2E8A336",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true
     },
     {
       "name": "Velvet Trip",
@@ -1116,7 +1355,14 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB2E8A336",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM"
     },
     {
       "name": "Levity",
@@ -1132,7 +1378,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD69EEA69",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Untitld",
@@ -1148,7 +1405,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD69EEA69",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "It's Murph",
@@ -1160,7 +1428,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Nate Band",
@@ -1172,7 +1451,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "confirmed": false
+      },
+      "time": "10:45 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Dazzle Camouflage",
@@ -1184,7 +1474,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Underscores",
@@ -1196,7 +1497,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Directress",
@@ -1208,7 +1520,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "confirmed": false
+      },
+      "time": "11:15 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "1x333",
@@ -1220,7 +1543,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Almost Heaven",
@@ -1236,7 +1570,8 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBF52C2DE",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "11 PM"
     },
     {
       "name": "Ryan Beatty",
@@ -1252,7 +1587,9 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC9F1D9DD",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "6 PM",
+      "approx": true
     },
     {
       "name": "Rochelle Jordan",
@@ -1268,7 +1605,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCD9EEE20",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets",
+        "confirmed": false
+      },
+      "time": "10:45 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Stefon Osae",
@@ -1284,7 +1632,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCD9EEE20",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Suki Waterhouse",
@@ -1300,7 +1659,12 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD862ECD1",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Saint Motel",
@@ -1316,7 +1680,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBCB65DB99",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM",
+      "approx": true
     },
     {
       "name": "The 4411",
@@ -1332,7 +1704,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBCB65DB99",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+        "confirmed": false
+      },
+      "time": "6 PM",
+      "approx": true
     },
     {
       "name": "LP",
@@ -1350,7 +1730,8 @@
         "at": "Eventim",
         "price": 54,
         "checked": "2026-09-26"
-      }
+      },
+      "time": "8 PM"
     },
     {
       "name": "Lola Young",
@@ -1366,7 +1747,15 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB57AA7B0",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true
     },
     {
       "name": "Leon Knight",
@@ -1382,7 +1771,14 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB57AA7B0",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+        "confirmed": false
+      },
+      "time": "7 PM"
     },
     {
       "name": "Annie DiRusso",
@@ -1398,7 +1794,8 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDC13C98E",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "10 PM"
     },
     {
       "name": "The War on Drugs",
@@ -1410,7 +1807,12 @@
       "page": {
         "url": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets",
         "at": "Do512"
-      }
+      },
+      "time": "7 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Arcy Drive",
@@ -1428,7 +1830,18 @@
         "at": "Eventim",
         "price": 32,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Common People",
@@ -1446,7 +1859,17 @@
         "at": "Eventim",
         "price": 32,
         "checked": "2026-09-26"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "World Famous Pets",
@@ -1462,7 +1885,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCD21AF513",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/world-famous-pets-tickets",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Elijah Delgado",
@@ -1478,7 +1912,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCD21AF513",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/world-famous-pets-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Sunday (1994)",
@@ -1494,7 +1939,8 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDFACD43D",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "9 PM"
     },
     {
       "name": "Łaszewo",
@@ -1510,7 +1956,18 @@
       "tickets": {
         "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Left Lucid",
@@ -1526,7 +1983,18 @@
       "tickets": {
         "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "¥ØU$UK€ ¥UK1MAT$U",
@@ -1544,7 +2012,8 @@
         "at": "Eventim",
         "price": 65,
         "checked": "2026-09-26"
-      }
+      },
+      "time": "9 PM"
     },
     {
       "name": "Jess Williamson",
@@ -1562,7 +2031,9 @@
         "at": "Eventbrite",
         "price": 37,
         "checked": "2026-09-26"
-      }
+      },
+      "time": "10 PM",
+      "close": "11:30 PM"
     },
     {
       "name": "Noga Erez",
@@ -1578,7 +2049,9 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD141E37A",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "8 PM",
+      "approx": true
     },
     {
       "name": "BUNT.",
@@ -1590,7 +2063,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "DJ Bad Apple",
@@ -1602,7 +2086,18 @@
       "page": {
         "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
         "at": "Do512"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Rodrigo y Gabriela",
@@ -1618,7 +2113,12 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD9A5EE44",
         "at": "Ticketmaster"
-      }
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Claire Rosinkranz",
@@ -1634,7 +2134,12 @@
       "tickets": {
         "url": "https://www.axs.com/events/1566242/official-2026-acl-fest-nights-claire-rosinkranz-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (club)"
     },
     {
       "name": "Don West",
@@ -1650,7 +2155,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCFDBF196",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+        "confirmed": false
+      },
+      "time": "10:45 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Kesmar",
@@ -1666,7 +2182,18 @@
       "tickets": {
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCFDBF196",
         "at": "Ticketmaster"
-      }
+      },
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Fcukers",
@@ -1679,7 +2206,8 @@
       "page": {
         "url": "https://www.devilmaycareatx.com/acl-nights-2",
         "at": "Devil May Care"
-      }
+      },
+      "time": "11:45 PM"
     }
   ],
   "meta": {
