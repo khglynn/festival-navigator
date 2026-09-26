@@ -570,15 +570,17 @@ function crewSection(ctx, actions) {
         catch { mBox.select(); }
       });
       mRow.append(mBox, mCopy);
-      // Linked vs placeholder (decision 4): a pid means a real person claimed
-      // this name — their me link already carries this crew. No pid = a name
-      // waiting for its human; the claim link below is how they arrive.
+      // Linked vs picked-for (decision 4): a pid means a real person claimed
+      // this name — their me link already carries this crew. No pid = a
+      // friend the crew picks for, who may never open the app (Kevin,
+      // 2026-09-26: "a note for us that they're going there"); the claim
+      // link below is theirs if they ever want it.
       memberLinkHost.append(mRow,
         el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
           p.pid
             ? `${name}’s in. This link still gets them back in.`
-            // The same sentence the add-someone sheet says: one idea, one wording.
-            : `Send ${name} this link. Opening it makes the picks theirs.`));
+            // The same sentence the Invite sheet says on an add: one idea, one wording.
+            : `If ${name} ever wants to pick, send this link. Opening it makes the picks theirs.`));
     });
     chips.appendChild(chip);
   }

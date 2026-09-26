@@ -6,13 +6,15 @@
 //   this is, once per phone;
 //
 //   a guest's FINGER tap on a card opens its shelf (the tap change,
-//   2026-09-26: the card, − · meter · +, the thread — what a member's tap
-//   opens); a click, or any of the shelf's doors, asks who they are on a
+//   2026-09-26: the card with − and + in its corners, the thread — what a
+//   member's tap opens); a click, or any of the shelf's doors, asks who they are on a
 //   shelf over the wall that never moves (the guest shelf round), and on join
 //   a + (or a click) becomes their pick through the ordinary pick path while
 //   − and the note door just join; "Look around" drops it;
 //
-//   the dock's empty "you" slot is a dashed + that asks the same question;
+//   the dock's empty "you" slot is a dashed + that opens the people menu
+//   (2026-09-26): Highlight works for a guest too, and its last row, Join the
+//   crew, asks the same question;
 //
 //   and a guest writes NOTHING into the crew until it joins — the link is the
 //   consent boundary, and a guest sees only what any link holder already can.
@@ -144,7 +146,8 @@ test('the dock’s "you" slot is a dashed + that says what it does', () => {
     const you = $(id);
     assert.ok(you.classList.contains('guest'), `${id} wears the guest ring`);
     assert.equal(you.textContent, '+');
-    assert.equal(you.getAttribute('aria-label'), 'Add yourself to the crew');
+    assert.equal(you.getAttribute('aria-label'), 'Highlight people’s picks, or join the crew');
+    assert.equal(you.getAttribute('aria-haspopup'), 'listbox', 'it opens the people menu (2026-09-26)');
     assert.equal(you.tagName, 'BUTTON', 'a real button, so it inherits the 44px floor');
   }
 });
@@ -263,13 +266,23 @@ test('"Look around" drops the question — still a guest, the wall unchanged, no
   assert.deepEqual(writes, []);
 });
 
-test('the dashed + opens the same shelf, with no artist waiting', async () => {
+test('the dashed + opens the people menu — Highlight, then Join the crew, no "you" and no Invite — and Join opens the same shelf, with no artist waiting', async () => {
   $('dock-you').click();
+  await settle(10);
+  const pop = document.querySelector('#dock-you-wrap .hl-pop');
+  assert.ok(pop && pop.style.display !== 'none', 'the menu is open');
+  assert.equal(shelf(), null, 'not the shelf: one tap longer to join, and Highlight works for a guest (design §6)');
+  assert.deepEqual([...pop.querySelectorAll('[data-person]')].map((b) => b.dataset.person), ['', 'Kevin', 'Maya'], 'Everyone, then the crew');
+  assert.equal(pop.querySelector('.you'), null, 'a guest is nobody in the crew yet');
+  assert.deepEqual([...pop.querySelectorAll('[data-act]')].map((b) => b.dataset.act), ['join'], 'Join the crew, and no Invite someone');
+  pop.querySelector('[data-act="join"]').click();
   await settle(10);
   assert.ok(shelf());
   assert.equal(shelfLine(), 'Pick shows as…');
+  assert.equal(pop.style.display, 'none', 'the menu went as the shelf rose');
   await lookAround();
   assert.equal(shelf(), null);
+  assert.deepEqual(writes, [], 'still nothing written');
 });
 
 test('the system Back takes the shelf down', async () => {

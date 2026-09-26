@@ -1011,10 +1011,11 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     // (Kevin's alignment note, 2026-08-29), and nothing sits above it.
     headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
-    // The shelf (the tap change, Kevin 2026-09-26): the card carries the
-    // − · + row along its floor — the one place a finger picks — with your
-    // meter between them. A step redraws the card in place, with the zoom's
-    // motion, and never moves the row under the finger (refreshSheetCard).
+    // The shelf (the tap change, Kevin 2026-09-26): the card carries − and
+    // + in its two bottom corners — the one place a finger picks (his round
+    // after trying it: no meter between them; your level is your own chip).
+    // A step redraws the card in place, with the zoom's motion, and never
+    // moves − or + under the finger (refreshSheetCard).
     // No notes chip on the header: this sheet IS the thread (§4).
     let card = null;
     const stepped = () => refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx, scroller: sheet });
@@ -1150,6 +1151,18 @@ export function closeSheet() {
     const same = [...document.querySelectorAll('#wall-root .card[data-artist]')]
       .filter((c) => c.dataset.artist === back2.dataset.artist);
     back2 = same.find((c) => (c.dataset.occ || '') === (back2.dataset.occ || '')) || same[0] || null;
+  }
+  // Any other opener a repaint replaced is found by the key it says to come
+  // back to (data-restore): the people row's + Invite someone is redrawn when
+  // an add lands, so focus goes to the new chip, never to <body> (Codex on the
+  // tap change's last round, 2026-09-26).
+  if (back2 && !back2.isConnected && back2.dataset && back2.dataset.restore) {
+    const key = back2.dataset.restore;
+    const same = [...document.querySelectorAll('[data-restore]')].filter((n) => n.dataset.restore === key);
+    // A shown one first; if the window narrowed so the people row is hidden,
+    // the avatar that opens the people menu (where Invite lives on a phone).
+    const shown = (n) => n && n.offsetParent !== null;
+    back2 = same.find(shown) || [document.getElementById('dock-you'), document.getElementById('rail-you')].find(shown) || same[0] || null;
   }
   if (back2 && back2.isConnected) focusQuietly(back2, {});
   restoreFocusTo = null;

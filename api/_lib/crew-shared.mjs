@@ -8,11 +8,11 @@
 // Name rules are SHARED with the client (js/name-rules.mjs): the join and
 // create forms validate with exactly the rule this validator enforces, so a
 // name can never pass the UI and fail the write (FLOW-5).
-import { SAFE_NAME_RE, NAME_LIMITS, FORBIDDEN_NAME_KEYS, validName } from '../../js/name-rules.mjs';
+import { SAFE_NAME_RE, NAME_LIMITS, FORBIDDEN_NAME_KEYS, validName, ACTIVE_PEOPLE_MAX } from '../../js/name-rules.mjs';
 
 export const LIMITS = {
   docBytes: 256 * 1024,   // hard cap on the stored crew document
-  activePeople: 24,
+  activePeople: ACTIVE_PEOPLE_MAX, // shared with the client's local-only add (js/name-rules.mjs)
   personName: NAME_LIMITS.personName,
   artistName: 100,
   crewName: NAME_LIMITS.crewName,

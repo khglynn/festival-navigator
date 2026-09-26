@@ -181,7 +181,18 @@ const restedOn = async (page, day, door = 'dock') => {
   }
 };
 const highlight = async (page, name) => {
-  await page.locator('#person-chips .person-chip', { hasText: name }).first().click();
+  const chip = page.locator('#person-chips .person-chip', { hasText: name }).first();
+  if (await chip.isVisible()) {
+    await chip.click();
+  } else {
+    // A phone has no people row (the people menu, 2026-09-26): the avatar —
+    // or, with someone already highlighted, the pill's faces — opens
+    // Highlight; a row toggles them; the avatar again puts it away.
+    const door = (await page.locator('#dock-you').isVisible()) ? '#dock-you' : '#dock-you-wrap .hl-faces';
+    await page.locator(door).click();
+    await page.locator(`#dock-you-wrap .hl-pop [data-person="${name}"]`).click();
+    await page.locator('#dock-you').click();
+  }
   await sleep(400);
 };
 

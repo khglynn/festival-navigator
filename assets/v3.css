@@ -240,7 +240,7 @@ html { touch-action: manipulation; }
 /* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
  * — it gets the same white-on-scrim treatment as every other mark (audit 8.1).
  * Its ring is solid (v93): in this app a dashed edge only ever means "add"
- * (the people row's + Invite someone, a guest's + in the dock, + Add a
+ * (+ Invite someone, a guest's + in the dock, + Add a
  * festival), and +n is people already here. Same 1px, so the corners' width
  * table (aura.js) is unchanged. */
 .mark.ghost { border: 1px solid rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
@@ -359,6 +359,122 @@ html { touch-action: manipulation; }
  * (50) — its menu paints at the bar's level, the bar being a stacking context
  * (app.js openShowMenu). */
 .dock.menu-up, .day-rail.menu-up { z-index: 39; }
+/* While a menu is up the wall listens for a stray tap (app.js catchStrayTaps),
+ * which in WebKit makes it a tap target: no grey flash over the whole wall. */
+#screen-app.menu-open { -webkit-tap-highlight-color: transparent; }
+
+/* ---- the people menu (2026-09-26) ------------------------------------------------ */
+/* Your avatar opens HIGHLIGHT, the twin of the fest name's SHOW: the same
+ * popover (.sort-pop and everything above), hung from the avatar's wrap with
+ * its LEFT edge on the avatar's left edge — the mirror of Show, whose right
+ * edge is on the fest name's. app.js puts its far edge on Show's line and
+ * caps its height to the room there is (alignHighlightMenu); past that it
+ * scrolls. Its width is its longest row's, never past the screen's gutters —
+ * a long name wraps inside its row instead. */
+.you-wrap { flex: none; align-items: center; }
+.you-wrap .sort-pop { left: 0; right: auto; }
+.hl-pop { width: max-content; min-width: 212px; max-width: calc(100vw - 2 * var(--sp-gutter)); box-sizing: border-box;
+          overflow-y: auto; overscroll-behavior: contain; }
+.hl-pop .nm { min-width: 0; overflow-wrap: anywhere; }
+.hl-pop [role="option"] { transition: color .12s ease; } /* a name turning brand as its mark fills */
+.hl-pop .you { color: var(--text-tertiary); font-size: 11px; font-weight: 600; margin-left: 6px; }
+.hl-pop [aria-selected="true"] .you { color: rgba(var(--brand), .7); }
+.hl-pop .check { display: inline-flex; align-items: center; justify-content: center; }
+/* A person's mark sits in the check column: their colour as a ring, filled
+ * with a ✓ while they are highlighted. Everyone keeps the plain ✓. */
+.hl-pop .mark { width: 12px; height: 12px; border-radius: var(--r-pill); box-sizing: border-box; flex: none;
+                display: inline-flex; align-items: center; justify-content: center;
+                border: 1.5px solid var(--c); transition: background-color .12s ease; }
+.hl-pop .mark .tick { color: #fff; font-size: 8px; font-weight: 900; line-height: 1; opacity: 0; }
+.hl-pop .mark.on { background: var(--c); }
+.hl-pop .mark.on .tick { opacity: 1; }
+.hl-pop .check.plus { color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+/* While its menu is open the avatar wears the brand ring — a door that is
+ * open (the fest name's three lines turn brand the same way). */
+.you-avatar { transition: box-shadow .12s ease; }
+.you-avatar[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--dock), 0 0 0 3.5px rgb(var(--brand)); }
+
+/* The slot: the avatar, or — while a highlight is on and the menu is shut —
+ * the pill: up to three faces and a ✕ (design §2). The wrap says which. The
+ * pill is the avatar's height, so the dock never changes height with it; it
+ * is wider, and the day row gives up the difference (the tabs slide). */
+.you-wrap[data-slot="pill"] > .you-avatar:not(.hl-ghost) { display: none; }
+.you-wrap:not([data-slot="pill"]) > .hl-pill:not(.hl-ghost) { display: none; }
+/* Above its own menu (z 35): on a close the faces travel down from the menu's
+ * marks while the menu is still fading, and must be seen doing it. */
+/* Its body (.hl-bg) is a layer of its own, under the faces: the body opens
+ * from the avatar's circle by a clip, and the faces must not be clipped with
+ * it while they travel in from the menu. */
+.hl-pill { position: relative; z-index: 36; display: inline-flex; align-items: center; height: 26px; box-sizing: border-box;
+           padding: 0 3.5px; }
+.hl-pill .hl-bg { position: absolute; inset: 0; border-radius: var(--r-pill); border: 1.5px solid rgb(var(--brand));
+                  background: rgba(var(--brand), .14); box-sizing: border-box; pointer-events: none; }
+.hl-pill button { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; color: inherit; font: inherit; position: relative; }
+.hl-faces { display: inline-flex; align-items: center; height: 20px; }
+.hl-faces .avatar { width: 20px; height: 20px; font-size: 8.5px; box-sizing: border-box; box-shadow: 0 0 0 1.5px var(--dock); }
+.hl-faces .avatar + .avatar { margin-left: -6px; }
+.hl-faces .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
+.hl-pill[data-compact] { padding: 0 3px; } /* the avatar's 26px: one disc in the ring (app.js pillCap) */
+.hl-pill[data-compact] .hl-x { display: none; }
+.hl-x { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+        color: var(--tonal-text); font-size: 10px; font-weight: 800; }
+/* What is leaving the slot, drawn where it stood while it goes (people-menu.js
+ * setSlot) — out of the flow (a ghost of the avatar is still `.dock .you`,
+ * which is position: relative, hence the doubled class). */
+.you-wrap > .hl-ghost.hl-ghost { position: absolute; margin: 0; pointer-events: none; z-index: 1; }
+/* The wall stepping back or forward as a highlight changes: only while it
+ * changes (app.js dimInPlace), so no other opacity change on a card is slowed. */
+#wall-root.hl-shift .card { transition: opacity .24s cubic-bezier(.4, 0, .2, 1); }
+@media (pointer: coarse) {
+  /* The pill's two doors sit on the dock's 26px line, where 44px of real
+   * height would grow the dock: they take borrowed space instead (the floor's
+   * exception, below), split at their shared edge so neither takes the
+   * other's tap, and short of the day row's gap on the right. */
+  .hl-pill button { min-height: 0; }
+  .hl-faces::after { content: ''; position: absolute; inset: -14px 0 -14px -12px; }
+  .hl-pill[data-compact] .hl-faces::after { right: -12px; }
+  .hl-x::after { content: ''; position: absolute; inset: -14px -8px -14px 0; }
+}
+/* The Invite sheet (2026-09-26): one sheet, crew link first, then a name,
+ * then the people from your other fests (app.js openInvite). The looks are
+ * the two sheets' it replaced, moved out of inline styles. */
+/* pretty: no one-word last line at 320 ("going.", "needed."); a plain wrap where unsupported. */
+.invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; text-wrap: pretty; }
+.invite-sheet .inv-link, .invite-sheet .inv-name { display: flex; gap: 8px; align-items: center; }
+.invite-sheet .inv-link input { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input);
+                                border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body);
+                                font-size: 12px; font-family: var(--font-ui); }
+.invite-sheet .inv-copy { font-size: 12px; padding: 9px 15px; flex: none; }
+/* Share fills the row; the quiet Done / Later sits at its end — alone on a
+ * laptop with no share sheet, it stays small rather than span the sheet. */
+.invite-sheet .inv-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; }
+.invite-sheet .inv-done { font-size: 12px; padding: 11px 16px; }
+/* The sections after the link: a hairline above each, the label, then its part. */
+.invite-sheet .inv-section { display: flex; flex-direction: column; gap: 7px;
+                             border-top: 1px solid var(--hairline); padding-top: 12px; margin-top: 2px; }
+.invite-sheet .inv-name input { flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input);
+                                border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px;
+                                font-family: var(--font-ui); }
+.invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; }
+.invite-sheet .inv-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
+.invite-sheet .inv-status:empty { display: none; }
+.invite-sheet .inv-others { display: flex; flex-wrap: wrap; gap: 6px; }
+.invite-sheet .inv-others .btn-tonal { font-size: 12.5px; padding: 7px 13px; }
+/* A member's own chip on the Pick-as shelf says so (join-shelf.js `me`). */
+.join-shelf .js-you { color: rgba(255, 255, 255, .72); font-weight: 600; margin-left: -3px; }
+/* On a phone the people row leaves the top of the wall (design §4): your
+ * avatar is their door now, from anywhere in the wall. The laptop keeps it.
+ * Space, not a line, parts it from the search field (Kevin, 2026-09-26: "in
+ * the header we don't need these lines" — a divider stub stood here, and
+ * where the row wrapped it dangled alone at a line's end): three times the
+ * chips' own gap, so the row and the field read as two groups; where the row
+ * wraps onto its own line the space falls at that line's end, unseen. */
+#person-chips { display: inline-flex; gap: 5px; flex-wrap: wrap; margin-right: 12px; }
+#person-chips:empty { display: none; }
+@media (max-width: 719px) {
+  #person-chips { display: none; }
+}
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
@@ -374,7 +490,6 @@ html { touch-action: manipulation; }
 .toolbar .notes-chip { align-self: stretch; box-sizing: border-box; }
 .notes-chip .count { background: rgba(139, 123, 255, .25); border-radius: var(--r-pill);
                      padding: 0 6px; font-size: 10px; }
-.toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
 
 /* ---- a day, and the one head every room wears (one-line heads, 2026-09-23) ----- */
 /* claude-plans/2026-09-23-one-line-heads.md. Kevin: "combine the double lines
@@ -431,7 +546,8 @@ button.room-head { cursor: pointer; }
 
 /* ---- desktop day rail (DT-1) --------------------------------------------------- */
 /* ≥720 the dock dies; the rail is its desktop body — sticky under the top of
- * the window, YOU chip jumps to top, tabs scrollspy with the wall. */
+ * the window, your avatar opens the people menu (2026-09-26), tabs
+ * scrollspy with the wall. */
 .day-rail { display: none; }
 @media (min-width: 720px) {
   .day-rail {
@@ -449,7 +565,9 @@ button.room-head { cursor: pointer; }
      * mid-scroll and read as broken overlap (Kevin, 2026-07-12). */
     background: rgba(12, 10, 20, .94);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--hairline);
+    /* No hairline under it (Kevin, 2026-09-26: "in the header we don't need
+     * these lines. the horizontal one already disappears on mobile"): the
+     * near-opaque ground is the edge, as the phone's top has none. */
   }
   /* Same anatomy as the dock (unified 2026-07-12, Kevin note 1.1): your
    * avatar circle, the day tabs, the fest name + sync dot. One component

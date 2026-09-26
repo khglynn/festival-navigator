@@ -47,7 +47,7 @@ const tapOn = async (page, sel) => {
 };
 // In the overlap of the open menu and the welcome card: what a finger touches.
 const overlapHit = (page) => page.evaluate(() => {
-  const pop = document.querySelector('#dock .sort-pop');
+  const pop = document.querySelector('#dock-fest-wrap .sort-pop');
   const card = document.querySelector('#welcome-card .bring-card');
   const a = pop.getBoundingClientRect(), b = card.getBoundingClientRect();
   const l = Math.max(a.left, b.left), r = Math.min(a.right, b.right), t = Math.max(a.top, b.top), bo = Math.min(a.bottom, b.bottom);
@@ -64,14 +64,14 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       await tapOn(page, '#dock-fest-link');
       await sleep(400);
-      assert.equal(await page.locator('#dock .sort-pop').isVisible(), true, 'the menu opened');
+      assert.equal(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), true, 'the menu opened');
       assert.ok(await page.locator('#welcome-card').count(), 'with the welcome card still up');
       const hit = await overlapHit(page);
       assert.equal(hit.overlap, true, 'they overlap on a phone (the case this is about)');
       assert.equal(hit.inMenu, true, `a finger in the overlap touches the menu, not the card (${JSON.stringify(hit)})`);
       // A row in the overlap really works: it is the thing under its centre.
       const rowHit = await page.evaluate(() => {
-        const rows = [...document.querySelectorAll('#dock .sort-pop [role="option"]')];
+        const rows = [...document.querySelectorAll('#dock-fest-wrap .sort-pop [role="option"]')];
         return rows.every((b) => { const r = b.getBoundingClientRect(); const u = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return u && b.contains(u); });
       });
       assert.equal(rowHit, true, 'every row of the menu is reachable');
@@ -82,22 +82,26 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await page.touchscreen.tap(lx, ly); // close
       await page.touchscreen.tap(lx, ly); // reopen, mid-fade
       await sleep(450);
-      assert.equal(await page.locator('#dock .sort-pop').isVisible(), true, 'the reopened menu is still up after the old fade ended');
+      assert.equal(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), true, 'the reopened menu is still up after the old fade ended');
       assert.equal(await page.locator('#dock-fest-link').getAttribute('aria-expanded'), 'true');
       assert.equal(await page.locator('#dock.menu-up').count(), 1, 'and the dock is still above the cards');
       // It steps back once the menu has gone.
       await page.keyboard.press('Escape');
       await sleep(500);
-      assert.equal(await page.locator('#dock .sort-pop').isVisible(), false);
+      assert.equal(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), false);
       assert.equal(await page.locator('#dock.menu-up').count(), 0, 'the dock stepped back under the cards');
       // The join shelf: opening it puts an open menu away.
       await tapOn(page, '#dock-fest-link');
       await sleep(400);
-      assert.equal(await page.locator('#dock .sort-pop').isVisible(), true);
-      await page.evaluate(() => document.getElementById('dock-you').click()); // the dashed +, under the menu's row of the dock
+      assert.equal(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), true);
+      // The dashed + opens the people menu (2026-09-26), whose Join the crew
+      // raises the shelf.
+      await page.evaluate(() => document.getElementById('dock-you').click());
+      await page.evaluate(() => document.querySelector('#dock-you-wrap .hl-pop [data-act="join"]').click());
       await page.waitForSelector('.join-shelf', { timeout: 3000 });
       await sleep(500);
-      assert.equal(await page.locator('#dock .sort-pop').isVisible(), false, 'the shelf put the menu away');
+      assert.equal(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), false, 'the shelf put the menu away');
+      assert.equal(await page.locator('#dock-you-wrap .sort-pop').isVisible(), false, 'and the people menu with it');
       const b = await page.locator('#dock-fest-link').boundingBox();
       const under = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || document.elementFromPoint(x, y)?.className, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
       assert.ok(/sheet|join-shelf|js-/.test(String(under)), `with the shelf up, the fest name is behind it (under: ${under})`);
