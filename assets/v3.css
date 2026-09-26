@@ -1298,6 +1298,33 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .stack-scroll > .venue-grid[data-clock][data-venues="1"] { grid-template-columns: var(--col-w); }
 }
 
+/* THE LIST BY TIME (v94 — wall.js timeGroups; a section that declares
+ * `layout: "by-time"`). Bands down, cards across: each band a quiet line —
+ * smaller and paler than the room head above it, never the fest accent (a band
+ * is not a stage) — then its cards on the one card track, `--col-w`, wrapping.
+ * Every gap is the wall's own: the card gap across and down (so a band reads as
+ * one block of cards, not rows of pairs), the room's 9px to the first band and
+ * a little more between bands than inside one. Cards in a row share a height
+ * (the grid's stretch), so a two-line name beside a one-line one is still one
+ * row with one bottom edge; the card centres its text as it does everywhere. */
+.time-list { display: flex; flex-direction: column; gap: 14px; }
+.time-band { display: flex; flex-direction: column; gap: 7px; }
+.band-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.band-head .label { flex: none; color: var(--text-secondary); font-size: 10px; font-weight: 800;
+                    letter-spacing: .09em; text-transform: uppercase; line-height: 1; }
+.band-head .line { flex: 1 1 0; min-width: 0; height: 1px;
+                   background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+.band-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
+             justify-content: start; gap: var(--col-gap); }
+/* Under a day's timetable, from 720 up: step in by the hour rail and take the
+ * clock's track gap, so column n sits under the clock's column n, as the
+ * stacks do (.venue-grid[data-clock="day"]). The phone keeps the shell's two
+ * columns (wall.js timeGroups says why). */
+@media (min-width: 720px) {
+  .time-list[data-clock] { padding-inline-start: var(--hour-rail-w); }
+  .time-list[data-clock] .band-grid { column-gap: var(--clock-gap); }
+}
+
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
  * piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
