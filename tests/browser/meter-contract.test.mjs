@@ -371,14 +371,19 @@ test('a laptop: the same laws at 1280, and the meter is drawn on the Spotify pil
   } finally { await ctx.close(); }
 });
 
-// What a real tap on a phone asks the compositor for, sampled right after it.
+// What a real pick on the resting card asks the compositor for, sampled right
+// after it. A CLICK: since the tap change (2026-09-26) a finger's tap opens the
+// card's shelf and its + picks there, over the card — the resting meter's
+// motion is what a mouse or a key sees (a finger's pick reaching the resting
+// meter: tests/browser/tap-shelf-contract.test.mjs). The mouse leaves at once,
+// before the hover intent can grow a zoom over the card.
 const tapAndSample = async (page, artist) => {
   const card = page.locator(`#wall-root .card[data-artist="${artist}"]`).first();
   await card.scrollIntoViewIfNeeded();
   const box = await card.boundingBox();
   await page.evaluate(() => { window.__started = []; });
-  await page.touchscreen.tap(box.x + box.width / 2, box.y + 12);
-  return page.evaluate((a) => {
+  await page.mouse.click(box.x + box.width / 2, box.y + 12);
+  const sample = await page.evaluate((a) => {
     const c = document.querySelector(`#wall-root .card[data-artist="${a}"]`);
     const m = c.querySelector(':scope > .corner-about > .chip-meter');
     // What this tap set moving in the card's corners, and a cleared chip on its
@@ -402,6 +407,8 @@ const tapAndSample = async (page, artist) => {
       props: [...new Set(running.flatMap((an) => an.effect.getKeyframes().flatMap((k) => Object.keys(k).filter((p) => !['offset', 'easing', 'composite', 'computedOffset'].includes(p)))))],
     };
   }, artist);
+  await page.mouse.move(2, 2);
+  return sample;
 };
 
 const leftovers = (page) => page.evaluate(() => document.querySelectorAll('#wall-root .chip-meter.leaving').length);
@@ -414,7 +421,7 @@ const settled = (page, artist) => page.waitForFunction((a) => {
     && an.effect && an.effect.target && c.contains(an.effect.target) && an.effect.target.closest('.corner-about, .chip-meter.leaving'));
 }, artist, { timeout: 5000 });
 
-test('a real tap is a small event: the chip grows in, the next bar lights, MUST arrives, clearing recedes — transform and opacity only', { skip }, async () => {
+test('a real click is a small event: the chip grows in, the next bar lights, MUST arrives, clearing recedes — transform and opacity only', { skip }, async () => {
   const { ctx, page } = await openWall();
   try {
     // Velvet Trip: nobody has picked it yet. Five taps walk your whole ladder.
@@ -451,7 +458,7 @@ test('a real tap is a small event: the chip grows in, the next bar lights, MUST 
   } finally { await ctx.close(); }
 });
 
-test('Reduce Motion: every tap lands the finished chip at once', { skip }, async () => {
+test('Reduce Motion: every click lands the finished chip at once', { skip }, async () => {
   const { ctx, page } = await openWall({ reducedMotion: 'reduce' });
   try {
     for (const want of [1, 2, 3, 4, 0]) {

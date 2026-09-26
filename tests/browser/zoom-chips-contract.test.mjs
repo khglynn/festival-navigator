@@ -5,7 +5,11 @@
 // names (two at most, then "+n"). A name never wraps, and a chip never
 // outgrows its row: at worst its names ellipsize, and the glyph and the "+n"
 // always show. The stress case is Kevin's: a crew of fifteen with thirteen in,
-// on a 390 phone, held with a real finger — plus one absurdly long name.
+// on a 390 phone, tapped with a real finger — plus one absurdly long name.
+// Since the tap change (2026-09-26) a finger's tap opens the card's SHELF, whose
+// card carries the same who-row (card-facts.js grownBlock) and the same motion
+// on a − / + (refreshSheetCard): so on a phone every law here runs on the
+// shelf, and the zoom's run where a zoom still grows — a mouse's hover.
 //
 // It runs with `npm run test:browser`, against the real index.html with a
 // made-up crew and /api answered inside the page (nothing leaves it). The
@@ -96,32 +100,24 @@ async function openWall({ width = 390, height = 844, target = TARGETS[0], touch 
   return { ctx, page };
 }
 
-// A real hold on an artist's resting card (the app's long-press ignores mouse
-// pointers by design), then the grown who-row, settled. `cell` picks the
-// timetable cell or a card that is not one, for an artist who is both.
-async function holdOpen(ctx, page, artist, cell = null) {
+// A real finger's tap on an artist's resting card: its shelf, the grown
+// who-row settled. `cell` picks the timetable cell or a card that is not one,
+// for an artist who is both.
+async function tapOpen(page, artist, cell = null) {
   const at = await page.evaluate(([a, c]) => {
     const sel = c === true ? '#wall-root .card.cell' : c === false ? '#wall-root .card:not(.cell)' : '#wall-root .card';
     const el = [...document.querySelectorAll(sel)].find((x) => x.dataset.artist === a);
     el.scrollIntoView({ block: 'center' });
     const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    return { x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 24) };
   }, [artist, cell]);
   await sleep(200);
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-  await sleep(650);
-  // And on until the card grows, as a finger does. The long-press is a 500ms
-  // timer, and under Playwright's fake clock (page.clock, which fixes the
-  // date) the first timer after a big wall settles runs up to ~220ms late —
-  // measured on ACL and Electric Forest, 2026-09-24; with real timers it runs
-  // at 501ms on every wall. A lift at 650ms then came first and the hold read
-  // as a tap. Holding until the zoom stands tests the app, not the clock.
-  for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await page.waitForSelector('#zoom-layer .zoom-slot.shown .f-who', { timeout: 4000 });
+  await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
+  await page.waitForSelector('#artist-sheet .sheet-card .f-who', { timeout: 4000 });
   await sleep(700);
 }
+const SHELF = '#artist-sheet .sheet-card';
+const ZOOM = '#zoom-layer .zoom-slot.shown';
 
 // A laptop's route: a real mouse comes to rest on the card, and hover intent
 // grows it.
@@ -139,9 +135,9 @@ async function hoverOpen(page, artist, cell = null) {
   await sleep(700);
 }
 
-// The grown who-row, chip by chip.
-function chipRow() {
-  const row = document.querySelector('#zoom-layer .zoom-slot.shown .f-who');
+// The grown who-row, chip by chip — in the zoom or on the shelf's card.
+function chipRow(scope) {
+  const row = document.querySelector(`${scope} .f-who`);
   const rr = row.getBoundingClientRect();
   return [...row.children].map((c) => {
     const r = c.getBoundingClientRect();
@@ -212,40 +208,54 @@ function glyphRoom(scope) {
 const heldOn = (t, b) => `${t.name}, ${b.artist} (${b.cell ? 'a timetable cell' : 'a card'})`;
 
 for (const t of TARGETS) for (const b of t.busy) {
-  test(`${heldOn(t, b)} — a crew of fifteen at 390: four chips, one line each, none past its row, the long name ellipsized`, { skip }, async () => {
+  test(`${heldOn(t, b)} — a crew of fifteen at 390, on the shelf a finger opens: four chips, one line each, none past its row, the long name ellipsized`, { skip }, async () => {
     const { ctx, page } = await openWall({ target: t });
     try {
-      // A real hold: the app's long-press ignores mouse pointers by design.
-      await holdOpen(ctx, page, b.artist, b.cell);
-      assertChipRow(await page.evaluate(chipRow));
+      await tapOpen(page, b.artist, b.cell);
+      assertChipRow(await page.evaluate(chipRow, SHELF));
+      assert.equal(await page.locator(ZOOM).count(), 0, 'a finger grows no zoom');
     } finally {
       await ctx.close();
     }
   });
 
-  test(`${heldOn(t, b)} — every name keeps its descenders and its halo, in the zoom and in the notes sheet header`, { skip }, async () => {
+  test(`${heldOn(t, b)} — every name keeps its descenders and its halo, on the shelf’s card`, { skip }, async () => {
     const { ctx, page } = await openWall({ target: t });
     try {
-      await holdOpen(ctx, page, b.artist, b.cell);
-      assertGlyphRoom(await page.evaluate(`(${glyphRoom})('#zoom-layer .zoom-slot.shown')`), 'the busy zoom');
-      // The notes sheet header draws the same block (grownBlock): the same rule.
-      await page.locator('#zoom-layer .zoom-slot.shown .f-chip.notes').tap();
-      await page.waitForSelector('.sheet-card .f-who .f-nm', { timeout: 4000 });
-      await sleep(500);
-      const sheet = await page.evaluate(`(${glyphRoom})('.sheet-card')`);
-      assert.ok(sheet.length >= 8, `the sheet header shows the names too: ${sheet.length}`);
-      for (const n of sheet) {
-        assert.ok(n.top >= 2 && n.bottom >= 2, `sheet header: "${n.name}" keeps its descenders and halo: ${JSON.stringify(n)}`);
-      }
+      await tapOpen(page, b.artist, b.cell);
+      assertGlyphRoom(await page.evaluate(`(${glyphRoom})('${SHELF}')`), 'the shelf’s card');
     } finally {
       await ctx.close();
     }
   });
 
-  test(`${heldOn(t, b)} — at 320 wide a busy zoom stays on screen: 8px either side, every chip inside its row — even re-placed mid-bloom`, { skip }, async () => {
+  test(`${heldOn(t, b)} — at 320 wide the shelf’s card holds the crowd: every chip inside its row, the card inside the screen`, { skip }, async () => {
     const { ctx, page } = await openWall({ width: 320, height: 640, target: t });
     try {
-      await holdOpen(ctx, page, b.artist, b.cell);
+      await tapOpen(page, b.artist, b.cell);
+      const m = await page.evaluate((scope) => {
+        const card = document.querySelector(scope).getBoundingClientRect();
+        const row = document.querySelector(`${scope} .f-who`).getBoundingClientRect();
+        const chips = [...document.querySelectorAll(`${scope} .f-who > .f-pill`)].map((c) => { const r = c.getBoundingClientRect(); return { level: c.dataset.level, left: r.left, right: r.right }; });
+        const steps = [...document.querySelectorAll(`${scope} .f-step-row > *`)].map((c) => { const r = c.getBoundingClientRect(); return { left: r.left, right: r.right }; });
+        return { card: { left: card.left, right: card.right }, vw: window.innerWidth, row: { left: row.left, right: row.right }, chips, steps };
+      }, SHELF);
+      assert.ok(m.card.left >= 0 && m.card.right <= m.vw, `the card is on screen: ${JSON.stringify(m.card)}`);
+      assert.equal(m.chips.length, 4, 'still one chip per level');
+      for (const c of m.chips) assert.ok(c.left >= m.row.left - 0.5 && c.right <= m.row.right + 0.5, `a chip never outgrows its row at 320: ${JSON.stringify(c)}`);
+      for (const d of m.steps) assert.ok(d.left >= m.card.left - 0.5 && d.right <= m.card.right + 0.5, `− · meter · + inside the card: ${JSON.stringify(d)}`);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  // A narrow window with a mouse (a laptop's split screen, an iPad with a
+  // trackpad) still grows the zoom: its box keeps 8px from either edge of a
+  // 320 screen, even re-placed mid-bloom.
+  test(`${heldOn(t, b)} — at 320 wide a hovered zoom stays on screen: 8px either side, every chip inside its row — even re-placed mid-bloom`, { skip }, async () => {
+    const { ctx, page } = await openWall({ width: 320, height: 640, target: t, touch: false });
+    try {
+      await hoverOpen(page, b.artist, b.cell);
       const measure = () => page.evaluate(() => {
         const slot = document.querySelector('#zoom-layer .zoom-slot.shown');
         const r = slot.getBoundingClientRect();
@@ -257,12 +267,12 @@ for (const t of TARGETS) for (const b of t.busy) {
       assert.ok(m.left >= 8 - 0.5 && m.right <= m.vw - 8 + 0.5, `the zoom keeps 8px from either edge of a 320 screen: ${JSON.stringify(m)}`);
       for (const c of m.chips) assert.ok(c.left >= m.row.left - 0.5 && c.right <= m.row.right + 0.5, `a chip never outgrows its row at 320: ${JSON.stringify(c)}`);
       assert.equal(m.chips.length, 4, 'still one chip per level');
-      // A scroll while the zoom is still blooming (a phone mid-momentum): the
-      // zoom follows its card and is re-placed while its box is scaled down.
-      // place() once measured that scaled box, centred it wrong and let the edge
-      // clamp pass it — 2-3px past the screen once the bloom finished, on about
-      // half the runs (2026-09-23). Held at the bloom's first scale on purpose,
-      // so the check is deterministic rather than a race.
+      // A scroll while the zoom is still blooming: the zoom follows its card
+      // and is re-placed while its box is scaled down. place() once measured
+      // that scaled box, centred it wrong and let the edge clamp pass it —
+      // 2-3px past the screen once the bloom finished, on about half the runs
+      // (2026-09-23). Held at the bloom's first scale on purpose, so the check
+      // is deterministic rather than a race.
       await page.evaluate(() => new Promise((res) => {
         const slot = document.querySelector('#zoom-layer .zoom-slot.shown');
         slot.style.scale = '0.7';
@@ -276,16 +286,22 @@ for (const t of TARGETS) for (const b of t.busy) {
     }
   });
 
-  // A laptop grows the same card on hover, at the same 360px cap a 390 phone
-  // gets — so the row's laws are the phone's, reached by a mouse.
-  test(`${heldOn(t, b)} — a laptop at 1280, by hover: the same chips, one line each, every name with its descenders`, { skip }, async () => {
+  // A laptop grows the same card on hover, at the 360px cap — the row's laws,
+  // reached by a mouse; its notes door opens the shelf, whose card holds them too.
+  test(`${heldOn(t, b)} — a laptop at 1280, by hover: the same chips, one line each, every name with its descenders — and on the shelf its note door opens`, { skip }, async () => {
     const { ctx, page } = await openWall({ width: 1280, height: 800, target: t, touch: false });
     try {
       await hoverOpen(page, b.artist, b.cell);
-      assertChipRow(await page.evaluate(chipRow));
-      assertGlyphRoom(await page.evaluate(`(${glyphRoom})('#zoom-layer .zoom-slot.shown')`), 'the hovered zoom');
+      assertChipRow(await page.evaluate(chipRow, ZOOM));
+      assertGlyphRoom(await page.evaluate(`(${glyphRoom})('${ZOOM}')`), 'the hovered zoom');
       const m = await page.evaluate(() => { const r = document.querySelector('#zoom-layer .zoom-slot.shown').getBoundingClientRect(); return { left: r.left, right: r.right, vw: window.innerWidth }; });
       assert.ok(m.left >= 8 - 0.5 && m.right <= m.vw - 8 + 0.5, `the zoom stays on screen: ${JSON.stringify(m)}`);
+      await page.locator(`${ZOOM} .f-step-row .f-chip.notes`).click();
+      await page.waitForSelector(`${SHELF} .f-who .f-nm`, { timeout: 4000 });
+      await sleep(500);
+      assertChipRow(await page.evaluate(chipRow, SHELF));
+      const sheet = await page.evaluate(`(${glyphRoom})('${SHELF}')`);
+      for (const n of sheet) assert.ok(n.top >= 2 && n.bottom >= 2, `shelf card: "${n.name}" keeps its descenders and halo: ${JSON.stringify(n)}`);
     } finally {
       await ctx.close();
     }
@@ -302,11 +318,104 @@ for (const t of TARGETS) for (const b of t.busy) {
 // the tap), and a chip's level glyph that jumped to its new spot while the
 // fill was still the old width (it sat outside its own chip).
 // Then: the leavers parked in the chip's type, out of flow, and gone at the end.
+// The first frame of a pick, and what is left once it settles — in the card
+// `scope` names (the zoom's, or the shelf's). `press` makes the pick.
+async function walkPick(page, scope, what, lands, press) {
+  await page.evaluate((sc) => {
+    const card = document.querySelector(sc);
+    const m = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+    const read = () => ({
+      names: Object.fromEntries([...card.querySelectorAll('.f-who .f-nm[data-person]')].map((n) => [n.dataset.person, m(n)])),
+      chips: Object.fromEntries([...card.querySelectorAll('.f-who > .f-pill')].map((p) => [p.dataset.level, m(p)])),
+      more: Object.fromEntries([...card.querySelectorAll('.f-who .f-more')].map((n) => [n.dataset.level, m(n)])),
+      glyphs: Object.fromEntries([...card.querySelectorAll('.f-who > .f-pill > .bars, .f-who > .f-pill > .must')].map((g) => [g.parentElement.dataset.level, m(g)])),
+      title: m(card.querySelector('.f-name')),
+    });
+    const before = read();
+    window.__firstFrame = new Promise((res) => {
+      const mo = new MutationObserver(() => {
+        mo.disconnect();
+        queueMicrotask(() => {
+          const anims = document.getAnimations().filter((a) => !(a instanceof CSSAnimation));
+          for (const a of anims) { a.pause(); a.currentTime = 0; }
+          const off = [];
+          const now = read();
+          const cmp = (kind, k, a, b) => { if (a && b && (Math.abs(a.x - b.x) > 1 || Math.abs(a.y - b.y) > 1)) off.push(`${kind} ${k}: ${(b.x - a.x).toFixed(1)},${(b.y - a.y).toFixed(1)}`); };
+          for (const k of Object.keys(now.names)) cmp('name', k, before.names[k], now.names[k]);
+          for (const k of Object.keys(now.chips)) cmp('chip', k, before.chips[k], now.chips[k]);
+          for (const k of Object.keys(now.glyphs)) cmp('glyph', k, before.glyphs[k], now.glyphs[k]);
+          for (const k of Object.keys(now.more)) cmp('+n', k, before.more[k], now.more[k]);
+          const seen = { parkedMore: card.querySelectorAll('.f-more.f-parked').length, parkedNames: card.querySelectorAll('.f-nm.f-parked').length };
+          cmp('title', '', before.title, now.title);
+          const parked = [...card.querySelectorAll('.f-parked')].map((p) => ({
+            cls: p.className, position: getComputedStyle(p).position, fontSize: getComputedStyle(p).fontSize,
+          }));
+          for (const a of anims) { try { a.finish(); } catch { a.play(); } }
+          res({ off, parked, seen });
+        });
+      });
+      mo.observe(card, { childList: true });
+    });
+  }, scope);
+  await press();
+  const f = await page.evaluate(() => window.__firstFrame);
+  assert.deepEqual(f.off, [], `${what}: at the first frame everything stands where it stood`);
+  for (const p of f.parked) {
+    assert.equal(p.position, 'absolute', `${what}: a leaver is out of flow (${JSON.stringify(p)})`);
+    if (/f-ghost/.test(p.cls)) assert.equal(p.fontSize, '11px', `${what}: a leaving name keeps the chip's type (${JSON.stringify(p)})`);
+  }
+  await sleep(250);
+  const after = await page.evaluate((sc) => {
+    const card = document.querySelector(sc);
+    const you = card.querySelector('.f-who .f-pill.you');
+    return {
+      temp: card.querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel').length,
+      lifted: [...card.querySelectorAll('.f-names')].filter((n) => n.style.overflow).length,
+      you: you ? you.dataset.level : null,
+      names: [...card.querySelectorAll('.f-nm[data-person]')].map((n) => n.dataset.person),
+    };
+  }, scope);
+  assert.equal(after.temp, 0, `${what}: nothing temporary outlives the move (${JSON.stringify(after)})`);
+  assert.equal(after.lifted, 0, `${what}: every lifted clip is restored`);
+  assert.equal(after.you, lands, `${what}: you land at ${lands}`);
+  assert.equal(new Set(after.names).size, after.names.length, `${what}: one rendering of every person (${after.names})`);
+  return f.seen;
+}
+
 for (const t of TARGETS) {
-  test(`${t.name}, ${t.motion} — a pick's first frame is the old layout, in every case of the walk: carry, merge, both, clear, first`, { skip }, async () => {
+  // A phone: the shelf a finger's tap opens, stepped with − and +, the finger
+  // pressing the same spots every time (the row never moves).
+  test(`${t.name}, ${t.motion} — on the shelf, a − / + pick's first frame is the old layout, in every case of the walk: carry, merge, both, split, clear, first`, { skip }, async () => {
     const { ctx, page } = await openWall({ target: t });
     try {
-      await holdOpen(ctx, page, t.motion);
+      await tapOpen(page, t.motion);
+      const spot = async (side) => { const b = await page.locator(`${SHELF} .f-step.${side}`).boundingBox(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; };
+      const plus = await spot('plus'), minus = await spot('minus');
+      const CASES = [
+        ['carry (×1 alone → ×2 alone)', '2', plus],
+        ['merge (×2 alone → ×3 with Pegah and Drew)', '3', plus],
+        ['both (out of ×3, into Nhu\'s MUST)', '4', plus],
+        ['both, back (out of the shared MUST, into ×3)', '3', minus],
+        ['split (out of ×3, alone at ×2)', '2', minus],
+        ['carry, down (×2 alone → ×1 alone)', '1', minus],
+        ['clear (nothing picked)', null, minus],
+        ['first pick (nobody at ×1)', '1', plus],
+      ];
+      const walked = [];
+      for (const [what, lands, at] of CASES) walked.push({ what, ...(await walkPick(page, SHELF, what, lands, () => page.touchscreen.tap(at.x, at.y))) });
+      assert.ok(walked.some((w) => w.parkedNames > 0) && walked.some((w) => w.parkedMore > 0), `the walk parked names and a "+n": ${JSON.stringify(walked)}`);
+      const row = await spot('plus');
+      assert.deepEqual(row, plus, 'and the + is where the finger left it');
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  // A laptop: the zoom a hover grows, its body clicked — the cycle.
+  test(`${t.name}, ${t.motion} — in the hovered zoom, a click's first frame is the old layout, in every case of the walk: carry, merge, both, clear, first`, { skip }, async () => {
+    const { ctx, page } = await openWall({ width: 1280, height: 800, target: t, touch: false });
+    try {
+      await hoverOpen(page, t.motion);
       const CASES = [
         ['carry (×1 alone → ×2 alone)', '2'],
         ['merge (×2 alone → ×3 with Pegah and Drew)', '3'],
@@ -315,71 +424,7 @@ for (const t of TARGETS) {
         ['first pick (nobody at ×1)', '1'],
       ];
       const walked = [];
-      for (const [what, lands] of CASES) {
-        await page.evaluate(() => {
-          const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
-          const m = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-          const read = () => ({
-            names: Object.fromEntries([...card.querySelectorAll('.f-who .f-nm[data-person]')].map((n) => [n.dataset.person, m(n)])),
-            chips: Object.fromEntries([...card.querySelectorAll('.f-who > .f-pill')].map((p) => [p.dataset.level, m(p)])),
-            more: Object.fromEntries([...card.querySelectorAll('.f-who .f-more')].map((n) => [n.dataset.level, m(n)])),
-            glyphs: Object.fromEntries([...card.querySelectorAll('.f-who > .f-pill > .bars, .f-who > .f-pill > .must')].map((g) => [g.parentElement.dataset.level, m(g)])),
-            title: m(card.querySelector('.f-name')),
-          });
-          const before = read();
-          window.__firstFrame = new Promise((res) => {
-            const mo = new MutationObserver(() => {
-              mo.disconnect();
-              queueMicrotask(() => {
-                const anims = document.getAnimations().filter((a) => !(a instanceof CSSAnimation));
-                for (const a of anims) { a.pause(); a.currentTime = 0; }
-                const off = [];
-                const now = read();
-                const cmp = (kind, k, a, b) => { if (a && b && (Math.abs(a.x - b.x) > 1 || Math.abs(a.y - b.y) > 1)) off.push(`${kind} ${k}: ${(b.x - a.x).toFixed(1)},${(b.y - a.y).toFixed(1)}`); };
-                for (const k of Object.keys(now.names)) cmp('name', k, before.names[k], now.names[k]);
-                for (const k of Object.keys(now.chips)) cmp('chip', k, before.chips[k], now.chips[k]);
-                for (const k of Object.keys(now.glyphs)) cmp('glyph', k, before.glyphs[k], now.glyphs[k]);
-                for (const k of Object.keys(now.more)) cmp('+n', k, before.more[k], now.more[k]);
-                const seen = { parkedMore: card.querySelectorAll('.f-more.f-parked').length, parkedNames: card.querySelectorAll('.f-nm.f-parked').length };
-                cmp('title', '', before.title, now.title);
-                const parked = [...card.querySelectorAll('.f-parked')].map((p) => ({
-                  cls: p.className, position: getComputedStyle(p).position, fontSize: getComputedStyle(p).fontSize,
-                }));
-                const cardH = card.getBoundingClientRect().height;
-                for (const a of anims) { try { a.finish(); } catch { a.play(); } }
-                res({ off, parked, cardH, seen });
-              });
-            });
-            mo.observe(card, { childList: true });
-          });
-          window.__cardHBefore = card.getBoundingClientRect().height;
-        });
-        await page.locator('#zoom-layer .zoom-slot.shown .zoom-card .f-name').tap();
-        const f = await page.evaluate(() => window.__firstFrame);
-        walked.push({ what, ...f.seen });
-        assert.deepEqual(f.off, [], `${what}: at the first frame everything stands where it stood`);
-        for (const p of f.parked) {
-          assert.equal(p.position, 'absolute', `${what}: a leaver is out of flow (${JSON.stringify(p)})`);
-          if (/f-ghost/.test(p.cls)) assert.equal(p.fontSize, '11px', `${what}: a leaving name keeps the chip's type (${JSON.stringify(p)})`);
-        }
-        await sleep(250);
-        const after = await page.evaluate(() => {
-          const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
-          const you = card.querySelector('.f-who .f-pill.you');
-          return {
-            temp: card.querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel').length,
-            lifted: [...card.querySelectorAll('.f-names')].filter((n) => n.style.overflow).length,
-            you: you ? you.dataset.level : null,
-            names: [...card.querySelectorAll('.f-nm[data-person]')].map((n) => n.dataset.person),
-          };
-        });
-        assert.equal(after.temp, 0, `${what}: nothing temporary outlives the move (${JSON.stringify(after)})`);
-        assert.equal(after.lifted, 0, `${what}: every lifted clip is restored`);
-        assert.equal(after.you, lands, `${what}: you land at ${lands}`);
-        assert.equal(new Set(after.names).size, after.names.length, `${what}: one rendering of every person (${after.names})`);
-      }
-      // Not a vacuous walk: somebody really folded into a "+n" (merge: Pegah),
-      // a "+n" really stepped away (both), and you really left a shared chip (clear).
+      for (const [what, lands] of CASES) walked.push({ what, ...(await walkPick(page, `${ZOOM} .zoom-card`, what, lands, () => page.locator(`${ZOOM} .zoom-card .f-name`).click())) });
       assert.ok(walked.some((w) => w.parkedNames > 0) && walked.some((w) => w.parkedMore > 0), `the walk parked names and a "+n": ${JSON.stringify(walked)}`);
     } finally {
       await ctx.close();
