@@ -138,3 +138,105 @@ a two-line time label. If the season view moves to the `--col-w` track later,
 adopt.
 
 Next: validator + tests, docs, the day image in time order, then the walks.
+
+### 2026-09-26 ~2 AM PT — built, merged with the full data, walked
+
+**What shipped on `live/v94`** (preview only; not stamped, per the rules):
+
+1. **The declaration.** `dayMeta.Folsom.layout = "by-time"` in
+   `portola-2026.json`. `by-venue` is the default. The validator
+   (`festival-rules.mjs checkLayouts`) errors on an unknown value, on a grid
+   day, on a combined label, on a label nobody plays under, and on a festival
+   with no grid. A by-time party with no clock gets a warning (it goes last,
+   under TIME TBA). `area` is a new optional short string.
+2. **The list.** `events.js timeBandsOf` builds on the stacks' own model
+   (`venueGroupsOf`, so the now window, cancelled handling and the tilde
+   come for free), and `wall.js timeGroups` draws it. The bands are fixed:
+   DAYTIME, EVENING, 9 PM, 10 PM, LATE (to 2 AM), AFTER-HOURS, TIME TBA. There
+   is one difference from a stack: a party's printed end is when its ring
+   goes out, not the next party's start in the same room.
+3. **Each party is its own show** (the coordinator's ask, 2026-09-26).
+   `events.js showsOnItsOwn` answers one question: does every room this entry
+   sits in read by time? The validator and the file's own tests all ask it,
+   so they can't drift apart. Where the answer is yes, none of the three
+   one-show-per-room checks applies: the "timed sets and no running order"
+   warning, the complete-run test (`portola-events`) and the one-bill links
+   test (`show-links`). All three stay fully in force for stacked sections,
+   and a combined label ("Afters & Folsom") is still held to them through its
+   Afters room. **How the validator knows:** it reads the section's own
+   `dayMeta` `layout`. A test on the real file checks that each party in a
+   shared venue opens its own doors in the zoom.
+4. **The data.** Merged `data/folsom-all` at its final head b4f562a (36
+   cards, PRIME door-only, HMD's tickets at Sickening). The 18 same-venue
+   parties are spliced in per the splice file's readme, all names frozen,
+   and the splice file is retired (DATA-NOTES says so). The file now has 65
+   Folsom cards (Fri 20, Sat 24, Sun 21). The validator reads **0 errors**,
+   and the Portola file has **0 warnings**.
+5. **Place lines never break mid-phrase** (Kevin via the coordinator). A
+   card's place is phrases (the venue, then the area). They share one line,
+   with a dot, only while every phrase fits whole. Otherwise each gets its
+   own line and the dot goes: `wall.js fitPlaces` decides from the drawn
+   widths, inside the fit pass that already runs before paint. The time line
+   never wraps. Checked in a real browser at 320/390/1280 and in WebKit
+   (`tests/browser/by-time-contract.test.mjs`).
+6. **Two small real bugs the full data showed:**
+   a. `timeRange` read 10 AM – 12 AM as "10 – 12 AM", a two-hour brunch
+      instead of a party to midnight. It now drops the first AM/PM only
+      inside one half-day.
+   b. A second NOW tap during the first tap's pulse (~0.9s) measured the
+      pulsing cards up to 12px larger, and the stops regrouped, so the same
+      show landed twice. NOW now measures a card's layout box.
+      `app.js pageGeo.box`.
+7. **Docs:** MODEL-V4 §3e, `docs/add-a-festival.md` (the declaration, `area`,
+   the room rules not applying), CLAUDE.md's one bullet, and the gallery's
+   Folsom (every band, a guessed close, TIME TBA, Mayes Oyster House /
+   Polk Gulch).
+
+**Frames with the full data** (portola-live `…/design/folsom-by-time/`):
+`sheet-4-full-data.png` (Fri/Sat/Sun at 390, all 65), and
+`frames/real-{fri,sat,sun}-390.png`.
+
+**The clock-day question, shown both ways** (`sheet-5-clock-day.png`,
+`frames/real-{A,B}-view-sat-{390,320}.png`). B applies the v91 stack rule to
+the time list: 40px of lead space, columns under the timetable's, a sideways
+row. It lines the Folsom cards up under the afters, but at rest every
+right-hand card runs 38px off the screen ("GearedUp Alley Pa", "Folsom
+Street's Miracle Mile walki"; at 320, "GearedUp All"). A time list is read
+across (the 9:30 party beside the 9 PM one), so B hides half of every pair.
+**Built: A.** On a phone the list keeps the shell's two full columns, edge to
+edge with its own SAT FOLSOM head. From 720 up it sits exactly under the
+clock's columns (measured: 140/320/500/680/860 on both). It is one CSS
+block to switch if Kevin prefers B (the rig's `ALT_B`).
+
+**Verified:**
+
+1. `npm test`: 1005 pass. The one failure is the service-worker stamp,
+   which is the integrator's.
+2. `npm run test:browser`: every contract passes, including the new
+   by-time contract. The stack-row contract now also measures time lists
+   (phone: two full columns, never a sideways row; 1280: under the clock).
+3. The NOW contract: each side-by-side pair lands in one tap, read off the
+   page.
+4. The walk (`v94-walk.mjs`: real touch at 390/320, a real mouse at 1280,
+   Reduce Motion; 0 page errors; writes only to its in-memory mock):
+   a. a tap picks in place (the band, the time line and the ring all kept);
+   b. a hold opens the zoom with Tix/Info and − note +;
+   c. the head opens "FOLSOM · FRIDAY";
+   d. NOW reaches the Folsom 9 PM band as one stop;
+   e. a highlight dims 18 of 20 cards;
+   f. the show menu hides Folsom and brings it back;
+   g. a fresh phone opening `&show=folsom` sees Folsom only;
+   h. Thursday has no Folsom room;
+   i. at 1280, hover zooms and a click picks.
+
+**For Kevin to decide:**
+
+1. A vs B on clock days (above). A is built.
+2. At 11:30 PM on a Friday, 16 of 20 Folsom cards wear the NOW ring, because
+   that's how many parties are open. It's honest, and the NOW button walks
+   them band by band. A party with no printed end rings for only an hour.
+   If he wants those to ring longer, that's data (a guessed `close`), not
+   the renderer.
+3. The real data carries no `area`, so cards say the venue alone. The
+   pick list has a neighbourhood for every party if he wants it (a data
+   pass).
