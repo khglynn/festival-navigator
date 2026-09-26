@@ -52,3 +52,6 @@ offline/
 !icon-maskable-512.png
 !apple-touch-icon.png
 !assets/og/*.jpg
+
+# Phase 1 builder frames (claude-plans/2026-09-26-unified-build/LIST-BUILD.md)
+list-shots/

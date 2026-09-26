@@ -20,6 +20,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
+import { isRunMember } from './events.js'; // the List (Phase 1): a run member's time line says its start
 import { searchFold } from '../fold.mjs'; // one fold for every search and the schedule import (2026-09-26)
 
 // ---- person -> board color ---------------------------------------------------
@@ -57,7 +58,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   const facts = factsFor(artistName, ctx, opts.occ || null);
   const people = facts.people;
   const el = document.createElement('div');
-  el.className = 'card' + (opts.cell ? ' cell' : '') + ((opts.time || opts.place) && !opts.cell ? ' timed' : '');
+  el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.row ? ' row' : '') + ((opts.time || opts.place) && !opts.cell && !opts.row ? ' timed' : '');
   // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
   // and carries the crew's marks — worn quieter and struck through (v3.css
   // .card.cancelled). The caller says "Cancelled" where the time goes.
@@ -454,7 +455,8 @@ const SEP_W = 11;
 function fitPlaces(cards) {
   const answers = [];
   for (const el of cards) {
-    const p = el.isConnected ? el.querySelector(':scope > .place') : null;
+    // A row's place is one line that ellipsizes (v3.css .card.row): nothing to stack.
+    const p = el.isConnected && !el.classList.contains('row') ? el.querySelector(':scope > .place') : null;
     const segs = p ? p.querySelectorAll(':scope > .phrase') : [];
     if (segs.length < 2 || !p.clientWidth) continue;
     const need = [...segs].reduce((w, s) => w + s.scrollWidth, 0) + SEP_W * (segs.length - 1);
@@ -524,6 +526,7 @@ const PLACEMENT_PROPS = ['grid-column', 'grid-row', 'width', 'margin-left', 'min
 export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
+    row: el.classList.contains('row'),
     time: el.dataset.time || undefined,
     place: el.dataset.place ? JSON.parse(el.dataset.place) : undefined,
     tag: el.dataset.tag || undefined,
@@ -1429,6 +1432,14 @@ function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
   return rooms;
 }
 
+// Whether this festival can be read as a List (Phase 1, 2026-09-26): only
+// where something has a clock to list by — a festival that publishes a stage
+// grid. A lineup (no days at all) is one list already, with no times to put
+// in order, so it has only its board and the menu offers no view there.
+export function listOffered(fest) {
+  return !!(fest && fest.days && Object.keys(fest.days).length);
+}
+
 // The words on the fest link at the end of the dock (phone) and the rail
 // (desktop) — the show menu's door. One builder, because the wall names that
 // door when everything is hidden and must say exactly what is written on it.
@@ -1643,9 +1654,14 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 // "9:30 PM – ~2 AM", the stacks' sub line said on the card, since no venue
 // head sits above it; else the doors; else nothing. The place is its own
 // line of phrases (renderCard `place`): the venue, then the area.
+// A member of a RUN (an afters room's line-up, `order`) says its start and no
+// more — "~10:30 PM", never "~10:30 PM – 3 AM": 3 AM is the room's close, not
+// the set's end (round five, direction a: Milli Meng read "~10:30 PM – 3 AM"
+// once Afters was read by time). v94's line was written for Folsom, where
+// every room is one party and its close IS the party's end, and it still is.
 const byTimeWhen = (m) => {
   const e = m.e;
-  const close = typeof e.close === 'string' && e.close ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
+  const close = typeof e.close === 'string' && e.close && !isRunMember(e) ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
   const when = m.cancelled ? 'Cancelled'
     : m.endStr ? timeRange(e.time)
       : m.startStr ? [approxMark(e, m.startStr), close].filter(Boolean).join(' – ')
@@ -1653,13 +1669,25 @@ const byTimeWhen = (m) => {
   return when || undefined;
 };
 const byTimePlace = (m) => [m.venue, areaOf(m.e)].filter(Boolean);
-export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
-  const list = mk('div', 'time-list');
+// A ROW's place (the List): the same phrases, except that a place which only
+// repeats the card's own name says nothing (Despacio on the Despacio stage),
+// and neither does the festival's own site under the festival's head (a
+// billed name with no set yet is at Pier 80 — the head above already says so).
+const rowPlace = (m, siteName) => [m.venue === siteName ? null : m.venue, areaOf(m.e)]
+  .filter((p) => p && p !== m.e.name);
+//
+// `ladder` and `row` are the List's (Phase 1, 2026-09-26): 'hours' for a room
+// of sets, the night ladder for a section that declared it; `row` draws each
+// card full width, one to a row (.time-list.rows, v3.css). A festival-grid set
+// carries the grid's own occurrence (`gridOcc`), so its zoom, its notes and a
+// zoom kept across a repaint are the grid cell's, whichever view drew it.
+export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null, ladder = 'night', row = false, window = 'printed' } = {}) {
+  const list = mk('div', row ? 'time-list rows' : 'time-list');
   if (day && day.iso) list.dataset.iso = day.iso;
   if (fest && fest.timezone) list.dataset.tz = fest.timezone;
   if (clock) list.dataset.clock = clock;
   let shown = 0;
-  for (const band of timeBandsOf(entries, { fallbackVenue })) {
+  for (const band of timeBandsOf(entries, { fallbackVenue, ladder, window })) {
     const b = mk('div', 'time-band');
     b.dataset.band = band.key;
     const head = mk('div', 'band-head');
@@ -1668,7 +1696,8 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
     grid.setAttribute('role', 'group');
     grid.setAttribute('aria-label', band.label);
     for (const m of band.members) {
-      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: byTimePlace(m), occ: occOf(m.e) });
+      const place = row ? rowPlace(m, fallbackVenue) : byTimePlace(m);
+      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: place.length ? place : undefined, occ: m.e.gridOcc || occOf(m.e), row });
       if (m.nowFrom != null && m.nowTo != null) {
         card.dataset.nowFrom = String(m.nowFrom);
         card.dataset.nowTo = String(m.nowTo);
@@ -1683,9 +1712,43 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
   root.appendChild(list);
   return shown;
 }
-// Where a section's cards go: its declared layout, else the stacks.
-function sectionBody(fest, key) {
+// Where a section's cards go: its declared layout, else the stacks. In the
+// List every room is a time list of rows: a section that declared by-time
+// keeps its night ladder, every other room reads on hours (events.js).
+function sectionBody(fest, key, ctx = {}) {
+  if (ctx.view === 'list') {
+    // A ring never changes with the view: a declared by-time section keeps its
+    // own window rule (the printed end wins, as on the Board), every other
+    // room the stacks' (the next act's start wins) — events.js timeBandsOf.
+    const byTime = sectionLayoutOf(fest, key) === BY_TIME;
+    return (root, entries, c, opts = {}) => timeGroups(root, entries, c,
+      { ...opts, clock: null, ladder: byTime ? 'night' : 'hours', window: byTime ? 'printed' : 'stack', row: true });
+  }
   return sectionLayoutOf(fest, key) === BY_TIME ? timeGroups : venueGroups;
+}
+// The short name a Portola stage goes by on a row: "Pier" for "Pier Stage" —
+// the one word every stage shares says nothing (round five, direction a).
+const shortStage = (s) => String(s || '').replace(/\s+stage$/i, '').trim() || null;
+// The festival's own room in the List: every set of the day's grid, as a
+// by-time entry under its stage's short name with the grid cell's own
+// occurrence and now window, then whatever of the festival's is not on the
+// grid (festRoomExtras: a stray stage, a name billed with no set, an activity)
+// — each extra with the window the Board's stacks give it (the same
+// venueGroupsOf call renderComposed makes), so no ring moves with the view.
+function festRoomListEntries(fest, day, layout) {
+  const sets = state.getDayArtists(day.dayKey, day.weekend)
+    .filter((a) => layout.stages.indexOf(a.stage) !== -1)
+    .map((a) => ({
+      name: a.name, day: day.dayKey, venue: shortStage(a.stage), time: a.time || null,
+      win: { from: a.startMin, to: a.endMin ?? a.startMin + 60 }, // the grid cell's own window (renderScheduledDayBody)
+      gridOcc: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null },
+    }));
+  const extras = festRoomExtras(fest, day, layout);
+  const winOf = new Map();
+  for (const g of venueGroupsOf(extras, { fallbackVenue: festRoomSub(fest) })) {
+    for (const m of g.members) winOf.set(m.e, m.nowFrom != null && m.nowTo != null ? { from: m.nowFrom, to: m.nowTo } : null);
+  }
+  return [...sets, ...extras.map((e) => ({ ...e, win: winOf.has(e) ? winOf.get(e) : null }))];
 }
 // Where the now mark lives: a stack's grid or a time list, each carrying its
 // date (and the festival's zone) for the ticker.
@@ -1716,6 +1779,138 @@ export function nightMinutes(iso, clock) {
   const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
   return days === 0 || days === 1 ? clock.minutes + days * 24 * 60 : null;
 }
+// ---- THE PAST (Phase 1, 2026-09-26) -----------------------------------------------
+// Kevin: "Hide vs show stuff that's past — like a scroll to the top cuts off
+// … not a long way back", and on the round: "just default to hide with this
+// little expand option that flips into a hide option. love."
+//
+// OVER is one rule, the NOW ring's own window (m-menu-past-persist §3): a
+// card is over exactly when its ring can never light again. Every card
+// already carries its window on its OWN night's clock (`data-now-from/to`,
+// on its host's `data-iso`), so the rule reads what was drawn:
+//   · `days` = the clock's festival day minus the host's night, in days;
+//   · the NIGHT is over when days ≥ 2, or days ≥ 1 and every card on it that
+//     has a window is over — which is what carries the 5 AM rollover: at 6 AM
+//     Sunday Saturday's grid (closed at 10 PM) is over, and Saturday's Folsom
+//     is not while Aftershock (3–10 AM) plays;
+//   · a CARD is over when its night is, or when it has a window and the clock
+//     on that night has reached its end. A card with no window (no clock, a
+//     cancelled act) is over only when its night is. Before the night (days
+//     < 0) nothing is.
+// `windows`: [{ from, to } | null] per card, in the night's minutes.
+export function pastOf(iso, windows, clock) {
+  const none = { nightOver: false, over: windows.map(() => false) };
+  if (!iso || !clock) return none;
+  const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
+  if (!(days >= 0)) return none;
+  const at = nightMinutes(iso, clock);
+  const ended = (w) => !!w && at != null && at >= w.to;
+  const timed = windows.filter(Boolean);
+  const nightOver = days >= 2 || (days >= 1 && timed.every(ended));
+  return { nightOver, over: windows.map((w) => nightOver || ended(w)) };
+}
+// Where the past is read on the wall: every host of cards that carries its
+// night — a grid, a stack grid, a time list.
+const PAST_HOSTS = '.times-grid[data-iso], .venue-grid[data-iso], .time-list[data-iso]';
+const windowOf = (card) => (card.dataset.nowFrom != null && card.dataset.nowTo != null
+  ? { from: Number(card.dataset.nowFrom), to: Number(card.dataset.nowTo) } : null);
+// Every card of a room, and whether each is over — null when the room holds a
+// card no host can place in time (a lineup day's billing): nothing to judge.
+function roomPast(room, date) {
+  const cards = [...room.querySelectorAll('.card[data-artist]')];
+  if (!cards.length) return null;
+  const overs = new Map();
+  for (const host of room.querySelectorAll(PAST_HOSTS)) {
+    const list = [...host.querySelectorAll('.card[data-artist]')];
+    const { over } = pastOf(host.dataset.iso, list.map(windowOf), festivalClock(date, host.dataset.tz || null));
+    list.forEach((c, i) => overs.set(c, over[i]));
+  }
+  if (cards.some((c) => !overs.has(c))) return null;
+  return { cards, overs, all: cards.every((c) => overs.get(c)) };
+}
+// The door: one quiet line, the section micro-label with the app's caret and
+// the band heads' hairline — "EARLIER · 7 SETS ⌄", and once tapped the SAME
+// line in the same spot reads "HIDE EARLIER ⌃". A bare <button
+// aria-expanded> (the 44px floor comes with it); `data-past` is its key, so
+// the shell can find it again after a repaint and hold it under the finger.
+function pastLine(key, open, words, ctx) {
+  const line = mk('button', 'past-line');
+  line.type = 'button';
+  line.dataset.past = key;
+  line.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const caret = mk('span', 'past-caret');
+  caret.setAttribute('aria-hidden', 'true');
+  line.append(mk('span', 'past-label', open ? 'Hide earlier' : words), caret, mk('span', 'past-rule'));
+  if (ctx.onPast) line.addEventListener('click', () => ctx.onPast(key));
+  return line;
+}
+// The noun a room's line counts in: parties in a section that reads by time
+// (Folsom's one-party rooms), sets everywhere else.
+function pastNoun(room, n) {
+  const fest = state.fest();
+  const [one, many] = room.dataset.room && sectionLayoutOf(fest, room.dataset.room) === BY_TIME ? ['party', 'parties'] : ['set', 'sets'];
+  return `${n} ${n === 1 ? one : many}`;
+}
+// The pass, after the wall is drawn (renderComposed). `ctx.pastAt` is the
+// clock the fold was last judged at — held still between the moments the
+// shell recomputes it (a boot, a resume, the festival day turning), so a set
+// that ends while you are reading never vanishes under your thumb; a render
+// with none judges at `ctx.now` (the tests). `ctx.pastOpen` holds what this
+// page opened (`<iso>|<room>`, or 'days') — memory only, never stored: a
+// reveal was a moment, not a choice, and a reload folds the past again.
+//   1. Whole days over, in both views, leave behind ONE line at the top of
+//      the wall ("EARLIER · THU · FRI"), where the scroll to the top now ends.
+//      A festival that is over from end to end folds nothing: it is a record,
+//      read whole, and one line for all of it would be a blank wall.
+//   2. In the List, each room of a day that is not over folds what of it is
+//      over behind its own line, above its bands; a band the fold empties
+//      goes with it. The Board keeps its rooms whole (the grid's cut is not
+//      built — LIST-BUILD.md, call 2).
+function foldPast(root, ctx, { days, weekends }) {
+  const date = ctx.pastAt || ctx.now || new Date();
+  const open = ctx.pastOpen || new Set();
+  const blocks = [...root.querySelectorAll(':scope > .day-block')];
+  const judged = new Map(); // room → roomPast
+  const dayOver = (block) => {
+    const rooms = [...block.querySelectorAll(':scope > .room')];
+    if (!rooms.length) return false;
+    return rooms.every((room) => {
+      const p = roomPast(room, date);
+      judged.set(room, p);
+      return !!p && p.all;
+    });
+  };
+  const over = blocks.filter(dayOver);
+  if (over.length === blocks.length) return; // over from end to end: a record, read whole
+  if (over.length) {
+    const daysOpen = open.has('days');
+    const twoWeekends = (weekends || [null]).length > 1;
+    const tabs = new Map(days.map((d) => [d.key, twoWeekends && d.num ? `${d.short} ${d.num}` : d.short]));
+    const names = over.map((b) => tabs.get(b.dataset.day) || String(b.dataset.day || '').slice(0, 3).toUpperCase());
+    over[0].before(pastLine('days', daysOpen, `Earlier · ${names.join(' · ')}`, ctx));
+    if (!daysOpen) over.forEach((b) => b.remove());
+    else over.forEach((b) => b.classList.add('past-day')); // what the fold's motion moves (app.js togglePast)
+  }
+  if (ctx.view !== 'list') return;
+  for (const block of blocks) {
+    if (over.includes(block)) continue; // an opened day that is over is shown whole
+    for (const room of block.querySelectorAll(':scope > .room')) {
+      const p = judged.has(room) ? judged.get(room) : roomPast(room, date);
+      const list = room.querySelector(':scope > .time-list[data-iso]');
+      if (!p || !list) continue;
+      const past = p.cards.filter((c) => p.overs.get(c));
+      if (!past.length) continue;
+      const key = `${list.dataset.iso}|${room.dataset.room}`;
+      const isOpen = open.has(key);
+      list.classList.add('has-past');
+      list.prepend(pastLine(key, isOpen, `Earlier · ${pastNoun(room, past.length)}`, ctx));
+      if (isOpen) { past.forEach((c) => c.classList.add('past')); continue; }
+      past.forEach((c) => c.remove());
+      for (const band of list.querySelectorAll(':scope > .time-band')) if (!band.querySelector('.card')) band.remove();
+    }
+  }
+}
+
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches(NOW_HOSTS) ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll(NOW_HOSTS)]) {
@@ -2220,7 +2415,7 @@ function festRoomExtras(fest, day, layout) {
 
 // The plan already holds only what is visible (wallPlanFor applies the fold):
 // every day here has something to show, every section and extra here is on.
-function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
+function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, weekends = [null] }) {
   const layout = scheduled ? computeTimesLayout(fest) : null;
 
   // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
@@ -2253,7 +2448,9 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const door = dateDoor(ctx, day.iso, dayLabelParts(day.dayKey).head);
       room.appendChild(head(fest.name, festRoomSub(fest), door));
       if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
-      if (day.grid) {
+      if (day.grid && ctx.view === 'list') {
+        timeGroups(room, festRoomListEntries(fest, day, layout), ctx, { day, fest, fallbackVenue: festRoomSub(fest), ladder: 'hours', window: 'stack', row: true });
+      } else if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
         clocked = renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
         if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest), clock: clocked ? 'room' : null });
@@ -2275,7 +2472,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
-      sectionBody(fest, sec.key)(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
+      sectionBody(fest, sec.key, ctx)(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
       block.appendChild(room);
     }
     root.appendChild(block);
@@ -2286,6 +2483,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
 
   if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
+  else foldPast(root, ctx, { days: plan.days, weekends });
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -2333,7 +2531,7 @@ function renderExtra(root, ctx, fest, extra) {
   if (!extra.byDate) {
     const room = roomBlock(extra.key);
     room.appendChild(roomHead({ label: extra.label, sub: ownSub }));
-    sectionBody(fest, extra.key)(room, extra.entries || [], ctx, { fest });
+    sectionBody(fest, extra.key, ctx)(room, extra.entries || [], ctx, { fest });
     block.appendChild(room);
   } else {
     for (const [iso, list] of extra.byDate) {
@@ -2343,7 +2541,7 @@ function renderExtra(root, ctx, fest, extra) {
       const wd = weekdayOfIso(iso);
       room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
       if (door) dayNoteWhisper(room, iso, door.aria, ctx);
-      sectionBody(fest, extra.key)(room, list, ctx, { day: { iso }, fest });
+      sectionBody(fest, extra.key, ctx)(room, list, ctx, { day: { iso }, fest });
       block.appendChild(room);
     }
   }
@@ -2425,6 +2623,10 @@ function renderWallInner(root, ctx) {
   root.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
+  // Which view this wall is (Phase 1): v3.css draws the List's one reading
+  // column from it. A search is a list of answers either way.
+  if (ctx.view === 'list' && scheduled && !ctx.query) root.dataset.view = 'list';
+  else delete root.dataset.view;
 
   // The composed wall (MODEL-V4, 2026-09-16): a week of days, each holding
   // its rooms. One path for every fest that has days at all — a search and a
@@ -2906,7 +3108,11 @@ export function wireScrollspy(containers, wallRoot) {
     // drops the stage strip, so the first read can be against the old
     // offset (Codex round 4, 2026-08-27).
     if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
-  } else setActive(tabs[0].dataset.day);
+  } else setActive((headers[0] || tabs[0]).dataset.day);
+  // (At the top of the page the first day ON THE WALL is the one you are in —
+  // not the first tab: a day that is over keeps its tab in the row while its
+  // block waits behind the days line (Phase 1), and THU lit over SAT PORTOLA
+  // would be a lie.)
   const onScroll = () => {
     if (ticking) return;
     ticking = true;

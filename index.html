@@ -213,7 +213,8 @@
           <button class="notes-chip" id="notes-chip">Notes <span class="count" id="notes-count">0</span></button>
         </div>
         <!-- Desktop day rail (DT-1): the dock's ≥720 body — same anatomy:
-             avatar, day tabs, fest name + sync dot (unified, Kevin note 1.1) -->
+             avatar, day tabs, then sync dot · fest name · the menu's three
+             lines (unified, Kevin note 1.1; the menu bar, Phase 1) -->
         <div class="day-rail" id="day-rail">
           <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
           <!-- NOW (2026-09-24): the jump to what is playing, while something
@@ -228,9 +229,9 @@
                room, and the tap goes straight to Settings when it has one. -->
           <span class="sort-wrap" id="rail-fest-wrap" style="margin-left: auto;">
             <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
-              <span class="fest-name" id="rail-fest-name"></span>
-              <span class="menu-caret down" aria-hidden="true"></span>
               <span class="sync-dot"></span>
+              <span class="fest-name" id="rail-fest-name"></span>
+              <svg class="menu-glyph" viewBox="0 0 12 12" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M1.5 2.75h9M1.5 6h9M1.5 9.25h9"/></svg>
               <span class="sr-only" id="sync-label">online</span>
             </button>
           </span>
@@ -245,9 +246,9 @@
         <span class="days" id="dock-days"></span>
         <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
           <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
-            <span class="fest-name" id="dock-fest-name"></span>
-            <span class="menu-caret" aria-hidden="true"></span>
             <span class="sync-dot"></span>
+            <span class="fest-name" id="dock-fest-name"></span>
+            <svg class="menu-glyph" viewBox="0 0 12 12" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M1.5 2.75h9M1.5 6h9M1.5 9.25h9"/></svg>
           </button>
         </span>
       </div>
