@@ -20,6 +20,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
+import { searchFold } from '../fold.mjs'; // one fold for every search and the schedule import (2026-09-26)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -854,23 +855,12 @@ function dayRuleSub(meta) {
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
-// Fold both sides of a search, never a stored name (names are pick keys): so
-// "tiesto" finds Tiësto, "mull" finds MÜLL, "chloe" finds Chloé Caillet, and
-// the other way round — nobody hunts for the ë on a phone keyboard in a
-// field. NFD splits an accented letter into letter + mark and the marks go;
-// the letters NFD leaves whole (a stroke or a ligature, not a mark: CØNTRA,
-// Łaszewo, DØMINA) get their plain spelling from FOLD_LETTERS. And iOS types
-// a curly ’ for ' (Smart Punctuation), so "it’s murph" finds It's Murph.
+// Fold both sides of a search, never a stored name (names are pick keys) —
+// the fold itself lives in js/fold.mjs, shared with the schedule import.
 // Every search in the app matches through searchMatches — there were two,
 // and the scheduled-fest one (Portola's) had never folded at all (v91,
 // 2026-09-25: friends at Portola typed "mull" and found nothing).
-const FOLD_LETTERS = { 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ħ': 'h', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
-export function searchFold(s) {
-  return String(s ?? '').toLowerCase().normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[øłđðħıßæœþ]/g, (c) => FOLD_LETTERS[c])
-    .replace(/[\u2018\u2019\u02bc]/g, "'");
-}
+export { searchFold };
 // The one match every search uses: does this name answer this query? An
 // empty (or all-space) query answers everything.
 export function searchMatches(name, query) {

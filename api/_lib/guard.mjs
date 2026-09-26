@@ -41,10 +41,19 @@ export function crossSite(req) {
 // with a long debug session.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
-export async function callGemini(promptText, { grounded = false } = {}) {
+// `image` ({ mimeType, data: base64 }) and `schema` (a responseSchema) are
+// the schedule import's (2026-09-26): an image read as inline data, answered
+// as strict JSON. Neither is set by the text-only callers, whose request body
+// is exactly what it always was. The image goes before the prompt (Google's
+// own advice for one image and a question), and a schema cannot ride with
+// grounding (see below), so no caller asks for both.
+export async function callGemini(promptText, { grounded = false, image = null, schema = null } = {}) {
   const KEY = process.env.GEMINI_API_KEY;
   if (!KEY) return { error: 'API key not configured', status: 500 };
-  const body = { contents: [{ role: 'user', parts: [{ text: promptText }] }] };
+  const parts = [{ text: promptText }];
+  if (image) parts.unshift({ inline_data: { mime_type: image.mimeType, data: image.data } });
+  const body = { contents: [{ role: 'user', parts }] };
+  if (schema) body.generationConfig = { responseMimeType: 'application/json', responseSchema: schema };
   // Google-search grounding: the model cites live web sources. NOTE: cannot
   // be combined with responseMimeType JSON — grounded callers parse JSON out
   // of the text themselves and validate hard.

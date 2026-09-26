@@ -921,6 +921,7 @@ const dockRow = (page) => page.evaluate(() => {
   };
 });
 const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
+const LINUX = process.platform === 'linux'; // CI: Inter draws wider there (CLAUDE.md, the two bottom corners)
 // `shows`: what this engine shows at that width, as Kevin's frames name it
 // (null: only the contract — the glyphs decide, as they do on Linux).
 for (const [fest, width, height, now, shows] of [
@@ -932,11 +933,15 @@ for (const [fest, width, height, now, shows] of [
   ['acl-2026', 390, 844, ACL_SAT, ['SAT3', 'NOW']],
   ['acl-2026', 375, 667, ACL_SAT, ['SAT3', 'NOW']],
   ['acl-2026', 320, 640, ACL_SAT, ['SAT3']], // too narrow for the pair beside ACL's long name: the day you are in wins
-]) for (const wide of [null, '0.7px']) {
+]) for (const wide of LINUX ? [null] : [null, '0.7px']) {
   // Each case twice: as this engine draws, and with every dock glyph 0.7px
   // wider — which reproduces CI's Linux rows to the pixel. With wider glyphs
-  // only the contract is asserted: which tabs fit is the engine's.
-  const exact = wide ? null : shows;
+  // only the contract is asserted: which tabs fit is the engine's. On Linux
+  // itself (CI) the engine already draws that wide, so each case runs once,
+  // as drawn, on the contract alone — Kevin's frames name what macOS and a
+  // phone show, and widening Linux again drew rows no device does (v96 CI:
+  // ACL at 320, its day cut by a pixel).
+  const exact = wide || LINUX ? null : shows;
   test(`${fest} at ${width}${wide ? ', glyphs wider (as Linux draws them)' : ''}: ${exact ? exact.join(' ') : 'the row\'s contract'}, the day you are in whole, no sliver, the fest name whole`, { skip }, async () => {
     const { ctx, page } = await openApp({ fest, width, height, now, wide });
     try {
@@ -1025,7 +1030,9 @@ for (const reduce of [false, true]) {
       await restedOn(page, 'Saturday');
       const f = await dockRow(page);
       const whole = f.tabs.filter((t) => t.seen >= t.w - 7).map((t) => t.name);
-      assert.deepEqual(whole, ['FRI', 'SAT', 'NOW', 'SUN'], `and the row rests on the pair: ${JSON.stringify(f.tabs)}`);
+      // What else fits beside the pair is the engine's (Linux draws wider).
+      if (LINUX) assert.ok(whole.includes('SAT') && whole.includes('NOW') && whole.indexOf('NOW') === whole.indexOf('SAT') + 1, `and the row rests on the pair: ${JSON.stringify(f.tabs)}`);
+      else assert.deepEqual(whole, ['FRI', 'SAT', 'NOW', 'SUN'], `and the row rests on the pair: ${JSON.stringify(f.tabs)}`);
       const arrived = await page.evaluate(() => window.__rowAnims.splice(0));
       if (reduce) assert.deepEqual(arrived, [], 'Reduce Motion: nothing moves, it is just there');
       else {
