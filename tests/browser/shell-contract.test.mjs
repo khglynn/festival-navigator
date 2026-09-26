@@ -190,218 +190,10 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
     await page.waitForFunction(() => document.getElementById('dock-fest-link').getAttribute('aria-expanded') === 'false', null, { timeout: 3000 });
     assert.equal(await page.evaluate(() => document.activeElement.id), 'dock-fest-link', 'focus back on the fest name');
     assert.ok(await page.isVisible('#screen-app'), 'the wall is still the wall');
-    // Put Folsom back for whoever runs next on this phone's storage.
-    await page.keyboard.press('Enter');
-    await row.waitFor({ state: 'visible' });
-    await row.focus();
-    await page.keyboard.press('Space');
-    assert.equal(await page.evaluate(() => localStorage.getItem('fn_fold_v1_portola-2026')), null);
   } finally {
     await ctx.close();
   }
 });
-
-// The show menu's ways out take its history entry back (v93), and only one
-// at a time: two before the first popstate lands (a double tap outside, a
-// tap then Escape) called history.back() twice, and Chromium left the app —
-// past the wall, past the page before it, to about:blank (probe, 2026-09-25).
-// jsdom queues both backs against the same entry, so only a real engine can
-// hold this.
-test('the show menu: a double tap outside and then Escape take ONE entry back — the app stays on the wall', { skip }, async () => {
-  const { ctx, page } = await phone();
-  const TOKEN = 'menudoublebackcontract_012'; // a made-up crew
-  const FID = 'portola-2026';
-  try {
-    await ctx.addInitScript(([t, f]) => {
-      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
-      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_welcome_v1', '1');
-    }, [TOKEN, FID]);
-    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
-    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
-    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-    await page.goto(`${server.origin}/404.html`); // a page behind the app's, where a second back would land
-    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
-    await page.click('#dock-fest-link');
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
-    await page.evaluate(() => {
-      const wall = document.getElementById('wall-root');
-      wall.click();
-      wall.click();
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    });
-    await page.waitForTimeout(1200);
-    assert.match(page.url(), /#g=/, `still on the app: ${page.url()}`);
-    assert.ok(await page.isVisible('#screen-app'), 'on the wall');
-    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false', 'with the menu away');
-  } finally {
-    await ctx.close();
-  }
-});
-
-// A refresh with the show menu up (review, 2026-09-25) lands on the wall
-// with the menu away: the entry behind the menu's belongs to the page
-// before the refresh, so a menu reopened there would have a Back that
-// reloads the page instead of closing it.
-test('the show menu: a refresh with it open lands on the wall without it', { skip }, async () => {
-  const { ctx, page } = await phone();
-  const TOKEN = 'menurefreshcontract_01234'; // a made-up crew
-  const FID = 'portola-2026';
-  try {
-    await ctx.addInitScript(([t, f]) => {
-      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
-      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_welcome_v1', '1');
-    }, [TOKEN, FID]);
-    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
-    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
-    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
-    await page.click('#dock-fest-link');
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
-    assert.deepEqual(await page.evaluate(() => history.state.layers), ['menu:show']);
-    await page.reload({ waitUntil: 'load' });
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
-    await page.waitForTimeout(600);
-    assert.equal(await page.isVisible('#dock-fest-wrap .sort-pop'), false, 'the menu is not reopened');
-    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false');
-    assert.deepEqual(await page.evaluate(() => history.state.layers), [], 'and the entry is the wall\'s (keeping the gone menu\'s id: tests/browser/show-menu-history)');
-  } finally {
-    await ctx.close();
-  }
-});
-
-// The crew deleted on the server while the Show menu is up (Sol 6's review of
-// 33164a3, reproduced): the poll's JSON 404 took the app to the fest list and
-// left the menu's busy flag and history entry behind — and the flag held every
-// new build's reload on that phone for good. The menu goes with its screen.
-test('the show menu: the crew deleted on the server while it is up — the fest list, the busy flag given back, history clean', { skip }, async () => {
-  const { ctx, page } = await phone();
-  const TOKEN = 'menucrewgonecontract_0123'; // a made-up crew
-  const FID = 'portola-2026';
-  let gone = false;
-  try {
-    await ctx.addInitScript(([t, f]) => {
-      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
-      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_welcome_v1', '1');
-    }, [TOKEN, FID]);
-    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
-    await ctx.route('**/api/crew**', (route) => (gone
-      ? route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Crew not found"}' })
-      : route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })));
-    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
-    await page.click('#dock-fest-link');
-    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
-    assert.equal(await page.evaluate(() => document.body.dataset.busy), 'show-menu', 'the open menu holds a reload');
-    gone = true;
-    await page.evaluate(() => import('/js/sync.js').then((s) => s.pollSync()));
-    await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
-    // Its entry is taken back before the fest list opens (v93), so the menu
-    // leaves the ordinary way — its quick fade — rather than at once.
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display === 'none', null, { timeout: 2000 }).catch(() => {});
-    const r = await page.evaluate(() => ({ busy: document.body.dataset.busy || null, state: history.state, menu: getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display }));
-    assert.deepEqual(r, { busy: null, state: null, menu: 'none' }, `the menu went with the wall: ${JSON.stringify(r)}`);
-  } finally {
-    await ctx.close();
-  }
-});
-
-// A tick in the Show menu keeps your place (v93). The menu stays up so a
-// friend can tick several rooms; the independent walk found every tick
-// snapping the page from Saturday evening to "SAT PORTOLA · 1 PM" — 3400 ->
-// 552 -> 2812 -> 552 -> 2812 — because a fold re-landed on the top of your day.
-// Now the card at the top of what you see stays where it is on screen, tick
-// after tick, while the days above it (Thursday's and Friday's afters) go and
-// come back.
-for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
-  test(`${width}: four ticks of Afters with the Show menu up — the card at the top of the screen stays put`, { skip }, async () => {
-    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
-    await ctx.addInitScript(() => { navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() }); });
-    const page = await ctx.newPage();
-    page.on('pageerror', (e) => { throw e; });
-    const TOKEN = 'menukeepplacecontract_012'; // a made-up crew
-    const FID = 'portola-2026';
-    try {
-      await ctx.addInitScript(([t, f]) => {
-        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
-        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-        localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-        localStorage.setItem('fn_welcome_v1', '1');
-      }, [TOKEN, FID]);
-      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
-      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
-      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-      await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-      await page.clock.setFixedTime(new Date('2026-09-26T09:00:00-07:00')); // before doors: no now-line landing to move the page
-      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
-      const door = width >= 720 ? 'rail' : 'dock';
-      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 10000 });
-      await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20);
-      // Saturday evening: Robyn's card a third of the way down the screen.
-      await page.evaluate(() => {
-        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
-        window.scrollTo(0, robyn.getBoundingClientRect().top + scrollY - innerHeight / 3);
-      });
-      await page.waitForTimeout(500);
-      const where = () => page.evaluate(() => {
-        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
-        return { y: Math.round(scrollY), robyn: Math.round(robyn.getBoundingClientRect().top), thursday: !!document.querySelector('#wall-root .day-block[data-day="Thursday"]') };
-      });
-      const start = await where();
-      assert.ok(start.y > 1500, `scrolled well into Saturday: ${JSON.stringify(start)}`);
-      await page.click(`#${door}-fest-link`);
-      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'visible' });
-      const seen = [start];
-      // A real pointer at the row, once the menu has finished growing.
-      // page.click() is not used here on purpose: it retries while the menu
-      // is still animating and each retry scrolls the page to "reveal" the
-      // row, moving the wall before the tap and hiding what this measures.
-      const tapAfters = async () => {
-        const at = await page.evaluate(async (d) => {
-          const row = document.querySelector(`#${d}-fest-wrap .sort-pop [data-room="Afters"]`);
-          let last = '';
-          for (let i = 0; i < 60; i++) {
-            await new Promise((r) => requestAnimationFrame(r));
-            const r = row.getBoundingClientRect();
-            const now = `${r.left},${r.top},${r.width},${r.height}`;
-            if (now === last) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-            last = now;
-          }
-          return null;
-        }, door);
-        assert.ok(at, 'the menu settles');
-        if (touch) await page.touchscreen.tap(at.x, at.y); else await page.mouse.click(at.x, at.y);
-      };
-      for (let tick = 0; tick < 4; tick++) {
-        await tapAfters();
-        await page.waitForTimeout(700); // the leave, the repaint, the arrival
-        seen.push(await where());
-      }
-      const said = JSON.stringify(seen);
-      assert.equal(seen[1].thursday, false, `the first tick hid Afters, and Thursday with it: ${said}`);
-      assert.notEqual(seen[1].y, start.y, `the page did move, by what left above: ${said}`);
-      for (const s of seen) assert.ok(Math.abs(s.robyn - start.robyn) <= 3, `Robyn stays where she was on screen, tick after tick: ${said}`);
-      assert.equal(await page.isVisible(`#${door}-fest-wrap .sort-pop`), true, 'and the menu is still up for the next tick');
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(500);
-      const closed = await where();
-      assert.ok(Math.abs(closed.robyn - start.robyn) <= 3, `putting the menu away keeps the place too: ${JSON.stringify(closed)}`);
-    } finally {
-      await ctx.close();
-    }
-  });
-}
 
 // The sort chip's popover (DT-7) — the same touch-floor miss the show menu's
 // rows just fixed (a click-only <li role="option"> at 32px), fixed the same
@@ -607,5 +399,160 @@ test('the notes button is the search field\'s height beside it, on a phone and o
     } finally {
       await ctx.close();
     }
+  }
+});
+
+// A tick in the Show menu keeps your place (v93). A fold used to re-land on
+// the top of your day whenever the page was scrolled at all: scrolled into
+// Saturday evening, a tick snapped the page to "SAT PORTOLA · 1 PM" (the
+// independent walk: 3400 -> 552 -> 2812 -> 552). Now the card at the top of
+// what you see stays where it is on screen, tick after tick, while the days
+// above it (Thursday's and Friday's afters) go and come back — the menu stays
+// up for all four.
+for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
+  test(`${width}: four ticks of Afters with the Show menu up — the card at the top of the screen stays put`, { skip }, async () => {
+    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() }); });
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => { throw e; });
+    const TOKEN = 'menukeepplacecontract_012'; // a made-up crew
+    const FID = 'portola-2026';
+    try {
+      await ctx.addInitScript(([t, f]) => {
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+        localStorage.setItem('fn_welcome_v1', '1');
+      }, [TOKEN, FID]);
+      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await page.clock.setFixedTime(new Date('2026-09-26T09:00:00-07:00')); // before doors: no now-line landing to move the page
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      const door = width >= 720 ? 'rail' : 'dock';
+      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 10000 });
+      await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20);
+      // Saturday evening: Robyn's card a third of the way down the screen.
+      await page.evaluate(() => {
+        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
+        window.scrollTo(0, robyn.getBoundingClientRect().top + scrollY - innerHeight / 3);
+      });
+      await page.waitForTimeout(500);
+      const where = () => page.evaluate(() => {
+        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
+        return { y: Math.round(scrollY), robyn: Math.round(robyn.getBoundingClientRect().top), thursday: !!document.querySelector('#wall-root .day-block[data-day="Thursday"]') };
+      });
+      const start = await where();
+      assert.ok(start.y > 1500, `scrolled well into Saturday: ${JSON.stringify(start)}`);
+      const seen = [start];
+      // A real pointer at the row, once the menu has finished growing.
+      // page.click() is not used here on purpose: it retries while the menu
+      // is still animating and each retry scrolls the page to "reveal" the
+      // row, moving the wall before the tap and hiding what this measures.
+      const tapAfters = async () => {
+        const at = await page.evaluate(async (d) => {
+          const row = document.querySelector(`#${d}-fest-wrap .sort-pop [data-room="Afters"]`);
+          let last = '';
+          for (let i = 0; i < 60; i++) {
+            await new Promise((r) => requestAnimationFrame(r));
+            const r = row.getBoundingClientRect();
+            const now = `${r.left},${r.top},${r.width},${r.height}`;
+            if (now === last) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            last = now;
+          }
+          return null;
+        }, door);
+        assert.ok(at, 'the menu settles');
+        if (touch) await page.touchscreen.tap(at.x, at.y); else await page.mouse.click(at.x, at.y);
+      };
+      await page.click(`#${door}-fest-link`);
+      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'visible' });
+      for (let tick = 0; tick < 4; tick++) {
+        await tapAfters();
+        await page.waitForTimeout(700); // the leave, the repaint, the arrival
+        seen.push(await where());
+      }
+      const said = JSON.stringify(seen);
+      assert.equal(seen[1].thursday, false, `the first tick hid Afters, and Thursday with it: ${said}`);
+      assert.notEqual(seen[1].y, start.y, `the page did move, by what left above: ${said}`);
+      for (const s of seen) assert.ok(Math.abs(s.robyn - start.robyn) <= 3, `Robyn stays where she was on screen, tick after tick: ${said}`);
+      assert.equal(await page.isVisible(`#${door}-fest-wrap .sort-pop`), true, 'and the menu is still up for the next tick');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+      const closed = await where();
+      assert.ok(Math.abs(closed.robyn - start.robyn) <= 3, `putting the menu away keeps the place too: ${JSON.stringify(closed)}`);
+    } finally {
+      await ctx.close();
+    }
+  });
+}
+
+// The Show menu is a popover, not a place (v93, after the cut of its own
+// history entry): opening it pushes nothing, a Back with it up goes where Back
+// goes and takes the menu and its busy flag with it, and a crew deleted on the
+// server with it up leaves no menu and no flag behind (Sol 6's review: the flag
+// held every new build's reload on that phone).
+test('the show menu: opening it pushes nothing; Back with it up leaves no menu and no busy flag; a crew 404 clears it too', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'menupopovercontract_01234'; // a made-up crew
+  const OTHER = 'menupopoverothercrew_0123'; // and the one before it
+  const FID = 'portola-2026';
+  let gone = false;
+  try {
+    await ctx.addInitScript(([t, o, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }, { token: o, name: 'Other' }]));
+      for (const x of [t, o]) { localStorage.setItem(`fn_me_v3_${x}`, 'Kevin'); localStorage.setItem(`fn_crew_fest_v3_${x}`, f); }
+      localStorage.setItem('fn_welcome_v1', '1');
+    }, [TOKEN, OTHER, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => {
+      const t = new URL(route.request().url()).searchParams.get('t');
+      return gone && t === TOKEN
+        ? route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Crew not found"}' })
+        : route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) });
+    });
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    const wall = () => page.waitForFunction(() => document.getElementById('screen-app').style.display === '' && document.querySelectorAll('#wall-root .card').length > 5, null, { timeout: 10000 });
+    const state = () => page.evaluate(() => ({
+      url: location.hash, len: history.length, busy: document.body.dataset.busy || null,
+      menu: document.getElementById('dock-fest-link').getAttribute('aria-expanded'),
+      shown: getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display,
+    }));
+    await page.goto(`${server.origin}/#g=${OTHER}`, { waitUntil: 'load' });
+    await wall();
+    await page.evaluate((t) => { location.hash = `#g=${t}`; }, TOKEN);
+    await page.waitForTimeout(400);
+    await wall();
+    const before = await state();
+    await page.click('#dock-fest-link');
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
+    const up = await state();
+    assert.equal(up.len, before.len, 'opening the menu pushed no history entry');
+    assert.equal(up.busy, 'show-menu', 'and it holds a new build\'s reload while it is up');
+    await page.evaluate(() => history.back());
+    await page.waitForTimeout(900);
+    await wall();
+    const back = await state();
+    assert.equal(back.url, `#g=${OTHER}`, 'one Back: the crew before, as Back always did');
+    assert.deepEqual([back.menu, back.shown, back.busy], ['false', 'none', null], 'with no menu and no busy flag left behind');
+
+    await page.evaluate(() => history.forward());
+    await page.waitForTimeout(900);
+    await wall();
+    await page.click('#dock-fest-link');
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
+    gone = true;
+    await page.evaluate(() => import('/js/sync.js').then((s) => s.pollSync()));
+    await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
+    const list = await state();
+    assert.deepEqual([list.menu, list.busy], ['false', null], `the crew 404: the fest list, the menu and its flag gone: ${JSON.stringify(list)}`);
+    await page.evaluate(() => history.back());
+    await page.waitForTimeout(900);
+    await wall();
+    assert.equal((await state()).url, `#g=${OTHER}`, 'and Back from the fest list is the crew before');
+  } finally {
+    await ctx.close();
   }
 });

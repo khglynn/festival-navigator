@@ -67,30 +67,19 @@ export function createRouter(hist) {
   return {
     registerKind(prefix, open, close) { kinds.push({ prefix, open, close }); },
 
-    // Record a layer the UI just opened. Sheets and menus never sit under
-    // anything — opening while one is on top swaps it instead of stacking.
-    // The UI open path already closed an old sheet; a menu (the show menu,
-    // v93: a popover with a history entry of its own, so Back closes it) is
-    // closed here, by whatever replaced it — Settings from its last row, a
-    // sheet from a card's zoom — so its entry becomes that layer's, and Back
-    // from there lands on the wall, never on a menu that is no longer open.
-    //   `extra` rides on the new entry beside its layers — the show menu's id
-    // (v93), so a later arrival there can tell that menu from one that has
-    // since gone. An entry a layer takes over is that layer's, and carries
-    // only what that layer gave it.
-    push(key, extra = null) {
+    // Record a layer the UI just opened. Sheets never sit under anything —
+    // opening while a sheet is on top swaps it instead of stacking (the UI
+    // open path already closed the old sheet).
+    push(key) {
       if (navigating) return;
       const top = stack[stack.length - 1];
       if (top === key) return;
-      if (top && (top.startsWith('sheet:') || top.startsWith('menu:'))) {
+      if (top && top.startsWith('sheet:')) {
         stack[stack.length - 1] = key;
-        hist.replaceState({ ...(extra || {}), layers: [...stack] }, '');
-        if (top.startsWith('menu:')) {
-          try { kindOf(top)?.close(top); } catch (e) { console.warn('layer close failed:', top, e); }
-        }
+        hist.replaceState({ layers: [...stack] }, '');
       } else {
         stack.push(key);
-        hist.pushState({ ...(extra || {}), layers: [...stack] }, '');
+        hist.pushState({ layers: [...stack] }, '');
       }
     },
 
@@ -106,28 +95,6 @@ export function createRouter(hist) {
 
     // A fresh boot resets the model; the caller resets the DOM.
     reset() { stack = []; },
-
-    // A layer that went away with its screen and could not take its entry
-    // back first (the show menu, v93, when the URL has already moved or the
-    // screen changed in place): out of the model, and out of the layers of
-    // the entry the page stands on when that entry names it — never by a
-    // traversal, which could move the app off the screen it is going to. The
-    // entry's other fields stay (the menu's id): that is how an arrival there
-    // later knows the menu it named is gone (app.js arrivedAt). Returns
-    // whether the model held it.
-    forget(key) {
-      const i = stack.lastIndexOf(key);
-      if (i === -1) return false;
-      stack.splice(i, 1);
-      try {
-        const cur = hist.state;
-        if (cur && Array.isArray(cur.layers) && cur.layers.includes(key)) {
-          const rest = { ...cur, layers: cur.layers.filter((k) => k !== key) };
-          hist.replaceState(rest.layers.length || Object.keys(rest).length > 1 ? rest : null, '');
-        }
-      } catch { /* an entry this history cannot read: the model is right */ }
-      return true;
-    },
 
     // Re-open layers captured before a refresh (spec F10: refresh restores
     // the same surface or its nearest parent).

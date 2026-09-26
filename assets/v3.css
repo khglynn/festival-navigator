@@ -307,8 +307,8 @@ html { touch-action: manipulation; }
 }
 .sort-pop [role="option"].kb-active { background: rgba(255, 255, 255, .08); }
 /* Hover only where there is a pointer that hovers: a finger's tap leaves
- * :hover stuck on the row it touched, and in a menu that stays up while you
- * choose (the show menu, v93) that grey read as the row being the choice. */
+ * :hover stuck on the row it touched, and that grey reads as the row being
+ * the choice the next time the menu opens (v93). */
 @media (hover: hover) {
   .sort-pop [role="option"]:hover { background: rgba(255, 255, 255, .08); }
 }

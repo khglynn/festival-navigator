@@ -62,20 +62,12 @@ const shown = () => pop().style.display !== 'none';
 const raised = () => dock().classList.contains('menu-up');
 const expanded = () => link().getAttribute('aria-expanded');
 const lastExit = () => [...fades].reverse().find((a) => a.frames[0].opacity === 1);
-// Since v93 the menu holds a history entry of its own, and every way out but
-// Back takes it back first: the close lands with the popstate, a tick after
-// the tap — later under a loaded suite. `closeBy` taps and waits for the close
-// itself, not a fixed time (a 20 ms wait lost the race once in a full run).
-const closeBy = async (go) => {
-  go();
-  for (let i = 0; i < 100 && expanded() !== 'false'; i += 1) await settle(10);
-};
 
-test('closed and reopened inside the fade: the old fade’s end never hides the new menu', async () => {
+test('closed and reopened inside the fade: the old fade’s end never hides the new menu', () => {
   holdFades();
   link().click();
   assert.equal(shown(), true, 'open');
-  await closeBy(() => link().click()); // close — the fade starts
+  link().click(); // close — the fade starts
   const oldFade = lastExit();
   assert.ok(oldFade && !oldFade.ended, 'fading out');
   assert.equal(expanded(), 'false');
@@ -87,21 +79,18 @@ test('closed and reopened inside the fade: the old fade’s end never hides the 
   assert.equal(shown(), true, 'the reopened menu is still showing');
   assert.equal(expanded(), 'true', 'and says so');
   assert.equal(raised(), true, 'and the dock is still above the cards');
-  await closeBy(() => link().click()); // close for real
+  link().click(); // close for real
   lastExit().finish();
   assert.equal(shown(), false, 'closed');
   assert.equal(expanded(), 'false');
   assert.equal(raised(), false, 'the dock stepped back');
 });
 
-test('a rapid double close ends where one close ends', async () => {
+test('a rapid double close ends where one close ends', () => {
   holdFades();
   link().click();
-  // A close, and a second one before the first has landed: one way out.
-  await closeBy(() => {
-    link().click();
-    document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  });
+  link().click(); // close: fading
+  document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); // a second close, nothing open
   assert.equal(expanded(), 'false');
   lastExit().finish();
   assert.equal(shown(), false);

@@ -157,11 +157,11 @@ test('the show menu\'s rows are real buttons, and still options in the listbox',
 });
 
 // v93 (Kevin): the menu stays up while you choose, so it has ways out of its
-// own — a tap outside, Escape, the fest name again, and Back — and a history
-// entry of its own that each of them takes back: history ends as the menu
-// found it, and Back never lands on a menu that is no longer open.
+// own — a tap outside, Escape, the fest name again. It is a popover, not a
+// place: opening it makes no history entry, and a Back with it open does
+// what Back does, with the menu gone.
 const escape = () => dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-test('a tap opens it; Escape, a tap outside, the fest name again and Back each close it, and history ends as it found it', async () => {
+test('a tap opens it; Escape, a tap outside and the fest name again each close it; opening it makes no history entry', async () => {
   const link = $('dock-fest-link');
   const pop = menu('dock');
   const h = dom.window.history;
@@ -169,7 +169,6 @@ test('a tap opens it; Escape, a tap outside, the fest name again and Back each c
     Escape: () => escape(),
     'a tap outside': () => click($('wall-root')),
     'the fest name again': () => click(link),
-    Back: () => h.back(),
   };
   const start = h.length;
   const found = JSON.stringify(h.state);
@@ -177,18 +176,31 @@ test('a tap opens it; Escape, a tap outside, the fest name again and Back each c
     click(link);
     assert.equal(pop.style.display, '', `${way}: open`);
     assert.equal(link.getAttribute('aria-expanded'), 'true');
-    assert.deepEqual(h.state.layers, ['menu:show'], `${way}: the menu stands on a history entry of its own`);
-    assert.equal(typeof h.state.menu, 'string', `${way}: which names this menu, by its id`);
+    assert.equal(h.length, start, `${way}: no history entry of its own`);
     go();
     await settle(30);
     assert.equal(link.getAttribute('aria-expanded'), 'false', `${way} closes it`);
     assert.equal(pop.style.display, 'none');
-    assert.equal(JSON.stringify(h.state), found, `${way}: back on the entry the menu found`);
+    assert.equal(JSON.stringify(h.state), found, `${way}: history as it was`);
     assert.equal($('screen-app').style.display, '', 'and nothing under it moved');
   }
-  // A closed layer's entry waits forward of here, as any does; the next open
-  // replaces it, so four opens never grew history by more than the one.
-  assert.ok(h.length <= start + 1, `history grew by ${h.length - start}`);
+  assert.equal(h.length, start);
+});
+
+test('Back with the menu up does what Back does, and the menu, its busy flag and nothing else go with it', async () => {
+  const h = dom.window.history;
+  h.pushState(null, ''); // a step the app could go back to, the wall's own address
+  const start = h.length;
+  click($('dock-fest-link'));
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true');
+  assert.equal(dom.window.document.body.dataset.busy, 'show-menu', 'busy while it is up');
+  assert.equal(h.length, start, 'opening it pushed nothing');
+  h.back();
+  await settle(40);
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu went with the step');
+  assert.equal(menu('dock').style.display, 'none');
+  assert.equal(dom.window.document.body.dataset.busy, undefined, 'and gave the reload back');
+  assert.equal($('screen-app').style.display, '', 'still the wall');
 });
 
 // With the menu up, the tap that puts it away is often a tap on the wall —
@@ -212,57 +224,14 @@ test('a tap outside the open menu only closes it: the card under the tap is not 
   }
 });
 
-// Anything else outside does what it was aimed at, on the same tap, once the
-// menu's entry is gone — a day tab here (the join shelf's + and Notes, which
-// open layers of their own, are why the entry goes first).
-test('a tap outside on a day tab closes the menu, and the tab still does its job — on the one tap', async () => {
+// Anything else outside does what it was aimed at, on the same tap — a day
+// tab here; a tap on an icon (the header's gear, its <svg>) reaches its
+// button; a card grown in the zoom is a card, and only closes the menu.
+test('a tap outside on a day tab or the gear closes the menu and still does its job; a grown card only closes it', async () => {
   const tab = $('dock-days').querySelector('.day-tab[data-day="Friday"]');
   let heard = 0;
   const hear = () => { heard += 1; };
   tab.addEventListener('click', hear);
-  try {
-    click($('dock-fest-link'));
-    click(tab);
-    assert.equal(heard, 0, 'held while the menu\'s entry goes');
-    await settle(40);
-    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
-    assert.equal(heard, 1, 'and then the tab heard its tap, once');
-    assert.deepEqual(dom.window.history.state, null, 'on the entry the menu found');
-  } finally {
-    tab.removeEventListener('click', hear);
-  }
-});
-
-// Two ways out before the first one's popstate lands (a double tap outside,
-// a tap then Escape) take ONE entry back — a second history.back() would
-// leave the wall. jsdom queues both backs against the same entry, so this
-// case cannot fail here; the browser contract is its teeth
-// (tests/browser/shell-contract.test.mjs). It holds the menu's own state:
-// closed once, on the entry it found.
-test('a double tap outside (then Escape too) takes one entry back, not two', async () => {
-  const h = dom.window.history;
-  // An entry the wall's could be mistaken for, one step behind it — where a
-  // second history.back() would land.
-  h.pushState({ before: true }, '');
-  h.pushState(null, '');
-  const found = JSON.stringify(h.state);
-  click($('dock-fest-link'));
-  click($('wall-root'));
-  click($('wall-root'));
-  escape();
-  await settle(60);
-  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false');
-  assert.equal(JSON.stringify(h.state), found, 'on the entry the menu found — not one before it');
-  assert.equal($('screen-app').style.display, '', 'still on the wall');
-});
-
-// Review, 2026-09-25: a tap on an icon lands on its <svg>, which has no
-// .click() — the replay threw and the tap was lost (the header gear on a
-// desktop). The click goes back to the element that acts on it. A card grown
-// in the zoom (its layer lives outside the wall) is a card: a click there is
-// a pick, so it only closes the menu. And the menu marks the page busy while
-// it is up (index.html's quiet()), giving the flag back only if it is its own.
-test('the replay finds the button behind an icon; a grown card only closes the menu; the menu holds a new build\'s reload', async () => {
   const gearPath = $('gear-btn').querySelector('path');
   let gearHeard = 0;
   const hearGear = (e) => { gearHeard += 1; e.stopImmediatePropagation(); };
@@ -276,34 +245,40 @@ test('the replay finds the button behind an icon; a grown card only closes the m
   grown.addEventListener('click', () => { grownHeard += 1; });
   try {
     click($('dock-fest-link'));
-    assert.equal(dom.window.document.body.dataset.busy, 'show-menu', 'busy while it is up');
+    click(tab);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
+    assert.equal(heard, 1, 'and the tab heard its tap, once');
+    click($('dock-fest-link'));
     gearPath.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-    await settle(40);
     assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false');
     assert.equal(gearHeard, 1, 'the gear heard the tap its icon took');
-    assert.equal(dom.window.document.body.dataset.busy, undefined, 'and the flag is given back');
-
     click($('dock-fest-link'));
     click(grown);
-    await settle(40);
     assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the grown card closed the menu');
     assert.equal(grownHeard, 0, 'and never heard the tap');
-
-    dom.window.document.body.dataset.busy = 'spotify-scan';
-    click($('dock-fest-link'));
-    escape();
-    await settle(40);
-    assert.equal(dom.window.document.body.dataset.busy, 'spotify-scan', 'another flow\'s busy flag is left alone');
   } finally {
-    delete dom.window.document.body.dataset.busy;
+    tab.removeEventListener('click', hear);
     $('gear-btn').removeEventListener('click', hearGear, true);
     layer.remove();
   }
 });
 
-// Settings from the menu's last row opens once the menu's entry is gone, so
-// Back from Settings lands on the wall — not on a menu that closed.
-test('Settings from the menu: one entry for Settings where the menu\'s was, and Back lands on the wall', async () => {
+test('the menu holds a new build\'s reload while it is up, and never takes another flow\'s flag', async () => {
+  click($('dock-fest-link'));
+  assert.equal(dom.window.document.body.dataset.busy, 'show-menu');
+  escape();
+  assert.equal(dom.window.document.body.dataset.busy, undefined);
+  dom.window.document.body.dataset.busy = 'spotify-scan';
+  try {
+    click($('dock-fest-link'));
+    escape();
+    assert.equal(dom.window.document.body.dataset.busy, 'spotify-scan', 'another flow\'s busy flag is left alone');
+  } finally {
+    delete dom.window.document.body.dataset.busy;
+  }
+});
+
+test('Settings from the menu: the menu goes, Settings takes one entry, and Back lands on the wall with no menu', async () => {
   const h = dom.window.history;
   const start = h.length;
   const found = JSON.stringify(h.state);
@@ -312,12 +287,12 @@ test('Settings from the menu: one entry for Settings where the menu\'s was, and 
   await settle(30);
   assert.notEqual($('screen-settings').style.display, 'none', 'Settings is open');
   assert.equal(menu('dock').style.display, 'none', 'the menu is gone');
-  assert.deepEqual(h.state, { layers: ['settings'] }, 'Settings stands where the menu\'s entry was');
-  assert.ok(h.length <= start + 1, 'one entry, not two');
+  assert.deepEqual(h.state, { layers: ['settings'] });
+  assert.ok(h.length <= start + 1, 'one entry, Settings\' own — none for the menu');
   h.back();
   await settle(30);
   assert.equal($('screen-app').style.display, '', 'Back: the wall');
-  assert.equal(JSON.stringify(h.state), found, 'on the entry the menu found');
+  assert.equal(JSON.stringify(h.state), found);
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'and no menu comes back with it');
 });
 
