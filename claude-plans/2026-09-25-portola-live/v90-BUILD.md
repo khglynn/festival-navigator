@@ -161,3 +161,74 @@ both widths; the whole file is green (7/7).
    divider between the chips and the field starts the second line, a stray
    tick left of the field (visible in the six-person shots). Tiny; flagging
    rather than widening this item.
+
+### Item 3 — "Get the latest version" (commit febe0bd)
+
+**Was there one already?** No visible one. The build only appeared inside
+the Diagnostics paste (and there it is read off cache names, not asked of
+the page's worker). The new-build strip exists, but only after a newer
+worker has already taken over.
+
+**What changed.**
+- `js/v3/settings.js:805` — a row in Settings → App, right before
+  Diagnostics: title "Get the latest version", second line "This phone runs
+  v89" (a live region). `:826-1000` — `updateWords` (every state's words),
+  `checkForUpdate(env, say)` (the decisions), `updateEnv` (the real page:
+  every DOM call through an arrow, every getter in a try) and `updateRow`.
+- `js/errlog.js:430` — `pageBuild()`, a read-only accessor for the build the
+  page loaded under (what crash reports already carry). Nothing leaves.
+- The flow: page build → registration → strip already up? "vNN is ready —
+  tap to use it" (no network needed) → offline? "You're offline — this
+  phone keeps v89 until you have signal", nothing asked → `reg.update()`
+  (15 s) → a new worker installing? "Downloading…" (60 s) → activated →
+  "Got it — switching over…", and index.html's glue reloads the page if
+  nothing is in progress; if the page is still there 1.5 s later it says
+  ready, and the tap on ready is the strip's own Refresh (`location.reload`).
+  Failed install, slow install, unreachable, no worker: each says so.
+
+**What I did NOT build, on purpose (the brief asked for it):** clearing
+Cache Storage. The coordinator's constraint (research doc, section B item
+6) agreed while I was working. Deleting the running worker's shell leaves
+the phone with no offline app until a new worker installs — at Pier 80
+exactly when installs fail — and deleting the data cache loses every
+festival the phone can open offline. The worker's activate already deletes
+old shells. So the row is a thin caller: no cache, storage, unregister, SW
+or glue change. `tests/update-check.test.mjs` has a source guard for it.
+
+**Checked.**
+- `tests/update-check.test.mjs` (11): each decision on a fake page — latest,
+  offline asks nothing, strip-up is ready without network, download → ready,
+  uncontrolled page, redundant → failed, timeout → slow, refused / thrown /
+  hung → unreachable, no worker, words never say "null", the source guard.
+- `tests/update-row.test.mjs` (5): the real shell — placement before
+  Diagnostics, a real button, names v89, offline, latest, downloading →
+  ready, failed; no cache deleted and the crew/person/fest keys unchanged
+  throughout.
+- A real-browser walk with a REAL service worker
+  (`claude-plans/2026-09-25-portola-live/v90-walk-update.mjs`, report in
+  `v90-shots/item3-walk.txt`, shots `v90-shots/item3-*.png`): a local server
+  "deploys" v90 then v91 by bumping the worker's CACHE_VERSION. Idle v89 →
+  latest v89 → tap with v90 deployed: downloading, then the glue reloaded
+  the quiet page after ~1.1 s → localStorage and sessionStorage probes kept,
+  caches = data cache (Portola still in it) + the v90 shell (activate removed
+  v89) → row "This phone runs v90" → with a Spotify scan marked busy, v91
+  held: row "v91 is ready — tap to use it", strip up → tap → reloaded onto
+  v91 → offline tap says so → an OFFLINE reload still boots the wall.
+- Row is 59px tall on a phone (two lines), over the 44px floor.
+
+**For the orchestrator.**
+1. Where the row can't help: if the new worker's install keeps failing on
+   the festival network (one of 30 shell files times out, and `addAll` is
+   all-or-nothing), the row honestly says "Couldn't download it — try
+   again with more signal". It cannot do what the private tab did (load
+   everything straight from the network, bypassing the worker) without
+   making the phone's offline copy disposable. If that is what bit Kevin,
+   the fix is a sturdier install (retries, or a longer network budget), and
+   that is update machinery — not tonight.
+2. With reports switched OFF, the page's build is asked for when Settings
+   opens rather than at boot; if a newer worker took over in between, the
+   row can name the newer build as "this phone's". The strip is read first,
+   so the row still says ready; only the name in the idle line can be off.
+3. The walk rig shows the strip only appears in the not-quiet case; on
+   Settings' own page nothing is ever in progress unless a Spotify scan
+   runs, so in practice the tap reloads within about a second.
