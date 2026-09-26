@@ -267,3 +267,12 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   "ResizeObserver loop" notice at boot counted as a page error by the mouse case (follow-up 6 above —
   the day rail's observer). The contract now ignores that notice, as errlog.js does; 6/6 green under
   six-way load locally, and the tap and List files 3/3 at three-way load.
+  CI on 91d0d47 green, then its re-run red once more in the same class: guest-tap-route tapped the
+  shelf's + at a place measured mid-rise (the join shelf never came). Stepping back rather than chasing
+  a fourth: the mechanism is a fixed sleep before measuring a surface that is still arriving, so every
+  test that measures or taps into a freshly opened shelf now waits on `motionDone` first — the tap
+  contract (open, each step, the keys cases), guest-tap-route (the shelf and the join shelf),
+  touch-ghost, show-links and zoom-chips-contract. Six files 3/3 at three-way load locally. One
+  unrelated local flake seen once in a full run and not since (0/3 alone): now-jump's "Ross highlighted"
+  read the row at 38 of 40 mid-glide (Chromium, v91's NOW slide) — for the NOW owner if CI ever shows it.
+

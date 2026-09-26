@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OPEN_MS = 700; // ZOOM_IN_MS (200) + the bloom, with room for a slow engine
@@ -106,6 +106,7 @@ test('WebKit: touch taps open the shelf and + steps inside it; nothing grows —
       await page.touchscreen.tap(t.x, t.y);
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card .f-step.plus'), null, { timeout: 4000 });
       await sleep(400);
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-rise
       const plus = await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox();
       await page.touchscreen.tap(plus.x + plus.width / 2, plus.y + plus.height / 2);
       await sleep(400);

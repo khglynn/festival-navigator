@@ -467,6 +467,7 @@ for (const [name, get] of ENGINES) {
       await tapAt(page, await cardAt(page, 'Tove Lo'));
       await page.waitForSelector('#artist-sheet .composer-foot textarea', { timeout: 4000 });
       await sleep(400);
+      await motionDone(page, { within: '#artist-sheet' });
       assert.ok(await page.evaluate(() => document.querySelectorAll('#artist-sheet .n-list .n-thread, #artist-sheet .n-list [data-note]').length >= 1 || document.getElementById('artist-sheet').textContent.includes('Note 10')), 'the thread is on the shelf');
       await page.locator('#artist-sheet .composer-foot textarea').tap();
       await page.keyboard.type('Pier by 6:45');
@@ -574,6 +575,7 @@ for (const [name, get] of ENGINES) {
         await tapAt(page, await cardAt(page, 'Tove Lo'));
         await page.waitForSelector('#artist-sheet .composer-foot textarea', { timeout: 4000 });
         await sleep(400);
+        await motionDone(page, { within: '#artist-sheet' });
         await page.evaluate(() => document.querySelector('#artist-sheet .composer-foot textarea').scrollIntoView({ block: 'nearest' }));
         await page.locator('#artist-sheet .composer-foot textarea').tap();
         await page.keyboard.type('Pier by 6:45');

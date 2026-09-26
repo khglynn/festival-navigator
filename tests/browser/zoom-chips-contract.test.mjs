@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 import { festData, shapesOf } from '../helpers/fest-shapes.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -115,6 +115,7 @@ async function tapOpen(page, artist, cell = null) {
   await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
   await page.waitForSelector('#artist-sheet .sheet-card .f-who', { timeout: 4000 });
   await sleep(700);
+  await motionDone(page, { within: '#artist-sheet' }); // the − and + are measured at rest
 }
 const SHELF = '#artist-sheet .sheet-card';
 const ZOOM = '#zoom-layer .zoom-slot.shown';

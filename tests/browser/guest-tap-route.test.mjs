@@ -20,7 +20,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -90,6 +90,7 @@ async function openShelf(page, artist) {
   await tap(page, await cardAt(page, artist));
   await page.waitForFunction(() => { const n = document.getElementById('artist-sheet'); return !!n && !n.classList.contains('join-shelf'); }, null, { timeout: 4000 });
   await sleep(500);
+  await motionDone(page, { within: '#artist-sheet' }); // its + is measured at rest, never mid-rise
 }
 
 for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]]) {
@@ -109,6 +110,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await tap(page, centre(await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox()));
       await page.waitForSelector('.join-shelf', { timeout: 4000 });
       await sleep(500);
+      await motionDone(page, { within: '.join-shelf' });
       assert.equal(await page.locator('.join-shelf .js-line').textContent(), 'Pick Tove Lo as…');
       assert.equal(await notesUp(page), false, 'the notes shelf gave way');
       assert.equal(await page.evaluate(() => history.state && history.state.joinShelf), true, 'on the notes shelf’s own entry');
@@ -157,6 +159,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await tap(page, centre(await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox()));
       await page.waitForSelector('.join-shelf', { timeout: 4000 });
       await sleep(500);
+      await motionDone(page, { within: '.join-shelf' });
       await tap(page, centre(await page.locator('.join-shelf .js-field').boundingBox()));
       await page.keyboard.type('Ana');
       await tap(page, centre(await page.locator('.join-shelf .js-go').boundingBox()));
@@ -193,6 +196,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
         await tap(page, plus); // the same spot: the dimmed wall above the rising question, or the question itself
         await sleep(700);
         assert.equal(await page.locator('.join-shelf').count(), 1, `+ then + ${gap}ms later: the question is still up`);
+        await motionDone(page, { within: '.join-shelf' });
         await tap(page, centre(await page.locator('.join-shelf .js-look').boundingBox()));
         await sleep(700);
         assert.equal(await page.locator('.join-shelf').count(), 0, 'Look around still puts it away');

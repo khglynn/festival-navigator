@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -201,6 +201,7 @@ test('on the shelf a finger opens, a door is a door from the first frame: Tix op
     await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
     await page.waitForSelector('#artist-sheet .sheet-card .f-links a.f-link', { timeout: 4000 });
     await sleep(500);
+    await motionDone(page, { within: '#artist-sheet' });
     const plus = await centre('#artist-sheet .sheet-card .f-step.plus');
     await page.touchscreen.tap(Math.round(plus.x), Math.round(plus.y));
     await sleep(60); // well inside what was the zoom's settle beat
