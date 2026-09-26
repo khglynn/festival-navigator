@@ -138,3 +138,74 @@ why, in the order a friend meets it:
    A guest with no `&f=` and no `inviteFestId` lands on the crew's busiest
    festival (activation records an empty festival membership for a fest the
    crew doesn't have — the catalog default would have done that).
+
+**~9:05 PM — tests, the walk, and what the walk changed.**
+
+1. **Tests added** (all jsdom shell, the real app): `tests/first-open-guest.test.mjs`
+   (guest boot writes nothing; the + ring; the welcome in C1; tap → "Pick
+   Robyn as…" → Just looking back; + and Settings "Add yourself" open the
+   same join; a notes sheet's door; join as Sam = one join POST and Kettama
+   is Sam's first pick; next open walks Sam in; claiming Kevin keeps his 2;
+   a guest's Share invite stamps nothing; empty crew; a personal link still
+   asks first and Just looking walks in), `first-open-show.test.mjs` (slugs,
+   showOf/foldFromShow, crewLink/showFromHash, unknown and all-rooms views do
+   nothing, a fold of its own is never overridden, a fresh phone seeds before
+   the first paint + Show all, a phone that has shown the fest is never
+   re-folded), `first-open-welcome.test.mjs` (a recognized member gets the
+   member copy and the offer waits for Got it; empty/no-pick copy),
+   `first-open-after-share.test.mjs` (create: share moment → welcome → offer,
+   never two at once). Mutation-checked the two load-bearing guards (the
+   "only from level 0" pick and the guest's invite stamp): both tests go red.
+2. **Existing tests**: the offer tests (`crew-join-recognize`,
+   `bring-picks-after-share`, `bring-picks-guards`) and every browser test
+   that set `fn_coach_v1` now set `fn_welcome_v1` — the offer waits for the
+   welcome by design, and those files aren't about it.
+3. **Full `npm test`: 942 tests, all pass except the asset stamp** (expected —
+   stamping is the orchestrator's; a temporary `--keep` restamp made
+   app-shell-complete and sw-stamp pass, then reverted). **`npm run
+   test:browser`: 180/180.**
+4. **The walk** (`v92-walk.mjs`, real Chromium, hasTouch + isMobile, taps via
+   the touchscreen, /api answered from memory, SW blocked, clock pinned to
+   Sat 3:15 PM PT except where noted). Report: `v92-shots/walk.txt`; shots in
+   `v92-shots/` (git-ignored). At 390 and 320:
+   a. New link → wall + welcome, zero writes; card 19px above the dock, fits
+      at 320, both buttons 44px. Got it → card leaves, + pulses, seen.
+   b. Guest tap (Kettama, grid scrolled sideways, page scrolled down) → join
+      "Pick Kettama as…" → Just looking → back at the SAME scrollY and
+      scrollLeft (2820/219 at 390, 3283/184 at 320), still zero writes →
+      tap again → join as Sam → same place, Kettama `{Sam: 1}`, the + is "S".
+      Writes, in order: the join POST, person mint, person stamp, the pick
+      push (with Sam's pid) — today's join path, nothing else.
+   c. Empty crew and nothing-picked crew: the brief's empty lines.
+   d. Returning member (claimed, had dismissed the old strip): member copy.
+      Recognized: "Welcome back, Kevin · Not me" and the card steps up 74px.
+   e. `&show=folsom` → only Folsom rooms, toast "Opened on Folsom. · Show
+      all" → Show all brings Portola and Afters back. No `show` → nothing.
+   f. Settings as a guest: no Rename, You says "You're just looking…" + Add
+      yourself. A member with Folsom hidden: invite link ends
+      `&show=fest,afters`, line "Opens on Portola + Afters — what you're
+      showing now."
+   g. Motion: the card arrives (opacity 0 at mount, 9 animations: card,
+      faces, buttons); Reduce Motion: opacity 1 at mount, 0 animations.
+   h. 1440: rail + ring, card bottom-centre 440px; rail + opens the join.
+   i. Hold a card as a guest (real touch, 700 ms) → zoom → tap the grown card
+      → join "Pick Tove Lo as…", no zoom left behind, zero writes.
+   j. Real clock (Fri 7:42 PM PT): lands on FRI AFTERS with the card up.
+5. **Also fixed on the way**: a Spotify hop (`&sp=connect`) whose person
+   absorb failed would now land as a guest and auto-open the Spotify drill;
+   it waits for a name (and joining resumes it). `docs/user-flows.md` F3
+   rewritten for wall first (the design audit walks that spec).
+
+**Left out, on purpose (after Portola, per the design brief §9):** the ADD
+YOURSELF sheet over the wall (F2c — tonight is today's join screen), the short
+How it works sheet (F2b), share-sheet room chips (SD2), the creator's first
+page without the auto share sheet and the My link card moved down (10.4 —
+defaults say yes, but the brief's tonight list doesn't carry them and the
+creator's only share door would be Settings until + Add opens S1), the
+personal-link card ("Kevin added you as Drew"), CL1/CL2, the paste boxes
+keeping the whole hash, QR, and warm open for returning guests.
+
+**Known, accepted:** a new build's reload (index.html glue) can land while a
+guest reads the join screen with an empty name field — the page reloads onto
+the guest wall and the waiting tap is gone (they tap again). Marking that
+busy would touch the update machinery, which this build leaves alone.

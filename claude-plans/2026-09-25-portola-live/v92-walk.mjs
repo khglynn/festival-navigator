@@ -323,6 +323,70 @@ await scenario('390 7 motion: the card arrives (mid-flight frame), reduced motio
   await ctx.close();
 });
 
+await scenario('1440 8 desktop: the guest ring on the rail, the card bottom-centre', async () => {
+  resetDocs();
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, serviceWorkers: 'block' });
+  await ctx.addInitScript((t) => {
+    const T0 = new Date(t).getTime(); const start = Date.now(); const RealDate = Date;
+    // eslint-disable-next-line no-global-assign
+    Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [T0 + (RealDate.now() - start)])); } static now() { return T0 + (RealDate.now() - start); } };
+  }, SAT_315PM);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  await page.waitForSelector('#welcome-card', { timeout: 5000 });
+  await sleep(900);
+  note(`rail you: "${await page.locator('#rail-you').textContent()}" guest=${await page.locator('#rail-you').evaluate((n) => n.classList.contains('guest'))}`);
+  note(`card box ${JSON.stringify(await page.locator('#welcome-card .bring-card').boundingBox())}`);
+  await shot(page, '1440-15-desktop-guest.png');
+  // A mouse click on a card: the same question.
+  await page.locator('#welcome-card button', { hasText: 'Got it' }).click();
+  await page.locator('#rail-you').click();
+  await page.waitForSelector('#screen-join', { state: 'visible' });
+  note('rail + opens the join screen');
+  note(`errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
+await scenario('390 9 hold a card, then tap the grown card as a guest', async () => {
+  resetDocs(); writes.length = 0;
+  const { ctx, page, errors } = await phone({ init: { fn: () => { try { localStorage.setItem('fn_welcome_v1', '1'); } catch {} }, arg: null } });
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  const card = page.locator('#wall-root .card[data-artist="Tove Lo"]').first();
+  await card.scrollIntoViewIfNeeded();
+  const b = await card.boundingBox();
+  const cx = b.x + b.width / 2; const cy = b.y + b.height / 2;
+  // A real hold: touch down, wait past the long-press, lift.
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] });
+  await sleep(700);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(500);
+  const zoomed = await page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot, #zoom-layer .zoom-card'));
+  note(`held: zoom up = ${zoomed}`);
+  await shot(page, '390-16-guest-zoom.png');
+  const z = await page.locator('#zoom-layer .zoom-card').first().boundingBox().catch(() => null);
+  if (z) await page.touchscreen.tap(z.x + z.width / 2, z.y + 20);
+  await sleep(400);
+  note(`tap on the grown card: join visible = ${await visible(page, '#screen-join')}; join-for "${await page.locator('#join-for').textContent()}"; zoom left behind = ${await page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot'))}`);
+  await shot(page, '390-17-zoom-tap-join.png');
+  note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
+await scenario('390 10 tonight, real clock: a friend opens the link on Friday night', async () => {
+  resetDocs();
+  const { ctx, page, errors } = await phone({ clock: null });
+  await openWall(page, `#g=${T.crew}&f=${FID}`);
+  await page.waitForSelector('#welcome-card', { timeout: 5000 });
+  await sleep(900);
+  note(`real clock ${await page.evaluate(() => new Date().toString())}; active tab ${await page.locator('#dock .day-tab.active').textContent().catch(() => '?')}; scrollY ${await page.evaluate(() => Math.round(scrollY))}`);
+  await shot(page, '390-18-friday-night-guest.png');
+  note(`errors: ${JSON.stringify(errors)}`);
+  await ctx.close();
+});
+
 await browser.close();
 server.close();
 fs.writeFileSync(path.join(OUT, 'walk.txt'), report.join('\n') + '\n');
