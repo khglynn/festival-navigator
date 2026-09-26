@@ -461,3 +461,24 @@ from now on.
    build:** give the window a pixel lift apart from its progress. A catch during a settle
    then takes progress, and a catch during an arrival or a redraw takes the lift. The
    arrival case gets a test through the guest's Look around.
+
+## Kevin's Share answers (review-page comments, 2026-09-26 1:27–1:34 PM PT)
+
+The frames and the five calls are in `share-design/` on `live/plan-share`. His answers
+came as comments, not saved choices:
+
+1. **The quicker crew link, A (a "Share the crew link" row in the Show menu):** "Good".
+2. **A friend opening the Share link lands on Our picks:** "This is all chill. Let's add
+   an x in the upper right of that welcome popup like all the others [have]."
+3. **The text:** "Okay I think this is closest [A, at 9:40 PM] but it's so hard to read.
+   Can we line breaks." The shape he wants:
+   `Our crew's main picks for Sat Portola now -> eod`, a blank line, then up to five lines
+   of `Location for Title @ time`, a blank line, then `Full rundown: link`. That means at
+   most 5 stops, "our top picks overall across all locations based on applied filters".
+   Text and link both, so call 1 is the text and the link.
+4. **Where the Share sits:** no comment. It stays my pick: `Share our picks` at the
+   plan's foot.
+5. On frame 3c he noted the peek's NOW/till alignment, which is fixed in v101 (above).
+
+Build after v101 lands, from main: the Share build takes these, plus the arrival/redraw
+catch banked above.

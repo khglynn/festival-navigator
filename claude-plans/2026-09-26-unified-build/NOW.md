@@ -19,11 +19,12 @@
   `OUR-PLAN-BUILD.md`; afternoon): shipping as "Our picks" in PR #60 (v101),
   held on Linux WebKit browser reds. Cause: a loaded CI runner starts
   animations late, so tests measured the panel mid-move — and one real app
-  flaw, the window popping when grabbed mid-settle. Both fixed on
-  `live/plan` (b712de5), sent to the coordinator for release/our-plan's CI
-  (`LATE_ANIMATIONS_MS` reproduces it on a Mac). The Share design waits on
-  Kevin's answers (review page linked in `share-design/DESIGN.md` on
-  `live/plan-share`).
+  flaw, the window popping when grabbed mid-settle. Both fixed, plus Kevin's
+  peek note (NOW level with the name), at `live/plan` 2b14fdf; Sol clean but
+  the stamp; with the coordinator to merge, stamp, CI and ship. Kevin has
+  answered the Share calls (review-page comments, logged in
+  `OUR-PLAN-BUILD.md`): the Share build starts from main after v101, with the
+  arrival/redraw catch banked there.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
