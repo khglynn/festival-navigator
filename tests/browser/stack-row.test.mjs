@@ -60,7 +60,9 @@ async function open(width, { touch = true, engine = browser } = {}) {
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 15000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .venue-grid').length > 0, null, { timeout: 15000 });
   await sleep(300);
-  return { ctx, page };
+  // `doc` is the crew the route serves: change it and poll, and the app takes
+  // it as a real remote change (the wall repaints).
+  return { ctx, page, doc };
 }
 
 // Each day's timetable columns, and every stack row, as the eye sees them.
@@ -187,7 +189,7 @@ async function holdZoom(ctx, page, at) {
   await sleep(700);
   const z = await page.evaluate(() => {
     const r = document.querySelector('#zoom-layer .zoom-slot.shown').getBoundingClientRect();
-    return { artist: document.querySelector('#wall-root .card.zoom-source')?.dataset.artist, left: r.left, right: r.right, vw: innerWidth };
+    return { artist: document.querySelector('#wall-root .card.zoom-source')?.dataset.artist, left: r.left, right: r.right, top: r.top, bottom: r.bottom, vw: innerWidth };
   });
   await cdp.detach();
   await page.keyboard.press('Escape');
@@ -234,6 +236,58 @@ test('390px, real touch: a sideways swipe carries SAT AFTERS\' lead away and mov
       assert.ok(after.y - before.y > 100, `(dx ${dx}, dy ${dy}): the page scrolled (${after.y - before.y}px)`);
       assert.equal(after.row, 0, `(dx ${dx}, dy ${dy}): the row did not`);
     }
+  } finally {
+    await ctx.close();
+  }
+});
+
+// The review's two other cases (2026-09-25).
+test('390, real touch: a row swiped sideways stays swiped when a crew-mate\'s pick repaints the wall', { skip }, async () => {
+  const { ctx, page, doc } = await open(390);
+  try {
+    const cdp = await ctx.newCDPSession(page);
+    await page.locator(AFTERS).evaluate((n) => window.scrollTo(0, n.getBoundingClientRect().top + scrollY - 260));
+    await sleep(300);
+    const first = await cardIn(page, 'Velvet Trip');
+    await swipe(cdp, first.x, first.y, -120, -3);
+    assert.equal((await state(page)).row, 38, 'swiped to the end');
+    await page.locator(AFTERS).evaluate((n) => { n.__before = true; });
+    doc.festivals[FID].selections['Velvet Trip'] = { Nhu: 3 };
+    await page.evaluate(() => import('/js/sync.js').then((s) => s.pollSync()));
+    await page.waitForFunction((sel) => { const n = document.querySelector(sel); return n && !n.__before; }, AFTERS, { timeout: 10000 });
+    await sleep(200);
+    const after = await state(page);
+    assert.equal(after.row, 38, 'the new row stands where the old one was left');
+    assert.equal(after.folsom, 0, 'and its neighbour where it was');
+  } finally {
+    await ctx.close();
+  }
+});
+
+test('390, real touch: a hold on a card in the row\'s last line — the right-hand one, just above the dock — opens the zoom on screen', { skip }, async () => {
+  const { ctx, page } = await open(390);
+  try {
+    // The row's last line of venues (two across), its right-hand venue, and
+    // that venue's last card.
+    const artist = await page.evaluate((sel) => {
+      const groups = [...document.querySelector(sel).querySelectorAll('.venue-group')];
+      const right = groups[groups.length % 2 ? groups.length - 2 : groups.length - 1];
+      return [...right.querySelectorAll('.card')].pop().dataset.artist;
+    }, AFTERS);
+    // Its bottom 16px above the dock: the zoom has a floor to clear.
+    await page.evaluate(([sel, a]) => {
+      const card = [...document.querySelector(sel).querySelectorAll('.card')].find((c) => c.dataset.artist === a);
+      const dock = document.getElementById('dock').getBoundingClientRect().top;
+      window.scrollBy(0, card.getBoundingClientRect().bottom - (dock - 16));
+    }, [AFTERS, artist]);
+    await sleep(300);
+    const at = await cardIn(page, artist);
+    assert.ok(at.right > 390, `the right-hand card, running off the screen at rest (${artist}: ${at.left}..${at.right})`);
+    const z = await holdZoom(ctx, page, at);
+    const dockTop = await page.evaluate(() => document.getElementById('dock').getBoundingClientRect().top);
+    assert.equal(z.artist, artist, `the zoom is ${artist}'s`);
+    assert.ok(z.left >= 7.5 && z.right <= z.vw - 7.5, `across, on the screen (${z.left}..${z.right})`);
+    assert.ok(z.top >= 0 && z.bottom <= dockTop - 7.5, `and clear of the dock (${z.top}..${z.bottom}, dock at ${dockTop})`);
   } finally {
     await ctx.close();
   }
