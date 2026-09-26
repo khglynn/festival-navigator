@@ -12,7 +12,7 @@ dies, this file and the branch are the handoff.*
 - [x] merged `origin/main` (v102, the Spotify playlist names) — `3a1a304`, no conflicts
 - [x] 1. NOW the first item of the day row, one place whatever the day — see "Step 1" below
 - [x] 2. the List filters by highlight — see "Step 2" below
-- [ ] 3. the crew playlist's top songs: paced, backed off, counted, said
+- [x] 3. the crew playlist's top songs: paced, backed off, counted, said — see "Step 3" below
 - [ ] frames 390 / 320 / 1280, Portola and ACL, looked at
 - [ ] npm test at UTC, Tokyo, NIGHT_CLOCK; `npm run test:browser`; CI green on both jobs
 
@@ -172,6 +172,45 @@ Everyone restores, the Board beside it dims, no crew write),
 `tests/browser/list-view.test.mjs` §6 (Chromium touch, WebKit touch, 1280
 mouse — real input, the words never cut, transforms and opacity only).
 
+## Step 3 — the crew playlist's top songs
+
+What changed (`js/spotify.js`): every Spotify call goes through one `call`:
+a 429 waits `Retry-After` when the browser can read it (seconds or a date),
+else backs off 1-2-4-8 s; it never sits through a single wait over 20 s nor
+more than four, and past either it throws `SpotifyBusy`; a 5xx is retried once
+after a second; a dropped connection is the browser's TypeError, untouched (one
+attempt — offline, a retry only delays the drill's own "Try again", which
+`tests/spotify-scan-progress.test.mjs` holds). The playlist's `findTrackUris`
+paces its searches a quarter second apart, clamps `limit` to Spotify's dev-mode
+max of 10, and on `SpotifyBusy` — or three failures in a row — stops asking.
+It hands back `unsearched`: every artist whose top songs did not come. Their
+saved tracks still go in, but they stay OFF `found`, the crew ledger, so the
+next "Add new picks" tries them again (their saved tracks, already in, are
+deduped against the live playlist). Playlist creation and the adds go through
+`call` too. A run with nothing at all to add makes no empty playlist, and says
+whether Spotify was busy or the lineup unknown.
+
+The words (`js/v3/settings.js`, `spotify.unsearchedNote`): Make playlist ends
+"✓ “Portola peeps’ picks” — 4 tracks. 39 artists had no songs found — try Add
+new picks again later." (Everyone) or "— try again later." (Just mine); the
+top-up (Add new picks, and the quiet one after connecting) says "Added 117
+tracks to the crew playlist." and the same count when some are still missing,
+and never "already has everyone's picks" while one is missing.
+
+Walked in a real browser (`v103-spotify-walk.mjs`, 390, real taps, a Spotify
+answered from memory that 429s for 21 hours after the first search): Make →
+the line above, 41 searches in all, no hour slept; a fresh open → Add new
+picks → "Added 117 tracks", and the ledger holds all 40. Frames
+`spotify-before-390`, `spotify-made-busy-390`, `spotify-topped-up-390`.
+
+Tests: `tests/spotify-rate-limit.test.mjs` (a fake Spotify: 429 then 200; an
+unreadable Retry-After's backoff; persistent 429 — four waits, then counted,
+saved tracks in, off the ledger; a 21-hour Retry-After never slept; 5xx once;
+three failures stop the run; pacing and the limit; the top-up's dedupe and
+count; Retry-After parsing), `tests/spotify-playlist-ui.test.mjs` (the real
+drill: the Make line, the ledger, Add new picks trying exactly the missed ones,
+the top-up's own note, and a re-render mid-run — call 3b).
+
 ## Calls (the brief left these open)
 
 **1a. When NOW and the day you are in cannot both show, the row centres on the
@@ -250,3 +289,30 @@ night (up to eleven, frame `list-acl-ben-390`). Truthful and per the brief, but
 a run that long reads as noise; collapsing a run of quiet nights into one line
 ("LATE NIGHTS · SEP 29 – OCT 6 · nothing Ben picked") would lose the per-date
 doors in the filtered view. Kevin's call before ACL (Oct 2).
+
+**3a. The root cause, as read, and what could not be confirmed.** The code
+path is certain: any search error kept only the maker's saved tracks, silently,
+and recorded the artist on the crew ledger as done, so no top-up ever retried
+it. Why the searches failed on Kevin's run is not provable from here (no live
+429 to read, and the errlog only records thrown errors). The likely story is a
+burst of ~50 searches drawing 429s whose `Retry-After` the browser could not
+read cross-origin; a 429 without CORS headers, or a Retry-After of hours, fails
+the same way. The fix covers all three, and the count now makes the next time
+visible to the person instead of silent.
+
+**3b. The drill keeps a running playlist's words across a re-render.** Pacing
+makes a 50-artist run a dozen seconds, and the drill re-renders under a running
+job (a friend's pick on the poll, the owner-app config landing — the scan's own
+known case). The progress line and the closing count used to be written to the
+card that started the run, which a re-render orphans — the count this release
+exists to say could have landed on a card nobody sees. Now `sayPl` keeps the
+latest line and writes it to the mounted card (`#spot-pl-status`); a card
+mounted mid-run catches up and keeps Make / Add new picks down until it ends;
+a finished line stays a minute for a card that comes back to it.
+
+**3c. Not changed, noticed:** the crew-playlist header ("Crew playlist · 1
+artists · by Ana") is drawn when the drill opens, so after a top-up it shows
+the old count until the drill opens again (and says "1 artists"); a
+connect-time top-up still records artists only by the member who connected
+(other members' saves for an artist already on the ledger are never added —
+the ledger's design, not this bug).

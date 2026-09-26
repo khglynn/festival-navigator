@@ -74,10 +74,14 @@ export async function openRig({ engine = 'chromium' } = {}) {
 
 // One page at a pinned time. `view`: 'list' | 'board'. `crew`: 'design' | 'sparse'.
 // `highlight`: names to highlight before the page opens (the device-local filter).
-export async function openApp(rig, { now, width = 390, height = 844, desktop = width >= 720, view = 'board', fid = FID, crew = 'design', highlight = null, reduce = false }) {
+// `routes(ctx, origin)`: more routes before the page loads (the Spotify walk
+// answers api.spotify.com from memory); `hash`: more of the address (`&sp=1`
+// opens the Spotify drill); `store`: more localStorage.
+export async function openApp(rig, { now, width = 390, height = 844, desktop = width >= 720, view = 'board', fid = FID, crew = 'design', highlight = null, reduce = false, routes = null, hash = '', store = {} }) {
   const ctx = await rig.browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: !desktop, isMobile: !desktop && rig.engine === 'chromium', serviceWorkers: 'block', timezoneId: 'America/Los_Angeles', reducedMotion: reduce ? 'reduce' : 'no-preference' });
   await ctx.route('**/*', (route) => (route.request().url().startsWith(rig.origin) ? route.fallback() : route.abort()));
-  await ctx.addInitScript(([t, me, f, v, hl]) => {
+  if (routes) await routes(ctx, rig.origin);
+  await ctx.addInitScript(([t, me, f, v, hl, st]) => {
     try {
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Demo crew' }]));
       localStorage.setItem(`fn_me_v3_${t}`, me);
@@ -91,13 +95,14 @@ export async function openApp(rig, { now, width = 390, height = 844, desktop = w
         if (hl) localStorage.setItem(`fn_filter_people_v1_${f}`, JSON.stringify(hl));
       }
       sessionStorage.setItem('rig_seeded', '1');
+      for (const [k, val] of Object.entries(st)) localStorage.setItem(k, val);
     } catch { /* storage blocked */ }
-  }, [TOKENS[crew], ME[crew], fid, view, highlight]);
+  }, [TOKENS[crew], ME[crew], fid, view, highlight, store]);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.clock.setFixedTime(now);
-  await page.goto(`${rig.origin}/f/${fid}#g=${TOKENS[crew]}&f=${fid}`, { waitUntil: 'load' });
+  await page.goto(`${rig.origin}/f/${fid}#g=${TOKENS[crew]}&f=${fid}${hash}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 3, null, { timeout: 20000 });
   await page.evaluate(() => document.fonts.ready);
