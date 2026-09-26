@@ -83,7 +83,7 @@ finger-follow stays (direct manipulation).
 | 6 | Release short of a third | same three | current `p` → 0 | 0 | OUT_MS, EASE_LEAVE |
 | 7 | Open lands on a NOW row | its card blooms under it (`sheetCard`), the rows below make room | height 0 → natural (FLIP of the rows below) | after 5 ends | GROW_MS, EASE_ARRIVE; the card's lines CASCADE_MS, STAGGER_MS apart |
 | 8 | A row tap in the open plan | that row's card grows; rows below make room; tap again folds it | as 7 | 0 | as 7 / OUT_MS out |
-| 9 | Close (drag down, ✕, Escape) | the grown card folds first (instant), then 6 from the current `p` | open → peek | 0 | OUT_MS, EASE_LEAVE |
+| 9 | Close (drag down, ✕, Escape, the fest name) | 6 from the current `p`; a grown card stays grown below the window and is there when it opens again (built 2026-09-26: folding it first was a second motion for nothing a person can see) | open → peek | 0 | OUT_MS, EASE_LEAVE |
 | 10 | Peek leaves (no plan day, search, a companion arrives) | `#plan` | peek → behind the dock | 0 | OUT_MS, EASE_LEAVE; a safety timer hides it if the animation never ends |
 
 A drag in progress marks the page busy (the Show menu's rule: take the slot only if free, give it
@@ -100,7 +100,12 @@ back only if it is ours, and the minute tick sweeps a leftover). An open plan do
    (clip-path inset, GROW_MS EASE_ARRIVE; closing reverses on OUT_MS EASE_LEAVE). The head is the
    one piece whose words differ between the two (`OUR PLAN · SAT · 9 OF US` vs
    `SAT OUR PLAN · SEP 26 · 9 OF US PICKING`); it rides the growing top edge and its words
-   crossfade **[review: or keep one head in both]**.
+   crossfade **[review: or keep one head in both]**. *Built 2026-09-26 as the cross-fade, in
+   the head line itself (a grid cell holding both), with the pill Open ⌃ / Close ⌄ beside it.
+   The card's box is the panel's, centred (10px off each side) and the panel drawn 10px left
+   of the edge, so the rows never reflow as it grows. Edge and shadow are drop-shadow filters
+   on a frame around #plan (a parent's filter follows a child's clip). No drag on a laptop;
+   a click anywhere on the card opens it.*
 3. The panel's top tracks the rail's real box (the rail sits under the header until it pins).
 4. The wall stays usable: the panel covers the right 300px at 1280 (the grid scrolls under it);
    a zoom's `place()` gets a right bound at the panel's left edge **[review]**.

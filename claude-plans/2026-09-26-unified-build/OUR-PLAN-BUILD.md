@@ -63,3 +63,24 @@ findings fixed; an independent Sonnet walker with real input.
 - live/list moved (c5e436b → 32d9b1e: view persistence, the List, the menu bar
   `dot · FEST '26 · ☰` in the dock). Not merged here yet — asked the coordinator; the
   peek builds on the dock, so it waits for that merge. plan.js (pure) goes first.
+- ~6:10 AM — merged live/list (32d9b1e) and then again (41bb914, which carries v96).
+  The first merge's base already failed six now-jump day-row contracts on its own
+  (checked on a clean worktree of 32d9b1e: 8 fails there); after the second, the
+  whole browser suite was green (235/235) before any Our plan browser test existed.
+- The model (Opus builder): `js/v3/plan.js` + `tests/plan-model.test.mjs`, golden
+  identical to the prototype's print-route on both folds, 1105/1/1 at three clocks on a
+  clean archive, 16 hand-made breaks each caught. Its log: `our-plan/plan-model-log.md`
+  (the open questions there go on the review page, ACL Late nights first).
+- The phone (84292d3, c393598, e40faf2): the peek is the day plan's own NOW/NEXT row
+  seen through a window (#plan at its open height, pushed behind the dock), one number
+  p drives the drag, `foot.js` is the floor (footTop, --foot-h/--dock-h), one NOW, a
+  search and the welcome card put it away, no peek before a festival but tomorrow's.
+  A NEXT row's faces wait just under the window. The shelf's jsdom tests caught a
+  bare getComputedStyle that took the whole boot down on a festival night — fixed,
+  and paintPlan now records a throw and puts the peek away instead of the wall.
+- The laptop (0c86671): the same element as the corner card and the 400px panel, one
+  clip-path; head line cross-fade; zoom right bound (sideLeft); rail NOW steps aside.
+  Browser: `tests/browser/plan-drag.test.mjs` 13/13 (Chromium + WebKit).
+- Frames: `our-plan/frames.mjs` → `our-plan/shots/` (git-ignored PNGs), rendered by the
+  production app on the ours-r2 rig (made-up nine, no network, no database).
+
