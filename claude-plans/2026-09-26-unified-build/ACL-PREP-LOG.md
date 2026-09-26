@@ -745,3 +745,135 @@ venue gave.
 
 **Checks:** validator 0 errors; both festivals re-run to 0 changes; `npm test`
 1,135 pass / 0 fail at the default clock, `TZ=Asia/Tokyo` and `NIGHT_CLOCK`.
+
+---
+
+# Round five (2026-09-26) — a concert's close is a window, not a curfew and not nothing
+
+**Why round four was wrong.** Round four wrote no close at all on a concert
+with no known close. With no close, a room's last card falls back to the
+app's one-hour NOW window (`js/v3/events.js` venueGroupsOf: next start, else
+a printed end, else the room's close, else start + 60). So 12 of the 13
+affected rooms stopped their ring EARLIER than before: BUNT. at 11:45 PM
+instead of midnight, The War on Drugs at 8 PM though a headliner from a 7 PM
+guess plays to 8:30 at least, and tonight's Parcels (Portola) would have gone
+dark at 11 PM. A ring that switches off while the act may still be on is the
+late-for-friends direction, the one this whole job exists to avoid. The cut
+removed the right mechanism (a guessed close pulling starts) along with the
+wrong one (having any outer edge at all).
+
+**The rule now (the coordinator's call, stated as a rule rather than a
+patch):** a concert room with no KNOWN close gets a WINDOW close, the later
+of the kind's default close and the closer's planned start + its headliner
+set. It is written with `closeApprox` and a `closeSource` naming the rule:
+- "kind default (hall)" when the default is later;
+- "kind default (hall), stretched to the headliner's set" when the set is;
+- "the headliner's set (outdoor)" when the kind has no default.
+
+It is only a generous outer edge for the room's window and the last card's
+ring: it schedules nobody (round two's fix stays: starts come only from
+doors, gaps, set lengths and known closes), and a known close (printed,
+evidenced for the night, the venue's registry hours) always wins. Clubs are
+unchanged.
+
+**Sol's minor:** `planFestival` skipped rooms whose every time was posted, so
+a stale guessed close written by an older rule survived there. Those rooms
+are now planned for their CLOSE only: every time is a posted fixed point and
+stays untouched, a printed or evidenced close is kept, and anything else is
+brought to the rule. (The old test "a room where every set is posted is left
+alone entirely" now asserts that its times and printed close are untouched
+and that nothing moves.)
+
+**Tests:**
+1. The window rule: the default wins when later (Palace, 8:45 + 90 = 10:15 PM <
+   midnight); the headliner's set stretches it when later (BUNT., 10:45 PM + 90
+   = ~12:15 AM); a known close wins and is a curfew; nothing is scheduled by it
+   (the same times as a room with no close of any kind); a lone act (War on
+   Drugs ~7 PM → window 12 AM); clubs unchanged.
+2. The all-posted cleanup: a stale club fallback on Suki → the concert window;
+   Rodrigo y Gabriela (no close) → the window; Fcukers' printed 2 AM and posted
+   11:45 untouched.
+3. Byte-stable re-run.
+
+Round four's rewrites of the Portola tests (`events-model`, `events-wall`) are
+reversed to round three's form, which reads Regency's `~<close>` window off
+the file; `dated-occurrence` now reads BUNT.'s night as "Runs 9 PM – ~12:15
+AM". Docs line updated to the window rule.
+
+**`--write` on both festivals:** only closes change (checked field by field: no
+`time`, `approx`, `doors`, `order` or other field moved). A second write
+changes nothing on either. **Portola's closes are now identical to main's in
+every room.** Tonight's Parcels keeps ~10 PM with a ~12 AM window ("kind
+default (hall)"), as do Velvet Trip's and the rest of Regency's and Great
+American Music Hall's rooms. **Every one of ACL's 40 Late nights rooms now
+carries a close**, so no ring falls back to one hour.
+
+What moved against round three (the last reviewed state before the cut):
+- Stretched past midnight by the headliner's own planned set: Emo's BUNT.
+  and Levity ~12:15 AM, Brushy Hunx ~12:15 AM, Brushy Underscores ~12:30 AM.
+- All-posted rooms that had no close now carry the rule's:
+  - Stubb's Indoors (Montclair, Grocery Bag, Almost Heaven, Annie DiRusso):
+    the venue's 1:45 AM curfew.
+  - Villanelle, Suki Waterhouse, Rodrigo y Gabriela, LP: the ~12 AM window.
+  - Night Tapes: Antone's midnight.
+  - Noga Erez: Scoot Inn's Friday curfew (12 AM).
+- Everything else as in round three.
+
+## Close table — every Late nights room against main's file and round three
+
+ACL's rooms all differ from main by construction: main's Late nights carried
+no times or closes. Portola: 0 rooms differ from main or round three.
+
+
+### acl-2026 — room closes: main → round three (ea9f5a3) → now
+| Room | Last set now | main | round three | now |
+|---|---|---|---|---|
+| 2026-09-29 · Mohawk Austin | Fcukers ~8:45 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-01 · Emo's | Palace ~8:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-01 · Stubb's | Brandon Flowers ~8:30 PM | — | ~10 PM (venue's 2026-10-01 close) | **~10 PM (venue's 2026-10-01 close)** |
+| 2026-10-01 · Stubb's Indoors | Montclair 10:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-01 · The Concourse Project | The Chainsmokers ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-02 · 3TEN | Villanelle 9 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-02 · Antone's | Night Tapes 10 PM | — | — | **~12 AM (venue's routine close)** |
+| 2026-10-02 · Brushy Street Commons | Hunx and his Punx ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-02 · Devil May Care | Rebecca Black 11:45 PM | — | 2 AM | **2 AM** |
+| 2026-10-02 · Emo's | BUNT. ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-02 · Historic Scoot Inn | Finn Wolfhard ~8 PM | — | ~12 AM (venue's Fri close) | **~12 AM (venue's Fri close)** |
+| 2026-10-02 · Stubb's | Bleachers ~9 PM | — | ~10:30 PM (venue's 2026-10-02 close) | **~10:30 PM (venue's 2026-10-02 close)** |
+| 2026-10-02 · Stubb's Indoors | Grocery Bag 11 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-02 · The Concourse Project | Steve Aoki ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-03 · Brushy Street Commons | Underscores ~11 PM | — | ~12 AM (kind default (hall)) | **~12:30 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-03 · Emo's | Levity ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-03 · Historic Scoot Inn | CMAT ~8 PM | — | ~12 AM (venue's Sat close) | **~12 AM (venue's Sat close)** |
+| 2026-10-03 · Stubb's | Parcels ~9:30 PM | — | ~11 PM (venue's 2026-10-03 close) | **~11 PM (venue's 2026-10-03 close)** |
+| 2026-10-03 · Stubb's Indoors | Almost Heaven 11:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-03 · The Concourse Project | It's Murph ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-04 · Antone's | Rochelle Jordan ~10:30 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-04 · Emo's | Suki Waterhouse 10 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-04 · Historic Scoot Inn | Ryan Beatty ~6 PM | — | ~10:30 PM (venue's Sun close) | **~10:30 PM (venue's Sun close)** |
+| 2026-10-05 · Brushy Street Commons | LP 8 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-05 · Historic Scoot Inn | Saint Motel ~7 PM | — | ~10:30 PM (venue's Mon close) | **~10:30 PM (venue's Mon close)** |
+| 2026-10-06 · Stubb's | Lola Young ~9 PM | — | ~10:30 PM (venue's Tue close) | **~10:30 PM (venue's Tue close)** |
+| 2026-10-06 · Stubb's Indoors | Annie DiRusso 10:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-08 · 3TEN | Łaszewo ~9:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Antone's | World Famous Pets ~8:45 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-08 · Brushy Street Commons | Arcy Drive ~8:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Fair Market | The War on Drugs ~7 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Stubb's Indoors | Sunday (1994) ~9 PM | — | ~1:45 AM (venue's routine close) | **~1:45 AM (venue's routine close)** |
+| 2026-10-08 · The Concourse Project | ¥ØU$UK€ ¥UK1MAT$U ~9 PM | — | 2 AM | **2 AM** |
+| 2026-10-08 · The Continental Club | Jess Williamson 10 PM | — | 11:30 PM | **11:30 PM** |
+| 2026-10-09 · Emo's | Rodrigo y Gabriela 10 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-09 · Historic Scoot Inn | Noga Erez 8:30 PM | — | — | **~12 AM (venue's Fri close)** |
+| 2026-10-09 · The Concourse Project | BUNT. ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-10 · 3TEN | Claire Rosinkranz ~9 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-10 · Antone's | Don West ~10:30 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+(39 rooms whose close differs from main or round three; rooms identical in all three omitted)
+
+### portola-2026 — room closes: main → round three (ea9f5a3) → now
+| Room | Last set now | main | round three | now |
+|---|---|---|---|---|
+(0 rooms whose close differs from main or round three; rooms identical in all three omitted)
+
+**Checks:** validator 0 errors; both festivals re-run to 0 changes; dated-room
+invariants on 40 rooms, 0 problems, every room with a close; `npm test` 1,136
+pass / 0 fail at the default clock, `TZ=Asia/Tokyo` and `NIGHT_CLOCK`.

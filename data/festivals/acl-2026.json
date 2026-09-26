@@ -788,7 +788,10 @@
         "confirmed": false
       },
       "time": "8:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "The 4411",
@@ -811,7 +814,10 @@
         "source": "https://do512.com/events/2026/10/1/palace-tickets",
         "confirmed": false
       },
-      "time": "8 PM"
+      "time": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Montclair",
@@ -828,7 +834,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBB2FBC0A",
         "at": "Ticketmaster"
       },
-      "time": "10:30 PM"
+      "time": "10:30 PM",
+      "close": "1:45 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "The Chainsmokers",
@@ -992,7 +1001,10 @@
         "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
       },
-      "time": "9 PM"
+      "time": "9 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "BUNT.",
@@ -1016,7 +1028,10 @@
         "confirmed": false
       },
       "time": "10:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Sarah Pederzani",
@@ -1039,7 +1054,10 @@
         "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
         "confirmed": false
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Hunx and his Punx",
@@ -1065,7 +1083,10 @@
         "confirmed": false
       },
       "time": "10:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "CorMae",
@@ -1090,7 +1111,10 @@
         "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
         "confirmed": false
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Night Tapes",
@@ -1107,7 +1131,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCB41EA73",
         "at": "Ticketmaster"
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Steve Aoki",
@@ -1204,7 +1231,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650DAE3A9B91",
         "at": "Ticketmaster"
       },
-      "time": "11 PM"
+      "time": "11 PM",
+      "close": "1:45 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Rebecca Black",
@@ -1375,7 +1405,10 @@
         "confirmed": false
       },
       "time": "10:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Untitld",
@@ -1398,7 +1431,10 @@
         "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
         "confirmed": false
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12:15 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "It's Murph",
@@ -1480,7 +1516,10 @@
         "confirmed": false
       },
       "time": "11 PM",
-      "approx": true
+      "approx": true,
+      "close": "12:30 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Directress",
@@ -1500,7 +1539,10 @@
         "confirmed": false
       },
       "time": "10:15 PM",
-      "approx": true
+      "approx": true,
+      "close": "12:30 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "1x333",
@@ -1519,7 +1561,10 @@
         "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "confirmed": false
       },
-      "time": "9:30 PM"
+      "time": "9:30 PM",
+      "close": "12:30 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall), stretched to the headliner's set"
     },
     {
       "name": "Almost Heaven",
@@ -1536,7 +1581,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBF52C2DE",
         "at": "Ticketmaster"
       },
-      "time": "11:30 PM"
+      "time": "11:30 PM",
+      "close": "1:45 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "Ryan Beatty",
@@ -1627,7 +1675,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD862ECD1",
         "at": "Ticketmaster"
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Saint Motel",
@@ -1699,7 +1750,10 @@
         "price": 54,
         "checked": "2026-09-26"
       },
-      "time": "8 PM"
+      "time": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Lola Young",
@@ -1769,7 +1823,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDC13C98E",
         "at": "Ticketmaster"
       },
-      "time": "10:30 PM"
+      "time": "10:30 PM",
+      "close": "1:45 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
     },
     {
       "name": "The War on Drugs",
@@ -1783,7 +1840,10 @@
         "at": "Do512"
       },
       "time": "7 PM",
-      "approx": true
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Arcy Drive",
@@ -1809,7 +1869,10 @@
         "confirmed": false
       },
       "time": "8:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Common People",
@@ -1834,7 +1897,10 @@
         "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
         "confirmed": false
       },
-      "time": "8 PM"
+      "time": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "World Famous Pets",
@@ -1932,7 +1998,10 @@
         "confirmed": false
       },
       "time": "9:45 PM",
-      "approx": true
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Left Lucid",
@@ -1955,7 +2024,10 @@
         "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
         "confirmed": false
       },
-      "time": "9 PM"
+      "time": "9 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "¥ØU$UK€ ¥UK1MAT$U",
@@ -2013,7 +2085,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD141E37A",
         "at": "Ticketmaster"
       },
-      "time": "8:30 PM"
+      "time": "8:30 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "venue's Fri close"
     },
     {
       "name": "BUNT.",
@@ -2071,7 +2146,10 @@
         "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD9A5EE44",
         "at": "Ticketmaster"
       },
-      "time": "10 PM"
+      "time": "10 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Claire Rosinkranz",
@@ -2089,7 +2167,10 @@
         "at": "AXS"
       },
       "time": "9 PM",
-      "approx": true
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Don West",

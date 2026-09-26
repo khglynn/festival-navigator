@@ -15,10 +15,11 @@ test('clockOf writes the file\'s own clock strings', () => {
   assert.equal(clockOf(26 * 60 + 30), '2:30 AM');
 });
 
-test('a hall with three acts and no known close: first act an hour after doors, a support slot apiece, and no close written', () => {
+test('a hall with three acts and no known close: first act an hour after doors, a support slot apiece, the kind default as its window', () => {
   const plan = planRun({ night: 'Fri', doors: '8 PM', close: null, closeApprox: false, members: members('Gelli Haha', 'Jyoty', 'Channel Tres'), profile: { kind: 'hall', close: { default: null }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null } });
   assert.deepEqual(plan.times.map((t) => t.time), ['9 PM', '9:45 PM', '10:30 PM']);
-  assert.deepEqual([plan.close, plan.closeApprox, plan.closeSource], [null, false, null], 'a concert never carries the kind\'s fallback close');
+  // The closer's set (10:30 + 90) ends right at the hall default, so the default is the window.
+  assert.deepEqual([plan.close, plan.closeApprox, plan.closeSource], [KIND_DEFAULTS.hall.close, true, 'kind default (hall)']);
 });
 
 test('a printed close is kept as printed; the venue\'s headliner length sets the closer', () => {
@@ -46,10 +47,11 @@ test('too many acts for the window: the night is split evenly and nobody gets le
   assert.ok(mins[mins.length - 1] < 25 * 60, 'the closer starts before the close (1 AM is 25 h on the axis)');
 });
 
-test('no close anywhere: acts are spaced by the support length and the close stays unknown', () => {
+test('no close anywhere: acts are spaced by the support length, and the window is the headliner\'s set', () => {
   const plan = planRun({ night: 'Thu', doors: '8 PM', close: null, closeApprox: false, members: members('a', 'b'), profile: { kind: 'outdoor', close: { default: null }, doorsToFirstActMin: null, headlinerSetMin: null, supportSetMin: 45 } });
-  assert.equal(plan.close, null);
   assert.deepEqual(plan.times.map((t) => t.time), ['8:30 PM', '9:15 PM']);
+  // Outdoor has no kind default: the window is the closer's planned set (9:15 + 90).
+  assert.deepEqual([plan.close, plan.closeApprox, plan.closeSource], ['10:45 PM', true, "the headliner's set (outdoor)"]);
 });
 
 test('no doors: nothing can be planned', () => {
@@ -113,14 +115,15 @@ test('a posted set time (no approx) is kept as posted — never re-guessed, neve
   assert.ok(f.artists.every((a) => a.close === '2 AM'), 'the room keeps one close on every set');
 });
 
-test('a room where every set is posted is left alone entirely — times, close and all', () => {
+test('a room where every set is posted keeps every time and its printed close — nothing in it moves', () => {
   const f = fest(
     set('a', 1, 2, { time: '11 PM', close: '3 AM' }),
     set('b', 2, 2, { time: '1 AM', close: '3 AM' }),
   );
   const before = clone(f);
   const [room] = planFestival(f, club({ default: '2 AM' }));
-  assert.equal(room.plan, null, 'nothing to guess');
+  assert.equal(room.allPosted, true);
+  assert.ok(room.plan.times.every((t) => t.posted && !t.changed), 'nothing to guess');
   assert.equal(applyPlans([room]), 0);
   assert.deepEqual(f, before);
 });
@@ -228,7 +231,8 @@ test('a concert bill follows its posted opener by the support slot — 7 PM door
   // a 2 AM club close, the old rule put Palace at 12:30 AM.
   const plan = planRun({ night: 'Thu', doors: '7 PM', members: [{ name: 'The 4411', seq: 1, time: '8 PM', posted: true }, { name: 'Palace', seq: 2 }], profile: hall() });
   assert.deepEqual(plan.times.map((t) => t.time), ['8 PM', '8:45 PM']);
-  assert.equal(plan.close, null, 'no published close, so none written: a concert never carries a fallback');
+  // No published close: the window is the hall default, later than Palace's planned set (8:45 + 90).
+  assert.deepEqual([plan.close, plan.closeApprox, plan.closeSource], ['12 AM', true, 'kind default (hall)']);
   // The same room laid as a club night runs back from the close — the shape
   // that is right for a DJ night and wrong for a concert.
   const club = planRun({ night: 'Thu', doors: '7 PM', close: '2 AM', members: [{ name: 'The 4411', seq: 1, time: '8 PM', posted: true }, { name: 'Palace', seq: 2 }], profile: { ...hall(), kind: 'club' } });
@@ -289,7 +293,8 @@ test('a fallback close is a guess: it draws a concert\'s window but pulls no sta
   // close. The hall default (12 AM) capping it made three half-hour sets.
   const members = [{ name: '1x333', seq: 1, time: '9:30 PM', posted: true }, { name: 'Directress', seq: 2 }, { name: 'underscores', seq: 3 }];
   const fallback = planRun({ night: 'Sat', doors: '9 PM', members, profile: hall() });
-  assert.equal(fallback.close, null, 'the hall\'s fallback is never written on a concert');
+  // Its window: underscores' planned set (11 PM + 90) outruns the hall default.
+  assert.deepEqual([fallback.close, fallback.closeSource], ['12:30 AM', "kind default (hall), stretched to the headliner's set"]);
   assert.deepEqual(fallback.times.map((t) => t.time), ['9:30 PM', '10:15 PM', '11 PM']);
   // The same room with the venue's own midnight close: the headliner's full
   // set ends by it, so the bill tightens.
@@ -297,24 +302,23 @@ test('a fallback close is a guess: it draws a concert\'s window but pulls no sta
   assert.deepEqual(known.times.map((t) => t.time), ['9:30 PM', '10 PM', '10:30 PM']);
   // A bill that runs past the fallback is laid exactly as if the fallback were
   // not there — first act at doors + gap, a support slot apiece — and the
-  // fallback, wrong for this night, is not written: no close at all rather
-  // than a window that cuts the closer off. (Review of 09d0bbe: the fallback
-  // was still pulling this bill to 10 PM, 10:30, 11 and 11:30.)
+  // window stretches to the closer's set. (Review of 09d0bbe: the fallback
+  // was pulling this bill to 10 PM, 10:30, 11 and 11:30.)
   const four = [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }, { name: 'c', seq: 3 }, { name: 'd', seq: 4 }];
   const late = planRun({ night: 'Sat', doors: '10 PM', members: four, profile: hall() });
   const unbounded = planRun({ night: 'Sat', doors: '10 PM', members: four, profile: { ...hall(), kind: 'outdoor', supportSetMin: 45 } });
   assert.deepEqual(late.times.map((t) => t.time), ['11 PM', '11:45 PM', '12:30 AM', '1:15 AM']);
   assert.deepEqual(late.times.map((t) => t.time), unbounded.times.map((t) => t.time), 'the same bill a room with no close at all gets');
-  assert.deepEqual([late.close, late.closeApprox, late.closeSource], [null, false, null]);
+  assert.deepEqual([late.close, late.closeApprox, late.closeSource], ['2:45 AM', true, "kind default (hall), stretched to the headliner's set"]);
 });
 
-test('a guessed close the plan no longer has is taken off the room; a printed one is never touched', () => {
+test('a stale guessed close is replaced by the rule\'s; a printed one is never touched', () => {
   const four = (extra) => ['a', 'b', 'c', 'd'].map((name, i) => dated(name, '2026-10-03', 'Hall', { doors: '10 PM', order: { seq: i + 1, of: 4, source: SRC, confirmed: false }, ...extra }));
-  // Written by the old rule: the hall fallback squeezed into the window.
+  // Written by an old rule: a bare midnight the closer's own set runs past.
   const f = lateFest(...four({ close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)' }));
   const reg = { venues: { Hall: hall() } };
   applyPlans(planFestival(f, reg));
-  assert.ok(f.artists.every((a) => a.close === undefined && a.closeApprox === undefined && a.closeSource === undefined));
+  assert.ok(f.artists.every((a) => a.close === '2:45 AM' && a.closeApprox === true && a.closeSource === "kind default (hall), stretched to the headliner's set"));
   assert.deepEqual(f.artists.map((a) => a.time), ['11 PM', '11:45 PM', '12:30 AM', '1:15 AM']);
   assert.equal(applyPlans(planFestival(f, reg)), 0, 're-runs to the same bytes');
   // A close a page printed is the venue's word: it caps, and it stays.
@@ -372,30 +376,51 @@ test('a lone billed act is guessed at its first-act time, in either shape — ne
   assert.deepEqual([f.artists[0].time, f.artists[0].approx, f.artists[0].close, f.artists[0].closeApprox], ['9 PM', true, '2 AM', undefined]);
 });
 
-test('a concert never carries a fallback close — only the venue\'s word; a club keeps its fallback, which anchors its layout', () => {
-  // Round four (2026-09-26), cut rather than patched: the third review pass
-  // on fallback closes found Emo's BUNT. (~10:45 PM) and Brushy's underscores
-  // (~11 PM) under a guessed midnight their own 90-minute sets run past, so
-  // the ring would have stopped mid-set.
+test('a concert with no known close gets a WINDOW close: the later of the kind default and the closer\'s planned set — it schedules nobody, and a known close always wins', () => {
+  // Round five (2026-09-26). Round four wrote no close at all on a concert,
+  // and the last card's ring fell back to one hour — BUNT. dark at 11:45 PM,
+  // tonight's Parcels at 11 — while the act could still be on.
   const bill = [{ name: 'Sarah Pederzani', seq: 1, time: '10 PM', posted: true }, { name: 'BUNT.', seq: 2 }];
-  for (const kind of ['hall', 'outdoor']) {
-    const plan = planRun({ night: 'Fri', doors: '9 PM', members: bill, profile: { ...hall(), kind, supportSetMin: 45 } });
-    assert.equal(plan.close, null, `${kind}: no fallback close`);
-    assert.equal(plan.times[1].time, '10:45 PM', `${kind}: the bill is laid the same`);
-    const withHours = planRun({ night: 'Fri', doors: '9 PM', members: bill, profile: { ...hall(), kind, supportSetMin: 45, close: { byWeekday: { Fri: '1 AM' } } } });
-    assert.deepEqual([withHours.close, withHours.closeApprox, withHours.closeSource], ['1 AM', true, "venue's Fri close"], `${kind}: the venue's hours are written`);
-  }
+  // BUNT. goes on a support slot after the posted 10 PM opener; its planned
+  // set (10:45 PM + 90) outruns the hall's midnight, so the set is the window.
+  const bunt = planRun({ night: 'Fri', doors: '9 PM', members: bill, profile: hall() });
+  assert.equal(bunt.times[1].time, '10:45 PM');
+  assert.deepEqual([bunt.close, bunt.closeApprox, bunt.closeSource], ['12:15 AM', true, "kind default (hall), stretched to the headliner's set"], 'the set stretches it when later');
+  const palace = planRun({ night: 'Thu', doors: '7 PM', members: [{ name: 'The 4411', seq: 1, time: '8 PM', posted: true }, { name: 'Palace', seq: 2 }], profile: hall() });
+  assert.deepEqual([palace.close, palace.closeSource], ['12 AM', 'kind default (hall)'], 'the default wins when later (8:45 + 90 = 10:15 PM)');
+  // It schedules nobody: the times are exactly those of the same room with no
+  // close of any kind (an outdoor room with no hours, same slots).
+  const none = planRun({ night: 'Fri', doors: '9 PM', members: bill, profile: { ...hall(), kind: 'outdoor', supportSetMin: 45 } });
+  assert.deepEqual(bunt.times.map((t) => t.time), none.times.map((t) => t.time));
+  // A known close always wins — and, being the venue's word, it is a curfew.
+  const hours = planRun({ night: 'Fri', doors: '9 PM', members: bill, profile: hall({ close: { byWeekday: { Fri: '11:30 PM' } } }) });
+  assert.deepEqual([hours.close, hours.closeSource], ['11:30 PM', "venue's Fri close"]);
+  assert.equal(hours.times[1].time, '10:30 PM', 'the curfew caps the headliner; the window never did');
   const printed = planRun({ night: 'Fri', doors: '9 PM', close: '2 AM', members: bill, profile: hall() });
-  assert.deepEqual([printed.close, printed.closeApprox], ['2 AM', false], 'a printed close stays printed');
+  assert.deepEqual([printed.close, printed.closeApprox], ['2 AM', false]);
+  // A lone act: The War on Drugs, 7 PM guess, hall default later than its set.
+  const wod = planRun({ night: 'Thu', doors: '6 PM', members: [{ name: 'The War on Drugs', seq: 1 }], profile: hall() });
+  assert.deepEqual([wod.times[0].time, wod.close], ['7 PM', '12 AM']);
+  // Clubs unchanged: laid back from their fallback.
   const club = planRun({ night: 'Fri', doors: '9 PM', members: [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }], profile: { kind: 'club', close: { default: null }, doorsToFirstActMin: null, headlinerSetMin: null, supportSetMin: null } });
-  assert.deepEqual([club.close, club.closeApprox, club.closeSource], [KIND_DEFAULTS.club.close, true, 'kind default (club)']);
-  assert.equal(club.times[1].time, '12:30 AM', 'laid back from it');
-  // Through the file: a fallback close an earlier run wrote on a concert room
-  // comes off; its times stay where they were.
+  assert.deepEqual([club.close, club.closeApprox, club.closeSource, club.times[1].time], [KIND_DEFAULTS.club.close, true, 'kind default (club)', '12:30 AM']);
+});
+
+test('an all-posted room keeps its times and a printed close, and has a stale guessed close brought to the rule — byte-stable', () => {
+  // Sol, round five: rooms whose times were all posted were skipped, so a
+  // guessed close written by an older rule survived in them forever.
+  const reg = { venues: { "Emo's": hall() } };
   const f = lateFest(
-    dated('Sarah Pederzani', '2026-10-02', "Emo's", { time: '10 PM', close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)', order: { seq: 1, of: 2, source: SRC, confirmed: false } }),
-    dated('BUNT.', '2026-10-02', "Emo's", { time: '10:45 PM', approx: true, close: '12 AM', closeApprox: true, closeSource: 'kind default (hall)', order: { seq: 2, of: 2, source: SRC, confirmed: false } }),
+    dated('Suki Waterhouse', '2026-10-04', "Emo's", { time: '10 PM', close: '2 AM', closeApprox: true, closeSource: 'kind default (club)' }),
+    dated('Rodrigo y Gabriela', '2026-10-09', "Emo's", { time: '10 PM' }),
+    dated('Fcukers', '2026-10-10', 'Devil May Care', { doors: '10 PM', time: '11:45 PM', close: '2 AM' }),
   );
-  applyPlans(planFestival(f, { venues: { "Emo's": hall() } }));
-  assert.deepEqual(f.artists.map((a) => [a.time, a.close, a.closeApprox, a.closeSource]), [['10 PM', undefined, undefined, undefined], ['10:45 PM', undefined, undefined, undefined]]);
+  const [suki, ryg, fcukers] = f.artists;
+  applyPlans(planFestival(f, { venues: { ...reg.venues, 'Devil May Care': { kind: 'bar', close: { default: '12 AM' }, doorsToFirstActMin: null, headlinerSetMin: 135, supportSetMin: null } } }));
+  assert.deepEqual([suki.time, suki.approx, suki.close, suki.closeSource], ['10 PM', undefined, '12 AM', 'kind default (hall)'], 'stale club fallback → the concert window; the posted time untouched');
+  assert.deepEqual([ryg.time, ryg.approx, ryg.close, ryg.closeApprox], ['10 PM', undefined, '12 AM', true], 'no close → the window, so the ring runs to it');
+  assert.deepEqual([fcukers.time, fcukers.close, fcukers.closeApprox, fcukers.closeSource], ['11:45 PM', '2 AM', undefined, undefined], 'a printed close and a posted time: untouched');
+  const once = clone(f);
+  assert.equal(applyPlans(planFestival(f, { venues: { ...reg.venues, 'Devil May Care': { kind: 'bar', close: { default: '12 AM' }, doorsToFirstActMin: null, headlinerSetMin: 135, supportSetMin: null } } })), 0);
+  assert.deepEqual(f, once);
 });

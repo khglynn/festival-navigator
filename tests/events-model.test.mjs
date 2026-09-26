@@ -176,12 +176,7 @@ test('venueGroupsOf on Portola Friday: the real bill, read off the file so a re-
   const regency = groups.find((g) => g.venue === 'Regency Ballroom');
   const file = fri.filter((a) => a.venue === 'Regency Ballroom').sort((a, b) => a.order.seq - b.order.seq);
   assert.deepEqual(regency.members.map((m) => m.e.name), file.map((a) => a.name), 'the Regency run, in its numbered order');
-  // A concert with no published close carries none (a fallback close is never
-  // written on a concert — ACL prep round four, 2026-09-26), so the head says
-  // its doors and invents no end. The tilde on a guessed close is pinned by
-  // the fixtures above.
-  assert.equal(file[0].close, undefined, 'no fallback close on a concert room');
-  assert.equal(regency.sub, `Doors ${file[0].doors}`, 'its doors, and no invented end');
+  assert.equal(regency.sub, `Doors ${file[0].doors} · ~${file[0].close}`, 'its window, the tilde on the guessed close');
   assert.ok(regency.members.every((m) => m.approx), 'every Regency clock is a guess, so every card wears the tilde');
 });
 

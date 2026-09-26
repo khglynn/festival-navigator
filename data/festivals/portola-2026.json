@@ -286,7 +286,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Black Rave Culture",
@@ -441,7 +444,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Jyoty",
@@ -465,7 +471,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Gelli Haha",
@@ -489,7 +498,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Six Sex",
@@ -513,7 +525,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Neil Frances",
@@ -718,7 +733,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Velvet Trip",
@@ -737,7 +755,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Groove Armada",
@@ -2280,7 +2301,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Rory Phillips",
@@ -2300,7 +2324,10 @@
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "B0yg1rl",
@@ -2324,7 +2351,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Femme Jatale b2b erika",
@@ -2348,7 +2378,10 @@
       "tickets": {
         "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
         "at": "AXS"
-      }
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Strawbry",

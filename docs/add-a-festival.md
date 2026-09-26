@@ -346,9 +346,10 @@ combined card eats the crew's picks.
   How it lays the bill depends on the room: a club night runs back from the
   close, a concert (a hall or outdoor venue — the registry's `kind`, or its
   `shape`) runs forward from the first act and treats the close as a curfew,
-  because a guess later than the show makes a friend miss it — and a concert
-  carries only a close the venue gave (printed, or its registry hours), never
-  the kind's fallback. A set with a
+  because a guess later than the show makes a friend miss it. Only a close
+  the venue gave (printed, or its registry hours) is a curfew; with none, a
+  concert's close is a window — the later of the kind's default and its
+  closer's planned set — which keeps the ring on and schedules nobody. A set with a
   time and no `approx` is posted, never touched, and a fixed point the
   guesses around it respect — so re-run it whenever a room or the registry
   changes. A show with no `time` at all is fine — it is a card with no clock

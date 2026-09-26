@@ -40,17 +40,19 @@
 //     act after it by the support slot, and the close is a CAP (a curfew),
 //     never a target — when it binds, the headliner still plays a full set
 //     and the openers move earlier to fit, never before doors. Only the
-//     venue's word is ever written on a concert (printed, evidenced, its
-//     registry hours): with none, a concert carries no close at all.
-//     A 7 PM-doors
+//     venue's word (printed, evidenced, its registry hours) is a curfew.
+//     With none, a concert gets a WINDOW close — the later of the kind's
+//     default and the closer's planned start + its headliner set — a
+//     generous outer edge for the ring that schedules nobody. A 7 PM-doors
 //     show does not run to midnight: laid back from a 2 AM close, Palace got
 //     12:30 AM behind 7 PM doors (ACL, 2026-09-26).
 // A guess that is early costs a friend some waiting; one that is late makes
 // them miss the act — the concert shape is the one that errs early.
 // A set with a time and no `approx` is POSTED: its time is never touched,
 // it is a fixed point the guesses around it respect (a guess never lands on
-// or past a posted set that follows it), and a room where every set is posted
-// is skipped. Everything is on the quarter hour. Written back as each guessed
+// or past a posted set that follows it); a room where every set is posted
+// keeps every time and only has its close brought to the rules (a printed
+// one is kept). Everything is on the quarter hour. Written back as each guessed
 // set's `time` (with `approx: true`), and the close on every member of the
 // room. (`closeSource` is provenance for whoever reads the file; nothing in
 // js/ renders it.)
@@ -70,8 +72,8 @@ export const shapeOf = (profile, kind) => (profile && (profile.shape === 'concer
   : CONCERT_KINDS.has(kind) ? 'concert' : 'club');
 
 // What a room of this kind usually does when the registry cannot say. A
-// concert (hall/outdoor) never takes the `close` here — a club night does,
-// and so would a hall pinned to the club shape.
+// club night is laid back from its `close`; a concert only uses it as one
+// side of its window close (see planRun) — it schedules no concert.
 export const KIND_DEFAULTS = {
   club: { close: '2 AM', doorsToFirstActMin: 30, headlinerSetMin: 90, supportSetMin: 60 },
   hall: { close: '12 AM', doorsToFirstActMin: 60, headlinerSetMin: 90, supportSetMin: 45 },
@@ -136,15 +138,16 @@ export function planRun({ night, date = null, doors, close, closeApprox = false,
     const c = closeFor(night, profile, kind, date);
     outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null; known = c.known;
   }
-  // A CONCERT NEVER CARRIES A FALLBACK CLOSE. Its bill ends when its
-  // headliner does, so a kind-default close is not an anchor, only a guessed
-  // end that its own planned sets can run past (the ring then stops early).
-  // Three review passes patched this; round four cut it (2026-09-26): only
-  // the venue's word — printed, evidenced for the night, its registry hours —
-  // is ever written on a concert. A club keeps its fallback, because a night
-  // that runs to the close is laid back from it.
+  // A concert's close is a curfew only when it is the venue's word. With no
+  // known close, the kind's default is NOT a curfew and schedules nobody: it
+  // is held aside here and becomes one side of the room's WINDOW close once
+  // the bill is laid (below). A club keeps its fallback as its anchor.
   const shape = shapeOf(profile, kind);
-  if (shape === 'concert' && !known) { outClose = null; outApprox = false; outSource = null; }
+  let windowFloor = null;
+  if (shape === 'concert' && !known) {
+    windowFloor = outClose;
+    outClose = null; outApprox = false; outSource = null;
+  }
   let C = outClose ? activityMinutes(outClose) : null;
   if (Number.isFinite(C) && C <= D) C += 24 * 60; // a close "past midnight" on the same axis
 
@@ -215,6 +218,23 @@ export function planRun({ night, date = null, doors, close, closeApprox = false,
     }
     rounded.push(m);
   }
+  // The WINDOW close of a concert with no known close (round five, 2026-09-26):
+  // the later of the kind's default and the closer's planned start + its
+  // headliner set, as a guess naming the rule. It is only the outer edge of the
+  // room's window and of the last card's ring — never a curfew, never an
+  // input to any start above. Why: with no close at all the last card's ring
+  // falls back to one hour (events.js venueGroupsOf), which switched off while
+  // the act could still be on (BUNT. at 11:45 PM, tonight's Parcels at 11) —
+  // the late-for-friends direction; and a bare kind default can end before
+  // the closer's own planned set does (round four's review).
+  if (shape === 'concert' && !known) {
+    const setEnd = rounded[n - 1] + H;
+    let floor = windowFloor ? activityMinutes(windowFloor) : null;
+    if (Number.isFinite(floor) && floor <= D) floor += 24 * 60;
+    if (Number.isFinite(floor) && floor >= setEnd) { outClose = windowFloor; outSource = `kind default (${kind})`; }
+    else { outClose = clockOf(setEnd); outSource = Number.isFinite(floor) ? `kind default (${kind}), stretched to the headliner's set` : `the headliner's set (${kind})`; }
+    outApprox = true;
+  }
   const times = members.map((mem, i) => {
     const time = mem.posted ? mem.time : clockOf(rounded[i]);
     return { name: mem.name, seq: mem.seq, min: rounded[i], time, was: mem.time || null, changed: (mem.time || null) !== time, posted: !!mem.posted };
@@ -269,7 +289,11 @@ export function planFestival(fest, registry) {
   for (const run of runsOf(fest)) {
     const profile = registry.venues[run.venue] || null;
     const doors = run.members.find((m) => m.doors)?.doors || null;
-    if (run.members.every(isPosted)) { out.push({ ...run, doors, profile: !!profile, plan: null, allPosted: true }); continue; }
+    // A room whose every set is posted has no time to guess — its times are
+    // fixed points and stay exactly as they are — but its CLOSE still follows
+    // the rules: a printed or evidenced close is kept, a stale guess is
+    // re-derived (Sol, round five: stale guessed closes survived here).
+    const allPosted = run.members.every(isPosted);
     const printed = run.members.find((m) => m.close && m.closeApprox !== true);
     const evidenced = !printed && run.members.find((m) => m.close && m.closeApprox === true && /^https:\/\//.test(m.closeSource || ''));
     const known = printed || evidenced || null;
@@ -278,7 +302,7 @@ export function planFestival(fest, registry) {
       close: known ? known.close : null, closeApprox: !printed, closeSource: evidenced ? evidenced.closeSource : null,
       members: run.members.map((m) => ({ name: m.name, seq: seqOf(m), time: m.time || null, posted: isPosted(m) })), profile,
     });
-    out.push({ ...run, doors, profile: !!profile, plan });
+    out.push({ ...run, doors, profile: !!profile, plan, allPosted });
   }
   return out;
 }
@@ -314,7 +338,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const plans = planFestival(fest, loadRegistry());
   for (const p of plans) {
     const where = `${p.date ? `${p.night} ${p.date}` : p.night} · ${p.venue}`;
-    if (!p.plan) { console.log(`\n${where}: ${p.allPosted ? 'every set is posted — left alone' : 'no doors — nothing to plan'}`); continue; }
+    if (!p.plan) { console.log(`\n${where}: no doors — nothing to plan`); continue; }
     const { plan } = p;
     console.log(`\n${where}  doors ${p.doors} → close ${plan.close || '?'}${!plan.close ? ' (none known)' : plan.closeApprox ? ' (guess: ' + plan.closeSource + ')' : ' (printed)'}  [${plan.kind}, ${plan.shape}${p.profile ? '' : ', no registry entry'}; gap ${plan.gap}m, headliner ${plan.H}m, support ${plan.S}m]`);
     for (const t of plan.times) console.log(`   ${String(t.seq).padStart(2)}. ${t.name.padEnd(24)} ${t.was ? t.was.padEnd(9) : '—'.padEnd(9)} → ${t.time}${t.posted ? '  (posted)' : t.changed ? '' : '  (same)'}`);
