@@ -1131,7 +1131,8 @@ export function wireTimesScrollSync(root) {
 }
 
 // The day's clock: rail + grid, inside its own `.tt-block` with a sticky
-// stage strip — the festival room's body on a grid day.
+// stage strip — the festival room's body on a grid day. True when it drew
+// one: a day with no timed sets has no clock for a stack to line up with.
 function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false } = {}) {
   const fest = state.fest();
   const computed = state.getDayArtists(day, weekend);
@@ -1148,7 +1149,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
       empty.textContent = 'No set times for this day yet.';
       root.appendChild(empty);
     }
-    return;
+    return false;
   }
 
   // Cards are laid out on DISPLAY extents: every set gets at least 30 visual
@@ -1260,6 +1261,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   }
   // Today's grid gets the now line on first paint (the ticker keeps it moving).
   if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
+  return true;
 }
 
 // ---- the composed wall (MODEL-V4, 2026-09-16) ------------------------------------
@@ -1487,10 +1489,18 @@ const stackTime = (m) => {
 // stage header, its doors/close line, then the night's cards stacked top to
 // bottom in play order. The people filter dims here exactly as it does on
 // the clock — renderCard's one rule — and never takes a card or a group away.
-export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null } = {}) {
+//
+// `clock` says a timetable sits above these stacks on the same day, so their
+// columns line up with its columns (Kevin at Portola, 2026-09-25: "times on
+// the left, and the items that don't have them don't line up"): 'room' when
+// the stacks are the clock's own room (a cancelled act, a set off the
+// columns, a name with no time yet), 'day' when they are another room on that
+// day (SAT AFTERS). How far each one moves is v3.css's call.
+export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
   if (fest && fest.timezone) grid.dataset.tz = fest.timezone;
+  if (clock) grid.dataset.clock = clock;
   let shown = 0;
   const groups = venueGroupsOf(entries, { fallbackVenue });
   // Where one room published its doors, the line holds its place across the
@@ -1981,6 +1991,10 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   for (const day of plan.days) {
     const block = dayBlock(day.key, day.iso);
     const weekday = headWeekday(day);
+    // Whether this day drew a clock (the festival's timetable): every stack
+    // under it lines up with its columns. A hidden festival room, or a grid
+    // day with no set times yet, has none.
+    let clocked = false;
     // The date rides the day's FIRST head and no other, whichever room that
     // turns out to be — so it is spent by the first head made, never assigned
     // to a room by name.
@@ -2003,8 +2017,8 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
       if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
-        renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
-        if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest) });
+        clocked = renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
+        if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest), clock: clocked ? 'room' : null });
       } else {
         renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       }
@@ -2023,7 +2037,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
-      venueGroups(room, list, ctx, { day, fest });
+      venueGroups(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
       block.appendChild(room);
     }
     root.appendChild(block);
