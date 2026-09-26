@@ -97,6 +97,8 @@ test('linksOf: a price shows only with its checked date and inside 0–2000 — 
   assert.equal(word({ price: 69, checked: '2026-13-40' }), 'Tix', 'shaped like a date, not one');
   assert.equal(word({ price: 69, checked: '2026-02-30' }), 'Tix');
   assert.equal(word({ price: 69, checked: '2028-02-29' }), 'Tix $69', 'a real leap day');
+  assert.equal(word({ price: 69, checked: '1800-01-01' }), 'Tix', 'outside the validator\'s years');
+  assert.equal(word({ price: 69, checked: '2200-01-01' }), 'Tix');
 });
 
 test('the validator: page and tickets are { url: https, at: a short name }, tickets may add price + checked', () => {

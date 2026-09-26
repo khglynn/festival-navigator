@@ -658,10 +658,10 @@ const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ?
 // because a phone can render a festival file its cache kept (Sol's review,
 // 2026-09-26: a price without its date, or $2001, rendered). Anything else
 // falls back to the bare word rather than a number nobody vouched for.
-// A real calendar date, the validator's rule: 2026-13-40 is shaped like one
-// and is not.
+// A real calendar date, the validator's rule (festival-rules.mjs realDate):
+// years 1900–2199, and 2026-13-40 is shaped like a date and is not one.
 const realDate = (d) => {
-  const m = typeof d === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  const m = typeof d === 'string' && /^((?:19|20|21)\d{2})-(\d{2})-(\d{2})$/.exec(d);
   if (!m) return false;
   const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
   return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
