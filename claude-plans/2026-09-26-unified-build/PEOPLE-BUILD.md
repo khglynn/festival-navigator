@@ -19,7 +19,9 @@ This file is the record if the build dies: read "Where it stands" first.
 5. `origin/main` (v97, `efeebd0`) merged in, clean (`0345d7b`). Stale docs swept (user-flows F2b/F9,
    comments) (`a1612a0`).
 6. The review round (below): four fixes (`449a838`); Codex's re-review of `449a838`: no findings.
-7. **Done, for the release to take** (head `f9dca00` or later). Final numbers on that head:
+7. **The last round (below: Codex's P2, Kevin's copy note, the header lines) — done, for the release
+   to take** (head `b9c78a8` or later; numbers in that section).
+8. Before it: done at `f9dca00`. Numbers on that head:
    a. `npm test` — 1,134 tests, 1,132 pass, 1 skipped, 1 fail in UTC, `TZ=Asia/Tokyo` and the night
       clock alike: the SW stamp test, red on purpose (no stamp here; the release stamps).
    b. `npm run test:browser` — 253/253 (17 of them `tests/browser/people-menu.test.mjs`, Chromium +
@@ -28,6 +30,95 @@ This file is the record if the build dies: read "Where it stands" first.
       frames` and `… slowmo 390|320` rebuild them). Contact sheets: `sheet-390.png`, `sheet-320.png`,
       `sheet-1280b.png`, `sheet-edges.png`, `sheet-flows.png`; slow motion: `slow-*-390.png`,
       `slow-*-320.png`.
+
+## The last round (2026-09-26 late morning): Codex's P2, Kevin's copy note, the header lines
+
+**1. Codex on `6178e38`: P2, a regression against production (fixed, `bfaeecf`).** A successful add
+stayed in `addedHere` until an Invite sheet happened to check it while the person looked active here.
+Nobody did, another phone removed them, and the sheet said "already in this crew" and sent no POST;
+production sends the re-add. The fix is at the mechanism, in sync, where ordering lives:
+`afterServerWrite()` now returns the write's **mark** (the `pushGen` it bumps), and sync records, per
+crew, the `pushGen` at which the newest **applied** request left (a poll, or a push's answer).
+`heardSince(token, mark)` is true once a doc that left after the write has landed here: the server's
+word on that person, whatever it says (here, removed since, recoloured). `addedNotYetHere` lets an add
+go on exactly that. It replaces "once they look active here" (Sol's `58e75fe` rule), and the
+reopen-before-the-poll case still holds, because the mark is not heard until the poll lands. Test
+(`tests/people-menu.test.mjs`): add Gus → the ordered poll brings him → another phone removes him → an
+ordered poll brings that → adding him back POSTs with `removed: false`. Red with the old rule (no POST,
+"Gus is already in this crew."); green with it.
+
+**2. Kevin's copy note (`fa54ddd`)**, verbatim: "The designs look good. Let's update the copy below
+(and maybe the title of) the invite someone sections. Sometimes picking as someone is a stop gap but an
+end state. Like I'm probably going to [add] some picks from some of our friends for Folsom but never
+plan to invite them to the app. It's more of just a note for us that they're going there."
+
+Shipped (**A, "Or add a friend"**):
+
+| Where | Was | Now |
+|---|---|---|
+| Menu row | + Invite someone | + Invite someone (kept) |
+| Sheet title | INVITE SOMEONE (after a new crew: ONE LINK MAKES IT A CREW) | kept, both |
+| Name section label | Add by name | **Or add a friend** |
+| Name section line | Pick for them until they open their link. | **You pick for them; the crew sees where they’re going.** |
+| Success title | MO IS IN | MO IS IN (kept) |
+| Success line | Send Mo this link. Opening it makes the picks theirs. | **If Mo ever wants to pick, send this link. Opening it makes the picks theirs.** |
+| Success, offline | Send Mo this link. Opening it makes the picks theirs — once this phone is online again. | **The crew sees Mo once this phone is online again.** + the line above |
+| Settings → Crew, a friend with no link opened | Send Drew this link. Opening it makes the picks theirs. | the sheet's sentence: **If Drew ever wants to pick, …** |
+
+Why A: the door and the room keep Kevin's word (he chose "Invite someone" over "Add someone" at
+12:28 AM, v93: "Add" beside a row of names could mean a pick, a note or a fest), and the label makes the
+name a **peer** of the link, not a step on the way to it. Title and label read as one sentence:
+"Invite someone… or add a friend". "A friend" is How it works' own word ("Highlight a friend’s picks.").
+The line says the whole of it with nothing pending (you pick; the crew sees; the semicolon is How it
+works' "Ticks are picks; a letter is a must."). "MO IS IN" already says the add is finished, so the
+link becomes an if-ever, said where the link actually is. The menu row stays: nothing here makes a
+stronger case than Kevin's call last night. The link is still the main door, and adding lives inside
+it.
+
+Not shipped:
+- **B, the title names both.** Title "INVITE OR ADD SOMEONE"; label "Add by name"; line "For friends
+  who won’t use the app — you pick, the crew sees where they’re going."; success "MO IS IN" · "Pick for
+  Mo anytime. Want them picking too? Send this link." Honest, but the title reads as a form label, and
+  "won't use the app" frames the friend by what they don't do.
+- **C, purpose first.** Title "WHO’S GOING"; label "Not on the app?"; line "Add them anyway. You pick;
+  the crew sees where they’re going."; success "MO’S ON THE WALL" · "Want Mo picking too? Send this
+  link. Opening it makes the picks theirs." Warm, but "going" to what? A crew spans fests, the title
+  leaves the door's word, and "anyway" makes the add sound second-best, the thing Kevin asked to lose.
+
+Also: the sheet's sub lines wrap `text-wrap: pretty`. At 320 both lines ended on one orphaned word
+("going.", "needed."); Chromium and WebKit both take it, and it is a plain wrap where unsupported.
+Tests: `tests/share-copy.test.mjs` (the one sentence in both places; the short lines; no "until they
+open their link"), `tests/people-menu.test.mjs` and the real-browser invite test assert the words;
+`docs/user-flows.md` F2b says them. Frames: `people-shots/invite-{390,320,1280}.png`,
+`invite-wk-320.png` (WebKit), `invite-added-{390,320,1280}.png`, `invite-added-wk-320.png`,
+`invite-added-offline-wk-320.png`; contact sheet `people-shots/sheet-invite-copy.png`. The rig answers
+the add in memory (`adds`), never a server.
+
+**3. The header's two lines (`b9c78a8`)**, Kevin on the live app: "in the header we don't need these
+lines. the horizontal one already disappears on mobile."
+- The `.toolbar-divider` stub is gone (index.html, gallery.html, v3.css). With twelve people at 900 it
+  dangled alone at the end of the chips' line. Space parts the row from the search field instead: the
+  row's 12px right margin plus the toolbar's 6px gap is 18px, three times the chips' own 5px, so they
+  read as two groups; where the row wraps, the space falls at a line's end, unseen. An empty row takes
+  no room.
+- The rail's `border-bottom` hairline is gone. Its near-opaque ground is the edge, as the phone's top
+  has none.
+- Test (`tests/browser/people-menu.test.mjs`, 390 / 900 / 1280): no divider, no rail border, and 18px
+  where the row and field share a line (red with the margin at 0).
+- Frames, before → after: `people-shots/header-top-{1280,900,390}-before.png` → `header-top-*.png`,
+  `header-top-twelve-900-before.png` → `header-top-twelve-900.png`,
+  `header-rail-{1280,900}-before.png` → `header-rail-*.png`; contact sheet
+  `people-shots/sheet-header-lines.png`.
+- FYI, not changed: mid-scroll, the Earlier line ghosts faintly through the rail's .94 ground (Kevin's
+  2026-07-12 opacity call). It is equally faint before and after; the hairline only sat under it. The
+  EARLIER-line centring Kevin offered is **not** in this round: the alignment build owns that line.
+
+**4. Kevin confirmed** the laptop avatar opens the Highlight menu, with the names kept along the top
+and no scroll to top. Built in step 1 (`cd4c54c`, product calls 4 and 12); nothing to change.
+
+**Numbers on `b9c78a8`:** `npm test`: 1,147 tests, 1,144 pass, 1 skipped, 1 todo (the banked casing
+test), 1 fail, the SW stamp test, red on purpose (no stamp here). The same in UTC, `TZ=Asia/Tokyo` and
+the night clock (`NIGHT_CLOCK=2026-09-27T04:30:00Z`). `npm run test:browser`: 260/260.
 
 ## CI's Linux fonts (2026-09-26, after the handback)
 
@@ -130,10 +221,10 @@ beside the sync engine and outside its ordering (the old add sheet did it since 
 | The laptop's people row (`renderPersonChips`) | the person in `state.activePeople()` | the ordered poll → `repaintFromRemote` |
 | The Highlight menu's rows | the same | the same (`paintHighlight` from `renderPersonChips` / `renderYou`); every open also re-reads the crew |
 | Pick as someone else (picking for the new person) | the person in `activePeople()` (and its still-in-the-crew check) | the ordered poll — typically well before a person can close the success sheet and open the shelf |
-| The Invite sheet's own checks ("already in this crew", the next person's colour) | people the server has that this phone does not yet | `addedNotYetHere` — memory of names answered, pruned when the poll lands; never written to the doc |
+| The Invite sheet's own checks ("already in this crew", the next person's colour) | people the server has that this phone does not yet | `addedNotYetHere` — memory of names answered, let go once a doc that left after the add has been applied here (`sync.heardSince`, the last round); never written to the doc |
 | "From your other fests" chips | who is already here | `state.people()`; a just-added one still showing is caught by the check above |
 | The invite-festival stamp | `meta.inviteFestId` | read at sheet open; untouched by adds |
-| Sync's pending overlay | — | an online add never touches it; offline adds go through it as before (`recordPerson`) |
+| Sync's pending overlay | — | an online add never touches it; offline and Stay-offline adds go through it (`recordPerson`, after the people-cap check); an add whose answer lands after Stay offline went on queues nothing |
 | Settings → Crew (member chips, their links) | `activePeople()` | read when Settings renders (as for any remote change) |
 | The wall (marks, auras) | picks | a new person has none |
 
@@ -143,6 +234,64 @@ removal and recolour, arriving while the add's answer is in transit, are not und
 so the answer's own effect is seen alone — red if the answer is applied); a hung request is let go at the
 12 s deadline (stubbed short) with the plain word and a free guard for a reopened sheet (red without the
 deadline); plus every earlier add test, now waiting for the ordered poll instead of reading the answer.
+
+## Sol's re-review of `58e75fe`: Stay offline, and a removed member brought back
+
+The cut held (no ack, retry, blocked-state or poll-ordering fault from the `pushGen` bump; the fresh
+poll still overlays pending edits; the server keeps the submitted key, so the link names the stored
+person). Two left, both fixed:
+
+1. **P1 — Stay offline.** The add still POSTed under the setting, said IS IN, and the ordered poll
+   never ran (polls stop under it), so the server had the person and this phone did not. The setting
+   means *this phone sends nothing*: under it the add takes the **offline path** — no POST, a local
+   pending edit through sync, like a real offline add — and the success line says the crew hears once
+   the phone is online again ("Send Vic this link. Opening it makes the picks theirs — once this phone
+   is online again."). An add already out when the setting goes on keeps the person here as a pending
+   edit when its answer lands (idempotent with the server's copy), so the view is never left behind.
+   `sync.stayingOffline()` (new, one line) is the page's own truth for the setting. Tests: an add under
+   Stay offline sends nothing, is here at once and pending, and sync sends it once the setting is off;
+   the setting switched on mid-flight keeps the person here. Both red without their fix.
+2. **P2 — `addedNotYetHere` pruned on any local entry**, and a removed member being brought back
+   already has one (`removed: true`), so a sheet reopened before the poll landed let the same add go
+   twice. It prunes only when the local entry is the active person. Test: bring back a removed member,
+   reopen before the poll — "Mo is already in this crew.", no second POST (red without the fix).
+
+## Sol on `0e51b06`, and the release rule: no worse than production, cheap and certain fixes, the rest banked
+
+Production's add today (`main`, `openAddMember`) applies the server's doc directly, POSTs under Stay
+offline, and its offline branch writes a local person keyed by the local copy's casing with no cap
+check. So several late findings are pre-existing flaws of the offline add path — sync-engine design
+work, not this release's. The rule the coordinator set: the add path must be no worse than production
+anywhere; fix what is cheap and certain; bank the rest with acceptance tests.
+
+1. **P1, cut (it came from the mid-flight instruction of the round before):** when Stay offline goes on
+   while an add is out and the add SUCCEEDS, nothing is queued here any more — a pending copy could
+   bring back a person another phone then removes, or undo a newer colour. The server has the person;
+   the sheet shows the same "once this phone is online again" line, and the ordered path brings them
+   when sync resumes (switching the setting off pushes, and the push's answer is the crew doc). The
+   local write that REPLACED an entry (dropping an existing pid) now merges into it. Tests: the
+   mid-flight success queues nothing and a later removal by another phone stands; a local-only add of a
+   removed member keeps their pid. Each red without its fix.
+2. **P2, cheap:** a local-only add (offline, Stay offline) checks the active count against the people cap
+   first and says "This crew is full (24 people max)." — the server's words — instead of promising a
+   link. The cap is now one shared number, `ACTIVE_PEOPLE_MAX` in `js/name-rules.mjs`, which the server's
+   `LIMITS.activePeople` reads (the same way the name rules are shared). Test: a full crew under Stay
+   offline — the words, nothing queued, the entries live again (red without the check).
+3. **P1 about casing — BANKED (pre-existing):** an offline add of "drew" while the server already has
+   "Drew" queues `people.drew`; the merge refuses two names that differ only by case (400, "Someone in
+   the crew already has that name"), sync.js treats that as a deterministic refusal, and the phone's
+   sync is **blocked** until a new edit. **Today's production has the same exposure** — confirmed in
+   `origin/main` `js/v3/app.js` (`openAddMember`'s catch: `state.recordPerson(canonical, person)` with
+   `canonical` from the local copy's casing, no reconciliation), and `api/crew.js` returns that 400.
+   Not redesigned now.
+
+## Follow-ups (banked, with acceptance tests)
+
+1. **A pending add whose name matches a server person case-insensitively reconciles to the server's key
+   and never blocks sync.** `tests/offline-add-casing.test.mjs` — written, runs as a TODO (it fails today,
+   reproducing the block: pending `drew`, sync blocked), and does not fail the suite. The fix is in the
+   sync engine (reconcile a pending person against the server's names before or on a 400), not the
+   Invite sheet.
 
 ## For whoever merges this with live/tap and live/plan
 
@@ -168,6 +317,9 @@ deadline); plus every earlier add test, now waiting for the ordered poll instead
    longer where a phone looks first — suggest "Tap your avatar, then their name." (his words to change).
 3. A real-iPhone check of the empty-space tap (call 14): WebKit in Playwright reproduces the missing
    click and the fix; Safari on a phone is the one that matters.
+4. The sheets' ✕ draws as a small "×" in WebKit (a font fallback for ✕, every sheet — seen in the
+   Invite frames at 320); Chromium draws the thin ✕. Pre-existing; worth a look with the sheet-chrome
+   work, not here.
 
 ## The review round (Codex, on `a1612a0`, 2026-09-26)
 
@@ -296,8 +448,10 @@ C if a highlight is on — under the sheet's backdrop) and the shelf or sheet ri
    and its "Later"; from + Invite someone it says "INVITE SOMEONE" and "Done". The name field is
    NOT focused on open (the old add-someone sheet did): a phone's keyboard would cover the crew
    link, which is first. A guest (Settings can open the link) sees the link only — no name to add,
-   no invite-festival stamp. Kevin's short copy is kept word for word ("Pick for them until they
-   open their link."; `tests/share-copy.test.mjs` holds it).
+   no invite-festival stamp. The name section's words are Kevin's copy note of the last round ("Or
+   add a friend" · "You pick for them; the crew sees where they’re going."; `tests/share-copy.test.mjs`
+   holds them) — they replaced "Pick for them until they open their link.", which read as a
+   waiting room.
 10. **Switching who you pick as grows the new letter in** (the + becoming you already did).
 11. **How it works keeps Kevin's words** ("Tap their name. Switch who you pick as in Settings." —
     both still true: the names are in the menu, and Settings → You still switches). Suggested,

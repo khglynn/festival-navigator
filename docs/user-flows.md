@@ -63,13 +63,19 @@ from generated crew names; selection survives entering the name step.
 
 1. Wall → your avatar → **+ Invite someone** (a laptop's people row has the
    same + Invite someone; so does Settings → CREW) → ONE sheet (2026-09-26),
-   in Kevin's order: the crew link first (Copy / Share), then add by name,
-   then one-tap chips under "From your other fests" (active people from every
-   other circle this device knows, deduped, minus you and existing members).
-   The sheet a new crew opens on is the same one, titled for the moment.
-2. Success mints the person's claim link (&me=) — placeholder until opened.
+   in Kevin's order: the crew link first (Copy / Share), then "Or add a
+   friend" (by name — "You pick for them; the crew sees where they're
+   going."), then one-tap chips under "From your other fests" (active people
+   from every other circle this device knows, deduped, minus you and existing
+   members). The sheet a new crew opens on is the same one, titled for the
+   moment.
+2. Adding by name is complete as it stands (2026-09-26): a friend the crew
+   picks for may never open the app. Success ("MO IS IN") mints their claim
+   link (&me=) for if they ever want to pick — opening it makes the picks
+   theirs.
 3. Settings → CREW → tapping a member chip shows their link with a
-   linked-vs-placeholder line (pid = claimed; no pid = waiting for its human).
+   linked-vs-picked-for line (pid = claimed; no pid = the same "if they ever
+   want to pick" sentence the sheet says).
 **Expected:** recurring people are one tap, never retyped; the two links keep
 their jobs distinct (circle link = joins the cluster; name link = becomes
 that person).

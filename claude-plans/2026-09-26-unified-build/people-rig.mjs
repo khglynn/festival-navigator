@@ -55,21 +55,33 @@ function docFor(crew = 9) {
   if (crew === 'left') d.people.Ben = { ...d.people.Ben, removed: true };
   return d;
 }
-export async function openApp(rig, { now, width = 390, height = 844, desktop = width >= 720, view = 'board', guest = false, crew = 9, store = {} }) {
+// `adds`: an Invite sheet add is answered IN MEMORY (the person merged into
+// this page's copy of the crew, which later GETs return) — so the success
+// state can be framed; nothing leaves this machine. `offline`: Settings →
+// Stay offline on, so an add takes the local path (the longest success line).
+export async function openApp(rig, { now, width = 390, height = 844, desktop = width >= 720, view = 'board', guest = false, crew = 9, store = {}, adds = false, offline = false }) {
   const doc = docFor(crew);
-  const ctx = await rig.browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: !desktop, isMobile: !desktop, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+  const ctx = await rig.browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: !desktop, isMobile: !desktop && rig.engine === 'chromium', serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
   await ctx.route('**/*', (route) => (route.request().url().startsWith(rig.origin) ? route.fallback() : route.abort()));
-  await ctx.route((u) => u.pathname === '/api/crew', (route) => (route.request().method() === 'GET' ? route.fulfill({ json: doc }) : route.fallback()));
-  await ctx.addInitScript(([t, f, v, g, st]) => {
+  await ctx.route((u) => u.pathname === '/api/crew', (route) => {
+    const req = route.request();
+    if (req.method() === 'GET') return route.fulfill({ json: doc });
+    if (!adds) return route.fallback(); // refused and counted by the rig's server
+    const people = ((JSON.parse(req.postData() || '{}').data || {}).people) || {};
+    for (const [n, p] of Object.entries(people)) doc.people[n] = { ...(doc.people[n] || {}), ...p };
+    return route.fulfill({ json: doc });
+  });
+  await ctx.addInitScript(([t, f, v, g, st, off]) => {
     try {
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Design crew' }]));
       if (!g) localStorage.setItem(`fn_me_v3_${t}`, 'Ana');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
       for (const k of ['fn_welcome_v1', 'fn_welcome_joined_v1', 'fn_coach_v1', 'fn_errlog_off_v1']) localStorage.setItem(k, '1');
       if (v === 'list') localStorage.setItem(`fn_view_v1_${f}`, 'list');
+      if (off) localStorage.setItem('fn_settings_v1', JSON.stringify({ stayOffline: true }));
       for (const [k, val] of Object.entries(st)) sessionStorage.setItem(k, val);
     } catch { /* storage blocked */ }
-  }, [TOKEN, FID, view, guest, store]);
+  }, [TOKEN, FID, view, guest, store, offline]);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -83,6 +95,17 @@ export async function openApp(rig, { now, width = 390, height = 844, desktop = w
 }
 
 const W3 = (id, o) => [390, 320, 1280].map((width) => ({ id: `${id}-${width}`, width, ...o }));
+async function invite(p, w) { await press(w)(p, you(w)); await press(w)(p, act(w, 'invite')); }
+// Add a friend by name through the sheet with real input (a tap or click on
+// the field, typed keys, the Add button), and wait for the success state.
+const addFriend = (name) => async (p, w) => {
+  await invite(p, w);
+  await press(w)(p, '.invite-sheet .inv-name input');
+  await p.keyboard.type(name);
+  await press(w)(p, '.invite-sheet .inv-add');
+  await p.waitForFunction((n) => (document.querySelector('.invite-sheet .sheet-title')?.textContent || '') === `${n.toUpperCase()} IS IN`, name, { timeout: 5000 });
+  if (!mobile(w)) await p.mouse.move(2, 2); // no hover left on the button
+};
 export const FRAMES = [
   ...W3('menu-open', { at: PORTOLA, act: async (p, w) => press(w)(p, you(w)) }),
   ...W3('menu-ben-cy', { at: PORTOLA, act: async (p, w) => highlight(p, w, ['Ben', 'Cy']) }),
@@ -93,7 +116,21 @@ export const FRAMES = [
   ...W3('top', { at: 'top' }),
   ...W3('guest-menu', { at: PORTOLA, guest: true, act: async (p, w) => press(w)(p, you(w)) }),
   ...W3('pickas', { at: PORTOLA, act: async (p, w) => { await press(w)(p, you(w)); await press(w)(p, act(w, 'pick-as')); await sleep(300); await press(w)(p, `.join-shelf .js-name[data-name="Ben"]`); } }),
-  ...W3('invite', { at: PORTOLA, act: async (p, w) => { await press(w)(p, you(w)); await press(w)(p, act(w, 'invite')); } }),
+  ...W3('invite', { at: PORTOLA, act: invite }),
+  // The Invite sheet's copy pass (2026-09-26): the sheet, and the success
+  // state after "Or add a friend", in Chromium and in WebKit (an iPhone's
+  // engine) at 320, where the lines wrap the most.
+  { id: 'invite-wk-320', width: 320, engine: 'webkit', at: PORTOLA, act: invite },
+  ...W3('invite-added', { at: PORTOLA, adds: true, act: addFriend('Mo') }),
+  { id: 'invite-added-wk-320', width: 320, engine: 'webkit', at: PORTOLA, adds: true, act: addFriend('Mo') },
+  { id: 'invite-added-offline-wk-320', width: 320, engine: 'webkit', at: PORTOLA, offline: true, act: addFriend('Mo') },
+  // The header's two lines, removed (Kevin, 2026-09-26: "in the header we
+  // don't need these lines"): the divider stub before the search field and
+  // the rail's hairline. The top of the wall at 1280, at 900 (the people row
+  // wraps there) and 390; and the rail stuck over the wall mid-scroll.
+  ...[1280, 900, 390].map((width) => ({ id: `header-top-${width}`, width, at: 'top' })),
+  ...[1280, 900].map((width) => ({ id: `header-rail-${width}`, width, at: PORTOLA })),
+  { id: 'header-top-twelve-900', width: 900, at: 'top', crew: 12 }, // the row wraps: the stub stood alone on the search line
   { id: 'menu-long-name-320', width: 320, at: PORTOLA, crew: 'long', act: async (p, w) => highlight(p, w, ['Bartholomew-Maximiliana']) },
   { id: 'pill-long-name-320', width: 320, at: PORTOLA, crew: 'long', act: async (p, w) => { await highlight(p, w, ['Bartholomew-Maximiliana']); await outside(p, w); } },
   { id: 'menu-twelve-667', width: 375, height: 667, at: PORTOLA, crew: 12, act: async (p, w) => press(w)(p, you(w)) },
@@ -108,11 +145,13 @@ export const FRAMES = [
 export async function renderFrames(prefixes = []) {
   const want = (id) => !prefixes.length || prefixes.some((p) => id.startsWith(p));
   const report = [];
-  const rig = await openRig();
+  const rigs = {};
+  const rigFor = async (engine = 'chromium') => (rigs[engine] ||= await openRig({ engine }));
   try {
     for (const f of FRAMES.filter((x) => want(x.id))) {
       try {
-      const { ctx, page, errors } = await openApp(rig, { now: f.now || SAT, width: f.width, height: f.height || (f.width >= 720 ? 900 : 844), view: f.view || 'board', guest: !!f.guest, crew: f.crew || 9, store: f.store || {} });
+      const rig = await rigFor(f.engine);
+      const { ctx, page, errors } = await openApp(rig, { now: f.now || SAT, width: f.width, height: f.height || (f.width >= 720 ? 900 : 844), view: f.view || 'board', guest: !!f.guest, crew: f.crew || 9, store: f.store || {}, adds: !!f.adds, offline: !!f.offline });
       try {
         if (f.at === 'top') { await page.evaluate(() => window.scrollTo(0, 0)); await sleep(900); } else if (f.at) await scrollTo(page, f.at);
         if (f.act) await f.act(page, f.width);
@@ -122,7 +161,7 @@ export async function renderFrames(prefixes = []) {
       } finally { await ctx.close().catch(() => {}); }
       } catch (e) { report.push(`${f.id}: FAILED — ${String(e.message || e).split('\n')[0]}`); }
     }
-  } finally { await rig.close(); }
+  } finally { for (const r of Object.values(rigs)) await r.close(); }
   report.push(`writes refused: ${writes.length} (${[...new Set(writes)].join(', ')})`);
   return report;
 }

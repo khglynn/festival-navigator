@@ -354,9 +354,14 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
   assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
+  // Adding by name is a whole thing on its own (Kevin, 2026-09-26: "a note for
+  // us that they're going there") — a peer of the link, not a wait until they join.
+  const byName = sheet.querySelector('.inv-name').parentElement;
+  assert.equal(byName.querySelector('.micro-label').textContent, 'Or add a friend');
+  assert.equal(byName.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
 });
 
-test('Add by name is server-first and ends on their own link; a name already here is said, not sent', async () => {
+test('Or add a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
   const input = sheet.querySelector('.inv-name input');
   input.value = 'ben';
@@ -373,6 +378,7 @@ test('Add by name is server-first and ends on their own link; a name already her
   const done = document.querySelector('#artist-sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
+  assert.equal(done.querySelector('.inv-sub').textContent, 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
   // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
   await until(() => state.people().Zed, 'Zed, brought by the poll');
   done.querySelector('.inv-done').click();
@@ -572,6 +578,130 @@ test('a request that hangs is let go at its deadline: a plain word, and the entr
   await doneWithSheet();
   await addNamed('Uma');
   await answered('Uma');
+  await doneWithSheet();
+});
+
+// Stay offline means this phone sends nothing (Sol's re-review of 58e75fe).
+const postsNow = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).length;
+const settleSync = async () => { sync.setStayOffline(false); await sync.pushSync(); await settle(10); };
+
+test('under Stay offline an add sends nothing: it is kept here as a pending edit, and the sheet says the crew hears when the phone is online again', async () => {
+  const before = postsNow();
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Vic');
+    await answered('Vic');
+    assert.equal(postsNow(), before, 'no POST under Stay offline');
+    const sheet = document.querySelector('#artist-sheet');
+    assert.equal(sheet.querySelector('.inv-sub').textContent, 'The crew sees Vic once this phone is online again. If Vic ever wants to pick, send this link. Opening it makes the picks theirs.');
+    assert.match(sheet.querySelector('.inv-link input').value, /me=Vic/, 'his link all the same');
+    assert.ok(state.people().Vic, 'Vic is here at once');
+    assert.ok(((state.pendingChanges || {}).people || {}).Vic, 'as a pending edit, for sync to send');
+    await doneWithSheet();
+  } finally { await settleSync(); }
+  assert.equal(postsNow(), before + 1, 'and sync sends him once the setting is off');
+  assert.ok(SERVER[CREW].people.Vic, 'the crew has him');
+});
+
+test('Stay offline switched on while an add is out and it succeeds: nothing is queued here — the server has the person, and sync brings them when it resumes', async () => {
+  await addNamed('Wes', { holdAnswer: true }); // out, and the server has him
+  sync.setStayOffline(true);
+  try {
+    holdPosts = false;
+    heldPosts.splice(0).forEach((r) => r());
+    await answered('Wes');
+    assert.match(document.querySelector('#artist-sheet .inv-sub').textContent, /once this phone is online again/, 'the sheet says so');
+    assert.equal(((state.pendingChanges || {}).people || {}).Wes, undefined, 'no pending copy (it could bring back someone another phone removes, or undo a newer colour)');
+    assert.equal(state.people().Wes, undefined, 'and no local write: the ordered path brings him');
+    await doneWithSheet();
+    // Another phone removes Wes before this one sends again: nothing here brings him back.
+    SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Wes: { removed: true } } });
+  } finally { await settleSync(); } // what switching the setting off does (app.js onStayOffline → pushSync)
+  assert.ok(state.people().Wes, 'the crew doc arrived the ordered way');
+  assert.equal(state.people().Wes.removed, true, 'with the other phone’s removal standing');
+});
+
+test('a local-only add checks the people cap first: a full crew says so instead of promising a link', async () => {
+  const fill = {};
+  const active = () => state.activePeople().length;
+  for (let i = 0; active() + Object.keys(fill).length < 24; i += 1) fill[`Fill${i}`] = { colorIndex: 0 };
+  state.applyRemoteDoc(deepMerge(state.crewDoc, { people: fill })); // 24 active, as this phone knows it
+  assert.equal(active(), 24);
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Yan');
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    assert.equal(sheet.querySelector('.inv-status').textContent, 'This crew is full (24 people max).', 'the server’s own words');
+    assert.equal(state.people().Yan, undefined);
+    assert.equal(((state.pendingChanges || {}).people || {}).Yan, undefined, 'nothing queued');
+    assert.equal(sheet.querySelector('.inv-add').disabled, false, 'the entries are live again');
+    document.querySelector('#artist-sheet .sheet-close').click();
+    await sheetClosed();
+  } finally { await settleSync(); } // the crew as the server has it again (the fill was this phone's alone)
+  assert.equal(state.people().Fill0, undefined);
+});
+
+test('a local-only add of a removed member merges into their entry: their pid is kept', async () => {
+  const pid = 'pidolitest0001';
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Oli: { colorIndex: 13, removed: true, pid } } });
+  await sync.pollSync();
+  assert.equal(state.people().Oli.pid, pid);
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Oli');
+    await answered('Oli');
+    assert.equal(state.people().Oli.removed, false, 'back');
+    assert.equal(state.people().Oli.pid, pid, 'with the pid their claim link needs');
+    await doneWithSheet();
+  } finally { await settleSync(); }
+  assert.equal(SERVER[CREW].people.Oli.pid, pid, 'and the server’s copy keeps it too');
+});
+
+test('bringing back a removed member: a reopened sheet before the poll lands still knows the add is done — no second POST', async () => {
+  assert.equal(state.people().Mo.removed, true, 'Mo left earlier (another phone removed him)');
+  holdGets = 1; // the ordered poll after the add waits
+  await addNamed('mo'); // any capitalisation brings back the same person
+  await answered('Mo');
+  const after = postsNow();
+  await doneWithSheet();
+  assert.equal(state.people().Mo.removed, true, 'this phone still has the old entry — the poll has not landed');
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  sheet.querySelector('.inv-name input').value = 'Mo';
+  sheet.querySelector('.inv-add').click();
+  await settle(20);
+  assert.equal(postsNow(), after, 'no second POST');
+  assert.equal(sheet.querySelector('.inv-status').textContent, 'Mo is already in this crew.', 'the answered add counts, though the old entry is removed');
+  heldGets.splice(0).forEach((r) => r());
+  await until(() => state.people().Mo && !state.people().Mo.removed, 'Mo back, brought by the poll');
+  document.querySelector('#artist-sheet .sheet-close').click();
+  await sheetClosed();
+});
+
+// Codex on 6178e38 (a regression against production): an answered add was
+// remembered until a sheet happened to check it while the person looked
+// active here. Nobody did, another phone removed him, and the sheet said
+// "already in this crew" and sent nothing — production sends the re-add.
+// The memory now ends when a read that left after the add has landed,
+// whatever it says about him.
+test('an add answered, another phone removes him, an ordered poll brings that: adding him back sends the POST', async () => {
+  await addNamed('Gus');
+  await answered('Gus');
+  await until(() => state.people().Gus && !state.people().Gus.removed, 'Gus, brought by the ordered poll');
+  await doneWithSheet(); // and nothing on this phone looks at the add again while he is here
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Gus: { removed: true } } }); // another phone removes him
+  await sync.pollSync(); // a poll that left after the add: the server's word on Gus
+  assert.equal(state.people().Gus.removed, true, 'Gus is out, here');
+  const before = postsNow();
+  await addNamed('Gus');
+  await answered('Gus');
+  assert.equal(postsNow(), before + 1, 'the re-add goes to the server, as production’s does');
+  const post = writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).at(-1);
+  assert.equal(post.body.data.people.Gus.removed, false, 'bringing him back');
+  await until(() => state.people().Gus && !state.people().Gus.removed, 'Gus back, brought by the ordered poll');
   await doneWithSheet();
 });
 

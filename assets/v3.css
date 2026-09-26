@@ -445,7 +445,8 @@ html { touch-action: manipulation; }
 /* The Invite sheet (2026-09-26): one sheet, crew link first, then a name,
  * then the people from your other fests (app.js openInvite). The looks are
  * the two sheets' it replaced, moved out of inline styles. */
-.invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; }
+/* pretty: no one-word last line at 320 ("going.", "needed."); a plain wrap where unsupported. */
+.invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; text-wrap: pretty; }
 .invite-sheet .inv-link, .invite-sheet .inv-name { display: flex; gap: 8px; align-items: center; }
 .invite-sheet .inv-link input { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input);
                                 border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body);
@@ -470,10 +471,16 @@ html { touch-action: manipulation; }
 /* A member's own chip on the Pick-as shelf says so (join-shelf.js `me`). */
 .join-shelf .js-you { color: rgba(255, 255, 255, .72); font-weight: 600; margin-left: -3px; }
 /* On a phone the people row leaves the top of the wall (design §4): your
- * avatar is their door now, from anywhere in the wall. The laptop keeps it. */
-#person-chips { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+ * avatar is their door now, from anywhere in the wall. The laptop keeps it.
+ * Space, not a line, parts it from the search field (Kevin, 2026-09-26: "in
+ * the header we don't need these lines" — a divider stub stood here, and
+ * where the row wrapped it dangled alone at a line's end): three times the
+ * chips' own gap, so the row and the field read as two groups; where the row
+ * wraps onto its own line the space falls at that line's end, unseen. */
+#person-chips { display: inline-flex; gap: 5px; flex-wrap: wrap; margin-right: 12px; }
+#person-chips:empty { display: none; }
 @media (max-width: 719px) {
-  #person-chips, .toolbar .toolbar-divider { display: none; }
+  #person-chips { display: none; }
 }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
@@ -490,7 +497,6 @@ html { touch-action: manipulation; }
 .toolbar .notes-chip { align-self: stretch; box-sizing: border-box; }
 .notes-chip .count { background: rgba(139, 123, 255, .25); border-radius: var(--r-pill);
                      padding: 0 6px; font-size: 10px; }
-.toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
 
 /* ---- a day, and the one head every room wears (one-line heads, 2026-09-23) ----- */
 /* claude-plans/2026-09-23-one-line-heads.md. Kevin: "combine the double lines
@@ -566,7 +572,9 @@ button.room-head { cursor: pointer; }
      * mid-scroll and read as broken overlap (Kevin, 2026-07-12). */
     background: rgba(12, 10, 20, .94);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--hairline);
+    /* No hairline under it (Kevin, 2026-09-26: "in the header we don't need
+     * these lines. the horizontal one already disappears on mobile"): the
+     * near-opaque ground is the edge, as the phone's top has none. */
   }
   /* Same anatomy as the dock (unified 2026-07-12, Kevin note 1.1): your
    * avatar circle, the day tabs, the fest name + sync dot. One component

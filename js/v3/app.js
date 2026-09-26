@@ -60,7 +60,7 @@ import { createSortControl } from './sort-control.js';
 // The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
 import { buildHighlightMenu, paintHighlightMenu, menuActionRow, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
 import { passesPeople } from './filters.js';
-import { nameProblem } from '../name-rules.mjs';
+import { nameProblem, ACTIVE_PEOPLE_MAX } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // Entering a crew you already have a life in (2026-09-23): recognized on
@@ -2873,15 +2873,26 @@ function openImport() {
 function openShareMoment() { openInvite({ moment: true }); }
 function openAddMember() { openInvite(); }
 
+// The words (copy pass 2026-09-26, Kevin: "Sometimes picking as someone is a
+// stop gap but an end state… a note for us that they're going there"). Adding
+// someone by name is a whole thing on its own — a friend the crew picks for,
+// who may never open the app — not a waiting room until they join, so the
+// section is a peer of the link ("Invite someone… or add a friend"), and
+// their link is an "if ever", said where the link is. The title stays the
+// door's name (+ Invite someone, Kevin's word over "Add", v93).
 const INVITE_WORDS = {
   title: 'INVITE SOMEONE',
   momentTitle: 'ONE LINK MAKES IT A CREW',
   opens: (crewName) => `Opens straight into ${crewName}. No accounts needed.`,
   share: 'Share the link',
-  byName: 'Add by name',
-  byNameSub: 'Pick for them until they open their link.',
+  byName: 'Or add a friend',
+  byNameSub: 'You pick for them; the crew sees where they’re going.',
   field: 'Their name',
   others: 'From your other fests',
+  // Settings → Crew says the same sentence for a friend with no link opened
+  // yet (tests/share-copy.test.mjs holds the two together).
+  claim: (who) => `If ${who} ever wants to pick, send this link. Opening it makes the picks theirs.`,
+  notYet: (who) => `The crew sees ${who} once this phone is online again.`,
 };
 
 function inviteLinkRow(link, label) {
@@ -2956,12 +2967,14 @@ function openInvite({ moment = false } = {}) {
   document.body.append(backdrop, sheet);
   if (!member) return;
 
-  // 2. A name: someone without the link yet — a shared phone, a friend who
-  // is not on their phone. Server-first like the join screen (FLOW-5), so the
-  // people cap answers here; offline falls back to the local doc + sync.
-  // Success mints the per-person claim link (&me=): opening it lands them on
-  // their circle with every pick already theirs. Not focused on open: the
-  // keyboard would cover the link, which comes first.
+  // 2. A name: a friend the crew picks for — one who may never open the app
+  // (Kevin's Folsom friends: "just a note for us that they're going there"),
+  // a shared phone, a friend not on their phone. Complete as it stands.
+  // Server-first like the join screen (FLOW-5), so the people cap answers
+  // here; offline falls back to the local doc + sync. Success mints the
+  // per-person claim link (&me=), for if they ever want it: opening it lands
+  // them on their circle with every pick already theirs. Not focused on open:
+  // the keyboard would cover the link, which comes first.
   const token = state.getCrewToken();
   const byName = document.createElement('div');
   byName.className = 'inv-section';
@@ -3013,14 +3026,19 @@ function openInvite({ moment = false } = {}) {
     sheet.appendChild(pickWrap);
   }
 
-  const succeed = (canonical) => {
+  const succeed = (canonical, offline = false) => {
     sheet.textContent = '';
     // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
     // the moment it becomes the thing you are actually looking at.
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.className = 'inv-sub';
-    explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
+    // Done as it stands: the link is for if they ever want to pick. Kept on
+    // this phone for now (offline, or Stay offline): the crew hears of them
+    // when the phone sends again, and the line says so first.
+    explain.textContent = offline
+      ? `${INVITE_WORDS.notYet(canonical)} ${INVITE_WORDS.claim(canonical)}`
+      : INVITE_WORDS.claim(canonical);
     const theirs = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
     const done = document.createElement('div');
     done.className = 'inv-actions';
@@ -3057,7 +3075,7 @@ function openInvite({ moment = false } = {}) {
       // A sheet that has closed, or a crew that has changed, takes nothing.
       if (!sheet.isConnected || state.getCrewToken() !== token) return;
       setWaiting(false);
-      if (outcome.ok) succeed(outcome.canonical);
+      if (outcome.ok) succeed(outcome.canonical, !!outcome.offline);
       else if (outcome.message) status.textContent = outcome.message;
     });
   };
@@ -3109,12 +3127,21 @@ const addInFlight = new Map(); // crew token → { canonical, waiters: Set<(outc
 // Answered, not yet in this phone's doc (the ordered poll has not landed):
 // the sheet counts them as here — "Mo is already in this crew", and the next
 // person does not take Mo's colour. Memory only; the doc stays sync's.
-const addedHere = new Map(); // crew token → Map(lower-case name → { name, person })
+//
+// Each is let go the moment this phone has applied a doc that left AFTER the
+// add was answered (sync.heardSince, the mark afterServerWrite handed back):
+// from then on this phone's doc is the server's word on that person, whatever
+// it says — here, or removed since by another phone. Not "once they look
+// active here": a removed member being brought back already has an entry
+// (removed: true), so that let a reopened sheet send the same add twice (Sol,
+// 58e75fe); and a success nobody re-checked while it was active stayed
+// forever, so a person another phone then removed could not be added back —
+// "already in this crew", no POST, where production re-adds (Codex, 6178e38).
+const addedHere = new Map(); // crew token → Map(lower-case name → { name, person, mark })
 function addedNotYetHere(token) {
   const mine = addedHere.get(token);
   if (!mine) return [];
-  const here = new Set(Object.keys(state.people()).map((n) => n.toLowerCase()));
-  for (const k of [...mine.keys()]) if (here.has(k)) mine.delete(k);
+  for (const [k, a] of [...mine]) if (sync.heardSince(token, a.mark)) mine.delete(k);
   return [...mine.values()];
 }
 function addPerson(token, canonical, person) {
@@ -3126,6 +3153,33 @@ function addPerson(token, canonical, person) {
       try { w(outcome); } catch (e) { record('invite:add', e); }
     }
   };
+  // The offline path: a local pending edit, pushed by sync when this phone
+  // sends again. Local-only, so the people cap is checked here, the way the
+  // server would have (the server's own words), before a link is promised.
+  // The local entry is merged, never replaced: bringing back a removed member
+  // keeps their pid (the old replacement dropped it — Sol, 0e51b06).
+  const keepHere = () => {
+    const active = new Set(state.activePeople().map(([n]) => n.toLowerCase()));
+    for (const a of addedNotYetHere(token)) active.add(a.name.toLowerCase());
+    if (!active.has(canonical.toLowerCase()) && active.size + 1 > ACTIVE_PEOPLE_MAX) {
+      finish({ ok: false, message: `This crew is full (${ACTIVE_PEOPLE_MAX} people max).` });
+      return;
+    }
+    state.recordPerson(canonical, person);
+    state.crewDoc.people[canonical] = { ...(state.crewDoc.people[canonical] || {}), ...person };
+    state.persist();
+    sync.scheduleSync();
+    refreshCtx(); renderPersonChips(); repaintWall();
+    finish({ ok: true, canonical, offline: true });
+  };
+  // Stay offline means this phone sends nothing: no POST at all — the add is
+  // the offline one (Sol's re-review of 58e75fe: it POSTed, said IS IN, and
+  // the ordered poll never ran under the setting, so the server had the
+  // person and this phone did not).
+  if (sync.stayingOffline()) {
+    Promise.resolve().then(keepHere); // after the sheet is listening
+    return add;
+  }
   const deadline = timeoutSignal(ADD_DEADLINE_MS);
   (async () => {
     try {
@@ -3143,11 +3197,18 @@ function addPerson(token, canonical, person) {
         return;
       }
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
+      // The doc, the ordered way (it waits under Stay offline); the mark says
+      // when a doc that carries this add has reached this phone.
+      const mark = sync.afterServerWrite();
       const mine = addedHere.get(token) || new Map();
-      mine.set(canonical.toLowerCase(), { name: canonical, person });
+      mine.set(canonical.toLowerCase(), { name: canonical, person, mark });
       addedHere.set(token, mine);
-      finish({ ok: true, canonical });
-      sync.afterServerWrite(); // the doc, the ordered way
+      // Stay offline switched on while this was out: the server has the
+      // person, and nothing is queued here — a pending copy could bring back
+      // someone another phone then removes, or undo a newer colour (Sol,
+      // 0e51b06). The sheet says the crew arrives once the phone is online
+      // again, and the ordered poll brings them when sync resumes.
+      finish({ ok: true, canonical, offline: sync.stayingOffline() });
     } catch {
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
       if (deadline && deadline.aborted) {
@@ -3155,12 +3216,7 @@ function addPerson(token, canonical, person) {
         return;
       }
       // Offline: local-first add, sync catches up — same as every pick.
-      state.recordPerson(canonical, person);
-      state.crewDoc.people[canonical] = person;
-      state.persist();
-      sync.scheduleSync();
-      refreshCtx(); renderPersonChips(); repaintWall();
-      finish({ ok: true, canonical });
+      keepHere();
     }
   })();
   return add;
