@@ -19,7 +19,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, focusQuietly } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
@@ -111,7 +111,14 @@ const ctx = {
   now: null, // tests pin the clock; null = new Date() at render
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
+    // From the zoom's note door, focus goes back to the card the zoom stood
+    // on when the shelf closes — the door itself is gone by then (the tap
+    // walk, 2026-09-26: Escape left focus on <body>). Handed over quietly, so
+    // it grows no keyboard zoom, before the sheet records its opener.
+    const stood = zoomedCard();
     unzoom({ why: 'notes sheet opened', meant: true });
+    const a = document.activeElement;
+    if (stood && stood.isConnected && (!a || a === document.body || (a.closest && a.closest('#zoom-layer')))) focusQuietly(stood);
     openArtistSheet(artist, ctx, onNotesChange, occ);
     // The occurrence rides in the route key (router.encodeNotesKey — a tagged
     // payload no name can imitate), so back, forward and a refresh reopen
@@ -161,6 +168,10 @@ const ctx = {
 // within a beat of the finger lifting, wherever it lands. Gone at the next
 // press, at that click, a beat after the lift, or — a finger held on and on —
 // after a few seconds regardless.
+// An engine that sends the menu on the RELEASE (Windows' press-and-hold) has
+// no lift still to come, so the beat also runs from the start; a key, a
+// cancelled gesture or the next press stand it down at once (the review of
+// the tap change: an Enter's click must never be eaten).
 function eatLiftClick() {
   let beat = null;
   const disarm = () => {
@@ -169,13 +180,17 @@ function eatLiftClick() {
     document.removeEventListener('click', eat, true);
     document.removeEventListener('pointerup', lifted, true);
     document.removeEventListener('pointerdown', disarm, true);
+    document.removeEventListener('pointercancel', disarm, true);
+    document.removeEventListener('keydown', disarm, true);
   };
   const eat = (e) => { disarm(); e.stopPropagation(); e.preventDefault(); };
   const lifted = () => { clearTimeout(beat); beat = setTimeout(disarm, 400); };
-  const cap = setTimeout(disarm, 5000);
+  const cap = setTimeout(disarm, 1500);
   document.addEventListener('click', eat, true);
   document.addEventListener('pointerup', lifted, true);
   document.addEventListener('pointerdown', disarm, true);
+  document.addEventListener('pointercancel', disarm, true);
+  document.addEventListener('keydown', disarm, true);
 }
 
 // One zoom at a time, dismissed the way previews are everywhere: a tap or
@@ -478,7 +493,10 @@ function refreshArtistCards(artistName) {
 // The hand is the last real press or key (card-facts.js fingerHand), never
 // the click's own pointerType — WebKit sends a finger's click as "mouse".
 function handleTap(artistName, el = null, occ = null) {
-  if (el && el.isConnected && fingerHand()) {
+  // Any press from a card (el) — even a node a repaint replaced between the
+  // finger's press and its click — opens the shelf for a finger: a finger
+  // never picks by tapping (the review of the tap change).
+  if (el && fingerHand()) {
     if (welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
     ctx.onOpenNotes(artistName, occ);
     return;

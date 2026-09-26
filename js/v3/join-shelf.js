@@ -38,6 +38,7 @@ export const SHELF_WORDS = {
 const SHEET_ID = 'artist-sheet';   // the production sheet's id: closeSheet, quiet() and the waiters know it
 const BACK_ID = 'sheet-backdrop';
 const DRAG_CLOSE_PX = 70;          // the grabber's swipe, as the notes sheets have it
+const SETTLE_MS = 700;             // the dimmed wall under a just-risen shelf is not a door yet (card-facts.js DOOR_SETTLE_MS)
 
 function node(tag, cls, text) {
   const n = document.createElement(tag);
@@ -224,7 +225,17 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     if (onLook) onLook();
   };
   look.addEventListener('click', leave);
-  back.addEventListener('click', leave);
+  // The dimmed wall is where the finger WAS a beat ago: the shelf this
+  // question replaced (a notes shelf's +, a zoom's door) stood there, and a
+  // quick second press meant for it must not drop the question it just
+  // raised (the review of the tap change: + + as a guest put the question
+  // away). The zoom's DOOR_SETTLE beat, the same still-hand law. Look around,
+  // the handle and Escape are always the way out.
+  const bornAt = typeof performance !== 'undefined' ? performance.now() : 0;
+  back.addEventListener('click', () => {
+    if (typeof performance !== 'undefined' && performance.now() - bornAt < SETTLE_MS) return;
+    leave();
+  });
   let startY = null;
   grab.addEventListener('pointerdown', (e) => { startY = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch { /* synthetic */ } });
   grab.addEventListener('pointermove', (e) => {

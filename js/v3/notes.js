@@ -871,6 +871,15 @@ function leave(sheet, backdrop) {
   activeSheetRepaint = null;
   sheet.style.pointerEvents = 'none';
   backdrop.style.pointerEvents = 'none';
+  // On its way out it is no longer a dialog: nothing in it takes focus or is
+  // read out (two modals at once during a guest's handoff to the join shelf).
+  sheet.inert = true;
+  sheet.setAttribute('aria-hidden', 'true');
+  // A close during the rise leaves from wherever the rise has got to — never
+  // snapping up to the rest first (read the live values, then stop the rise).
+  const liveT = window.getComputedStyle(sheet).transform;
+  const liveO = Number.parseFloat(window.getComputedStyle(backdrop).opacity);
+  for (const a of [...sheet.getAnimations(), ...backdrop.getAnimations()]) { try { a.cancel(); } catch { /* finished */ } }
   leavingSheets.add(sheet);
   leavingSheets.add(backdrop);
   let done = false;
@@ -882,8 +891,10 @@ function leave(sheet, backdrop) {
     leavingSheets.delete(sheet);
     leavingSheets.delete(backdrop);
   };
-  backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
-  const from = sheet.style.transform || 'none'; // a grabber drag lets go where it was
+  backdrop.animate([{ opacity: Number.isFinite(liveO) ? liveO : 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  // Where the sheet stands: a grabber drag's inline transform, a rise in
+  // flight, or its rest.
+  const from = sheet.style.transform || (liveT && liveT !== 'none' ? liveT : 'none');
   const out = phoneShelf()
     ? sheet.animate([{ transform: from }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' })
     : sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
@@ -952,7 +963,14 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     let card = null;
     const stepped = () => refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx, scroller: sheet });
     const cardOpts = () => ({ onClose: requestSheetClose, notesChip: false, step: shelfStep(target, ctx, stepped) });
+    // A repaint (a crew-mate's sync, a note added) redraws the card IN PLACE
+    // and instantly: a focused − or + keeps its focus and the row its place
+    // (the review of the tap change: a rebuild dropped a key's focus to <body>).
     paintHeader = () => {
+      if (card && card.isConnected) {
+        refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx: { lowPower: true }, scroller: sheet });
+        return;
+      }
       card = sheetCard(factsFor(target, ctx, occ), cardOpts());
       headerHost.replaceChildren(card);
     };
@@ -993,6 +1011,9 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     paint();
     onChange();
   }) : null;
+  // The scope sheet's composer is its foot, and sticks there (v3.css
+  // .composer-foot); All notes keeps its composer at the top, in the flow.
+  if (box) box.classList.add('composer-foot');
 
   const paint = () => {
     paintHeader();

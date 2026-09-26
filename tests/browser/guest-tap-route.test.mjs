@@ -173,3 +173,32 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
     } finally { await ctx.close(); }
   });
 }
+
+// The review of the tap change (2026-09-26): the join shelf rises in the
+// notes shelf's place, so the spot a guest's finger just pressed + on is the
+// dimmed wall a beat later. A quick second press there must not put the
+// question away (the zoom's settle beat, the still-hand law) — a long thread
+// puts the + high on the screen, where the shorter join shelf never reaches.
+for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]]) {
+  test(`${name}: a guest's quick + + keeps the question it raised`, {
+    skip: get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER),
+  }, async () => {
+    const { ctx, page, errors, writes } = await guestPhone(get());
+    try {
+      for (const gap of [150, 600]) {
+        await openShelf(page, 'Tove Lo');
+        const plus = centre(await page.locator('#artist-sheet .sheet-card .f-step.plus').boundingBox());
+        await tap(page, plus);
+        await sleep(gap);
+        await tap(page, plus); // the same spot: the dimmed wall above the rising question, or the question itself
+        await sleep(700);
+        assert.equal(await page.locator('.join-shelf').count(), 1, `+ then + ${gap}ms later: the question is still up`);
+        await tap(page, centre(await page.locator('.join-shelf .js-look').boundingBox()));
+        await sleep(700);
+        assert.equal(await page.locator('.join-shelf').count(), 0, 'Look around still puts it away');
+      }
+      assert.deepEqual(writes, []);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

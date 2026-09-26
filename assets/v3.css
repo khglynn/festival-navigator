@@ -1544,7 +1544,9 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 /* The middle third is a fixed width that holds the meter at its widest (MUST),
  * so a step to must never re-divides the row: − and + keep their boxes, not
  * just their glyphs (the tap walk, 2026-09-26 — at must the +'s box lost 6px). */
-.sheet-card .f-chips.f-step-row { margin-top: 1px; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); }
+.sheet-card .f-chips.f-step-row { margin-top: 1px; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+                                  /* quick presses on and between − and + never start WebKit's select or callout (the prefix law) */
+                                  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .sheet-card .f-chips.f-step-row > .f-meter { justify-self: center; }
 .sheet-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -17px -16px; }
 .sheet-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -16px -17px 0; }
@@ -1574,7 +1576,7 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * the dock's ground, clear of the home indicator, with the thread passing
  * under it. (The sheet's own 16px padding is what the negative margins and
  * the -16px offset give back.) */
-.sheet > .composer-wrap { position: sticky; bottom: -16px; z-index: 3;
+.sheet > .composer-wrap.composer-foot { position: sticky; bottom: -16px; z-index: 3;
                           margin: 0 -16px -16px; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
                           background: var(--dock); box-shadow: 0 -12px 16px -12px rgba(0, 0, 0, .55); }
 /* The shelf rises from the bottom edge in script on a phone (notes.js arrive);

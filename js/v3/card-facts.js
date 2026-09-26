@@ -1731,7 +1731,11 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
     if (inT) clearTimeout(inT);
     inT = setTimeout(() => {
       inT = null;
-      if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
+      // Never under a sheet: on a touch screen with a trackpad, a finger can
+      // open a shelf inside the intent's 200ms, and a zoom grown under the
+      // dimmed wall stood unseen and held a new build's reload (the review of
+      // the tap change).
+      if (el.isConnected && !document.getElementById('sheet-backdrop')) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
     }, ZOOM_IN_MS);
   };
   // A finger's ghost entering arms nothing (`touchAt`), and a pointer already

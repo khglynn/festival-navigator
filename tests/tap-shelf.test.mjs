@@ -203,3 +203,49 @@ test('Escape closes the shelf and hands focus back to the card — growing no zo
   assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom grew on the handed-back focus');
   assert.equal(level('Robyn'), 1);
 });
+
+// The review of the tap change (2026-09-26).
+test('a crew-mate\'s repaint redraws the shelf\'s card in place: a key\'s focus on + survives it', async () => {
+  const { refreshOpenSheet } = await import('../js/v3/notes.js');
+  await tap(cardOf('Robyn'));
+  assert.ok(shelf());
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })); // the keyboard is driving now
+  plus().focus();
+  const cardBefore = shelf().querySelector('.sheet-card');
+  refreshOpenSheet(); // what a remote sync calls
+  assert.equal(shelf().querySelector('.sheet-card'), cardBefore, 'the same card node, redrawn in place');
+  assert.ok(document.activeElement && document.activeElement.classList.contains('plus'), 'focus is still on +');
+  assert.ok(shelf().contains(document.activeElement), 'inside the shelf');
+  await closeShelf();
+});
+
+test('the shelf\'s composer is its sticky foot; All notes keeps its composer in the flow', async () => {
+  const { openAllNotes, closeSheet } = await import('../js/v3/notes.js');
+  await tap(cardOf('Robyn'));
+  assert.ok(shelf().querySelector('.composer-wrap.composer-foot'), 'the shelf\'s composer sticks to its foot');
+  await closeShelf();
+  openAllNotes({ fid: FID, meName: 'Kevin', picks: {}, onOpenDayNotes() {}, onOpenFestNotes() {} });
+  await settle(10);
+  const all = document.getElementById('artist-sheet');
+  assert.ok(all && all.querySelector('.composer-wrap'), 'All notes has a composer');
+  assert.equal(all.querySelector('.composer-wrap.composer-foot'), null, 'but not the sticky foot');
+  closeSheet();
+});
+
+test('the hold\'s click-eater stands down at a key: an Enter\'s click is never eaten', async () => {
+  const el = cardOf('Robyn');
+  Object.defineProperty(el, 'offsetParent', { configurable: true, get: () => document.body });
+  press(el, 'touch');
+  el.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+  await settle(20);
+  assert.ok(shelf(), 'the hold opened the shelf');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  let heard = 0;
+  const b = document.createElement('button');
+  document.body.appendChild(b);
+  b.addEventListener('click', () => { heard += 1; });
+  b.click();
+  b.remove();
+  assert.equal(heard, 1, 'the click after a key went through');
+  await closeShelf();
+});

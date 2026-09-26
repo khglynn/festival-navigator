@@ -271,3 +271,82 @@ test('Chromium (a touch screen with a mouse): a finger opens the shelf, the mous
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });
+
+// The review of the tap change (2026-09-26): a close during the rise leaves
+// from wherever the rise has got to — the sheet never jumps up to its rest
+// on its way out (nothing pops).
+for (const [name, get] of ENGINES) {
+  test(`${name}: closed during its rise, the shelf goes straight down from where it was`, { skip: skipFor(name, get) }, async () => {
+    const { ctx, page, errors } = await memberPhone(get());
+    try {
+      const at = await cardAt(page, 'Tove Lo');
+      // Sampled from here, round trip by round trip (this file fixes the
+      // page's clock, and the page's own timers and frames go with it).
+      const sample = () => page.evaluate(() => {
+        const s = document.querySelector('.sheet:not(.join-shelf)');
+        return s ? { top: s.getBoundingClientRect().top, rest: innerHeight - s.offsetHeight, closing: !s.id } : null;
+      });
+      await tapAt(page, at);
+      await page.waitForFunction(() => !!document.getElementById('artist-sheet'), null, { timeout: 4000 });
+      const tops = [];
+      for (let i = 0; i < 4; i++) { const f = await sample(); if (f) tops.push(f); } // mid-rise
+      await page.evaluate(() => history.back());
+      for (let i = 0; i < 60; i++) { const f = await sample(); if (!f) break; tops.push(f); }
+      const closing = tops.filter((f) => f.closing);
+      assert.ok(closing.length >= 2, `the way out was sampled (${closing.length} frames)`);
+      const lastRising = tops.filter((f) => !f.closing).pop();
+      assert.ok(lastRising && lastRising.top > lastRising.rest + 40, `not vacuous: the close came mid-rise (${lastRising && lastRising.top} vs rest ${lastRising && lastRising.rest})`);
+      // The rise may have gone on a few px between the two samples; a snap to
+      // the rest would be the whole remaining way.
+      assert.ok(closing[0].top > closing[0].rest + 30 && closing[0].top >= lastRising.top - 12,
+        `the way out starts where the rise was (${lastRising.top} → ${closing[0].top}; rest ${closing[0].rest}), not at its rest`);
+      for (let i = 1; i < closing.length; i++) assert.ok(closing[i].top >= closing[i - 1].top - 1, `and only goes down (${closing[i - 1].top} → ${closing[i].top})`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// The real-input walk (2026-09-26): the shelf a mouse opens from the zoom's
+// note door hands focus back to the card on Escape — the door is gone by then.
+for (const [name, get] of ENGINES) {
+  test(`${name.split(" ")[0]}, a desktop's mouse: the zoom's note door opens the shelf, and Escape hands focus back to the card with no zoom regrown`, { skip: skipFor(name, get) }, async () => {
+    const engine = get();
+    const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
+    const ctx = await engine.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+    try {
+      await ctx.addInitScript((t) => {
+        localStorage.setItem('fn_welcome_v1', '1');
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Tap Crew' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+      }, CREW);
+      const doc = { v: 4, meta: { name: 'Tap Crew', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await ctx.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+      const page = await ctx.newPage();
+      await page.clock.setFixedTime(new Date('2026-09-26T15:15:00-07:00'));
+      await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+      const at = await cardAt(page, 'Tove Lo');
+      await page.mouse.move(at.x - 50, at.y - 50);
+      await page.mouse.move(at.x, at.y, { steps: 6 });
+      await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+      await sleep(600);
+      const door = await page.locator('#zoom-layer .zoom-slot.shown .f-step-row .f-chip.notes').boundingBox();
+      await page.mouse.click(door.x + door.width / 2, door.y + door.height / 2);
+      await page.waitForSelector('#artist-sheet .sheet-card .f-step.plus', { timeout: 4000 });
+      await sleep(400);
+      // The mouse leaves the card's spot (resting on it, a hover would grow
+      // its zoom again once the sheet is gone — hover's own rule); what is
+      // pinned here is the keyboard's handed-back focus.
+      await page.mouse.move(640, 24, { steps: 3 });
+      await page.keyboard.press('Escape');
+      await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
+      await sleep(400);
+      assert.equal(await page.evaluate(() => document.activeElement?.dataset?.artist || document.activeElement?.nodeName), 'Tove Lo', 'focus is back on the card');
+      assert.equal(await zoomUp(page), 0, 'and no zoom regrew on it');
+    } finally { await ctx.close(); }
+  });
+}
