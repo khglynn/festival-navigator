@@ -247,3 +247,48 @@ findings fixed; an independent Sonnet walker with real input.
 - Gate on 23bbcf2 (load average up to 19 during it): unit 1203 of 1205 at UTC, Tokyo
   and the night clock (the stamp red, 1 skipped); browser 288 of 289 (the WebKit Tab
   skip), 0 failures. Sent to the coordinator with the review page republished.
+
+## Kevin's second round (answers relayed ~10:15 AM) — state when this session wrapped (~11 AM)
+
+Kevin's answers, via the coordinator: ship as soon as the gate is clean, even Sunday, after
+the people menu; tomorrow-only peek, no history entry, tucked faces, grown cards, head tap,
+crossfade and cover all as built. Four changes asked for; one is built.
+
+1. **Built — rule 3's trip** ("move only for something better, never back"): `slicesOf` in
+   `js/v3/plan.js`; what it moved and why is in the model log's "Rule 3's trip". Unit 1205
+   of 1207 at UTC (the stamp red, 1 skipped). NOT yet gated at Tokyo, the night clock or
+   the browser suite, and not Codex-reviewed.
+2. **Not built — every filter reaches NOW and the plan** (Kevin on op-nowtab: "I don't get
+   it. But the filters should filter the now too"; the coordinator: the Show menu's rooms).
+   a. Room folds already reach both: the plan seats bodies first and shows only what the
+      fold shows (rule 8), and the dock's NOW walks the rendered wall. Pin it with an app
+      test (hide Afters: the peek never names a Public Works stop, the dock NOW never lands
+      there).
+   b. The people highlight is the gap: the plan ignores it, so with "just Ross" on the peek
+      can promote a stop Ross is not at while the wall dims that card. Recommended design:
+      stops and forks with none of the highlighted people dim like wall cards; the peek
+      looks only at stops that include one of them (NOW if the current stop does, else
+      NEXT among those); drop the `!(ctx.filterPeople || []).length` exception in
+      `paintNowTabs` (app.js) so there is always one NOW — the dock's NOW comes back only
+      when the peek is not saying NOW, filtered to the highlight as today. Then replace the
+      model test "the people filter is not an input" with the filtered view's tests.
+   c. The review page's op-nowtab gets one line: "Every filter reaches NOW: hidden rooms
+      never appear in the plan, and with a highlight on, the plan dims stops without those
+      people and the peek names only stops they are at."
+3. **Not built — floating cards sit where the NOW card sits** (Kevin: "all the cards like
+   that should be lower right justified in the same spot as our now… or centered… where
+   that card floats right now is so awk"). Inventory first: `#welcome-card` and the
+   bring-your-picks offer (`.bring-offer`) at least. Laptop: the corner card's spot (right
+   and bottom 20px in); phone: where the peek rides above the dock. Centre only if the
+   corner fights the zoom or the Spotify pill.
+4. **Not built — big titles mean "most of us" only** (Kevin: the show title's size should
+   only ever say "a bunch of the crew will be there"; NOW has its own signals). The rows
+   already size by tier (`.plan-row.some .nm` is 14.5px, most is 17px); the grown NOW
+   card's name is 17px whatever its tier (`.plan-grow .sheet-card .f-name` in
+   `assets/v3.css`). Make that follow the stop's tier, and check the peek and the laptop
+   corner card for the same leak.
+5. **Then the gate** as before: `npm test` at UTC, Tokyo and the night clock, `npm run
+   test:browser`, Codex Sol high with real findings fixed, a Sonnet real-input walker for
+   2–4, frames re-rendered; the head SHA goes to the coordinator, which merges, stamps and
+   ships after the people menu. `live/people` has moved to 6178e38 since the last merge;
+   merge it when the coordinator says so.

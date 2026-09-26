@@ -168,6 +168,38 @@ The model did not change; the data under it did, and eight tests moved with it
 3. **New open question 7 below** — a Late night that starts while the festival still plays
    sends the route across town and back.
 
+## Rule 3's trip (built 2026-09-26, ~10:45 AM PT — Kevin's answer to open question 7)
+
+Kevin: "Build it: move only for something better, never back … don't overengineer for
+stuff like that. Just make sure the filters for locations work apply here."
+
+1. **The rule** (`slicesOf` in `js/v3/plan.js`): a SITE is the grounds (every grid set and
+   stray of the festival's own) or one venue (its room or its parties). Within a site,
+   rule 3 is unchanged. A person changes site only for a live pick at a level above the
+   most they want anything still to come at their site (a room's stretch runs to their
+   last pick there), or once nothing of theirs is left there; and a site they left that
+   night is never a candidate again. A person's first site is simply their first live pick.
+2. **What moved on the made-up crews** (each re-pinned with its reason in
+   `tests/plan-model.test.mjs`):
+   a. Portola Sat: Cy stays at Parcels (3) to its end instead of leaving at 10:30 for
+      Public Works (also 3), so Soulwax runs 10:15–10:55 PM and Public Works starts 10:55.
+   b. Portola Sun: Eli stays at Public Works through Overmono (3) instead of leaving at
+      1:30 AM for SG Lewis (3), so the Great Northern stop is 3, not 4.
+   c. ACL Sun Oct 4: five stops (Scoot Inn, Tito's, Scoot Inn, T-Mobile, Scoot Inn) become
+      two (Tito's 6:30, T-Mobile 8:30) with a scattered hour between. Ada goes to Ryan
+      Beatty at 6 and leaves for The xx (wanted more), Bo stays at the Scoot Inn through
+      Fcukers (both 3), Cal waits at Zilker for The xx and goes after it; two at the Scoot
+      Inn is under the bar. Stops per ACL night: `[1,1,6,3,2,0,0,1,5,4,2]`; stops with an
+      "also": 25 / 13 (was 28 / 16).
+   d. Hiding W1 now leaves Sun Oct 4 as a night with no stop (it had three Scoot Inn stops).
+3. **The location filters** (Kevin's condition): hidden rooms still never appear as a
+   stop, fork, count or "also" (rule 8), and bodies are still seated on the whole festival
+   first, so hiding a room never re-seats its crowd somewhere you can see. The trip makes
+   hidden rooms pull fewer people off the grounds, never more: a hidden Late night takes
+   someone away only if they want it more than everything still to come at Zilker.
+4. Two synthetic tests pin the rule itself (a tie stays, a higher pick goes, nothing left
+   goes, never back even for a must).
+
 ## Open questions (not settled here)
 
 1. *(Answered 2026-09-26 by main's #56 — the Late nights now have times; see the section
@@ -191,7 +223,7 @@ The model did not change; the data under it did, and eight tests moved with it
    only tomorrow's. Before the festival the model points at the first night.
 6. **sw.js**: once app.js imports plan.js, it belongs in APP_CORE and the stamp must be re-run
    (the coordinator's release step; I touched neither).
-7. **A route across town and back (found 2026-09-26, after #56).** Rule 3 seats each person
+7. *(Answered and built 2026-09-26, ~10:45 AM: Kevin chose "move only for something better, never back" — see "Rule 3's trip" above.)* **A route across town and back (found 2026-09-26, after #56).** Rule 3 seats each person
    at their highest live pick every five minutes, and a room holds them from their first pick
    to their last. On Portola's made-up nine no route goes back to the grounds after a room
    (Saturday's Regency opens at 9 PM while the grid runs to 11, but whoever leaves for it

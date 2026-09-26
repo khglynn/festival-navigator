@@ -16,13 +16,14 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 10:30 AM): last gated at 23bbcf2. Kevin answered the
-  review page: ship as soon as the gate is clean, even Sunday, after the
-  people menu. Building his round now: the route never goes back to a site
-  it left (hidden rooms included), the Show menu's filters reach NOW and the
-  plan, floating cards like the welcome sit where the NOW card sits, and big
-  titles mean "most of us" only. Then the full gate, Codex, a walker, and
-  the head goes to the coordinator; merge `live/people` again when told.
+  `OUR-PLAN-BUILD.md`; 11 AM): last GATED head 682c4f2 (23bbcf2 + docs).
+  Kevin answered: ship as soon as the gate is clean, even Sunday, after the
+  people menu. His round is one quarter built and the sibling session has
+  wrapped: rule 3's trip ("never back") is on `live/plan`, unit-green at
+  UTC but ungated. Still to build, with the design written down in the
+  build log's last section: filters reach NOW and the plan (the people
+  highlight is the gap), floating cards where the NOW card sits, big titles
+  for "most of us" only. Then the full gate and the head to the coordinator.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
