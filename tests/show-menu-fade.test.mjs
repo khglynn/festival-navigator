@@ -62,12 +62,16 @@ const shown = () => pop().style.display !== 'none';
 const raised = () => dock().classList.contains('menu-up');
 const expanded = () => link().getAttribute('aria-expanded');
 const lastExit = () => [...fades].reverse().find((a) => a.frames[0].opacity === 1);
+// Since v93 the menu holds a history entry of its own, and every way out but
+// Back takes it back first: the close lands with the popstate, a tick after
+// the tap. `closeBy` taps and waits for it.
+const closeBy = async (go) => { go(); await settle(20); };
 
-test('closed and reopened inside the fade: the old fade’s end never hides the new menu', () => {
+test('closed and reopened inside the fade: the old fade’s end never hides the new menu', async () => {
   holdFades();
   link().click();
   assert.equal(shown(), true, 'open');
-  link().click(); // close — the fade starts
+  await closeBy(() => link().click()); // close — the fade starts
   const oldFade = lastExit();
   assert.ok(oldFade && !oldFade.ended, 'fading out');
   assert.equal(expanded(), 'false');
@@ -79,18 +83,21 @@ test('closed and reopened inside the fade: the old fade’s end never hides the 
   assert.equal(shown(), true, 'the reopened menu is still showing');
   assert.equal(expanded(), 'true', 'and says so');
   assert.equal(raised(), true, 'and the dock is still above the cards');
-  link().click(); // close for real
+  await closeBy(() => link().click()); // close for real
   lastExit().finish();
   assert.equal(shown(), false, 'closed');
   assert.equal(expanded(), 'false');
   assert.equal(raised(), false, 'the dock stepped back');
 });
 
-test('a rapid double close ends where one close ends', () => {
+test('a rapid double close ends where one close ends', async () => {
   holdFades();
   link().click();
-  link().click(); // close: fading
-  document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); // a second close, nothing open
+  // A close, and a second one before the first has landed: one way out.
+  await closeBy(() => {
+    link().click();
+    document.dispatchEvent(new shell.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
   assert.equal(expanded(), 'false');
   lastExit().finish();
   assert.equal(shown(), false);
