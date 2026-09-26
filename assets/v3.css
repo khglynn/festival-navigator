@@ -236,7 +236,7 @@ html { touch-action: manipulation; }
 /* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
  * — it gets the same white-on-scrim treatment as every other mark (audit 8.1).
  * Its ring is solid (v93): in this app a dashed edge only ever means "add"
- * (the people row's + Invite someone, a guest's + in the dock, + Add a
+ * (+ Invite someone, a guest's + in the dock, + Add a
  * festival), and +n is people already here. Same 1px, so the corners' width
  * table (aura.js) is unchanged. */
 .mark.ghost { border: 1px solid rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
@@ -533,7 +533,8 @@ button.room-head { cursor: pointer; }
 
 /* ---- desktop day rail (DT-1) --------------------------------------------------- */
 /* ≥720 the dock dies; the rail is its desktop body — sticky under the top of
- * the window, YOU chip jumps to top, tabs scrollspy with the wall. */
+ * the window, your avatar opens the people menu (2026-09-26), tabs
+ * scrollspy with the wall. */
 .day-rail { display: none; }
 @media (min-width: 720px) {
   .day-rail {

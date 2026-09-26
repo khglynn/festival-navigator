@@ -575,7 +575,7 @@ function crewSection(ctx, actions) {
         el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
           p.pid
             ? `${name}’s in. This link still gets them back in.`
-            // The same sentence the add-someone sheet says: one idea, one wording.
+            // The same sentence the Invite sheet says on an add: one idea, one wording.
             : `Send ${name} this link. Opening it makes the picks theirs.`));
     });
     chips.appendChild(chip);

@@ -1,6 +1,6 @@
 // v3 app shell: boot flow, screen switching (landing / create / join / wall /
 // settings / lost states — all six render HERE), wall wiring, sync cadence,
-// sheets (share moment, add member), and the server-side v4 migration call.
+// sheets (the Invite sheet), and the server-side v4 migration call.
 // wall.js renders the wall's CONTENT; settings.js and notes.js own their
 // surfaces and mount into hosts this shell controls.
 import * as state from '../state.js';

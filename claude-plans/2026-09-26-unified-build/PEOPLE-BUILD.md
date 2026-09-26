@@ -9,11 +9,30 @@ This file is the record if the build dies: read "Where it stands" first.
 
 ## Where it stands
 
-1. Step 0 (this log, the storyboard, the plan) — done, before any code.
-2. Step 1 — the menu, the pill, the guest's route, the phone top, jump-to-top retired, Pick as
-   someone else, and the one Invite sheet: built and working in Chromium at 390 (first look, the
-   rig). Unit suite green except the SW stamp test, which stays red on purpose until the release
-   stamps (the brief: never stamp here). Next: the motion walk in slow motion, 320 / 1280, tests.
+1. Step 0 (this log, the storyboard, the plan) — done, before any code (`fbb59ff`).
+2. Step 1 — the menu, the pill, the guest's route, the phone top, jump to top retired, Pick as
+   someone else, the one Invite sheet (`cd4c54c`).
+3. Step 2 — the motion walked in slow motion and fixed (the storyboard's C–E; see "What the slow
+   motion caught"), the pill's disc cap, the crew-variant rig (`a804269`).
+4. Step 3 — `tests/people-menu.test.mjs` (jsdom, 11) (`9904644`); `tests/browser/people-menu.test.mjs`
+   (real input, Chromium + WebKit, 15) and the WebKit empty-tap fix both menus needed (`ef64dc1`).
+5. `origin/main` (v97, `efeebd0`) merged in, clean (`0345d7b`). Stale docs swept (user-flows F2b/F9,
+   comments).
+6. Unit suite: green in UTC, Tokyo and the night clock except the SW stamp test, red on purpose (the
+   brief: no stamp; the release stamps). Browser suite: see the log.
+
+## What the slow motion caught (people-rig.mjs slowmo, a twentieth speed)
+
+1. The avatar's ghost sat IN the flow, beside the pill (`.dock .you` is position: relative and out-
+   ranked `.hl-ghost`) — the wrap widened mid-motion. Fixed with specificity.
+2. The faces flying down from the menu's marks were invisible: clipped by the pill's own opening clip
+   and painted under the fading menu (z 35). The pill's body is now a layer of its own (`.hl-bg`) —
+   the clip is on the body only — and the pill stands at z 36.
+3. The day tabs outran the pill's edge (the pill opened over GROW on ARRIVE, the tabs slid over
+   CASCADE): FRI slid under the ✕ on a clear. The body's clip now runs on the tabs' own duration and
+   curve (CASCADE; ARRIVE in, SURFACE out), so the edge and the row move as one; on a clear the ✕
+   goes first (it is where the tabs are headed), the faces shrink to the circle, the body fades last.
+4. Your letter lingered under the first landing face; it now leaves in 0.7 × OUT.
 
 ## The plan (one commit per working step, each pushed)
 
@@ -116,6 +135,25 @@ C if a highlight is on — under the sheet's backdrop) and the shelf or sheet ri
     not made: "Tap your avatar, then their name." (`tests/docs-truth.test.mjs` holds his rows.)
 12. **The laptop's people row drives the same highlight**, and its chips now dim the wall in place
     too; the rail's pill appears with the faces growing in the slot.
+13. **The pill holds only as many discs as leave the day row its promise** (wall.js restingLeft rules
+    1–2: the day you are in whole, NOW whole beside its day). Measured at 320 with NOW live: three
+    discs left 92px of row for SAT · NOW's 101, and NOW slid out — so two there (a face and +n).
+    ACL's long name at 320: two (the day you are in whole; NOW cannot be whole there even beside the
+    bare avatar, today); at 360 one. One disc for several people is their bare count. `pillCap` in
+    app.js measures it at every paint; `pillWidth` is held to the drawn pill by the browser test.
+    Known limit: the cap is judged when the slot is painted, so NOW arriving later (the minute tick)
+    with three discs up can clip NOW until the next paint — the day you are in stays whole.
+14. **A tap on the wall's empty space closes a menu in WebKit too — Show's included.** Found on the
+    walk: WebKit (so an iPhone) sends a tap's click only where something listens, and both menus'
+    outside tap is a document listener, so a tap on a gutter or the time rail left either menu open
+    (Chromium closed it). While a menu is up the wall listens (`catchStrayTaps`), with its tap
+    highlight off so a closing tap never flashes the wall grey. Shipped Show since v93 this way;
+    worth Kevin knowing it was broken on his phone.
+15. **The Invite sheet's lone Done stays small** where there is no share sheet (a laptop); with Share
+    the row is [Share the link][Done].
+16. **Faces open the menu from the pill with its own label** ("Highlighting Ben and Cy. Open
+    Highlight"); the ✕ says "Stop highlighting: show everyone's picks". The avatar's label names you
+    and the menu ("Ana: highlight people's picks"; a guest's: "…, or join the crew").
 
 ## Disagreements with the brief
 
