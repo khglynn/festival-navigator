@@ -10,10 +10,10 @@ branch are the handoff.*
 - [x] read the brief, Kevin's four screenshots, v3.css (room heads, the clock,
       the stacks, by-time, the List, the past line), wall.js (venueGroups,
       timeGroups, renderComposed, the past line), clock-stacks.test.mjs
-- [ ] before frames (Board + List; Portola Sat: Folsom by time, the grid, the
-      Afters stacks, Earlier open; an ACL day; 1280 / 900 / 390 / 320)
-- [ ] the edge (CSS) + the wall.js touch
-- [ ] after frames, looked at; the EARLIER call framed both ways
+- [x] before frames — `bc73ab6` (log), rig `align-frames.mjs`
+- [x] the edge (CSS) + the wall.js touch + the tests rewritten to the new
+      law — `16981ff` (the EARLIER centring rode in the same commit)
+- [x] after frames, looked at; the EARLIER call framed both ways (call 3)
 - [ ] gate: npm test (UTC, Tokyo, night clock), test:browser, CI on the final head
 
 ## What is there today (why the edge jumps)
@@ -56,6 +56,76 @@ One edge, one rule, on the Board from 720 up:
 Size: CSS plus a two-line wall.js removal and the CSS-shape test rewritten.
 Phones (<720) keep their v91 rule (see call 2).
 
+## What it really was (size)
+
+CSS plus a four-line wall.js removal, as sized. Net code: the three
+per-presentation offset rules and the time list's `data-clock` gone; added one
+padding rule, one one-track gap rule, the clock's margin reaching back past the
+edge (a changed line, not a new one), the hour label's `nowrap`, and the
+EARLIER line's second hairline (call 3). Most added lines are comments saying
+why. Tests: the CSS-shape test rewritten to the new law (clock-stacks), two
+by-time asserts, and the desktop half of `tests/browser/stack-row.test.mjs`
+rewritten to measure the one edge at 1280 and 900 in a real browser — red
+with `--wall-edge: 0px`, green with it.
+
 ## Calls
 
-(filled in as they are made)
+1. **The edge equals the gutter; nothing hangs.** First plan: the edge a bit
+   smaller than the 40px rail, so the times hang into the shell's side
+   padding and the cards gain the difference. Measured before building: the
+   NOW pill on the rail ("10:45 PM", 52px) already reaches 2px from the window
+   at 720 and past it on a phone, so any hang clips it on a narrow laptop. So
+   `--wall-edge` = `--hour-rail-w` from 720 up, and the "scootch" is inside
+   the gutter: hour marks 10px off the cards instead of 6 (and `nowrap`, since
+   the label box is now only 2px wider than "10 PM" in Inter on a Mac and
+   Linux/iOS draw Inter wider). The widest mark ("10 PM") now starts ~2px in
+   from the shell's edge — in line with the header's chips and day tabs above
+   it. The grid's cards do not move; everything else moves right 40px.
+2. **Phones keep the v91 rule** (`--wall-edge: 0px` below 720). The shell
+   holds exactly two `--col-w` columns; stepping every room in by the gutter
+   would need narrower cards on every phone (178 → 158 at 390, 143 → 123 at
+   320) and would retire the v91 sideways row and its NOW slide (app.js +
+   wall.js + three test files) — well past "CSS plus a small wall.js touch",
+   mid-festival, on the phones people are using. The phone gets the same
+   hour-mark nudge (4px left). If Kevin wants the phone on one edge too, that
+   is its own release with a card-width call attached.
+3. **EARLIER: centred in its rule from 720 up** (framed both ways:
+   `list-shots/align-centred/cmp-*.png`). On the one edge, "EARLIER · THU ·
+   FRI" stood flush over SAT PORTOLA and read as a second room head, and in
+   the List three labels stacked on one x (SAT PORTOLA / EARLIER · 7 SETS /
+   2 PM). Centred it reads as a fold in the wall, not a heading, and its
+   rule still starts on the edge. One component, one rule: the days line and
+   the List's room lines both. Phones keep it left, as Kevin approved it (his
+   note was "on desktop"; a phone's line is nearly all words anyway).
+4. **Band heads are headings on the edge, not times in the gutter.** The
+   brief put "10 PM" / "LATE" in the gutter. The ladder also says DAYTIME,
+   EVENING, AFTER-HOURS and TIME TBA (53–83px at 10px/800 tracked); a gutter
+   that holds them costs every card on the wall that width. They sit on the
+   edge with their hairline, like the room heads above them, and in the List
+   they already do.
+5. **One track from 720 up.** Removing the clock cases would have left a day
+   with no clock at `--col-gap` (7px) and a clock day at `--clock-gap` (4px),
+   so Friday's Folsom columns drifted 3/6/9px off Saturday's grid right
+   under it. Every card column now takes the clock's gap from 720 up; column
+   n sits under column n on every day. (The rule has to follow `.band-grid`'s
+   own — its `gap` shorthand resets it; the first frames showed exactly that.)
+6. **The Board's search and a lineup-only fest are on the edge too.** One
+   rule on `#wall-root`, so typing a search does not shift the wall 40px left
+   and back. Their gutter is empty; that is the cost of "always".
+
+## Frames
+
+Rig: `align-frames.mjs` beside this (the Phase 1 rig: a local server, /api
+from memory with a made-up crew, the service worker blocked, every write
+refused). Board: top, Earlier open (Fri Folsom into SAT PORTOLA), the days
+line open at the top, the grid's end into SAT AFTERS, SAT FOLSOM by time,
+ACL's Saturday grid, an ACL Late nights day. List: top, SAT AFTERS, SAT
+FOLSOM, ACL Saturday. Each at 1280 / 900 / 390 / 320. In `list-shots/`
+(git-ignored): `align-before/`, `align-after/`, `align-pairs/` (before |
+after side by side), `align-centred/` (the EARLIER variant).
+
+Measured on every frame's page (Board, 1280/900/720): room heads, the EARLIER
+line, stage/venue heads, stack and band columns, band heads and the clock's
+first column all at shell + 40; column 2 of every stack and band equals the
+clock's column 2; no page overflow. Phones and the List unchanged but for
+the hour marks.
