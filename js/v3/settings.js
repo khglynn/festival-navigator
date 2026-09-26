@@ -840,26 +840,42 @@ export function renderSettings(root, ctx, actions) {
 // festival this phone can open offline. The worker's own activate already
 // removes old shells (v90 build log, item 3).
 const UPDATE_CHECK_MS = 15000;    // reg.update() on a network that hangs
+const UPDATE_LOOKUP_MS = 5000;    // getRegistration(): the browser's own bookkeeping, no network
 const UPDATE_DOWNLOAD_MS = 60000; // a new worker's install: the whole shell
 const UPDATE_SWITCH_MS = 1500;    // the glue's reload, if nothing is in progress
 
+// Work that marks the page busy (body[data-busy], index.html's quiet())
+// and would be thrown away by a reload, as the row names it. A value not
+// listed here still holds the reload; it is just not named.
+const BUSY_WORDS = {
+  'spotify-scan': 'the Spotify scan finishes',
+  join: 'you’ve joined the crew',
+  create: 'the new crew is made',
+  'me-link': 'your link has loaded',
+};
+
 // What the row's second line says, in each state.
-export function updateWords({ state, page = null, next = null }) {
+export function updateWords({ state, page = null, next = null, busy = null }) {
   switch (state) {
     case 'checking': return 'Checking…';
     case 'latest': return page ? `You’re on the latest — ${page}` : 'You’re on the latest version';
     case 'downloading': return 'Downloading the new version…';
     case 'switching': return 'Got it — switching over…';
     case 'ready': return `${next || 'The new version'} is ready — tap to use it`;
+    // Ready, but a reload now would throw away work that is running.
+    case 'held': return `${next || 'The new version'} switches in once ${BUSY_WORDS[busy] || 'what’s running finishes'} — tap again then`;
     case 'slow': return 'Still downloading — it switches over by itself when it’s done';
     case 'offline': return page ? `You’re offline — this phone keeps ${page} until you have signal` : 'You’re offline — try again when you have signal';
     case 'unreachable': return 'Couldn’t check — try again with more signal';
+    // The browser did not answer "is there a worker?" — not a no.
+    case 'lookup-failed': return 'Couldn’t check just now — try again in a moment';
     case 'failed': return 'Couldn’t download it — try again with more signal';
     case 'no-worker': return 'This browser keeps no offline copy, so a reload always gets the latest';
     default: return page ? `This phone runs ${page}` : 'Checks for a newer version of the app';
   }
 }
 
+// A bounded wait: the promise's own answer, or `fallback` once `ms` pass.
 const within = (promise, ms, fallback) => new Promise((resolve, reject) => {
   const t = setTimeout(() => resolve(fallback), ms);
   Promise.resolve(promise).then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
@@ -912,20 +928,29 @@ function workerSettles(worker, ms) {
 // The real page's side of the check. Every DOM global is called through an
 // arrow, never stored bare (a stored location.reload throws "Illegal
 // invocation" in every browser and nothing in Node).
-function updateEnv() {
+export function updateEnv() {
   let container = null;
   try { container = (window.navigator && window.navigator.serviceWorker) || null; } catch { container = null; }
   return {
     online: () => { try { return window.navigator.onLine !== false; } catch { return true; } },
+    // The registration, or null for a CONFIRMED absence (no worker API, or
+    // the browser answered that none is registered). A lookup that throws or
+    // does not answer in time REJECTS: that is not a no, and the row must
+    // not tell a phone on one bar that it keeps no offline copy.
     registration: async () => {
       if (!container || typeof container.getRegistration !== 'function') return null;
-      try { return (await within(container.getRegistration(), UPDATE_CHECK_MS, null)) || null; } catch { return null; }
+      const NO_ANSWER = {};
+      const reg = await within(container.getRegistration(), UPDATE_LOOKUP_MS, NO_ANSWER);
+      if (reg === NO_ANSWER) throw new Error('getRegistration did not answer');
+      return reg || null;
     },
     pageBuild: () => pageBuild(),
     activeBuild: (reg) => askWorkerBuild(reg && reg.active, container),
     // The glue's own word that this page runs an older build than the worker
     // now in charge: it put up the new-build strip (app.js showNewBuildStrip).
     behind: () => !!document.getElementById('new-build-strip'),
+    // Work a reload would throw away (index.html's quiet() reads the same mark).
+    busy: () => { try { return document.body.dataset.busy || null; } catch { return null; } },
     settles: (worker, ms) => workerSettles(worker, ms),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
     reload: () => window.location.reload(),
@@ -937,13 +962,22 @@ function updateEnv() {
 // what does that, through index.html's glue, or a second tap on "ready".
 export async function checkForUpdate(env, say = () => {}) {
   const step = (s) => { say(s); return s; };
+  // A newer build is here: "ready", or "held" while work is running that a
+  // reload would throw away.
+  const ready = (page, next) => {
+    const busy = env.busy();
+    return step(busy ? { state: 'held', page, next, busy } : { state: 'ready', page, next });
+  };
   // The page's build first: it settles before any other worker is asked
   // "which build?", so their answers can never be mistaken for this page's.
   const page = await env.pageBuild();
-  const reg = await env.registration();
+  let reg = null;
+  let lookupFailed = false;
+  try { reg = await env.registration(); } catch { lookupFailed = true; }
   // Already downloaded, this page just has not switched: no network needed.
-  if (env.behind()) return step({ state: 'ready', page, next: reg ? await env.activeBuild(reg) : null });
+  if (env.behind()) return ready(page, reg ? await env.activeBuild(reg) : null);
   if (!env.online()) return step({ state: 'offline', page });
+  if (lookupFailed) return step({ state: 'lookup-failed', page });
   if (!reg) return step({ state: 'no-worker', page });
   step({ state: 'checking', page });
   try {
@@ -965,13 +999,14 @@ export async function checkForUpdate(env, say = () => {}) {
   // glue lets the first worker's claim pass without a reload). A misread
   // page build lands here too, and costs one reload onto the same build.
   const active = await env.activeBuild(reg);
-  if (env.behind() || (page && active && active !== page)) return step({ state: 'ready', page, next: active });
+  if (env.behind() || (page && active && active !== page)) return ready(page, active);
   return step({ state: 'latest', page: page || active });
 }
 
 // The row: a real button (the 44px floor comes from being one), its words in
 // the second line, which is a live region so a screen reader hears each state.
-function updateRow(envOf = updateEnv) {
+// Exported for its tests, which hand it a stand-in page.
+export function updateRow(envOf = updateEnv) {
   const row = el('button');
   row.className = 'list-row';
   row.style.cssText = 'cursor: pointer; width: 100%; background: none; border: none; border-bottom: 1px solid var(--hairline); font: inherit; text-align: left; color: inherit;';
@@ -993,8 +1028,17 @@ function updateRow(envOf = updateEnv) {
   row.addEventListener('click', async () => {
     if (running) return;
     const env = envOf();
-    // The second tap on "ready" is the strip's own Refresh: the person asked.
-    if (last.state === 'ready') { env.reload(); return; }
+    // The second tap on "ready" is the strip's own Refresh: the person asked,
+    // and it is the way through when a sheet keeps the glue from reloading.
+    // Never through running work (a Spotify scan): a reload would throw it
+    // away, so the row says what it waits for, and the first tap after the
+    // work is done switches.
+    if (last.state === 'ready' || last.state === 'held') {
+      const busy = env.busy();
+      if (busy) { show({ state: 'held', page: last.page, next: last.next || null, busy }); return; }
+      env.reload();
+      return;
+    }
     running = true;
     try { await checkForUpdate(env, show); } catch { show({ state: 'unreachable', page: last.page }); } finally { running = false; }
   });

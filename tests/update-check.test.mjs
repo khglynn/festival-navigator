@@ -31,7 +31,7 @@ globalThis.localStorage = {
 globalThis.location = dom.window.location;
 dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
 
-const { checkForUpdate, updateWords } = await import('../js/v3/settings.js');
+const { checkForUpdate, updateWords, updateRow, updateEnv } = await import('../js/v3/settings.js');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // A worker whose install the test drives: `to(state)` moves it on.
@@ -52,10 +52,14 @@ function page(over = {}) {
   let behind = !!over.behind;
   const env = {
     online: () => over.online !== false,
-    registration: async () => (over.noWorker ? null : reg),
+    registration: async () => {
+      if (over.lookup) throw new Error(over.lookup);
+      return over.noWorker ? null : reg;
+    },
     pageBuild: async () => ('page' in over ? over.page : 'v89'),
     activeBuild: async (r) => (r && r.active ? r.active.build : null),
     behind: () => behind,
+    busy: () => (typeof over.busy === 'function' ? over.busy() : over.busy || null),
     settles: over.settles || (async (w) => w.state),
     sleep: async () => { if (over.onSleep) behind = over.onSleep() || behind; },
     reload: () => { calls.reload += 1; },
@@ -161,8 +165,101 @@ test('no worker at all (a private window, a browser without one): the reload is 
   assert.match(updateWords(last), /reload always gets the latest/);
 });
 
+// ---- review round (Codex on e4d40ca, 2026-09-25) ------------------------------------
+// A "ready" tap must never reload through running work (a Spotify scan marks
+// body[data-busy]; a reload throws it away). And a registration lookup that
+// throws or hangs is not "this browser keeps no offline copy".
+
+test('ready while a Spotify scan runs: held, and the words say what it waits for', async () => {
+  const w = new Worker('installing');
+  const p = page({
+    busy: 'spotify-scan',
+    update: async (reg) => { reg.installing = w; },
+    settles: async (worker) => { worker.to('activated'); p.reg.active = { build: 'v90' }; return worker.state; },
+    onSleep: () => true,
+  });
+  const { last, said } = await run(p);
+  assert.deepEqual(said, ['checking', 'downloading', 'switching', 'held']);
+  assert.equal(updateWords(last), 'v90 switches in once the Spotify scan finishes — tap again then');
+  const strip = page({ behind: true, busy: 'something-new' });
+  strip.reg.active = { build: 'v90' };
+  const held = (await run(strip)).last;
+  assert.equal(held.state, 'held', 'the strip already up, work running: held too');
+  assert.equal(updateWords(held), 'v90 switches in once what’s running finishes — tap again then', 'work it cannot name still holds');
+});
+
+test('the row: a tap on ready while work runs does NOT reload; the first tap after it finishes does', async () => {
+  let busy = null;
+  const p = page({ behind: true, busy: () => busy });
+  p.reg.active = { build: 'v90' };
+  const row = updateRow(() => p.env);
+  document.body.appendChild(row);
+  const words = () => row.querySelector('.row-sub').textContent;
+  const tap = async () => { row.click(); for (let i = 0; i < 10; i++) await new Promise((r) => setTimeout(r, 0)); };
+  await tap();
+  assert.equal(row.dataset.update, 'ready');
+  assert.equal(words(), 'v90 is ready — tap to use it');
+  busy = 'spotify-scan'; // a scan starts
+  await tap();
+  assert.equal(p.calls.reload, 0, 'the scan is not thrown away');
+  assert.equal(row.dataset.update, 'held');
+  assert.equal(words(), 'v90 switches in once the Spotify scan finishes — tap again then');
+  await tap();
+  assert.equal(p.calls.reload, 0, 'still running, still held');
+  busy = null; // the scan finishes
+  await tap();
+  assert.equal(p.calls.reload, 1, 'the first tap after it is done switches');
+  row.remove();
+});
+
+test('a registration lookup that fails is not "no offline copy": it says it could not check', async () => {
+  const p = page({ lookup: 'getRegistration rejected' });
+  const { last, said } = await run(p);
+  assert.deepEqual(said, ['lookup-failed']);
+  assert.equal(p.calls.update, 0);
+  assert.equal(updateWords(last), 'Couldn’t check just now — try again in a moment');
+  assert.doesNotMatch(updateWords(last), /offline copy|always gets the latest/);
+  // Offline still says offline first: that is the truer reason.
+  assert.equal((await run(page({ lookup: 'x', online: false }))).last.state, 'offline');
+});
+
+test('the real page side: a throwing or hanging getRegistration is a failed lookup; only a real "none" is no-worker', async () => {
+  const nav = dom.window.navigator;
+  const withContainer = async (container, drive) => {
+    Object.defineProperty(nav, 'serviceWorker', { value: container, configurable: true });
+    try {
+      const env = { ...updateEnv(), pageBuild: async () => 'v89', online: () => true };
+      return await drive(env);
+    } finally {
+      delete nav.serviceWorker;
+    }
+  };
+  const base = () => Object.assign(new dom.window.EventTarget(), { startMessages() {} });
+  const threw = await withContainer(Object.assign(base(), { getRegistration: () => Promise.reject(new DOMException('no', 'SecurityError')) }), (env) => checkForUpdate(env));
+  assert.equal(threw.state, 'lookup-failed', 'a rejected lookup');
+  const threwSync = await withContainer(Object.assign(base(), { getRegistration: () => { throw new TypeError('boom'); } }), (env) => checkForUpdate(env));
+  assert.equal(threwSync.state, 'lookup-failed', 'a lookup that throws outright');
+  const none = await withContainer(Object.assign(base(), { getRegistration: async () => undefined }), (env) => checkForUpdate(env));
+  assert.equal(none.state, 'no-worker', 'the browser answered: none registered');
+  const noApi = await withContainer(undefined, (env) => checkForUpdate(env));
+  assert.equal(noApi.state, 'no-worker', 'no worker API at all');
+
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    const hung = await withContainer(Object.assign(base(), { getRegistration: () => new Promise(() => {}) }), async (env) => {
+      const pending = checkForUpdate(env);
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+      mock.timers.tick(5000);
+      return pending;
+    });
+    assert.equal(hung.state, 'lookup-failed', 'a lookup that never answers is given up on, and is not a no');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
 test('every state has plain words, and an unknown build never prints "null"', () => {
-  for (const state of ['idle', 'checking', 'latest', 'downloading', 'switching', 'ready', 'slow', 'offline', 'unreachable', 'failed', 'no-worker']) {
+  for (const state of ['idle', 'checking', 'latest', 'downloading', 'switching', 'ready', 'held', 'slow', 'offline', 'unreachable', 'lookup-failed', 'failed', 'no-worker']) {
     const w = updateWords({ state, page: null, next: null });
     assert.ok(w && !/null|undefined/.test(w), `${state}: "${w}"`);
   }

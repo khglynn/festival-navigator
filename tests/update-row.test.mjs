@@ -125,6 +125,13 @@ test('a newer build: downloading, then ready once it has taken over — and noth
   // no glue, so the page stays — the case where something WAS in progress.
   assert.notEqual(await within(3000, () => row().dataset.update === 'ready'), null, words());
   assert.equal(words(), 'v90 is ready — tap to use it');
+  // A Spotify scan starts (it marks the body busy, as index.html's quiet()
+  // reads it): the tap on ready must not reload through it.
+  win.document.body.dataset.busy = 'spotify-scan';
+  await tap();
+  assert.equal(row().dataset.update, 'held', 'held, not reloaded');
+  assert.equal(words(), 'v90 switches in once the Spotify scan finishes — tap again then');
+  delete win.document.body.dataset.busy;
   assert.deepEqual(kept(), before, 'the crew, the person and the picks are all still here');
   assert.equal(cacheDeletes, 0, 'no cache deleted — the offline app and the festival data stay');
 });
