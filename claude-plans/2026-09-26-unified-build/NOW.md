@@ -32,3 +32,4 @@ and the moment lens; add-an-event stays banked (`claude-plans/2026-09-02-add-a-s
 Push v97's PR, start Sol's re-review of the delta and an independent walker,
 merge on green, smoke. Then merge main into `live/tap` for the preview link
 Kevin tests, and write the people-menu brief.
+- **Our plan** (`live/plan`, 2026-09-26 ~7 AM): phone peek + day plan and laptop corner/panel built; two bugs from the motion clips fixed (mouse on the grabber; a row tap moving its row); review page with ten calls out; gate next.

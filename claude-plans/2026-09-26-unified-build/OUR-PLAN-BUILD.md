@@ -84,3 +84,30 @@ findings fixed; an independent Sonnet walker with real input.
 - Frames: `our-plan/frames.mjs` → `our-plan/shots/` (git-ignored PNGs), rendered by the
   production app on the ours-r2 rig (made-up nine, no network, no database).
 
+- ~7:00 AM — the motion clips (`our-plan/motion.mjs`, real pointer input on the same
+  rig, MP4s git-ignored with every recording now) caught two real bugs the stills and
+  the tests had not:
+  1. A mouse on the phone's grabber could neither open nor close the plan. The drag
+     captures the pointer, so a captured mouse's click lands on `#plan`, never on the
+     grabber (a finger's click still reached it in Chromium, which is why the tests
+     passed). The grabber's pointer tap is now taken in `onUp`; its click is the
+     keyboard's.
+  2. A row tap below the NOW card slid the tapped row up under the finger — first by
+     folding the NOW card above (one grown card at a time), then, once grown cards
+     became a set, by the window growing with its content. Storyboard 8 says only the
+     rows below make room: a tap now pins the window's height (border-box), the rows
+     below scroll out of sight, and only a card the bottom edge would cut off moves
+     things — the window grows toward its cap, then the list scrolls, by exactly the
+     overflow. The pin lasts while the plan is open. An open list also keeps its
+     scroll across a redraw (a new list element used to start at the top).
+  Both have Chromium + WebKit tests now (plan-drag 17/17).
+- A full browser run under load failed the flick test once: the helper read the
+  page's geometry between the last move and the release, and on a busy machine that
+  round trip outlasted the flick's 80ms. A CPU-throttle probe also showed a 60px
+  synthetic flick stops reading as a flick at 4x (CDP input waits on the page, so
+  its timestamps slow with it — real touches keep hardware time). The test's flick
+  is now 90px (still under a third) released at once; it holds at 4x.
+- Welcome frames had broken on v96's boot address (`/f/<fest>#g=…`, a Vercel rewrite
+  the static server lacks); the rig now re-opens `/#g=…` instead of reloading.
+- The review page (my own artifact, `our-plan/review.html`, frames and clips from
+  `our-plan/shots/`): ten calls with my pick marked, answers stored in its db.
