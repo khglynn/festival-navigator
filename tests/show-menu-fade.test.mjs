@@ -64,8 +64,12 @@ const expanded = () => link().getAttribute('aria-expanded');
 const lastExit = () => [...fades].reverse().find((a) => a.frames[0].opacity === 1);
 // Since v93 the menu holds a history entry of its own, and every way out but
 // Back takes it back first: the close lands with the popstate, a tick after
-// the tap. `closeBy` taps and waits for it.
-const closeBy = async (go) => { go(); await settle(20); };
+// the tap — later under a loaded suite. `closeBy` taps and waits for the close
+// itself, not a fixed time (a 20 ms wait lost the race once in a full run).
+const closeBy = async (go) => {
+  go();
+  for (let i = 0; i < 100 && expanded() !== 'false'; i += 1) await settle(10);
+};
 
 test('closed and reopened inside the fade: the old fade’s end never hides the new menu', async () => {
   holdFades();

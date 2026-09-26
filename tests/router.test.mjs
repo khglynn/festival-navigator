@@ -21,6 +21,7 @@ function harness() {
   let idx = 0;
   let routerRef = null;
   const hist = {
+    get state() { return entries[idx].state; },
     pushState: (s) => { entries.splice(idx + 1); entries.push({ state: s }); idx++; },
     replaceState: (s) => { entries[idx].state = s; },
     back: () => { if (idx > 0) { idx--; routerRef.onPopState(entries[idx].state); } },
@@ -99,6 +100,23 @@ test('a menu\'s way out is history: requestClose, and the pop closes it', () => 
   assert.deepEqual(h.router.current(), []);
   assert.deepEqual(h.log, ['close menu:show']);
   assert.equal(h.idx(), 0, 'back on the entry it found');
+});
+
+// A menu that went away with its screen (v93 — a crew deleted with the Show
+// menu up): out of the model and out of the entry the page stands on, with
+// no traversal — a Back here could move the app off the screen it is going to.
+test('forget drops a layer from the model and the current entry, without a traversal', () => {
+  const h = harness();
+  h.router.push('menu:show');
+  const at = h.idx();
+  assert.equal(h.router.forget('menu:show'), true);
+  assert.deepEqual(h.router.current(), []);
+  assert.equal(h.idx(), at, 'no traversal');
+  assert.equal(h.hist.state, null, 'the entry no longer names the menu');
+  assert.deepEqual(h.log, [], 'and no close ran: the caller already closed it');
+  assert.equal(h.router.forget('menu:show'), false, 'a second forget has nothing to do');
+  h.hist.back();
+  assert.deepEqual(h.router.current(), [], 'Back from there lands on the wall, with nothing to close');
 });
 
 test('requestClose drives history; nothing to close returns false', () => {

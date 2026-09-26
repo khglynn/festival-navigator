@@ -277,6 +277,43 @@ test('the show menu: a refresh with it open lands on the wall without it', { ski
   }
 });
 
+// The crew deleted on the server while the Show menu is up (Sol 6's review of
+// 33164a3, reproduced): the poll's JSON 404 took the app to the fest list and
+// left the menu's busy flag and history entry behind — and the flag held every
+// new build's reload on that phone for good. The menu goes with its screen.
+test('the show menu: the crew deleted on the server while it is up — the fest list, the busy flag given back, history clean', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'menucrewgonecontract_0123'; // a made-up crew
+  const FID = 'portola-2026';
+  let gone = false;
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_welcome_v1', '1');
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => (gone
+      ? route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Crew not found"}' })
+      : route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
+    await page.click('#dock-fest-link');
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
+    assert.equal(await page.evaluate(() => document.body.dataset.busy), 'show-menu', 'the open menu holds a reload');
+    gone = true;
+    await page.evaluate(() => import('/js/sync.js').then((s) => s.pollSync()));
+    await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
+    const r = await page.evaluate(() => ({ busy: document.body.dataset.busy || null, state: history.state, menu: getComputedStyle(document.querySelector('#dock-fest-wrap .sort-pop')).display }));
+    assert.deepEqual(r, { busy: null, state: null, menu: 'none' }, `the menu went with the wall: ${JSON.stringify(r)}`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 // The sort chip's popover (DT-7) — the same touch-floor miss the show menu's
 // rows just fixed (a click-only <li role="option"> at 32px), fixed the same
 // way: native <button role="option">. A search wall hides the control

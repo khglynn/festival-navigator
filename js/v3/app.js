@@ -784,6 +784,10 @@ function startClock() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
 }
 function tickClock(date = new Date()) {
+  // A 'show-menu' busy flag with no menu open is a leftover (it would hold
+  // every new build's reload on this phone for good): given back here, at the
+  // minute tick and whenever the page is shown again.
+  if (document.body.dataset.busy === 'show-menu' && !openMenu) delete document.body.dataset.busy;
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
   paintNowTabs(date); // the same minute decides whether NOW is there at all
@@ -1461,6 +1465,23 @@ function openShowMenu(wrap, link, pop) {
   if (!document.body.dataset.busy) document.body.dataset.busy = 'show-menu';
   router.push(MENU_LAYER);
 }
+// The Show menu goes with its screen (v93 — Sol 6's review): any screen but
+// the wall (the fest list after a crew was deleted on the server, the error
+// screen, the join screen) and a boot (which rebuilds the wall) retire an open
+// menu at once — closed, its scroll hold and its way-out state let go, its
+// busy flag given back, and its history entry dropped where the page stands
+// (router.forget). Left behind, the flag held every new build's reload on the
+// phone, and history still named a menu that was gone.
+function retireShowMenu() {
+  clearTimeout(menuLeaving);
+  menuLeaving = null;
+  afterMenu = null;
+  window.removeEventListener('scroll', trackMenuY);
+  menuY = null;
+  if (openMenu) closeShowMenu({ instant: true });
+  if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;
+  router.forget(MENU_LAYER);
+}
 // A way out that is not Back: take the menu's history entry back, and do
 // `then` once it is gone (menuGone, from the popstate). Without the entry —
 // a desynced stack — it goes at once.
@@ -1754,6 +1775,8 @@ function showNewBuildStrip() {
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
+  // The Show menu belongs to the wall's screen, and goes with it.
+  if (screen !== 'screen-app') retireShowMenu();
   for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
@@ -3394,6 +3417,7 @@ let pendingMeHint = null; // &me= from a personal invite link, consumed by rende
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
+  retireShowMenu(); // a boot rebuilds the wall: a menu over the old one goes with it
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
   const isFirst = firstBoot;

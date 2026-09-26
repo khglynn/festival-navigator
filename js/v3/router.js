@@ -103,6 +103,24 @@ export function createRouter(hist) {
     // A fresh boot resets the model; the caller resets the DOM.
     reset() { stack = []; },
 
+    // A layer that went away with its screen (the show menu, v93): out of
+    // the model, and out of the entry the page stands on when that entry
+    // names it — never by a traversal, which could move the app off the
+    // screen it is going to. Returns whether the model held it.
+    forget(key) {
+      const i = stack.lastIndexOf(key);
+      if (i === -1) return false;
+      stack.splice(i, 1);
+      try {
+        const cur = hist.state;
+        if (cur && Array.isArray(cur.layers) && cur.layers.includes(key)) {
+          const layers = cur.layers.filter((k) => k !== key);
+          hist.replaceState(layers.length ? { layers } : null, '');
+        }
+      } catch { /* an entry this history cannot read: the model is right */ }
+      return true;
+    },
+
     // Re-open layers captured before a refresh (spec F10: refresh restores
     // the same surface or its nearest parent).
     restore(layers) { if (Array.isArray(layers) && layers.length) reconcile(layers); },
