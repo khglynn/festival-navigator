@@ -111,6 +111,7 @@ export async function renderFrames(prefixes = []) {
   const rig = await openRig();
   try {
     for (const f of FRAMES.filter((x) => want(x.id))) {
+      try {
       const { ctx, page, errors } = await openApp(rig, { now: f.now || SAT, width: f.width, height: f.height || (f.width >= 720 ? 900 : 844), view: f.view || 'board', guest: !!f.guest, crew: f.crew || 9, store: f.store || {} });
       try {
         if (f.at === 'top') { await page.evaluate(() => window.scrollTo(0, 0)); await sleep(900); } else if (f.at) await scrollTo(page, f.at);
@@ -118,7 +119,8 @@ export async function renderFrames(prefixes = []) {
         await sleep(500);
         await shot(page, f.id);
         report.push(`${f.id}: ok${errors.length ? ` — page errors: ${errors.join(' | ')}` : ''}`);
-      } finally { await ctx.close(); }
+      } finally { await ctx.close().catch(() => {}); }
+      } catch (e) { report.push(`${f.id}: FAILED — ${String(e.message || e).split('\n')[0]}`); }
     }
   } finally { await rig.close(); }
   report.push(`writes refused: ${writes.length} (${[...new Set(writes)].join(', ')})`);
