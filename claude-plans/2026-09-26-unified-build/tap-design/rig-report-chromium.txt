@@ -37,6 +37,8 @@ chromium motion390
   errors: none
 chromium alt390
   frame chromium-390-ALT-no-meter-plus2.png
+chromium rise390
+  the sheet's bottom vs the screen's, every frame of the rise: min 0px, max 639.7px over 179 frames (negative = a gap under it)
 chromium member320
   frame chromium-320-member-boysnoize-doors.png
   Robyn open 320: {"top":127,"h":441,"rowY":325,"meter":"0","minusOff":true,"plusOff":false}
@@ -60,4 +62,4 @@ chromium desktop1280
   frame chromium-1280-mouse-robyn-shelf.png
   frame chromium-1280-mouse-robyn-shelf-plus1.png
   errors: none
-writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person

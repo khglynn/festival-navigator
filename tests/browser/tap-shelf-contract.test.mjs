@@ -288,18 +288,22 @@ for (const [name, get] of ENGINES) {
       });
       await tapAt(page, at);
       await page.waitForFunction(() => !!document.getElementById('artist-sheet'), null, { timeout: 4000 });
+      // Hold the rise halfway (its own animation, paused), so the close lands
+      // mid-rise however loaded the machine is; then close it.
+      await page.evaluate(() => {
+        const sheet = document.getElementById('artist-sheet');
+        const rise = sheet.getAnimations().find((a) => a.effect && a.effect.target === sheet);
+        if (rise) { rise.pause(); rise.currentTime = 110; }
+      });
       const tops = [];
-      for (let i = 0; i < 4; i++) { const f = await sample(); if (f) tops.push(f); } // mid-rise
+      const held = await sample();
+      tops.push(held);
       await page.evaluate(() => history.back());
       for (let i = 0; i < 60; i++) { const f = await sample(); if (!f) break; tops.push(f); }
       const closing = tops.filter((f) => f.closing);
       assert.ok(closing.length >= 2, `the way out was sampled (${closing.length} frames)`);
-      const lastRising = tops.filter((f) => !f.closing).pop();
-      assert.ok(lastRising && lastRising.top > lastRising.rest + 40, `not vacuous: the close came mid-rise (${lastRising && lastRising.top} vs rest ${lastRising && lastRising.rest})`);
-      // The rise may have gone on a few px between the two samples; a snap to
-      // the rest would be the whole remaining way.
-      assert.ok(closing[0].top > closing[0].rest + 30 && closing[0].top >= lastRising.top - 12,
-        `the way out starts where the rise was (${lastRising.top} → ${closing[0].top}; rest ${closing[0].rest}), not at its rest`);
+      assert.ok(held.top > held.rest + 40, `not vacuous: the close came mid-rise (${held.top} vs rest ${held.rest})`);
+      assert.ok(closing[0].top >= held.top - 1, `the way out starts where the rise was (${held.top} → ${closing[0].top}; rest ${closing[0].rest}), not at its rest`);
       for (let i = 1; i < closing.length; i++) assert.ok(closing[i].top >= closing[i - 1].top - 1, `and only goes down (${closing[i - 1].top} → ${closing[i].top})`);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
