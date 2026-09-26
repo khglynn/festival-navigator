@@ -32,7 +32,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, nowLanding, nowStops, nowStep, stillThere, nowPulseable, nowSaid, cardFor, roomOf, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
+const { renderWall, nowLanding, nowStops, nowStep, stillThere, nowPulseable, nowSaid, cardFor, roomOf, positionNowLines, positionNowMarks, rowSlide, stackRowKey } = await import('../js/v3/wall.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -568,4 +568,139 @@ test('what NOW says names one show once, even where it renders in two rooms', ()
   const b = a.cloneNode(true);
   const stop = { members: [{ card: a, line: null }, { card: b, line: null }] };
   assert.equal(nowSaid({ stops: [stop] }, stop), 'Playing now: Horse Meat Disco at The Midway.');
+});
+
+// ---- across, in a phone's stack row (v91, review 2026-09-25) -----------------------
+// On a phone a clocked stack row scrolls sideways by its lead space: at rest
+// its columns start where the clock's do and the right-hand card runs off the
+// screen by 38px (at 320, Milli Meng's afters card to x=344 in a row ending at
+// 306). NOW's landing slides the row just enough to show its cards whole.
+// The row, as a phone draws it at 390: a 362px window at x 14 that scrolls
+// 38px; columns at 54 and 236, 178 wide. `left` is where the row stands.
+const rowLayout = (root, { left = 0, at = 0, ...opts } = {}) => {
+  const base = layout(root, opts);
+  const box = new Map();
+  const rows = new Map();
+  for (const row of root.querySelectorAll('.stack-scroll')) {
+    rows.set(row, left);
+    for (const [i, g] of [...row.querySelectorAll('.venue-group')].entries()) {
+      // Across is read off the column (the venue group); the cards keep
+      // their heights, and a card of their own width.
+      const x = 54 + (i % 2) * 182 - rows.get(row);
+      box.set(g, { top: 0, bottom: 0, left: x, right: x + 178 });
+      for (const c of g.querySelectorAll('.card')) box.set(c, { ...base.box(c), left: x, right: x + 178 });
+    }
+  }
+  // `at`: the page scrolled there — every box moves up by it, as on screen.
+  const up = (b) => (at ? { ...b, top: b.top - at, bottom: b.bottom - at } : b);
+  return {
+    ...base,
+    scrollY: at,
+    now: 0,
+    gridLeft: () => null,
+    box: (el) => up(box.get(el) || base.box(el)),
+    row: (card) => {
+      const el = card.closest('.stack-scroll');
+      return el ? { el, key: stackRowKey(el), x: 14, left: rows.get(el), width: 362, max: 38 } : null;
+    },
+    rowLeft: (key) => {
+      const el = [...rows.keys()].find((r) => stackRowKey(r) === key);
+      return el ? rows.get(el) : null;
+    },
+  };
+};
+const afters = (root) => root.querySelector('.day-block[data-day="Saturday"] .room[data-room="Afters"] .stack-scroll');
+
+test('rowSlide: the least slide that shows a span whole — none when it already is, and never past the row', () => {
+  const row = { left: 0, width: 362, max: 38 };
+  assert.equal(rowSlide(row, 40, 218), 0, 'the left-hand card is whole at rest: nothing moves');
+  assert.equal(rowSlide(row, 222, 400), 38, 'the right-hand card: just its clipped 38px');
+  assert.equal(rowSlide(row, 40, 400), 38, 'both columns: the far end shows them together');
+  assert.equal(rowSlide({ ...row, left: 38 }, 40, 218), 38, 'swiped already, the left card is still whole: no nudge back');
+  assert.equal(rowSlide({ ...row, left: 38 }, 20, 198), 20, 'a card behind the left edge: just far enough back');
+  assert.equal(rowSlide({ ...row, max: 20 }, 222, 400), 20, 'as far as the row goes');
+});
+
+test('Ross highlighted, his live pick is the right-hand card of SAT AFTERS: the stop slides that row just enough to show it', () => {
+  const { root, ctx } = render(SAT_1030, ['Ross']);
+  const row = afters(root);
+  assert.ok(row, 'SAT AFTERS sits in its row (a clocked stack)');
+  const milli = [...row.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Milli Meng');
+  assert.ok(milli.closest('.venue-group') === row.querySelectorAll('.venue-group')[1], 'Public Works is the right-hand column');
+  const plan = nowStops(root, ctx, SAT_1030, rowLayout(root));
+  const stop = plan.stops[plan.bestAt];
+  assert.deepEqual(namesOf(stop), ['Milli Meng']);
+  assert.deepEqual(stop.rows.map((r) => [r.el, r.slide]), [[row, 38]], 'one row, slid 38px: the card ends at its edge');
+  assert.equal(stop.rows[0].key, stackRowKey(row), 'named by where it stands, to survive a repaint');
+  // Already swiped: nothing to do.
+  const swiped = nowStops(root, ctx, SAT_1030, rowLayout(root, { left: 38 }));
+  assert.deepEqual(swiped.stops[swiped.bestAt].rows.map((r) => r.slide), [38], 'whole already: the slide is where it stands');
+  root.remove();
+});
+
+test('side by side in one row is still one stop — both columns fit the far end of the row together', () => {
+  const { root, ctx } = render(SAT_1030);
+  const plan = nowStops(root, ctx, SAT_1030, rowLayout(root));
+  const withRows = plan.stops.filter((st) => st.rows.length);
+  assert.ok(withRows.length, 'the afters stops carry their row');
+  const pair = plan.stops.find((st) => st.members.filter((m) => m.card).length > 1);
+  assert.ok(pair, 'two live cards at one height');
+  const plain = nowStops(root, ctx, SAT_1030, layout(root));
+  assert.equal(plan.stops.length, plain.stops.length, 'a row adds no stops: it only slides');
+  for (const st of withRows) {
+    for (const r of st.rows) {
+      const cards = st.members.filter((m) => m.card && m.card.closest('.stack-scroll') === r.el);
+      const right = cards.some((m) => [...r.el.querySelectorAll('.venue-group')].indexOf(m.card.closest('.venue-group')) % 2 === 1);
+      assert.equal(r.slide, right ? 38 : 0, `a row slides only for a right-hand card: ${cards.map((m) => m.card.dataset.artist)}`);
+    }
+  }
+  // Without the row reading (a desktop, or an old geo) nothing slides.
+  assert.ok(plain.stops.every((st) => st.rows.length === 0));
+  root.remove();
+});
+
+test('the repeat tap counts across: a card clipped by its row is not shown, and a row swiped by hand makes the next tap fresh', () => {
+  // Ross with only Milli Meng on: one stop.
+  const { root, ctx } = render(SAT_1030, ['Ross'], { picks: { 'Milli Meng': { Ross: 3 } } });
+  const g0 = rowLayout(root);
+  const plan0 = nowStops(root, ctx, SAT_1030, g0);
+  assert.equal(plan0.stops.length, 1);
+  const first = nowStep(plan0, null, g0);
+  const cycle = { lead: first.lead.key, y: first.target, grid: null, sl: 0, rows: first.stop.rows.map((r) => [r.key, r.slide]), until: 0 };
+  assert.deepEqual(cycle.rows, [[stackRowKey(afters(root)), 38]]);
+  // Where NOW left it: the page at y, the row at 38 — still there, and it stays.
+  const there = rowLayout(root, { left: 38, at: cycle.y });
+  assert.equal(stillThere(cycle, there), true);
+  assert.equal(nowStep(nowStops(root, ctx, SAT_1030, there), cycle, there).target, cycle.y, 'the repeat tap stays (and pulses)');
+  // The hand swipes the row back: the card is clipped again.
+  const back = rowLayout(root, { left: 0, at: cycle.y });
+  assert.equal(stillThere(cycle, back), false, 'a row moved by hand: not where NOW left it');
+  const again = nowStep(nowStops(root, ctx, SAT_1030, back), cycle, back);
+  assert.equal(again.fresh, true);
+  assert.deepEqual(again.stop.rows.map((r) => r.slide), [38], 'and the fresh landing slides it out again');
+  // A row that is gone (its room hidden) ends the cycle.
+  assert.equal(stillThere(cycle, { ...there, rowLeft: () => null }), false);
+  // Horizontal counts even when the cycle holds: the one stop does not stay while its card is clipped.
+  const held = { ...back, rowLeft: () => 38 }; // the cycle's reading says 38, the row itself stands at 0
+  assert.equal(stillThere(cycle, held), true);
+  const step = nowStep(nowStops(root, ctx, SAT_1030, held), cycle, held);
+  assert.deepEqual(step.stop.rows.map((r) => r.slide), [38], 'the landing slides the row, whatever the cycle said');
+  root.remove();
+});
+
+test('a pulsing card does not split its row: across is read off the column, not the scaled card', () => {
+  const { root, ctx } = render(SAT_1030);
+  const g = rowLayout(root);
+  // NOW's pulse on every afters card: each box 6% wider about its centre.
+  const pulsed = { ...g, box: (el) => {
+    const b = g.box(el);
+    if (!el.classList || !el.classList.contains('card') || !el.closest('.stack-scroll')) return b;
+    const grow = (b.right - b.left) * 0.03;
+    return { ...b, left: b.left - grow, right: b.right + grow };
+  } };
+  const calm = nowStops(root, ctx, SAT_1030, g);
+  const busy = nowStops(root, ctx, SAT_1030, pulsed);
+  assert.deepEqual(busy.stops.map((st) => st.members.length), calm.stops.map((st) => st.members.length), 'the same stops, mid-pulse or not');
+  assert.deepEqual(busy.stops.map((st) => st.rows.map((r) => r.slide)), calm.stops.map((st) => st.rows.map((r) => r.slide)), 'and the same slides');
+  root.remove();
 });

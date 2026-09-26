@@ -1235,13 +1235,37 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * down. The gutter is space, not a sticky rail: it scrolls with the page.
  * `data-clock` comes from wall.js (venueGroups): 'room' is the clock's own
  * room, 'day' another room on that day. The clock's own room steps in at
- * every width. Another room steps in only from 720 up: on a phone its two
- * columns fill the shell exactly (--col-w), so the rail's 40px would drop SAT
- * AFTERS to one column — twice the scroll for a straight edge. A day with no
- * clock (Portola's Thursday) never carries the attribute. */
+ * every width; another room from 720 up here, and on a phone by the
+ * sideways row below. A day with no clock (Portola's Thursday) never carries
+ * the attribute. */
 .venue-grid[data-clock="room"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
 @media (min-width: 720px) {
   .venue-grid[data-clock="day"] { padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap); }
+}
+/* On a phone, a clocked row keeps its two columns at full --col-w and scrolls
+ * sideways instead (v91, Kevin at Portola: "a little bit of extra padding
+ * that obviously scrolls away if you left scroll"). Stepped in by the rail
+ * inside the shell, two columns would only fit as one — SAT AFTERS at half
+ * the width, twice the scroll — so the rail's 40px is LEAD SPACE inside
+ * `.stack-scroll` (wall.js venueGroups): at rest the columns start at the
+ * clock's first column and the right one runs off the edge exactly as the
+ * timetable's does (by the rail plus the clock's gap less the shell's, 38px
+ * at every phone width), and a swipe carries the lead away. The room still
+ * wraps two across, so a night with seven venues is read top to bottom as
+ * before, never swiped through one by one. One venue fits beside the lead
+ * space and does not scroll. The row is not a `.times-scroll`: nothing that
+ * mirrors the timetable's position may grab it. Its block padding, taken
+ * back by a margin, is room for a NOW card's glow at the row's bottom edge,
+ * which a scroller would otherwise clip. From 720 up the row is an ordinary
+ * box and the rules above do the lining up. */
+@media (max-width: 719.98px) {
+  .stack-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+                  padding-block: 8px; margin-block: -8px; }
+  .stack-scroll > .venue-grid[data-clock] {
+    width: max-content; grid-template-columns: repeat(2, var(--col-w));
+    padding-inline-start: var(--hour-rail-w); column-gap: var(--clock-gap);
+  }
+  .stack-scroll > .venue-grid[data-clock][data-venues="1"] { grid-template-columns: var(--col-w); }
 }
 
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one

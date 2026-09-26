@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -630,6 +630,17 @@ const pageGeo = (root) => ({
     const el = grid && grid.closest('.times-scroll');
     return el ? el.scrollLeft : null;
   },
+  // A stack card's sideways row (a clocked stack on a phone, v91), named by
+  // where it stands so the name survives a repaint, as a grid's day does.
+  row: (card) => {
+    const el = card.closest('.stack-scroll');
+    if (!el) return null;
+    return { el, key: stackRowKey(el), x: el.getBoundingClientRect().left + el.clientLeft, left: el.scrollLeft, width: el.clientWidth, max: Math.max(0, el.scrollWidth - el.clientWidth) };
+  },
+  rowLeft: (key) => {
+    const el = [...root.querySelectorAll('.stack-scroll')].find((r) => stackRowKey(r) === key);
+    return el ? el.scrollLeft : null;
+  },
 });
 function jumpToNow() {
   const seq = ++nowSeq;
@@ -668,9 +679,25 @@ function jumpToNow() {
       if (Math.abs(sl - sc.scrollLeft) >= 1) { sc.scrollTo({ left: sl, behavior }); slid = true; }
     }
   }
+  // Across, for the stop's stack cards (v91): a phone's clocked stack row
+  // scrolls sideways by its lead space, and its right-hand card runs off the
+  // screen at rest. Each row holding one of them slides just enough to show
+  // them whole (wall.js rowSlide) — and not at all when they already are.
+  const rowsSlid = [];
+  for (const r of stop.rows || []) {
+    if (!r.el.isConnected || Math.abs(r.slide - r.el.scrollLeft) < 1) continue;
+    r.el.scrollTo({ left: r.slide, behavior });
+    rowsSlid.push(r.el);
+  }
   const moves = Math.abs(target - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top: target, behavior });
-  nowCycle = { lead: lead.key, y: target, grid: sc ? stop.frame.iso : null, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
+  // Anything this tap moved: the page, a grid, a stack row.
+  const moved = moves || slid || rowsSlid.length > 0;
+  nowCycle = {
+    lead: lead.key, y: target, grid: sc ? stop.frame.iso : null, sl,
+    rows: (stop.rows || []).map((r) => [r.key, r.slide]),
+    until: moved && smooth ? performance.now() + 1500 : 0,
+  };
   // The "still gliding there" grace lasts only as long as the glide: when it
   // ends (both glides, if the grid slid too), where the page stands is the
   // whole answer again — so a hand scroll right after a landing makes the
@@ -679,14 +706,16 @@ function jumpToNow() {
   // next stop). Engines without scrollend (WebKit before 26) keep the 1.5 s cap.
   if (nowCycle.until) {
     const mine = nowCycle;
-    let glides = (moves ? 1 : 0) + (slid ? 1 : 0);
+    let glides = (moves ? 1 : 0) + (slid ? 1 : 0) + rowsSlid.length;
     const ended = () => { glides -= 1; if (glides <= 0 && nowCycle === mine) mine.until = 0; };
     const onPage = () => { window.removeEventListener('scrollend', onPage); ended(); };
     const onGrid = () => { sc.removeEventListener('scrollend', onGrid); ended(); };
+    const onRow = (el) => { const once = () => { el.removeEventListener('scrollend', once); ended(); }; el.addEventListener('scrollend', once); return () => el.removeEventListener('scrollend', once); };
     if (moves) window.addEventListener('scrollend', onPage);
     if (slid) sc.addEventListener('scrollend', onGrid);
+    const offRows = rowsSlid.map(onRow);
     // No listener outlives the cap (an engine with no scrollend never calls them).
-    setTimeout(() => { window.removeEventListener('scrollend', onPage); if (sc) sc.removeEventListener('scrollend', onGrid); }, 1600);
+    setTimeout(() => { window.removeEventListener('scrollend', onPage); if (sc) sc.removeEventListener('scrollend', onGrid); offRows.forEach((off) => off()); }, 1600);
   }
   // What pulses: the stop's cards — the highlighted person's picks, or, for
   // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
@@ -696,7 +725,7 @@ function jumpToNow() {
   const cards = pulses ? stop.members.filter((m) => m.card).map((m) => m.card) : [];
   const bumps = cards.filter((c) => canAnimate(c, ctx));
   if (!bumps.length) {
-    if (!moves && !slid) pulseLine((stop.members.find((m) => m.line) || {}).line || null);
+    if (!moved) pulseLine((stop.members.find((m) => m.line) || {}).line || null);
     return;
   }
   // Who to pulse, by identity rather than by node: the wall can replace a
@@ -734,7 +763,7 @@ function jumpToNow() {
     }
   };
   // Already there (a repeat tap on the one stop): the pulse is the whole answer, at once.
-  if (!moves && !slid) { pulse(); return; }
+  if (!moved) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
 }

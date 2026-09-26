@@ -90,7 +90,9 @@
    * On a phone: two columns across the SHELL — the stacks' box, and the widest
    * box a card lives in. The timetable's scroller is narrower by the 40px hour
    * rail, so it shows a little under two columns and scrolls, which is what a
-   * scroller is for.
+   * scroller is for — and a stack row under a clock does the same, carrying
+   * the rail as lead space so its columns sit under the clock's (v3.css
+   * `.stack-scroll`, v91).
    * Why an absolute length and not `calc((100% - gap)/2)`: a percentage inside
    * a custom property resolves at the USE site, so one token would have come
    * out 158px in the grid and 178px in the stack — two widths again, from the

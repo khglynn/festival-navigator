@@ -822,13 +822,32 @@ function dayRuleSub(meta) {
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
-// Fold diacritics so "tiesto" finds Tiësto — nobody hunts for the ë on a
-// phone keyboard in a field (audit walker anomaly, verified real).
-const fold = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+// Fold both sides of a search, never a stored name (names are pick keys): so
+// "tiesto" finds Tiësto, "mull" finds MÜLL, "chloe" finds Chloé Caillet, and
+// the other way round — nobody hunts for the ë on a phone keyboard in a
+// field. NFD splits an accented letter into letter + mark and the marks go;
+// the letters NFD leaves whole (a stroke or a ligature, not a mark: CØNTRA,
+// Łaszewo, DØMINA) get their plain spelling from FOLD_LETTERS. And iOS types
+// a curly ’ for ' (Smart Punctuation), so "it’s murph" finds It's Murph.
+// Every search in the app matches through searchMatches — there were two,
+// and the scheduled-fest one (Portola's) had never folded at all (v91,
+// 2026-09-25: friends at Portola typed "mull" and found nothing).
+const FOLD_LETTERS = { 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ħ': 'h', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+export function searchFold(s) {
+  return String(s ?? '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[øłđðħıßæœþ]/g, (c) => FOLD_LETTERS[c])
+    .replace(/[\u2018\u2019\u02bc]/g, "'");
+}
+// The one match every search uses: does this name answer this query? An
+// empty (or all-space) query answers everything.
+export function searchMatches(name, query) {
+  const q = searchFold(query).trim();
+  return !q || searchFold(name).includes(q);
+}
 export function applyFilter(artists, query) {
-  const q = fold((query || '').trim());
-  if (!q) return artists;
-  return artists.filter((a) => fold(a.name).includes(q));
+  if (!searchFold(query).trim()) return artists;
+  return artists.filter((a) => searchMatches(a.name, query));
 }
 
 // Multi-weekend fests (ST-3): 'all' shows everyone; W1/W2 shows that
@@ -1496,6 +1515,16 @@ const stackTime = (m) => {
 // the stacks are the clock's own room (a cancelled act, a set off the
 // columns, a name with no time yet), 'day' when they are another room on that
 // day (SAT AFTERS). How far each one moves is v3.css's call.
+//
+// A clocked row also sits in its own sideways scroller, `.stack-scroll` (v91):
+// on a phone the rail's 40px is lead space inside it — the columns start
+// where the clock's do and keep their full width, and the lead scrolls away
+// under a swipe (Kevin: "a little bit of extra padding that obviously scrolls
+// away if you left scroll"). One scroller per room on a day, never per day:
+// the room's head between two rooms is a door and stays put. It is not a
+// `.times-scroll` on purpose — nothing that mirrors the timetable's position
+// may take it for one; its own position survives a repaint by its own key
+// (stackRowKey). From 720 up it is an ordinary box (v3.css).
 export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
@@ -1531,7 +1560,16 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     grid.appendChild(group);
   }
   if (!shown) return 0;
-  root.appendChild(grid);
+  if (clock) {
+    // How many columns the row asks for is v3.css's to decide; one venue
+    // fits the phone beside the lead space and never scrolls.
+    grid.dataset.venues = String(groups.length);
+    const row = mk('div', 'stack-scroll');
+    row.appendChild(grid);
+    root.appendChild(row);
+  } else {
+    root.appendChild(grid);
+  }
   return shown;
 }
 
@@ -1664,7 +1702,19 @@ export function nowLanding(root, ctx, date = new Date()) {
 // { top, bottom } of what can be seen (under a grid's pinned stage strip for a
 // grid, under the sticky chrome otherwise; above the dock on a phone),
 // scroller(cell) → { el, x, left, width, max } of the grid's own sideways
-// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls) }.
+// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls),
+// and row(card) → the same for a stack card's `.stack-scroll`, plus its
+// `key` (stackRowKey), or null — optional: without it no row slides }.
+//
+// ACROSS, for a stack card (v91): on a phone a clocked stack row scrolls
+// sideways by its lead space, and at rest its right-hand card runs off the
+// screen by it (38px — at 320, Milli Meng's afters card to x=344 in a row
+// ending at 306: review, 2026-09-25). A stop's landing slides each row that
+// holds one of its cards JUST ENOUGH to show them whole (rowSlide), and not
+// at all when they already are. Unlike a grid, a row never splits a stop:
+// its scroll is exactly its lead space, so its two columns always fit it
+// together at the far end (and were they ever not to, the slide keeps the
+// left-hand one whole).
 export const NOW_PAD = 8;
 export function landingTarget(m, geo) {
   const pad = NOW_PAD;
@@ -1731,6 +1781,36 @@ export function frameSlide(frame) {
   const { sc, lo, hi } = frame;
   return Math.min(sc.max, Math.max(0, (lo + hi) / 2 - sc.width / 2));
 }
+// A stack card's place in its row's sideways scroll, in the row's own
+// coordinates — null for a card in no row, or in a row that does not scroll
+// (a desktop, one venue). Read off the card's COLUMN (its venue group), not
+// the card: NOW's pulse scales a card, and its box grows with it — a tap
+// during the last tap's pulse measured the two columns 3px too wide to share
+// the row (the browser cycle test, 2026-09-25).
+function rowSpanIn(m, geo) {
+  if (!m.card || m.line || !geo.row) return null;
+  const row = geo.row(m.card);
+  if (!row || !(row.max > 0)) return null;
+  const r = geo.box(m.card.closest('.venue-group') || m.card);
+  const lo = r.left - row.x + row.left;
+  return { row, lo, hi: lo + (r.right - r.left) };
+}
+// The least slide that puts [lo, hi] wholly inside a row: where it already
+// stands when it does, else just far enough, as far as the row scrolls. No
+// pad: at the far end of its scroll a row's right-hand card ends exactly at
+// its edge, and a pad would ask for a slide the row does not have.
+export function rowSlide(row, lo, hi) {
+  let sl = row.left;
+  if (hi > sl + row.width) sl = hi - row.width;
+  if (lo < sl) sl = lo;
+  return Math.min(row.max, Math.max(0, sl));
+}
+// Whether a card is whole inside its row as the row stands now (a card in
+// no scrolling row always is).
+function wholeAcross(m, geo) {
+  const s = rowSpanIn(m, geo);
+  return !s || (s.lo >= s.row.left - 1 && s.hi <= s.row.left + s.row.width + 1);
+}
 export function nowStops(root, ctx, date, geo) {
   const best = nowLanding(root, ctx, date);
   if (!best) return null;
@@ -1755,30 +1835,44 @@ export function nowStops(root, ctx, date, geo) {
     m.key = keyOf(m);
     m.target = landingTarget(m, geo);
     m.span = spanIn(m, geo);
+    m.rowSpan = rowSpanIn(m, geo);
     m.x = m.span ? m.span.lo : geo.box(m.card || m.line).left;
   }
   members.sort((a, b) => a.target - b.target || a.x - b.x);
   // Room across: a frame holds its cells side by side with 8px either side.
   const fits = (frame, span) => !frame || (frame.sc.el === span.sc.el
     && Math.max(frame.hi, span.hi) - Math.min(frame.lo, span.lo) <= span.sc.width - 2 * NOW_PAD);
+  // A stack row never splits a stop (see above); one stop may hold several
+  // rows, each sliding on its own.
+  const takeRow = (st, rs) => {
+    if (!rs) return;
+    const f = st.across.get(rs.row.el);
+    st.across.set(rs.row.el, f ? { ...f, lo: Math.min(f.lo, rs.lo), hi: Math.max(f.hi, rs.hi) } : { ...rs });
+  };
   const stops = [];
   for (const m of members) {
     const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)));
     if (home) {
       home.members.push(m);
       if (m.span) home.frame = home.frame ? { ...home.frame, lo: Math.min(home.frame.lo, m.span.lo), hi: Math.max(home.frame.hi, m.span.hi) } : { ...m.span };
+      takeRow(home, m.rowSpan);
       continue;
     }
     // A stop of its own. Where a stop already shows it at that height and
     // only its column is out of frame, it lands at the same height — the
     // tap's move is the sideways slide.
     const beside = m.span ? stops.find((st) => showsAt(m, st.target, geo)) : null;
-    stops.push({ target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null });
+    const st = { target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null, across: new Map() };
+    takeRow(st, m.rowSpan);
+    stops.push(st);
   }
   for (const st of stops) {
     st.keys = st.members.map((m) => m.key);
     st.x = Math.min(...st.members.map((m) => m.x));
     st.slide = st.frame ? frameSlide(st.frame) : null;
+    // Each row this stop's cards sit in, and the slide that shows them whole.
+    st.rows = [...st.across.values()].map((f) => ({ el: f.row.el, key: f.row.key, slide: rowSlide(f.row, f.lo, f.hi) }));
+    delete st.across;
   }
   stops.sort((a, b) => a.target - b.target || a.x - b.x);
   const bestKey = keyOf(best);
@@ -1855,10 +1949,18 @@ export function nowSaid(plan, stop) {
 //
 // geo adds two readings to nowStops' own: now (the clock `until` is on) and
 // gridLeft(iso) → that day's grid's sideways scroll, or null with no such grid.
+// A landing that framed stack rows keeps them too (v91): cycle.rows is
+// [[stackRowKey, slide], …], read back through geo.rowLeft(key) — a row
+// swiped by hand since makes the next tap fresh, as a grid does; a row that
+// is gone ends the cycle.
 export function stillThere(cycle, geo) {
   if (!cycle) return false;
   if (geo.now < cycle.until) return true;
   if (Math.abs(geo.scrollY - cycle.y) > 4) return false;
+  for (const [key, sl] of cycle.rows || []) {
+    const left = geo.rowLeft ? geo.rowLeft(key) : null;
+    if (left == null || Math.abs(left - sl) > 4) return false;
+  }
   if (cycle.grid == null) return true;
   const left = geo.gridLeft(cycle.grid);
   return left != null && Math.abs(left - cycle.sl) <= 4;
@@ -1872,7 +1974,8 @@ export function stillThere(cycle, geo) {
 // slides to, the key the next tap starts from — else its top member.
 //
 // The one stop, tapped again, stays where the last tap left it — while that
-// landing still shows it (every member, by showsAt). The clock moves a stop
+// landing still shows it (every member, by showsAt, and each stack card
+// whole inside its row, by wholeAcross). The clock moves a stop
 // without moving the page: tap at 3 PM, tap again at 7 PM, and the line has
 // walked four hours down the grid (at 320x568, 198px → 582px, under the dock
 // at 523). The page is exactly where NOW left it, so this was "still there",
@@ -1889,7 +1992,8 @@ export function nowStep(plan, cycle, geo) {
   if (fresh) at = bestAt;
   const stop = stops[at];
   const lead = stop.keys.includes(best.key) ? best : stop.members[0];
-  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo));
+  // Shown means whole: across too, for a card in a stack row (wholeAcross).
+  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo) && wholeAcross(m, geo));
   return { fresh, at, stop, lead, target: stays ? cycle.y : stop.target };
 }
 
@@ -2113,6 +2217,16 @@ function renderExtra(root, ctx, fest, extra) {
 }
 
 // ---- the wall ------------------------------------------------------------------
+// A stack row's sideways position belongs to that row alone — no other
+// scroller shares it — so it is kept by where the row stands: its day, its
+// room, and which of that room's rows it is.
+export function stackRowKey(row) {
+  const room = row.closest('.room');
+  const rows = room ? [...room.querySelectorAll('.stack-scroll')] : [row];
+  const day = row.closest('.day-block');
+  return `${day ? day.dataset.day : ''}|${room ? room.dataset.room : ''}|${rows.indexOf(row)}`;
+}
+
 // The repaint boundary preserves ephemeral client state (audit Class 1): a
 // remote sync tearing down #wall-root must never cost the user their scroll
 // position or a half-typed note. Harvest before teardown, restore after.
@@ -2124,6 +2238,12 @@ function harvestEphemera(root) {
     const key = s.dataset.sync || '*';
     if (!scrolls.has(key) && s.scrollLeft) scrolls.set(key, s.scrollLeft);
   }
+  // A crew-mate's pick repaints the wall; a phone that had swiped SAT AFTERS
+  // sideways must not have it snap back under its thumb.
+  const rows = new Map();
+  for (const s of root.querySelectorAll('.stack-scroll')) {
+    if (s.scrollLeft) rows.set(stackRowKey(s), s.scrollLeft);
+  }
   const drafts = new Map();
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
     if (input.value) {
@@ -2134,13 +2254,17 @@ function harvestEphemera(root) {
       });
     }
   }
-  return { scrolls, drafts };
+  return { scrolls, rows, drafts };
 }
 
-function restoreEphemera(root, { scrolls, drafts }) {
+function restoreEphemera(root, { scrolls, rows, drafts }) {
   for (const s of root.querySelectorAll('.times-scroll')) {
     if (isStripScroller(s)) continue; // the strip follows its grid; it is never scrolled itself
     const left = scrolls.get(s.dataset.sync || '*');
+    if (left) s.scrollLeft = left;
+  }
+  for (const s of root.querySelectorAll('.stack-scroll')) {
+    const left = rows.get(stackRowKey(s));
     if (left) s.scrollLeft = left;
   }
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
@@ -2185,10 +2309,10 @@ function renderWallInner(root, ctx) {
   // show answers under its night rather than under its section's name, which
   // is not a place any more (MODEL-V4 §2).
   if (scheduled) {
-    const q = ctx.query.trim().toLowerCase();
     // Every name that matches answers; the people filter dims the answers
     // the selected people did not pick (renderCard), the same as on the wall.
-    const wanted = (name) => name.toLowerCase().includes(q);
+    // The same folded match as a lineup fest's search (searchMatches).
+    const wanted = (name) => searchMatches(name, ctx.query);
     const plan = wallPlanFor(fest, ctx);
     // A search is a LIST: each answer group is a list head over a card grid,
     // and a day's groups sit in the block its tab lands on (dayBlock).
