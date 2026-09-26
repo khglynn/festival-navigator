@@ -1237,6 +1237,7 @@ function renderDayNav() {
   // highlight), so the rebuilt rows start where the old ones rested, and NOW
   // is lifted out before the old tabs go — back in its place below, with
   // nothing on screen having moved.
+  const focused = NOW_DOORS.map(([tab]) => document.activeElement === $(tab)); // a keyboard on NOW keeps it
   const rested = NOW_DOORS.map(([tab, row]) => { parkNowTab($(tab), $(row)); return $(row).scrollLeft; });
   dock.textContent = '';
   rail.textContent = '';
@@ -1260,6 +1261,12 @@ function renderDayNav() {
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
   paintNowTabs();
+  // Moving NOW out and back in drops focus; someone walking NOW's stops on a
+  // keyboard must not lose their place to the 25 s poll's repaint.
+  NOW_DOORS.forEach(([tab], i) => {
+    const t = $(tab);
+    if (focused[i] && !t.hidden && document.activeElement !== t) t.focus({ preventScroll: true });
+  });
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -1303,6 +1310,7 @@ function closeShowMenu({ instant = false } = {}) {
   const { pop, link } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
+  if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;
   // A keyboard standing on a row goes back to the fest name that opened the
   // menu, not to the top of the page (the menu stays up across rows now, so
   // Escape from a row is the usual way out).
@@ -1329,6 +1337,10 @@ function openShowMenu(wrap, link, pop) {
   }
   menuY = window.scrollY;
   window.addEventListener('scroll', trackMenuY, { passive: true });
+  // Busy while you choose (index.html's quiet()): the menu stays up now, and
+  // a new build's reload must not pull it out from under a tick. The flag is
+  // shared — only taken when free, only given back when it is the menu's.
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'show-menu';
   router.push(MENU_LAYER);
 }
 // A way out that is not Back: take the menu's history entry back, and do
@@ -1361,7 +1373,7 @@ function menuGone() {
   menuY = null;
   const then = afterMenu;
   afterMenu = null;
-  const hold = () => { if (y != null && Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); };
+  const hold = () => { if (y != null && Math.abs(window.scrollY - y) > 1) window.scrollTo(window.scrollX, y); };
   hold();
   requestAnimationFrame(() => { hold(); if (then) then(); });
 }
@@ -1474,7 +1486,7 @@ function paintShowMenus() {
     if (!wrap || !link) continue;
     const existing = wrap.querySelector('.sort-pop');
     if (rooms.length < 2) {
-      if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+      if (existing) { if (openMenu && openMenu.pop === existing) leaveShowMenu(); existing.remove(); }
       link.removeAttribute('aria-haspopup');
       link.removeAttribute('aria-expanded');
       link.setAttribute('aria-label', 'Open settings');
@@ -1492,7 +1504,9 @@ function paintShowMenus() {
       }
       continue;
     }
-    if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+    // A menu whose popover goes (the rooms changed) takes its history entry
+    // with it, like any other way out.
+    if (existing) { if (openMenu && openMenu.pop === existing) leaveShowMenu(); existing.remove(); }
     link.setAttribute('aria-expanded', 'false');
     wrap.appendChild(buildShowMenu(rooms, folded));
   }
@@ -3051,7 +3065,11 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // surface). The entry must KEEP representing those layers — writing null
   // here made one Back collapse the whole restored stack and killed Forward
   // (Codex trailing review, P1, reproduced).
-  const savedLayers = (history.state && history.state.layers) || null;
+  // A refresh reopens the layers it had — never the show menu (v93): its
+  // entry's neighbours belong to the page before the refresh, so its Back
+  // would reload the page rather than close a menu.
+  const kept = ((history.state && history.state.layers) || []).filter((k) => !String(k).startsWith('menu:'));
+  const savedLayers = kept.length ? kept : null;
   // Seeded BEFORE the first paint, so the wall opens already on the view the
   // link carried — nothing folds away under the person's eyes.
   const opened = showFor && state.activeFestivalId === showFor ? safely('show-seed', () => seedShowOnce(showFor, showHint)) : null;
@@ -3557,13 +3575,23 @@ export function init() {
   // stays up while you choose, so the tap that puts it away is often a tap
   // on the wall, and a pick under your name on the way out is a write nobody
   // meant. A scroll is not a tap: the wall scrolls behind the menu.
+  //   A link is let through as it is: every link here opens a new tab, which
+  // pushes nothing, and the browser opens it on the real tap. A card — on the
+  // wall or grown in the zoom, where a click is a pick too — only closes the
+  // menu. Anything else gets its click back on the element that acts on it
+  // (a tap on an icon lands on its <svg>, which has no .click()).
   document.addEventListener('click', (e) => {
     if (!openMenu || openMenu.wrap.contains(e.target)) return;
+    const aimed = e.target;
+    const near = (sel) => (aimed.closest ? aimed.closest(sel) : null);
+    if (near('a[href]')) { leaveShowMenu(); return; }
     e.stopPropagation();
     e.preventDefault();
-    const aimed = e.target;
-    const onCard = !!(aimed.closest && aimed.closest('#wall-root .card'));
-    leaveShowMenu(onCard ? null : () => { if (aimed.isConnected) aimed.click(); });
+    if (near('#wall-root .card, #zoom-layer')) { leaveShowMenu(); return; }
+    const target = near('button, input, select, textarea, label, [role="button"]') || aimed;
+    leaveShowMenu(() => {
+      if (target.isConnected) target.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    });
   }, true);
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });

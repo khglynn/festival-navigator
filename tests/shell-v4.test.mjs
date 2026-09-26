@@ -255,6 +255,51 @@ test('a double tap outside (then Escape too) takes one entry back, not two', asy
   assert.equal($('screen-app').style.display, '', 'still on the wall');
 });
 
+// Review, 2026-09-25: a tap on an icon lands on its <svg>, which has no
+// .click() — the replay threw and the tap was lost (the header gear on a
+// desktop). The click goes back to the element that acts on it. A card grown
+// in the zoom (its layer lives outside the wall) is a card: a click there is
+// a pick, so it only closes the menu. And the menu marks the page busy while
+// it is up (index.html's quiet()), giving the flag back only if it is its own.
+test('the replay finds the button behind an icon; a grown card only closes the menu; the menu holds a new build\'s reload', async () => {
+  const gearPath = $('gear-btn').querySelector('path');
+  let gearHeard = 0;
+  const hearGear = (e) => { gearHeard += 1; e.stopImmediatePropagation(); };
+  $('gear-btn').addEventListener('click', hearGear, true);
+  const layer = dom.window.document.createElement('div');
+  layer.id = 'zoom-layer';
+  const grown = dom.window.document.createElement('div');
+  layer.appendChild(grown);
+  dom.window.document.body.appendChild(layer);
+  let grownHeard = 0;
+  grown.addEventListener('click', () => { grownHeard += 1; });
+  try {
+    click($('dock-fest-link'));
+    assert.equal(dom.window.document.body.dataset.busy, 'show-menu', 'busy while it is up');
+    gearPath.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    await settle(40);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false');
+    assert.equal(gearHeard, 1, 'the gear heard the tap its icon took');
+    assert.equal(dom.window.document.body.dataset.busy, undefined, 'and the flag is given back');
+
+    click($('dock-fest-link'));
+    click(grown);
+    await settle(40);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the grown card closed the menu');
+    assert.equal(grownHeard, 0, 'and never heard the tap');
+
+    dom.window.document.body.dataset.busy = 'spotify-scan';
+    click($('dock-fest-link'));
+    escape();
+    await settle(40);
+    assert.equal(dom.window.document.body.dataset.busy, 'spotify-scan', 'another flow\'s busy flag is left alone');
+  } finally {
+    delete dom.window.document.body.dataset.busy;
+    $('gear-btn').removeEventListener('click', hearGear, true);
+    layer.remove();
+  }
+});
+
 // Settings from the menu's last row opens once the menu's entry is gone, so
 // Back from Settings lands on the wall — not on a menu that closed.
 test('Settings from the menu: one entry for Settings where the menu\'s was, and Back lands on the wall', async () => {

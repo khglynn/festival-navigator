@@ -242,6 +242,41 @@ test('the show menu: a double tap outside and then Escape take ONE entry back â€
   }
 });
 
+// A refresh with the show menu up (review, 2026-09-25) lands on the wall
+// with the menu away: the entry behind the menu's belongs to the page
+// before the refresh, so a menu reopened there would have a Back that
+// reloads the page instead of closing it.
+test('the show menu: a refresh with it open lands on the wall without it', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'menurefreshcontract_01234'; // a made-up crew
+  const FID = 'portola-2026';
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_welcome_v1', '1');
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
+    await page.click('#dock-fest-link');
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
+    assert.deepEqual(await page.evaluate(() => history.state), { layers: ['menu:show'] });
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
+    await page.waitForTimeout(600);
+    assert.equal(await page.isVisible('#dock-fest-wrap .sort-pop'), false, 'the menu is not reopened');
+    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false');
+    assert.equal(await page.evaluate(() => history.state), null, 'and the entry is the wall\'s');
+  } finally {
+    await ctx.close();
+  }
+});
+
 // The sort chip's popover (DT-7) â€” the same touch-floor miss the show menu's
 // rows just fixed (a click-only <li role="option"> at 32px), fixed the same
 // way: native <button role="option">. A search wall hides the control

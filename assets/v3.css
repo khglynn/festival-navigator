@@ -631,6 +631,13 @@ button.room-head { cursor: pointer; }
   .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
+  /* The day rows scroll sideways, and a scroller clips — hit-testing
+   * included — so the tabs' borrowed 14px above and below were cut off at
+   * the row's edge: NOW (in the row since v93) and every day tab answered a
+   * tap only on their ~20px of text (review, 2026-09-25). The row takes the
+   * reach inside its own box and gives it back in margin, so the dock does
+   * not grow by a pixel. */
+  .dock .days, .day-rail .rail-days { padding-block: 14px; margin-block: -14px; }
   /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving

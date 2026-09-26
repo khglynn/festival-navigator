@@ -2604,6 +2604,9 @@ export function holdDayRowEdges(c, edges, settled) {
 // weekend); four days are 16px too long at 375. Past what the gaps can give,
 // the row scrolls at its full gap.
 function fitDayRowGap(c) {
+  // Mid-slide, the tabs' transforms move what the row can scroll; the fit it
+  // made before the slide stands until the tabs land.
+  if (heldEdges.has(c)) return;
   c.style.removeProperty('--gap');
   // What the row really scrolls at its full gap — which includes the last
   // tab's touch reach (v3.css, 2px past its box on a phone), and is nothing

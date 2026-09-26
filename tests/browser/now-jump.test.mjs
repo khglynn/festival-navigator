@@ -926,6 +926,31 @@ for (const [fest, width, height, now, shows] of [
   });
 }
 
+// The 44px floor, for NOW in the row (review, 2026-09-25): the day row
+// scrolls sideways, and a scroller clips hit-testing too, so the tabs'
+// borrowed 14px above and below were cut at the row's edge and NOW answered
+// a finger only on its text. A finger 12px off the text's middle, above or
+// below, is NOW's (and the day tab's) — in Chromium and WebKit.
+for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
+  const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
+  test(`${name}390: NOW and the day tabs take a finger 12px above and below their words — the row does not clip their reach`, { skip }, async () => {
+    const { ctx, page } = await openApp({ engine });
+    try {
+      await restedOn(page, 'Saturday');
+      const r = await page.evaluate(() => {
+        const at = (el, dy) => { const b = el.getBoundingClientRect(); const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2 + dy); return !!hit && el.contains(hit); };
+        const now = document.getElementById('dock-now');
+        const sat = document.querySelector('#dock-days .day-tab.active');
+        const row = document.getElementById('dock-days');
+        return { now: [at(now, -12), at(now, 12)], sat: [at(sat, -12), at(sat, 12)], scrollsY: row.scrollHeight - row.clientHeight };
+      });
+      assert.deepEqual(r.now, [true, true], `NOW: ${JSON.stringify(r)}`);
+      assert.deepEqual(r.sat, [true, true], `SAT: ${JSON.stringify(r)}`);
+      assert.equal(r.scrollsY, 0, 'and the row never scrolls up and down');
+    } finally { await ctx.close(); }
+  });
+}
+
 // NOW arriving and leaving with the clock (v93): it comes into the row after
 // the live day as the row comes to rest on the pair, and when nothing is live
 // it leaves and the room closes up. In Chromium, with the motion on: NOW
