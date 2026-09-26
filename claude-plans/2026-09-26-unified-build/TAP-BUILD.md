@@ -108,6 +108,13 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    pointer press and no key opens the shelf on every screen. Still unproven on a device: whether iOS
    VoiceOver's double-tap sends a pointer press of its own (it should not — a simulated click); Kevin's
    iPhone check with VoiceOver on answers it, and Diagnostics' hand line says 'assistive' when it works.
+6. **The day rail's ResizeObserver loops** (found 2026-09-26, run 36249100883): `wireScrollspy`'s `rows`
+   observer (wall.js) calls `restDayRow`, whose `fitDayRowGap` changes the gap of the very row it
+   observes, so WebKit at 1280 raises "ResizeObserver loop completed with undelivered notifications" at
+   boot under load (4/6 locally with six runs in parallel; instrumented: the `#rail-days` callback fires,
+   the notice follows within 1ms). Harmless — the notification lands a frame later, and errlog.js already
+   drops it as noise — so the tap contract ignores it the same way. The fix, for the rail's owner: re-fit
+   only when the observed width differs from the width the last fit left, or fit in the next frame.
 
 ## Steps (commit + push after each)
 
@@ -256,3 +263,7 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   `motionDone` (tests/helpers/browser.mjs) waits out every finite animation on the document's clock
   before a place is read; list-view launches WebKit through `launchWebkit`, so a missing one fails CI
   rather than skipping. No app file changed, so no re-stamp.
+  CI on a9ee244 green (both jobs; a re-run green too). On 3a1e067 one new WebKit red, not the tap: a
+  "ResizeObserver loop" notice at boot counted as a page error by the mouse case (follow-up 6 above —
+  the day rail's observer). The contract now ignores that notice, as errlog.js does; 6/6 green under
+  six-way load locally, and the tap and List files 3/3 at three-way load.

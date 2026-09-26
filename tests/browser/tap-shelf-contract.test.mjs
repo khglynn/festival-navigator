@@ -73,7 +73,13 @@ async function memberPhone(engine, { width = 390, height = 664, mouse = false, n
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
   const page = await ctx.newPage();
   const errors = [];
-  page.on('pageerror', (e) => errors.push(String(e)));
+  // A ResizeObserver loop notice is the browser's, not an error of the app's
+  // — errlog.js isNoise drops it for the same reason. WebKit at 1280 raises
+  // one at boot under load: the day rail's observer (wall.js wireScrollspy)
+  // re-fits the row's gap inside its own callback, resizing what it observes;
+  // the notification lands a frame later (run 36249100883, reproduced 4/6
+  // locally under load, 2026-09-26; a follow-up for the rail, in TAP-BUILD).
+  page.on('pageerror', (e) => { if (!/^ResizeObserver loop/.test(e.message)) errors.push(String(e)); });
   await page.clock.setFixedTime(new Date('2026-09-26T15:15:00-07:00'));
   await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
