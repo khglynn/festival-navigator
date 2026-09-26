@@ -88,6 +88,7 @@ test('a finger’s tap opens the card’s shelf — facts, − · meter · +, th
   assert.ok(shelf().querySelector('.composer textarea'), 'a member writes here');
   assert.equal(level('Robyn'), 0, 'a look writes nothing');
   assert.ok((history.state && history.state.layers || []).some((k) => k.startsWith('sheet:notes:')), 'Back closes it: it has an entry');
+  assert.equal(document.documentElement.dataset.hand, 'finger', 'the page says the hand, for Diagnostics');
 });
 
 test('the one-time line, for a friend who picked before: once, never again on this phone', async () => {

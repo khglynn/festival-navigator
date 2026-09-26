@@ -916,15 +916,24 @@ if (typeof document !== 'undefined') {
       if (cardKey(over) !== dismissedKey) dismissedKey = null;
     }
   }, { passive: true, capture: true });
+  // The hand, said on the page for Diagnostics (js/errlog.js reads it, the way
+  // it reads the strip's data-follow): the next "my tap picked" report carries
+  // its own evidence. Written only when it changes.
+  const sayHand = () => {
+    const h = lastInput === 'keyboard' ? 'keyboard' : fingerHand() ? 'finger' : 'mouse';
+    const root = document.documentElement;
+    if (root && root.dataset.hand !== h) root.dataset.hand = h;
+  };
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
     lastPointerType = e.pointerType || 'mouse';
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
+    sayHand();
   }, { passive: true, capture: true });
   document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fingerAt(e); }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
-    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) lastInput = 'keyboard';
+    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) { lastInput = 'keyboard'; sayHand(); }
   }, { passive: true, capture: true });
 }
 
