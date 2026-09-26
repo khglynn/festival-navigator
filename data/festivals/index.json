@@ -60,6 +60,7 @@
     "dates": "Sep – Nov 2026",
     "updated": "2026-09-25",
     "location": "Austin, TX",
+    "timezone": "America/Chicago",
     "accent": "240, 146, 76"
   },
   {
@@ -73,6 +74,7 @@
     "dates": "Dec 2026 – Feb 2027",
     "updated": "2026-09-25",
     "location": "Austin, TX",
+    "timezone": "America/Chicago",
     "accent": "125, 196, 255"
   },
   {
@@ -86,6 +88,7 @@
     "dates": "Mar – May 2027",
     "updated": "2026-09-25",
     "location": "Austin, TX",
+    "timezone": "America/Chicago",
     "accent": "244, 114, 182"
   },
   {
@@ -99,6 +102,7 @@
     "dates": "Jun – Aug 2027",
     "updated": "2026-09-25",
     "location": "Austin, TX",
+    "timezone": "America/Chicago",
     "accent": "250, 204, 90"
   },
   {

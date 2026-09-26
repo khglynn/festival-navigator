@@ -546,7 +546,7 @@ async function main() {
     // (archived once over, as festivals are) and the day the feed last ran.
     const rows = files.map((f) => ({
       id: f.id, kind: 'season', name: f.name, year: f.year, startsOn: f.startsOn, endsOn: f.endsOn,
-      status: f.status, dates: f.dates, updated: f.updated, location: f.location, accent: f.accent,
+      status: f.status, dates: f.dates, updated: f.updated, location: f.location, timezone: f.timezone, accent: f.accent,
     }));
     const at = index.findIndex(isCitySeason);
     const rest = index.filter((r) => !isCitySeason(r));
