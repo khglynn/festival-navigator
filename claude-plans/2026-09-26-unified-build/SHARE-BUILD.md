@@ -51,7 +51,7 @@ PR and merges; this branch is never stamped here.
 - [x] S6 the Show menu row
 - [x] S7 the lift: arrival and slide catches, the font retarget
 - [x] S8 browser tests for each; jsdom tests; docs (README/CLAUDE where they describe it)
-- [ ] Gate: npm test, browser suite at 0 and 700 ms late, a Sonnet walker on the real
+- [x] Gate: npm test, browser suite at 0 and 700 ms late, a Sonnet walker on the real
       app, Sol, CI both jobs; the SHA to the coordinator
 
 ## Log
@@ -113,3 +113,17 @@ PR and merges; this branch is never stamped here.
        it lifts). The finger versions fail on the shelf before the lift.
     New browser tests: another festival's link, the join shelf, the refused sheet, the
     floor at 390 coarse and 1280 fine. Each fails on fc86005 and passes now.
+11. **The walk** (a Sonnet walker, real input, fc86005; brief and screenshots in the
+    session's scratchpad `walk3/`): 15 of 16 steps pass in both engines, no page errors,
+    no app failure. The one inconclusive step, "the plan-link landing jumps ~350px in one
+    frame", is the harness: under `page.clock` a sampled animation shows no in-between
+    frames in either engine, the plain peek arrival included; on the real clock the same
+    landing samples as one smooth curve (Chromium 799 → 50 → 55px, WebKit the same shape).
+    Banked in the project memory's harness traps. Its catch reading (3.4px against a 2px
+    bound) was a live animation read a touch-dispatch before the finger landed; the paused
+    tests hold it to 1px, in both hands.
+12. **CI on Linux**: the browser job was green on fc86005. Two later runs each had one
+    timing failure in a test this branch does not change the behaviour of (edb30b8, docs
+    only over fc86005: WebKit's widen-to-a-laptop-and-back; 7ad9721: show-links' Tix door
+    60 ms after a +). Neither appears in the last 20 failed runs on other branches; both
+    pass locally 5 of 5 and 3 of 3 at 700 ms late. The failed job was re-run.
