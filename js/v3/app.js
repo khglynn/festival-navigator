@@ -748,13 +748,14 @@ function renderPersonChips() {
   }
   // Add-on-their-behalf lives right where the crew is visible (note 5) —
   // only for claimed devices; a spectator can't grow the crew. The plus says
-  // what it adds, in the words Settings uses (v93): a bare "+ Add" beside a
-  // row of names could as well have meant a pick, a note or a festival.
+  // what it does (v93, Kevin: "Invite someone I think, not add someone"): a
+  // bare "+ Add" beside a row of names could as well have meant a pick, a
+  // note or a festival — and what it hands you is their invite link.
   if (ctx.meName) {
     const add = document.createElement('button');
     add.className = 'person-chip add';
-    add.textContent = '+ Add someone';
-    add.setAttribute('aria-label', 'Add someone to the crew');
+    add.textContent = '+ Invite someone';
+    add.setAttribute('aria-label', 'Invite someone to the crew');
     add.style.cursor = 'pointer';
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
@@ -1792,7 +1793,7 @@ function festPickRow(f, { muted = false, onPick }) {
 // Multi-pick (fests × circles × you, decision 2): tap toggles a fest into the
 // selection, one button creates a board per fest. "Add all the fests I'm
 // going to, then quickly add people to them" — the people step is gone from
-// here entirely; people questions live on each fest's + Add someone.
+// here entirely; people questions live on each fest's + Invite someone.
 const createSel = new Set();
 function renderCreate() {
   show('screen-create');
@@ -2127,7 +2128,7 @@ function openAddMember() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
+  sheetChrome(sheet, 'INVITE SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
   sub.textContent = 'Pick for them until they open their link.';
@@ -2170,7 +2171,7 @@ function openAddMember() {
     pickWrap.append(pickLabel, chips);
     sheet.appendChild(pickWrap);
   }
-  dialogize(sheet, 'Add someone to the crew');
+  dialogize(sheet, 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
   input.focus();
 

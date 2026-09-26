@@ -58,9 +58,9 @@ back to one crew-named "tap to open" row.
 **Expected:** no people questions anywhere in this flow; apostrophes stripped
 from generated crew names; selection survives entering the name step.
 
-## F2b · Add people on a fest (+ Add someone)
+## F2b · Invite people on a fest (+ Invite someone)
 
-1. Wall → **+ Add someone** → type a name, or one-tap a chip under "From your other
+1. Wall → **+ Invite someone** → type a name, or one-tap a chip under "From your other
    fests" (active people from every other circle this device knows, deduped,
    minus you and existing members).
 2. Success mints the person's claim link (&me=) — placeholder until opened.

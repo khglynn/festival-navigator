@@ -176,7 +176,7 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    Since v93 (Kevin, 2026-09-25: "feature first, then how" — small wording
    changes, not a rethink) every row leads with what it is, then how:
    1. people chips — `Highlight a friend's picks.` / `Tap their name. Switch who you pick as in Settings.`
-   2. `+ Add someone` — `Add your people.` / `Tap + Add someone, or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93: it was `+ Add`)
+   2. `+ Invite someone` — `Invite your people.` / `Tap + Invite someone, or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93, Kevin 2026-09-26 "invite, not add": it was `+ Add`)
    3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Add your color to an artist.` / `Tap it. Your bars fill each tap. 4 taps = must see.`
    4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
    5. the about-corner chips — `Details and notes.` / `Hold the card. Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`

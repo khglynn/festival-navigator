@@ -429,8 +429,8 @@ function openHowItWorks(actions) {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
   }, 'Highlight a friend’s picks.', 'Tap their name. Switch who you pick as in Settings.'));
   card.appendChild(lesson((d) => {
-    d.append(chipDemo('+ Add someone', { dashed: true }));
-  }, 'Add your people.', 'Tap + Add someone, or share the crew link — anyone who opens it is in, no account needed.'));
+    d.append(chipDemo('+ Invite someone', { dashed: true }));
+  }, 'Invite your people.', 'Tap + Invite someone, or share the crew link — anyone who opens it is in, no account needed.'));
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
   // Row 3 is the card getting brighter with the REAL meter chip on it, filling
@@ -582,7 +582,7 @@ function crewSection(ctx, actions) {
     chips.appendChild(chip);
   }
   if (ctx.meName && actions.addMember) {
-    const add = el('button', 'cursor: pointer;', '+ Add someone');
+    const add = el('button', 'cursor: pointer;', '+ Invite someone');
     add.className = 'person-chip add';
     add.addEventListener('click', actions.addMember);
     chips.appendChild(add);

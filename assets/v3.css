@@ -236,7 +236,7 @@ html { touch-action: manipulation; }
 /* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
  * — it gets the same white-on-scrim treatment as every other mark (audit 8.1).
  * Its ring is solid (v93): in this app a dashed edge only ever means "add"
- * (the people row's + Add someone, a guest's + in the dock, + Add a
+ * (the people row's + Invite someone, a guest's + in the dock, + Add a
  * festival), and +n is people already here. Same 1px, so the corners' width
  * table (aura.js) is unchanged. */
 .mark.ghost { border: 1px solid rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
@@ -257,7 +257,7 @@ html { touch-action: manipulation; }
  * the same padding, so alone on a line (six people at 390) it stands exactly
  * as tall as the names on every engine (a 1.5px edge drew as 1px in Chromium
  * and not in WebKit, and the chip came out a pixel or two short). How it
- * works draws it the same way. "+ Add someone" is one thing; it moves to the
+ * works draws it the same way. "+ Invite someone" is one thing; it moves to the
  * next line whole. */
 .person-chip.add { background: transparent; border: 1px dashed var(--border-emphasis);
                    color: var(--text-secondary); padding: 5px 12px; white-space: nowrap; }
