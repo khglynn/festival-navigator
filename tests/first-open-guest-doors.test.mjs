@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,7 +69,12 @@ async function openCard(artist) {
   assert.ok(notesShelf(), `${artist}'s shelf is open`);
   assert.equal(zoomCard(), null, 'a finger grows no zoom');
 }
-async function lookAround() { shelf().querySelector('.js-look').click(); await settle(60); }
+// The next popstate and a beat for its handlers — never a fixed sleep: a
+// traversal is two jsdom tasks, and a thread a loaded machine held past the
+// sleep read the page between them (Sol 6's night-clock run, 2026-09-26).
+const popped = () => new Promise((r) => shell.dom.window.addEventListener('popstate', () => setTimeout(r, 0), { once: true }));
+async function goBack() { const p = popped(); history.back(); await p; }
+async function lookAround() { shelf().querySelector('.js-look').click(); await settleUntil(() => !shelf() && !(history.state && history.state.joinShelf)); await settle(10); }
 
 test('− on a guest’s shelf asks naming the artist, promises no pick — and the question takes the shelf’s place', async () => {
   await openCard('Robyn');
@@ -107,8 +112,7 @@ test('a card with notes shows them to read, the door in under them', async () =>
   assert.match(notesShelf().textContent, /Front left\./);
   assert.equal(notesShelf().querySelector('.composer'), null, 'read-only for a guest');
   assert.ok(notesShelf().querySelector('button.join-door'), 'and the door in waits under them');
-  history.back();
-  await settle(60);
+  await goBack();
   assert.equal(notesShelf(), null, 'Back closes it');
   assert.deepEqual(writes, []);
 });
@@ -136,8 +140,7 @@ test('a finger’s tap on another card while a zoom stands opens THAT card’s s
   await settle(20);
   assert.equal(zoomCard(), null, 'the press outside closed the zoom');
   assert.equal(notesShelf() && notesShelf().querySelector('.f-name').textContent, 'Dog Blood', 'and the tap opened its card');
-  history.back();
-  await settle(60);
+  await goBack();
 });
 
 test('a guest\'s assistive activation (a click with no press of its own) opens the card\'s shelf, not the question (Sol 6\'s review)', async () => {
@@ -146,8 +149,7 @@ test('a guest\'s assistive activation (a click with no press of its own) opens t
   assert.ok(notesShelf(), 'the card\'s shelf');
   assert.equal(shelf(), null, 'no join question before the guest asks');
   assert.equal(notesShelf().querySelector('.sheet-card .f-name').textContent, 'Robyn');
-  history.back();
-  await settle(60);
+  await goBack();
   assert.deepEqual(writes, []);
 });
 

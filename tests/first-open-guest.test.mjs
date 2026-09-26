@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootShell, settle } from './helpers/shell-rig.mjs';
+import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
 import { deepMerge } from '../js/merge.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -117,7 +117,12 @@ const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) =
 const shelfGo = () => shelf().querySelector('.js-go');
 const shelfLook = () => shelf().querySelector('.js-look');
 const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
-async function lookAround() { shelfLook().click(); await settle(40); }
+// The next popstate and a beat for its handlers — never a fixed sleep: a
+// traversal is two jsdom tasks, and a thread a loaded machine held past the
+// sleep read the page between them (Sol 6's night-clock run, 2026-09-26).
+const popped = () => new Promise((r) => shell.dom.window.addEventListener('popstate', () => setTimeout(r, 0), { once: true }));
+async function goBack() { const p = popped(); history.back(); await p; }
+async function lookAround() { shelfLook().click(); await settleUntil(() => !shelf() && !(history.state && history.state.joinShelf)); await settle(10); }
 async function open(hash) {
   location.hash = hash;
   await settle(120);
@@ -205,9 +210,10 @@ test('a guest’s finger tap on a card opens its shelf — − · meter · + alo
 
 test('a tap on the dimmed wall only closes the shelf — it never opens the card under it', async () => {
   const back = document.getElementById('sheet-backdrop');
+  const closed = popped(); // the dimmed wall closes through history, like Back
   press(back, 'touch');
   back.click();
-  await settle(60);
+  await closed;
   assert.equal(notesShelf(), null, 'closed');
   assert.equal(shelf(), null, 'and nothing asked');
   fingerTap(cardOf('Robyn')); // the next tap opens again
@@ -270,8 +276,7 @@ test('the system Back takes the shelf down', async () => {
   await settle(10);
   assert.ok(shelf(), 'a click (desktop) asks on the shelf directly');
   assert.equal(shelfLine(), 'Pick Robyn as…');
-  history.back();
-  await settle(60);
+  await goBack();
   assert.equal(shelf(), null, 'Back closes it, rather than leaving the app');
   assert.deepEqual(shown(), ['screen-app']);
 });
