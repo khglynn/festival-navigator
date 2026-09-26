@@ -75,6 +75,18 @@ const clickCorner = async (page) => {
   await page.mouse.click(b.x + b.width * 0.4, b.y + b.height / 2);
   await sleep(800);
 };
+// The people menu's highlight (Kevin, 2026-09-26: "the filters should filter
+// the now too"): Gus is at none of Saturday's stops from 9 PM until the Great
+// Northern, so the peek says NEXT and the stops without him step back.
+const highlight = (who) => async (page) => {
+  const door = await page.evaluate(() => (innerWidth >= 720 ? '#rail-you' : '#dock-you'));
+  await page.click(door);
+  await sleep(300);
+  await page.click(`${door}-wrap .hl-pop [data-person="${who}"]`);
+  await sleep(300);
+  await page.click(door);
+  await sleep(700);
+};
 const FRAMES = [
   phone('P-peek-now-390', 390, SAT_940),
   phone('P-peek-next-390', 390, SAT_11AM),
@@ -91,6 +103,8 @@ const FRAMES = [
   phone('P-two-days-before-390', 390, TUE_NOON),
   phone('P-fri-fork-390', 390, FRI_7PM, openByTap),
   phone('P-welcome-390', 390, SAT_940, async () => {}, { welcome: true }),
+  phone('P-highlight-gus-390', 390, SAT_940, highlight('Gus')),
+  phone('P-highlight-gus-open-390', 390, SAT_940, async (p) => { await highlight('Gus')(p); await openByTap(p); }),
 
   // ---- the laptop: the corner card, its hover, the panel, a zoom beside it ----------
   desk('D-corner-now-1280', 1280, 800, SAT_940),
@@ -116,6 +130,7 @@ const FRAMES = [
     if (box) { await p.mouse.move(box.x, box.y, { steps: 5 }); await sleep(1000); }
   }),
   desk('D-welcome-1280', 1280, 800, SAT_940, async () => {}, { welcome: true }),
+  desk('D-highlight-gus-open-1280', 1280, 800, SAT_940, async (p) => { await highlight('Gus')(p); await clickCorner(p); }),
 ];
 
 const only = process.argv.slice(2);

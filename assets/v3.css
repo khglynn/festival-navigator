@@ -193,6 +193,16 @@ html { touch-action: manipulation; }
   background: var(--dock); border: 1px solid var(--border-emphasis);
   border-radius: var(--r-row); box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
 }
+/* On a laptop the card waits where Our plan's corner card sits (Kevin,
+ * 2026-09-26: "lower right justified in the same spot as our now" — centred
+ * over the wall it floated nowhere in particular): the corner's box, 380px
+ * wide, 20px in from the window's right and bottom (plan-shelf.js GAP). The
+ * plan waits under it and rises in the same place when it goes; on a phone
+ * the two already share the strip above the dock. */
+@media (min-width: 720px) {
+  .bring-offer { left: auto; right: 20px; bottom: 20px; width: 380px; }
+  .bring-card { max-width: none; }
+}
 .bring-line { color: var(--text-body); font-size: 13px; font-weight: 700; line-height: 1.4; }
 .bring-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
 .bring-actions { display: flex; gap: 8px; }
@@ -1907,6 +1917,12 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
 .plan-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
 .plan-row.past { opacity: .42; }
+/* A highlight (the people menu's "just Ross") dims the stops and forks none
+ * of them is in — the wall card's .dim, on the row's CONTENT: the row's own
+ * opacity belongs to the peek's window and to .past, and the path through the
+ * nodes stays unbroken. plan-shelf.js fades it in place (--plan-dim). */
+.plan-row.dim > .plan-node, .plan-row.dim > .plan-what, .plan-row.dim > .plan-when, .plan-row.dim > .plan-n,
+.plan-grow.dim > .sheet-card { opacity: var(--plan-dim); }
 
 /* 4 · how many of us */
 .plan-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
@@ -1924,9 +1940,13 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-grow > * { grid-column: 2; min-width: 0; }
 .plan-grow .sheet-card { padding: 13px 12px 14px; }
 .plan-grow .sheet-card .f-name { font-size: 17px; }
+/* A big name means "most of us will be there" and nothing else (Kevin,
+ * 2026-09-26): NOW has its own signals, so a SOME stop's grown card takes the
+ * SOME row's name size, NOW or not. */
+.plan-grow.some .sheet-card .f-name { font-size: 14.5px; }
 
 /* ---- the phone: the shelf that is the peek and the day ---------------------- */
-.plan-shelf { --plan-bg: var(--dock); position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
+.plan-shelf { --plan-bg: var(--dock); --plan-dim: .3; position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
               display: flex; flex-direction: column; max-height: calc(100dvh - var(--dock-h) - 56px);
               background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
               box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }
