@@ -13,7 +13,7 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, gearIcon } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
@@ -486,7 +486,10 @@ function openHowItWorks(actions) {
     }
   }, 'Sync, at a glance.', 'Green dot = synced. Gray = offline (still works); red = something’s wrong.'));
   card.appendChild(lesson((d) => {
-    const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
+    // The header's own gear, drawn at the glyph's old size (v93: the "⚙"
+    // glyph could come out as a colour emoji on iOS).
+    const gear = el('span', 'color: var(--text-secondary); display: inline-flex;');
+    gear.appendChild(gearIcon(16));
     d.appendChild(gear);
   }, 'Switch fests and more in Settings.', ''));
   col.appendChild(card);

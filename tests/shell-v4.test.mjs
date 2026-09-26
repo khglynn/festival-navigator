@@ -791,6 +791,12 @@ test('How it works: nine rows, the fest link says ACL \'26 whatever fest is open
     assert.equal(cell.style.overflow, 'hidden', 'and clips what does not fit');
   }
   assert.match(sub.textContent, /red = something’s wrong\./, 'red means something is wrong, not that the reader is needed');
+  // The last row's gear is the header's own SVG, never the "⚙" glyph (iOS
+  // can draw it as a colour emoji — v93).
+  const gear = rows.at(-1).firstElementChild.querySelector('svg.gear');
+  assert.ok(gear, 'the gear is a picture of the real one');
+  assert.equal(gear.querySelector('path').getAttribute('d'), $('gear-btn').querySelector('path').getAttribute('d'));
+  assert.doesNotMatch(sub.textContent, /\u2699/, 'no gear glyph anywhere in the drill');
   assert.doesNotMatch(sub.textContent, /Tap a stage/, 'no stage lesson');
   // Back out, so the tests after this one find the wall.
   dom.window.history.back();

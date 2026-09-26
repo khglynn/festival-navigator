@@ -14,7 +14,7 @@ import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFo
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow } from './tools.js';
+import { disclosureFold, eqLoader, festRow, gearIcon } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
@@ -1378,26 +1378,6 @@ function menuGone() {
   requestAnimationFrame(() => { hold(); if (then) then(); });
 }
 
-// The Settings row's gear (v93, Kevin: "a little gear to the left of the
-// settings line"): the header's own gear (index.html, #gear-btn) drawn at the
-// row's text size, in the check column, so "Settings" lines up with the room
-// names above it. currentColor: v3.css gives it the secondary text colour.
-const GEAR_PATH = 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z';
-function gearIcon() {
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('class', 'gear');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('width', '12'); svg.setAttribute('height', '12');
-  svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2.4'); svg.setAttribute('stroke-linecap', 'round');
-  const hub = document.createElementNS(NS, 'circle');
-  hub.setAttribute('cx', '12'); hub.setAttribute('cy', '12'); hub.setAttribute('r', '3');
-  const teeth = document.createElementNS(NS, 'path');
-  teeth.setAttribute('d', GEAR_PATH);
-  svg.append(hub, teeth);
-  return svg;
-}
 
 // A row is a native <button>, which is where its keyboard and its 44px floor
 // come from — not from a second roving-focus controller lifted out of
@@ -1415,6 +1395,9 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   if (settings) row.className = 'settings';
   const check = document.createElement('span');
   check.className = 'check';
+  // The Settings row's gear (v93, Kevin: "a little gear to the left of the
+  // settings line"), in the check column, so "Settings" lines up with the
+  // room names above it.
   if (settings) check.appendChild(gearIcon());
   else check.textContent = on ? '✓' : '';
   check.setAttribute('aria-hidden', 'true');
