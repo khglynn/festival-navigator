@@ -318,6 +318,45 @@ for (const width of [390, 320, 1280]) {
   });
 }
 
+// ---- the people row (+ Add someone) and a card's +n ring ----------------------------------
+for (const width of [390, 320]) {
+  await scenario(`people ${width}`, async () => {
+    const o = await open({ width, at: AT.sat9am });
+    const { page } = o;
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(400);
+    const row = await page.evaluate(() => {
+      const chips = [...document.querySelectorAll('#person-chips .person-chip')];
+      const add = document.querySelector('#person-chips .person-chip.add');
+      const r = add.getBoundingClientRect();
+      const lines = new Set(chips.map((c) => Math.round(c.getBoundingClientRect().top)));
+      return {
+        chips: chips.map((c) => c.textContent).join(' | '), lines: lines.size, add: { text: add.textContent, w: Math.round(r.width), h: Math.round(r.height), right: Math.round(r.right), oneLine: r.height < 30, label: add.getAttribute('aria-label') },
+        border: getComputedStyle(add).borderStyle, innerWidth,
+      };
+    });
+    note(`people row: ${JSON.stringify(row)}`);
+    const tb = await page.locator('.toolbar').boundingBox();
+    await page.screenshot({ path: path.join(OUT, `people-${width}.png`), clip: { x: 0, y: Math.max(0, tb.y - 10), width, height: tb.height + 20 } });
+    // A card's +n: Robyn is picked by all six, so her crew corner folds into one.
+    const robyn = page.locator('#wall-root .card[data-artist="Robyn"]').first();
+    await robyn.scrollIntoViewIfNeeded();
+    await sleep(400);
+    const ghost = await page.evaluate(() => {
+      const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
+      const g = card.querySelector('.mark.ghost');
+      if (!g) return null;
+      const cs = getComputedStyle(g);
+      const corners = [...card.querySelectorAll('.corner-about, .corner-who')].map((c) => c.getBoundingClientRect());
+      return { text: g.textContent, border: `${cs.borderTopStyle} ${cs.borderTopWidth}`, w: Math.round(g.getBoundingClientRect().width), gapBetweenCorners: corners.length === 2 ? Math.round(corners[1].left - corners[0].right) : null };
+    });
+    note(`Robyn's +n: ${JSON.stringify(ghost)}`);
+    const cb = await robyn.boundingBox();
+    await page.screenshot({ path: path.join(OUT, `ghost-ring-${width}.png`), clip: { x: Math.max(0, cb.x - 8), y: Math.max(0, cb.y - 8), width: Math.min(cb.width + 16, width), height: cb.height + 16 } });
+    await done(o);
+  });
+}
+
 fs.writeFileSync(path.join(OUT, 'report.txt'), report.join('\n') + '\n');
 await browser.close();
 server.close();

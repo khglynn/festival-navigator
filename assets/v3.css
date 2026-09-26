@@ -252,8 +252,14 @@ html { touch-action: manipulation; }
  * looked exactly like the two chips that DO something and silently did nothing
  * when tapped. Same component, honest about which job it is doing here. */
 .person-chip.static { cursor: default; }
-.person-chip.add { background: transparent; border: 1.5px dashed var(--border-emphasis);
-                   color: var(--text-secondary); padding: 4px 10px; white-space: nowrap; } /* "+ Add someone" is one thing; it moves to the next line whole */
+/* The add chip is a name chip's box with a dashed edge — the same 1px and
+ * the same padding, so alone on a line (six people at 390) it stands exactly
+ * as tall as the names on every engine (a 1.5px edge drew as 1px in Chromium
+ * and not in WebKit, and the chip came out a pixel or two short). How it
+ * works draws it the same way. "+ Add someone" is one thing; it moves to the
+ * next line whole. */
+.person-chip.add { background: transparent; border: 1px dashed var(--border-emphasis);
+                   color: var(--text-secondary); padding: 5px 12px; white-space: nowrap; }
 .avatar { width: 17px; height: 17px; border-radius: var(--r-pill); color: #fff; font-size: 8px;
           font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .avatar-cluster { display: inline-flex; }
