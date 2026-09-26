@@ -333,3 +333,166 @@ the shape pin; dated rooms write back and re-run to the same bytes.
 Docs kept true: the tool paragraph in `docs/add-a-festival.md` and the README
 script line (both describe the tool; a scope note, since the brief listed
 data + script + tests).
+
+## Step B — the rooms (`data/venues/index.json`, `data/festivals/acl-2026.json`)
+
+Read every one of the 40 rooms. Sources: each venue's OWN event data first
+(Live Nation's embedded data behind emosaustin.com / scootinnaustin.com,
+antonesnightclub.com and stubbsaustin.com event pages, acllive.com, the
+Concourse / Brushy / Devil May Care ticket pages), Ticketmaster's event text
+where its page refuses scrapers (read through search), city code for curfews,
+and — for the Concourse only — community reports of when headliners go on.
+Full quotes are in each registry entry's `sources` / `setSources`.
+
+### The finding that changed the most rooms: "Show" is the first act
+
+Every venue here prints a Doors time and a Show time, and the Show time is
+when the FIRST act goes on. Round one had most of these as guesses; 18 are now
+posted from the venue's own print (36 posted in all, 30 guesses). Two of round
+one's "posted" readings were wrong the other way:
+
+- **Stubb's concert calendar prints DOORS, not show.** Its one time per show is
+  labelled "Doors:" on the calendar; Ticketmaster prints "Doors: 7:00pm Show:
+  8:00pm" (Brandon Flowers, Bleachers, Lola Young) and "Doors 8 / Show 9"
+  (Parcels). So the amphitheater openers move 7 → 8 PM (Parcels' 8 → 9 PM),
+  and the Stubb's Indoors shows move to their printed Show: Montclair 10:30,
+  Grocery Bag 11, Almost Heaven 11:30, Annie DiRusso 10:30. These move LATER,
+  deliberately: they are the venue's printed start, replacing a doors time.
+- **Sunday (1994)** "9 PM" is its show start, but its page bills an opener we do
+  not carry ("With Semiwestern"), so it is a guess (~9 PM, the opener's start).
+
+### Per venue — what changed and the evidence
+
+| Venue | kind/shape | close | gap / sets | Evidence (verbatim in the registry) |
+|---|---|---|---|---|
+| **Emo's** | club → **hall** (concert) | 2 AM fallback → unknown (hall fallback ~12 AM draws the window, schedules nobody) | gap 60 | emosaustin.com event data: Palace "Doors: 7:00pm Show: 8:00pm" (lineup Palace, The 4411); BUNT./Levity/Suki/RyG "Doors: 9:00pm Show: 10:00pm". Its own IG shows 9 PM-doors DJ nights running to 2 AM, concerts end in the evening — no single close fits both, so none. |
+| **Brushy Street Commons** | club → **hall** | unknown | gap 60 (30 on the DJ night) | brushystreet.com: "Located within the sound stage of the historic 501 Studios building" — **indoor** (the brief called it outdoor; it is not, so no outdoor curfew). Eventim: Hunx "Doors 9 / Show 10", Arcy Drive "Doors 7 / Show 8", underscores DJ set "Doors 9:00pm Show: 9:30pm". |
+| **3TEN** | club → **hall** | unknown | gap 60 | acllive.com: Villanelle, Łaszewo, Claire Rosinkranz all "Showtimes … 9:00PM" (AXS: doors 8). Claire's page bills "with Abby Powledge" (not in our lineup). |
+| **Antone's** | club → **hall** | 12 AM (Yelp, kept) | gap 60 | Its own pages: World Famous Pets w/ Elijah Delgado "8:00pm (Doors: 7:00pm)"; Night Tapes "10:00pm (Doors: 9:00pm)"; Rochelle Jordan w/ Stefon Osae "10:00pm (Doors: 9:00pm)"; Don West w/ Kesmar "10:00pm (Doors: 9:00pm)". |
+| **Mohawk Austin** | club → **hall** | 12 AM (Yelp, kept) | gap 60 | A concert venue ("music starts at 8p and goes to 10:30p-1a"); the Fcukers night is indoor. |
+| **Stubb's** (amphitheater) | outdoor (concert) | none → **Red River curfew by weekday** (Sun–Wed 10:30 PM, Thu 12 AM, Fri/Sat 1 AM; Austin Code 9-2-30(A)(4), 2018 ordinance text, adoption not re-verified — Tue is 10:30 PM under the general rule too) | gap 60 | FAQ "an hour after doors"; Ticketmaster Doors/Show above. Per night, tighter: the indoor wristband after-shows open at 10 PM Thu (Montclair, "Free with wristband from Brandon Flowers"), 10:30 PM Fri (Grocery Bag, Bleachers), 11 PM Sat (Almost Heaven, Parcels) — written as an EVIDENCED close (`closeApprox` + that page's https link) on those three nights. |
+| **Stubb's Indoors** | hall | 1:45 AM (FAQ, kept) | gap null (30 on four pages, 60 on two) | Each show's own page: Montclair "Doors: 10:00PM. Show: 10:30PM." (Ticketmaster: Doors 9:30), Grocery Bag "Doors: 10:30pm Show: 11:00pm" (Ticketmaster copies: Doors 10), Almost Heaven "Doors: 11:00PM. Show: 11:30PM." (an older Ticketmaster copy: Show 12 AM), Annie DiRusso "Doors 10 / Show 10:30", Sunday (1994) "Doors: 8:00PM. Show: 9:00PM … With Semiwestern". Where two sources disagree, the earlier time is kept. |
+| **Historic Scoot Inn** | outdoor (concert) | none → **city outdoor curfew by weekday** (Sun–Wed 10:30 PM, Thu 11 PM, Fri/Sat 12 AM; Austin Code 9-2-30(A)(1)) | gap 60 | scootinnaustin.com event data: Finn Wolfhard/Malcy and CMAT/Fancy Hagood "Doors 6 / Show 7"; Saint Motel/The 4411 "Doors 5 / Show 6"; Noga Erez "Doors 7 / Show 8:30"; Ryan Beatty "Doors 5 / Show 6" with girlsweetvoiced (not in our lineup). |
+| **The Concourse Project** | club | 2 AM, now **printed** per night | gap 0, **headliner 120** (was the 90 default) | Each night's own ticket page: "Show: 9:00PM" and "18+ Welcome // 9pm - 2am" (Chainsmokers, Aoki, it's murph, Yukimatsu, BUNT.). Headliners: r/concourseproject "Headliners go on at midnight unless otherwise stated"; r/Austin "Sets at Concourse usually start at 12:00 or so and go until 2:00"; r/ZedsDeadFam "typically midnight. Maybe 12:15-30"; the venue's own 2023 post shows a headliner from 11:30 PM on an extended night. |
+| **Devil May Care** | bar (club) | 2 AM printed (kept) | gap **105 → null** (bar default 30), headliner 135 | The 105 minutes was each night's printed "Show: 11:45PM" — the HEADLINER's start, not the first act's. |
+| **Fair Market** | hall | unknown | — | Universe ticket page: sponsor event "Thu, Oct 8, 2026 at 6:00 PM", no set time or end. |
+| **The Continental Club** | club → hall | none | — | Its own Eventbrite: "@10pm … Doors open @9pm" → doors 9:30 → **9 PM**. |
+| **Regency Ballroom** (Portola) | hall, **shape pinned to club** | — | — | Keeps Portola's live file exactly what the tool writes (step A). |
+
+### Every room whose guess moved (round one → round two)
+
+All earlier. (Posted-time corrections are in the table further down.)
+
+- Emo's: **Palace ~12:30 AM → ~8:45 PM** (Oct 1), **BUNT. ~12:30 AM → ~10:45 PM** (Oct 2), **Levity ~12:30 AM → ~10:45 PM** (Oct 3).
+- Brushy Street Commons: **Hunx and his Punx ~12:30 AM → ~10:45 PM** (Oct 2); underscores night (Oct 3) Directress ~11:15 → ~10:15 PM, **Underscores ~12:30 AM → ~11 PM**; **Arcy Drive ~12:30 AM → ~8:45 PM** (Oct 8, 7 PM doors).
+- 3TEN: **Łaszewo ~12:30 AM → ~9:45 PM** (Oct 8).
+- Mohawk Austin: **Fcukers ~10:30 → ~8:45 PM** (Sep 29, 8 PM opener).
+- Antone's: **World Famous Pets ~10:30 → ~8:45 PM** (Oct 8, 8 PM opener); Rochelle Jordan ~10:45 → ~10:30 PM; Don West ~10:45 → ~10:30 PM (the venue's midnight close caps a 90-minute headliner).
+- Stubb's: **Brandon Flowers ~9 → ~8:30 PM** (the outdoor show is over by the 10 PM after-show); **Parcels ~10 → ~9:30 PM** (over by 11).
+- The Concourse Project: **The Chainsmokers, Steve Aoki, It's Murph, BUNT. (Oct 9) ~12:30 → ~12 AM**; Elephante and Nate Band ~10:45 → ~10:30 PM. The brief expected the Concourse might be right as it was; the evidence says its headliners go on at midnight, so 12:30 was 30 minutes late.
+
+### Rooms left as they were, and why
+
+- Devil May Care (both nights): Rebecca Black 11:45 PM and Fcukers 11:45 PM are printed; Bambi ~10:30 PM is now **the tool's** answer (bar gap 30, headliner 135), not a hand edit — a re-run cannot undo it.
+- Stubb's Bleachers ~9 PM and Lola Young ~9 PM: the curfew (10:30 PM) and the forward rule agree.
+- Historic Scoot Inn Finn Wolfhard ~8, CMAT ~8, Saint Motel ~7 PM: an hour after a printed 7 PM (6 PM) show, well inside the curfew.
+- Single acts left on doors + gap because an opener we do not carry is billed (so the guess marks the opener's start — early, the safe side): Ryan Beatty ~6 PM (girlsweetvoiced), Claire Rosinkranz ~9 PM (Abby Powledge), Sunday (1994) ~9 PM (Semiwestern). Night Tapes is posted at 10 PM from Antone's own page, which bills it alone; Do512 bills "w/ Alice Rivers", so Night Tapes may go on later — again the safe side.
+- The War on Drugs ~7 PM: nothing printed beyond a 6 PM event start; an hour later is the earliest likely.
+- Jess Williamson at the Continental Club (10 PM – 11:30 PM printed) and Yukimatsu (9 PM printed): posted, untouched.
+
+### Closes
+
+A guessed close left in a room where every set is now posted could never be
+refreshed (the tool leaves such rooms alone), so I removed those rather than
+leave an orphan: Suki Waterhouse and Rodrigo y Gabriela (Emo's, "kind default
+(club)" 2 AM), Villanelle (3TEN, same), Night Tapes (Antone's routine 12 AM).
+Those rooms read "Doors 9 PM" in the zoom — no invented window.
+
+### Checks
+
+- `node scripts/guess-run-times.mjs acl-2026 --write` → 46 changes; a second
+  `--write` → **0 changes** (the file is exactly what the tool writes; Bambi
+  included).
+- `node scripts/validate-festivals.mjs` → 0 errors.
+- The validator's run checks never see a dated room (its room key needs a
+  `night`) — **a gap worth fixing in the validator**, out of this round's
+  scope. I ran the same invariants by hand on all 40 rooms / 66 sets (shared
+  doors/close, distinct seq, `of` = room size, clock agrees with order, 30
+  minutes apart, every set inside doors → close, no order on one act): 0
+  problems.
+- Pick keys: 148 names byte-identical (no name touched); freeze test green.
+- Round one did NOT reorder `artists[]` (the brief's worry): array order and
+  every name are identical to main; its "apply-order" step only added `order`.
+
+### Full table — every Late nights set, round one → round two
+
+`~` = guess. Bold = changed.
+
+| Date | Venue | Act | Doors | Set (r1 → r2) | Close (r1 → r2) |
+|---|---|---|---|---|---|
+| 09-29 | Mohawk Austin | Total Wife | 7 PM | 8 PM | ~12 AM |
+| 09-29 | Mohawk Austin | Fcukers | 7 PM | ~10:30 PM → **~8:45 PM** | ~12 AM |
+| 10-01 | Emo's | The 4411 | 7 PM | ~8 PM → **8 PM** | ~2 AM → ~12 AM |
+| 10-01 | Emo's | Palace | 7 PM | ~12:30 AM → **~8:45 PM** | ~2 AM → ~12 AM |
+| 10-01 | Stubb's | Jess Williamson | 7 PM | 7 PM → **8 PM** | — → ~10 PM |
+| 10-01 | Stubb's | Brandon Flowers | 7 PM | ~9 PM → **~8:30 PM** | — → ~10 PM |
+| 10-01 | Stubb's Indoors | Montclair | 9:30 PM | 9:30 PM → **10:30 PM** | — |
+| 10-01 | The Concourse Project | Austin Ashtin | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-01 | The Concourse Project | The Chainsmokers | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-02 | 3TEN | Villanelle | 8 PM | ~9 PM → **9 PM** | ~2 AM → — |
+| 10-02 | Antone's | Night Tapes | 9 PM | ~10 PM → **10 PM** | ~12 AM → — |
+| 10-02 | Brushy Street Commons | CorMae | 9 PM | 10 PM | ~2 AM → ~12 AM |
+| 10-02 | Brushy Street Commons | Hunx and his Punx | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-02 | Devil May Care | Bambi | 10 PM | ~10:30 PM | 2 AM |
+| 10-02 | Devil May Care | Rebecca Black | 10 PM | 11:45 PM | 2 AM |
+| 10-02 | Emo's | Sarah Pederzani | 9 PM | ~10 PM → **10 PM** | ~2 AM → ~12 AM |
+| 10-02 | Emo's | BUNT. | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-02 | Historic Scoot Inn | Malcy | 6 PM | ~7 PM → **7 PM** | — → ~12 AM |
+| 10-02 | Historic Scoot Inn | Finn Wolfhard | 6 PM | ~8 PM | — → ~12 AM |
+| 10-02 | Stubb's | This Is Lorelei | 7 PM | 7 PM → **8 PM** | — → ~10:30 PM |
+| 10-02 | Stubb's | Bleachers | 7 PM | ~9 PM | — → ~10:30 PM |
+| 10-02 | Stubb's Indoors | Grocery Bag | 10 PM | 10:30 PM → **11 PM** | — |
+| 10-02 | The Concourse Project | Riot Ten | 9 PM | 9 PM | ~2 AM → 2 AM |
+| 10-02 | The Concourse Project | Elephante | 9 PM | ~10:45 PM → **~10:30 PM** | ~2 AM → 2 AM |
+| 10-02 | The Concourse Project | Steve Aoki | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-03 | Brushy Street Commons | 1x333 | 9 PM | ~10 PM → **9:30 PM** | ~2 AM → ~12 AM |
+| 10-03 | Brushy Street Commons | Directress | 9 PM | ~11:15 PM → **~10:15 PM** | ~2 AM → ~12 AM |
+| 10-03 | Brushy Street Commons | Underscores | 9 PM | ~12:30 AM → **~11 PM** | ~2 AM → ~12 AM |
+| 10-03 | Emo's | Untitld | 9 PM | ~10 PM → **10 PM** | ~2 AM → ~12 AM |
+| 10-03 | Emo's | Levity | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-03 | Historic Scoot Inn | Fancy Hagood | 6 PM | ~7 PM → **7 PM** | — → ~12 AM |
+| 10-03 | Historic Scoot Inn | CMAT | 6 PM | ~8 PM | — → ~12 AM |
+| 10-03 | Stubb's | Velvet Trip | 8 PM | 8 PM → **9 PM** | — → ~11 PM |
+| 10-03 | Stubb's | Parcels | 8 PM | ~10 PM → **~9:30 PM** | — → ~11 PM |
+| 10-03 | Stubb's Indoors | Almost Heaven | 11 PM | 11 PM → **11:30 PM** | — |
+| 10-03 | The Concourse Project | Dazzle Camouflage | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-03 | The Concourse Project | Nate Band | 9 PM | ~10:45 PM → **~10:30 PM** | ~2 AM → 2 AM |
+| 10-03 | The Concourse Project | It's Murph | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-04 | Antone's | Stefon Osae | 9 PM | ~10 PM → **10 PM** | ~12 AM |
+| 10-04 | Antone's | Rochelle Jordan | 9 PM | ~10:45 PM → **~10:30 PM** | ~12 AM |
+| 10-04 | Emo's | Suki Waterhouse | 9 PM | ~10 PM → **10 PM** | ~2 AM → — |
+| 10-04 | Historic Scoot Inn | Ryan Beatty | 5 PM | ~6 PM | — → ~10:30 PM |
+| 10-05 | Brushy Street Commons | LP | 7 PM | 8 PM | — |
+| 10-05 | Historic Scoot Inn | The 4411 | 5 PM | ~6 PM → **6 PM** | — → ~10:30 PM |
+| 10-05 | Historic Scoot Inn | Saint Motel | 5 PM | ~7 PM | — → ~10:30 PM |
+| 10-06 | Stubb's | Leon Knight | 7 PM | 7 PM → **8 PM** | — → ~10:30 PM |
+| 10-06 | Stubb's | Lola Young | 7 PM | ~9 PM | — → ~10:30 PM |
+| 10-06 | Stubb's Indoors | Annie DiRusso | 10 PM | 10 PM → **10:30 PM** | — |
+| 10-08 | 3TEN | Left Lucid | 8 PM | ~9 PM → **9 PM** | ~2 AM → ~12 AM |
+| 10-08 | 3TEN | Łaszewo | 8 PM | ~12:30 AM → **~9:45 PM** | ~2 AM → ~12 AM |
+| 10-08 | Antone's | Elijah Delgado | 7 PM | ~8 PM → **8 PM** | ~12 AM |
+| 10-08 | Antone's | World Famous Pets | 7 PM | ~10:30 PM → **~8:45 PM** | ~12 AM |
+| 10-08 | Brushy Street Commons | Common People | 7 PM | 8 PM | ~2 AM → ~12 AM |
+| 10-08 | Brushy Street Commons | Arcy Drive | 7 PM | ~12:30 AM → **~8:45 PM** | ~2 AM → ~12 AM |
+| 10-08 | Fair Market | The War on Drugs | 6 PM | ~7 PM | ~12 AM |
+| 10-08 | Stubb's Indoors | Sunday (1994) | 8 PM | 9 PM → **~9 PM** | — → ~1:45 AM |
+| 10-08 | The Concourse Project | ¥ØU$UK€ ¥UK1MAT$U | 9 PM | 9 PM | — → 2 AM |
+| 10-08 | The Continental Club | Jess Williamson | 9:30 PM → **9 PM** | 10 PM | 11:30 PM |
+| 10-09 | Emo's | Rodrigo y Gabriela | 9 PM | ~10 PM → **10 PM** | ~2 AM → — |
+| 10-09 | Historic Scoot Inn | Noga Erez | 7 PM | ~8 PM → **8:30 PM** | — |
+| 10-09 | The Concourse Project | DJ Bad Apple | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-09 | The Concourse Project | BUNT. | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-10 | 3TEN | Claire Rosinkranz | 8 PM | ~9 PM | ~2 AM → ~12 AM |
+| 10-10 | Antone's | Kesmar | 9 PM | ~10 PM → **10 PM** | ~12 AM |
+| 10-10 | Antone's | Don West | 9 PM | ~10:45 PM → **~10:30 PM** | ~12 AM |
+| 10-10 | Devil May Care | Fcukers | 10 PM | 11:45 PM | 2 AM |
