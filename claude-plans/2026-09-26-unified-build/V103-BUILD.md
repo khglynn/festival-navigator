@@ -715,3 +715,39 @@ mid-slide read, fixed in the test; `hover-contract` "a fast click…" and
 `tap-shelf-contract` "at 320: − and +…", each green alone three times over).
 CI: 36287201762 (39c5ec5), 36288129719 (8cc4c43), 36288953285 (47f3c02) —
 **browser green** each, checks red on the stamp only.
+
+## Sol's targeted check on 5af0f3e (2026-09-26 ~7:50 PM PT) — one IMPORTANT
+
+Review: `~/.codex-runs/cx-20260926-194857-48069-a5372d/last-message.md`. Clean:
+the T1 cut (no second create after a confirmed one; the drill offers Add new
+picks without reopening), `rowKey` holding Afters vs Folsom across repaints,
+and the focus restore staying inside the wall (it never takes focus back from
+Settings, a sheet, a menu or search). The stamp red is expected.
+
+- [x] IMPORTANT — call 3b had turned the keyboard on a zoom's control ("+
+      note", "−", "More") into the keyboard on the card behind it, so a
+      friend's poll moved a keyboard or VoiceOver user off the control they
+      were on. **Done:** the focus goes back to the SAME control in the
+      rebuilt zoom, found by its kind (tag and class — `f-step minus`,
+      `f-chip notes`, a `f-link tix`) and its place among controls of that
+      kind, never by its words (they change with the level: "More" becomes
+      "Must"). Only when that control is gone, or cannot take the focus (a −
+      with nowhere to go is disabled), does the card the zoom stands on take
+      it. Test, red first (`list-highlight-pick`): Kevin's pick on Ross's
+      Tricky arrives from his other phone, so the zoom's − can step; the
+      keyboard on −; a friend's pick polled in; the zoom is rebuilt (a new
+      node) and the focus is on the rebuilt − (it was on the card). The same
+      for "+ note". The fallback: on −, Kevin's other phone un-picks it, the
+      rebuilt − is disabled, and the card has the focus (not `<body>`).
+      Walked in Chromium and WebKit (`v103-twice.mjs`): Tab onto Despacio's
+      zoom's "Less for Despacio", a friend's pick by the poll, the wall and
+      the zoom both really rebuilt (marks on the old nodes gone), the focus
+      on the rebuilt "Less for Despacio" — `twice-*-4-repainted.png` shows the
+      focus ring on −.
+
+**Gate at this fix:** npm test at UTC / Asia/Tokyo / the night clock 1295 of
+1298 each, the one red the service-worker stamp. Local `npm run
+test:browser` 357 of 359 (1 skipped): the one red `hover-contract` "a random
+real-input walk" (a close read a beat early) — it runs against
+`gallery.html`, which never loads `js/v3/app.js`, the only file this fix
+touches; alone it went 2 of 3 green under a load average of 8–38.

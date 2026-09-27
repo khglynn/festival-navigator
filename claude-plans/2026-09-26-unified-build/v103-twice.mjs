@@ -69,23 +69,25 @@ for (const engine of ['chromium', 'webkit']) {
     await sleep(1400);
     const left = { ...(await seen()), tabs };
     await page.screenshot({ path: `${SHOTS}/twice-${engine}-3-left.png` });
-    // The keyboard goes INTO the standing zoom (one more Tab), and a friend's
-    // pick arrives on the poll — a whole repaint. The zoom stands on, and the
-    // keyboard is on its card, never <body>. (The page coming back into view
+    // The keyboard goes INTO the standing zoom (one more Tab, onto its −), and
+    // a friend's pick arrives on the poll — a whole repaint. The zoom stands
+    // on, rebuilt, and the keyboard is on the rebuilt zoom's SAME control —
+    // never the card behind it, never <body> (Sol, on 5af0f3e). (The page coming back into view
     // is what asks for the poll here: the rig's clock is pinned. The rig's
     // service worker is blocked, and Playwright's block resolves register()
     // with nothing, so index.html's reg.update() throws on that event — a rig
     // artifact, not the app: a real register() resolves a registration.)
     await page.keyboard.press('Tab');
     await sleep(300);
-    const inZoom = await page.evaluate(() => { const f = document.activeElement; return f.closest('#zoom-layer') ? (f.getAttribute('aria-label') || f.className) : `no:${f.className}`; });
+    const inZoom = await page.evaluate(() => { const f = document.activeElement; if (f.closest('#zoom-layer')) f.dataset.walkMark = 'old'; return f.closest('#zoom-layer') ? (f.getAttribute('aria-label') || f.className) : `no:${f.className}`; });
     friend = true;
     await page.evaluate(() => { document.querySelector('#wall-root .card.zoom-source').dataset.walkMark = 'old'; document.dispatchEvent(new Event('visibilitychange')); });
     await sleep(1500);
     const polled = await page.evaluate(() => {
       const f = document.activeElement;
       const card = f.closest('.card[data-artist]');
-      return { repainted: !document.querySelector('#wall-root [data-walk-mark]'), focus: card ? `card:${card.dataset.artist}` : f.tagName, zoom: !!document.querySelector('#zoom-layer .zoom-slot.shown') };
+      return { repainted: !document.querySelector('#wall-root [data-walk-mark]'), zoomRebuilt: !document.querySelector('#zoom-layer [data-walk-mark]'),
+        focus: f.closest('#zoom-layer') ? `zoom:${f.getAttribute('aria-label') || f.className}` : card ? `card:${card.dataset.artist}` : f.tagName, zoom: !!document.querySelector('#zoom-layer .zoom-slot.shown') };
     });
     await page.screenshot({ path: `${SHOTS}/twice-${engine}-4-repainted.png` });
     out.push({ engine, before, held, left, inZoom, polled, errors });

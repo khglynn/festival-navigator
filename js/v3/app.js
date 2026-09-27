@@ -2640,9 +2640,15 @@ function alignHighlightMenu(wrap, pop) {
 // the focus back: a card by its row (wall.js rowKey), anything else a Tab
 // reaches by its day, room and kind — the nth of its key — quietly (no fresh
 // keyboard zoom; a standing one is handed over by repaintWall itself), and
-// only when the focus went nowhere. A place that is gone keeps nothing. The
-// keyboard inside a standing zoom (its "+ note", its −) is on the zoom's card:
-// the overlay is rebuilt, so the card takes it, as the notes door hands it back.
+// only when the focus went nowhere. A place that is gone keeps nothing.
+// The keyboard inside a standing zoom (its −, "+ note", +, a Tix link) goes
+// back to the SAME control in the rebuilt zoom — found by its kind (tag and
+// class: `f-step minus`, `f-chip notes`) and its place among its kind, never
+// its words, which change with the level ("More" becomes "Must"). Only when
+// that control is gone, or can no longer take the focus (a − with nowhere to
+// go is disabled), does the card the zoom stands on take it — Sol, on
+// 5af0f3e: a keyboard or VoiceOver user is never moved off the control they
+// were on by a friend's poll.
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"]), .card[data-artist]';
 function placeKey(el) {
   const card = el.closest('.card[data-artist]');
@@ -2657,14 +2663,25 @@ function placesLike(key) {
   const pool = key.startsWith('card|') ? root.querySelectorAll('.card[data-artist]') : root.querySelectorAll(TABBABLE);
   return [...pool].filter((el) => placeKey(el) === key);
 }
+const zoomControlKey = (el) => `${el.tagName}|${el.className}`;
+const zoomControls = (key) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown ' + TABBABLE)]
+  .filter((el) => zoomControlKey(el) === key);
 function focusedPlace() {
   let a = document.activeElement;
+  let control = null;
   const z = zoomedCard();
-  if (a && a.closest && a.closest('#zoom-layer') && z && z.isConnected) a = z;
+  if (a && a.closest && a.closest('#zoom-layer') && z && z.isConnected) {
+    const own = a.closest(TABBABLE);
+    if (own) {
+      const key = zoomControlKey(own);
+      control = { key, n: Math.max(0, zoomControls(key).indexOf(own)) };
+    }
+    a = z;
+  }
   if (!a || !a.closest || !$('wall-root').contains(a) || a === $('wall-root')) return null;
   const el = a.closest('.card[data-artist]') || a;
   const key = placeKey(el);
-  return { key, n: Math.max(0, placesLike(key).indexOf(el)) };
+  return { key, n: Math.max(0, placesLike(key).indexOf(el)), control };
 }
 function refocusPlace(was) {
   if (!was) return;
@@ -2672,7 +2689,15 @@ function refocusPlace(was) {
   if (a && a !== document.body && a.isConnected) return; // it went somewhere real
   const same = placesLike(was.key);
   const el = same[was.n] || same[0];
-  if (el) focusQuietly(el);
+  if (!el) return;
+  if (was.control && zoomedCard() === el) {
+    const ctl = zoomControls(was.control.key)[was.control.n];
+    if (ctl && !ctl.disabled) {
+      focusQuietly(ctl);
+      if (document.activeElement === ctl) return;
+    }
+  }
+  focusQuietly(el);
 }
 
 function repaintWall() {

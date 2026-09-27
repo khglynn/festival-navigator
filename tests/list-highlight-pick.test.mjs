@@ -267,26 +267,48 @@ test('one artist in two rooms: holding its Afters row does not hold its Folsom r
   assert.equal(document.activeElement, daysLine(), 'the keyboard is still on the days line after the row left');
 });
 
-// A repaint while the keyboard is inside a standing zoom (its "+ note", its
-// −): the zoom comes back on the fresh card, and the keyboard with it — on
-// the card the zoom stands on, as the notes door already hands it back. It
-// used to fall to <body>, the next Tab starting at the top of the page.
-test('a friend’s repaint while the keyboard is in a zoom keeps the keyboard on that card', async () => {
+// A repaint while the keyboard is inside a standing zoom (its −, its "+ note"):
+// the zoom comes back on the fresh card, and the keyboard comes back to the
+// SAME control in it — found by what it is (its kind, its place in the row),
+// never by its words, which change with the level ("More" becomes "Must").
+// Only when that control is gone, or can no longer take the focus, does the
+// card the zoom stands on take it. It used to fall to <body> (the next Tab at
+// the top of the page), and then to the card (Sol, on 5af0f3e: a keyboard or
+// VoiceOver user moved off the control they were on by a friend's poll).
+test('a friend’s repaint while the keyboard is in a zoom keeps the keyboard on the same control', async () => {
   await highlight('Kevin'); // off
   await highlight('Ross');
   const tricky = () => cardIn(room('Saturday', ':fest'), 'Tricky');
   assert.ok(tricky(), 'Ross’s Tricky is on the List');
+  // Kevin likes it too (from his other phone), so the zoom's − can step.
+  const poll = async (sel, check, what) => {
+    SERVER = deepMerge(SERVER, { festivals: { [FID]: { selections: sel } } });
+    await sync.pollSync();
+    await until(check, what);
+    await settle(60);
+  };
+  await poll({ Tricky: { Kevin: 2 } }, () => level('Tricky') === 2, 'Kevin’s pick from his other phone');
   window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
   tricky().focus();
   await settle(40);
-  const control = () => document.querySelector('#zoom-layer .zoom-slot button:not([disabled])');
-  await until(() => !!control(), 'the keyboard zoom to stand, with its controls');
-  control().focus();
-  assert.ok(document.activeElement.closest('#zoom-layer'), 'the keyboard is inside the zoom');
-  SERVER = deepMerge(SERVER, { festivals: { [FID]: { selections: { Galen: { Ross: 2 } } } } });
-  await sync.pollSync();
-  await until(() => level('Galen', 'Ross') === 2, 'the friend’s change to arrive');
-  await settle(60);
-  assert.ok(document.querySelector('#zoom-layer .zoom-slot'), 'the zoom stands on through the repaint');
-  assert.equal(document.activeElement, tricky(), 'the keyboard is on the card the zoom stands on, not <body>');
+  const inZoom = (sel) => document.querySelector(`#zoom-layer .zoom-slot.shown ${sel}`);
+  await until(() => !!inZoom('.f-step.minus:not([disabled])'), 'the keyboard zoom to stand, its − able to step');
+  // The keyboard on the zoom's −; a friend's pick arrives on the poll.
+  inZoom('.f-step.minus').focus();
+  const was = document.activeElement;
+  assert.ok(was.closest('#zoom-layer'), 'the keyboard is on the zoom’s −');
+  await poll({ Galen: { Ross: 2 } }, () => level('Galen', 'Ross') === 2, 'the friend’s change to arrive');
+  assert.ok(inZoom('.f-step.minus'), 'the zoom stands on through the repaint');
+  assert.notEqual(inZoom('.f-step.minus'), was, 'a rebuilt zoom (not the old node)');
+  assert.equal(document.activeElement, inZoom('.f-step.minus'), 'the keyboard is on the rebuilt zoom’s −, not the card, not <body>');
+  // The same for its "+ note".
+  inZoom('.f-chip.notes').focus();
+  await poll({ Galen: { Ross: 3 } }, () => level('Galen', 'Ross') === 3, 'the friend’s next change');
+  assert.equal(document.activeElement, inZoom('.f-chip.notes'), 'the keyboard is on the rebuilt zoom’s + note');
+  // The fallback: on −, and Kevin's other phone un-picks it — the rebuilt −
+  // has nowhere to go (disabled, it cannot hold the focus): the card takes it.
+  inZoom('.f-step.minus').focus();
+  await poll({ Tricky: { Kevin: 0 } }, () => level('Tricky') === 0, 'Kevin’s un-pick from his other phone');
+  assert.ok(inZoom('.f-step.minus[disabled]'), 'the rebuilt − is disabled');
+  assert.equal(document.activeElement, tricky(), 'so the card the zoom stands on has the keyboard, not <body>');
 });
