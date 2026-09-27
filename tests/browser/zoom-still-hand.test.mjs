@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER, lateStarts, motionDone } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FID = 'portola-2026';
@@ -46,6 +46,7 @@ const doc = () => ({
 
 async function openWall(engine, at) {
   const ctx = await engine.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  await lateStarts(ctx); // LATE_ANIMATIONS_MS: Linux WebKit's late motion, on any machine
   const TOKEN = 'stillhandcontract_012345'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -129,16 +130,38 @@ const watchZoom = (page) => page.evaluate(() => {
 });
 const stopZoomWatch = (page) => page.evaluate(() => { const w = window.__zoomWatch; w.on = false; w.mo.disconnect(); return { grew: w.grew, frames: w.frames }; });
 const railNow = (page) => page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
+// Where the hand clicks NOW, measured: a point on the tab (4px in from its
+// edges) straight above a card column, as near the tab's middle as that
+// allows, so the glide slides a card under the still pointer wherever the
+// tab sits in the rail's row. NOW has led that row since v104, just right of
+// the time gutter, and its middle is a few pixels from the first column.
+const aimAtNow = (page) => page.evaluate(() => {
+  const r = document.getElementById('rail-now').getBoundingClientRect();
+  const lo = Math.ceil(r.left + 4), hi = Math.floor(r.right - 4), mid = Math.round(r.left + r.width / 2);
+  const cols = [...document.querySelectorAll('#wall-root .card.cell')].map((c) => c.getBoundingClientRect()).filter((b) => b.width > 0);
+  const over = (x) => cols.some((b) => x >= b.left + 2 && x <= b.right - 2);
+  let x = null;
+  for (let d = 0; d <= hi - lo && x == null; d++) x = [mid - d, mid + d].find((c) => c >= lo && c <= hi && over(c)) ?? null;
+  return { x, y: Math.round(r.top + r.height / 2) };
+});
 const labelOf = (page, a) => page.evaluate((x) => { const c = [...document.querySelectorAll('#wall-root .card')].find((el) => el.dataset.artist === x); return c && c.getAttribute('aria-label'); }, a);
 
-// The glide: NOW clicked with the mouse, the page settling under it.
+// The glide: NOW clicked with the mouse, the page settling under it. The
+// highlight brings NOW into the rail's row and slides the days over for it
+// (v104), so the tab is measured once that motion is done: on Linux WebKit,
+// where animations start 700ms+ late, a fixed beat measured it mid-slide and
+// the click missed it (CI, v105's PR run 36344794921).
 async function glide(page) {
   await page.locator('#person-chips .person-chip', { hasText: 'Ross' }).first().click();
-  await sleep(400);
-  const now = await railNow(page);
+  await page.waitForFunction(() => { const n = document.getElementById('rail-now'); return !!n && !n.hidden && n.getClientRects().length > 0; }, null, { timeout: 5000 });
+  await motionDone(page, { within: '#day-rail' });
+  const now = await aimAtNow(page);
+  assert.ok(now.x != null, 'not vacuous: some point on NOW sits straight above a card column');
+  const top = await page.evaluate(() => window.scrollY);
   await page.mouse.click(now.x, now.y);
   await sleep(200); // let the glide begin
-  await scrollSettled(page);
+  const landed = await scrollSettled(page);
+  assert.ok(landed > top + 100, `not vacuous: the click on NOW glided the page (scrollY ${top} to ${landed})`);
   return now;
 }
 
