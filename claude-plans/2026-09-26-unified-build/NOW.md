@@ -20,26 +20,18 @@
   searches every picked artist's top songs with a backoff for Spotify's rate
   limit, and reports artists that got none. Gate: Sol → Sonnet real-input
   walk → merge main → stamp above main → CI both jobs → merge → smoke.
-- **Share for Our picks** (`live/share`, the sibling session; log
-  `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
-  link that opens that night's plan), the welcome card's ✕, "Share the crew
-  link" in the Show menu. Sol's four release rounds and his targeted check are
-  fixed (log items 13–18). The Share is single-source: a tap repaints the plan
-  at that minute, the words come from the rows on screen, and a tap under a
-  held paint (a hand on the grabber) sends nothing. Each share holds a new
-  build's reload with its own counted mark (`data-sharing`), which pagehide
-  drops, and the wall stays still under the sheet. **The v101 window catches
-  are cut** (item 19): the widen test failed a third time on CI's Linux WebKit
-  (run 36290138756), so plan-shelf's measure/refit path is main's again. The
-  link's open waits for the peek to rise (`afterArrival`), and opens only if
-  the wall is still showing that crew, festival and night (Sol's final check,
-  item 20). The catches and their tests are banked at the tag
-  `back-pocket/window-catches` and in the plan-days DESIGN.md. Next: one green
-  browser attempt on this head (259da5e had three), then the SHA to the
-  coordinator. Kevin approved every
-  default on the design page (Despacio as a drop-in room, the plan across the
-  days, the menus over it); it builds on `live/plan-days-design` after v104,
-  aimed at ACL.
+- **Share for Our picks** shipped as v103 (PR #64, 10:18 PM PT; log
+  `SHARE-BUILD.md` items 1–20). The v101 window catches stay banked at the tag
+  `back-pocket/window-catches` and in the plan-days DESIGN.md.
+- **Our picks across the days** (`live/plan-days-design`, the sibling session;
+  plan and log `plan-days-design/BUILD.md`): Kevin approved every default on
+  the design page (Despacio as a drop-in room, the plan across the days, the
+  menus over it). Main at v103 is merged in (0b82dfa), and an Opus builder is
+  on P1–P3 (the prototype made the product, the days in one list, the menus
+  over the open plan). Next: review its handback; merge v104 the day it lands
+  (Mon Sep 28) and re-run the suites first; P4–P5 (where a stop ends, ACL
+  ready); then the Share's gate and the SHA to the coordinator, aimed at ACL
+  Late nights from Tue Sep 29.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
   night and type, `gen.py`, prices from the festival file); a Google My Map
   in Kevin's personal account, link-shared, built from them. The in-app
