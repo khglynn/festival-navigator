@@ -1350,6 +1350,7 @@ function planAnswer(date) {
   // highlighted people by name on this screen (never in the Share's words).
   const who = pickingWords(plan);
   const landing = peek.night.id;
+  const nowMin = peek.today && at && at.night.id === peek.night.id ? at.minutes : null;
   // A night's head and the Share's word for it (the plan-days round). The
   // head is the wall's grammar — SUN, then its date and whose picks — and
   // the Share names the day it sends: today's, Sunday's, Sat Oct 10's.
@@ -1359,19 +1360,21 @@ function planAnswer(date) {
     const isToday = id === landing && peek.today;
     const name = isToday ? 'today' : (wdCount.get(n.wd) > 1 && n.iso ? `${n.wd || ''} ${date}` : (FULL_DAY[n.wd] || n.wd || ''));
     // A day with no stop has nothing to send: the Share says so and rests.
+    // Today's is sent from now, so today with every stop behind it rests too
+    // (an open plan a highlight emptied; the last night after its last stop).
     const route = n.id ? (id === peek.night.id ? peek.night : plan.night(id)) : null;
-    const bare = !!route && !route.items.some((i) => i.kind === 'stop');
+    const bare = !!route && !route.items.some((i) => i.kind === 'stop' && (!isToday || nowMin == null || i.to > nowMin));
     return { weekday: String(n.wd || '').toUpperCase(), date, sub: [date, who].filter(Boolean).join(' · '), share: `${name}’s`, name, bare };
   };
   // A night with no stop says why, in one quiet line (plan.js night().why).
   const emptyWords = (route) => {
+    if (route.why === 'over') return 'Nothing left today';
     if (route.why === 'no-times') return 'No set times yet';
     if (route.why === 'unpicked') return plan.group ? capital(thinnedWords(plan.highlight, ctx.meName)) : 'Nothing picked yet';
     return plan.group ? 'Never together — no stop' : 'Scattered all day';
   };
   return {
-    plan, peek, route: peek.night, gen: planGen,
-    nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
+    plan, peek, route: peek.night, gen: planGen, nowMin,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: dayOf(landing).sub,
     dayWord: peek.today ? '' : (entry.wd || ''),

@@ -399,6 +399,37 @@ test('the people menu’s Our picks row: above Pick as someone else while the pl
   you.click();
 });
 
+// A highlight can empty what is left of the plan (DESIGN.md C, edge cases):
+// Gus and Hal met twice on Saturday afternoon and never again this weekend.
+// The open plan stays open on today; today says nothing is left (its stops
+// are behind Earlier) and its Share rests — sent from now, it would carry no
+// line — and Sunday says why it has no stop.
+test('a highlight that empties the open plan: today says nothing is left and its Share rests; Sunday says why', async () => {
+  await repaint();
+  const grab = plan().querySelector('.plan-grab');
+  const you = $('dock-you');
+  const person = (name) => $('dock-you-wrap').querySelector(`.hl-pop [data-person="${name}"]`);
+  const rowsOf = (night) => [...plan().querySelectorAll('.plan-row')].filter((r) => r.dataset.night === night).map((r) => r.textContent);
+  const share = plan().querySelector('.plan-share');
+  grab.click();
+  assert.equal(plan().dataset.state, 'open');
+  you.click();
+  person('Gus').click();
+  person('Hal').click();
+  await settle(40);
+  assert.equal(plan().dataset.state, 'open', 'a menu over the plan never takes it away');
+  assert.deepEqual(rowsOf('2026-09-26'), ['Nothing left today']);
+  assert.match(plan().querySelector('.plan-row.earlier').textContent, /2 stops/, 'their two stops are behind Earlier');
+  assert.deepEqual([share.textContent.trim(), share.disabled], ['Nothing to share today', true]);
+  assert.deepEqual(rowsOf('2026-09-27'), ['Never together — no stop']);
+  person('').click();
+  await settle(40);
+  assert.deepEqual([share.textContent.trim(), share.disabled], ['Copy today’s picks', false], 'everyone: the crew’s day again (jsdom has no share sheet: Copy)');
+  you.click();
+  grab.click();
+  assert.equal(plan().dataset.state, 'peek');
+});
+
 test('nothing two days before the festival; the day before, tomorrow’s first stop with its weekday', async () => {
   setClock(TUE_NOON);
   await repaint();

@@ -405,7 +405,8 @@ function markEnds(rows) {
 //   where it is drawn); `from`: the night id the list lands on (the
 //   peek's); `nowMin`: the clock on that night (null when it is not tonight);
 //   `dayOf(id)` → { weekday, sub } for a night's head; `emptyWords(route)` →
-//   the line a night with no stop shows.
+//   the line a night with no stop shows (`why`: plan.js night().why, or
+//   'over' for tonight with every stop behind it).
 // Every row carries `data-night`, which is how the shelf knows which day is
 // at the top of the view (its head and its Share follow it).
 export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, grown = new Set(), earlierOpen = false,
@@ -458,6 +459,12 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
       // The quiet drop-in line (if any) stays; the empty line says why there
       // is no stop.
       body.push(e);
+    } else if (fold && !body.length) {
+      // Every stop of today's is over and none is left: an open plan a
+      // highlight emptied (DESIGN.md C: it stays open on today), or the
+      // festival's last night after its last stop. One quiet line says so,
+      // as a day with no stop does, rather than a day with no rows at all.
+      body.push(emptyRow({ ...route, why: 'over' }));
     }
     out.push(...body);
     rows.push(...tag(out, id));
