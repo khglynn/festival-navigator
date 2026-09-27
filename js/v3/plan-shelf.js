@@ -402,7 +402,7 @@ function onListScroll() {
   // A scroll the layout made (a width change reflowed the rows under the same
   // number, and the engine clamped or anchored it) is not the reader's: the
   // refit that follows puts the place back from the anchor taken before it.
-  if (listEl.clientWidth === placeW) takePlace();
+  if (listEl.offsetWidth === placeW) takePlace();
   const id = nightAtTop();
   if (id && id !== topNight) paintHead(id);
 }
@@ -418,10 +418,16 @@ function onListScroll() {
 // makes, and put back after every draw, settle and refit (keepPlace), before
 // the head is painted. Null is the list's top: a new list starts there.
 let place = null;
-let placeW = -1; // the list's width the place was read at: a different one is a reflow
+// The list's own box width the place was read at: a different one is a
+// reflow. Its box, not its content (clientWidth): a scrollbar that takes room
+// (Windows, a Mac with a mouse) arrives with the open list's scrolling and
+// narrows the content 15px, and a place measured before it then read every
+// later scroll as a reflow and never took one — the next repaint put the list
+// back where it had last been read (the plan-days build log, 2026-09-27).
+let placeW = -1;
 const placeKey = (r) => (r.dataset.stop ? `${r.dataset.night || ''}#${r.dataset.stop}` : '');
 function takePlace() {
-  placeW = listEl ? listEl.clientWidth : -1;
+  placeW = listEl ? listEl.offsetWidth : -1;
   place = null;
   if (!listEl || mode !== 'open' || listEl.scrollTop < 1) return;
   const top = listEl.scrollTop;
@@ -445,7 +451,7 @@ function takePlace() {
 function keepPlace({ fresh = false } = {}) {
   if (!listEl || mode !== 'open') return;
   if (gliding && !fresh) { glideOn(); return; }
-  placeW = listEl.clientWidth;
+  placeW = listEl.offsetWidth;
   restorePlace();
   if (gliding) glideOn();
 }
@@ -506,7 +512,7 @@ function draw() {
   // The place is read from the rows on screen unless a reflow has moved them
   // under the scroll since it was last read (a width change the refit has
   // not answered yet): then the place from before it stands.
-  if (mode === 'open' && listEl.clientWidth === placeW) takePlace();
+  if (mode === 'open' && listEl.offsetWidth === placeW) takePlace();
   const f = document.activeElement;
   const focused = f && f !== listEl && listEl.contains(f) && f.dataset.stop ? f.dataset.stop : null;
   listEl.replaceWith(list);

@@ -41,7 +41,10 @@ const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag
 // `fest`: which festival and made-up crew. `plan`: the link's &plan=<night>.
 // `desk`: a laptop. `reduced`: Reduce Motion. `at`: the clock. `wait: false`
 // hands the page back as soon as it has loaded, before the plan settles.
-async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true } = {}) {
+// `bars`: a scrollbar that takes room, as Windows and a Mac with a mouse draw
+// one (Chromium needs a browser launched with its scrollbars on). The crew's
+// doc comes back too: a friend's pick is a change to it, then a pull.
+async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false } = {}) {
   const crew = CREWS[fest];
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
@@ -50,6 +53,16 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
     reducedMotion: reduced ? 'reduce' : 'no-preference',
   });
   await lateStarts(ctx);
+  if (bars) {
+    await ctx.addInitScript(() => {
+      const put = () => {
+        const s = document.createElement('style');
+        s.textContent = '::-webkit-scrollbar { width: 15px; background: #222; } ::-webkit-scrollbar-thumb { background: #777; }';
+        document.head.appendChild(s);
+      };
+      if (document.head) put(); else document.addEventListener('DOMContentLoaded', put);
+    });
+  }
   // The head's turn, as the page asks for it: every animation started on the
   // head's weekday or date, with its first frame and its length.
   await ctx.addInitScript(() => {
@@ -90,7 +103,7 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
   const doc = {
     v: 4, meta: { name: 'Crew', inviteFestId: fest }, spotify: {}, affinity: {},
     people: Object.fromEntries(crew.members.map((n, i) => [n, { colorIndex: i }])),
-    festivals: { [fest]: { selections: crew.picks } },
+    festivals: { [fest]: { selections: structuredClone(crew.picks) } },
   };
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
@@ -112,11 +125,11 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.clock.setFixedTime(at);
   await page.goto(`${server.origin}/#g=${crewToken}&f=${fest}${plan ? `&plan=${plan}` : ''}`);
-  if (!wait) return { ctx, page, errors, crewToken };
+  if (!wait) return { ctx, page, errors, crewToken, doc };
   await page.waitForSelector('#plan:not([hidden])', { timeout: 15000 });
   await fontsIn(page);
   await settled(page);
-  return { ctx, page, errors, crewToken };
+  return { ctx, page, errors, crewToken, doc };
 }
 const settled = async (page) => { await motionDone(page, { within: '#plan' }); await sleep(QUIET_MS); };
 // Does this engine, under this harness, show an element's smooth scroll on
@@ -425,6 +438,60 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal((await read(page)).wd, 'SUN');
       assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); }
+  });
+
+  // The same repaint on the way, on a laptop whose list scrollbar takes room
+  // (Windows, a Mac with a mouse). A new list was measured for the reader's
+  // place before it was a scrolling list, 15px wider than the one it became
+  // (the scrollbar arrived with the settle), so every scroll after the glide
+  // read as a reflow and was never taken; the next repaint put the list back
+  // where the glide had been when the tick came.
+  test(`${name} laptop, a scrollbar that takes room: after a glide the reader scrolls, and the next repaint keeps where they are`, { skip }, async (t) => {
+    const probe = await smoothShows(name, get());
+    t.diagnostic(verdict(name, probe));
+    if (!probe.shows) { t.skip('this engine lands a smooth scroll in one step as far as a test can see: there is no mid-glide to repaint in'); return; }
+    const own = name === 'Chromium' ? await launchBrowser({ scrollbars: true }) : null;
+    const { ctx, page, errors, doc } = await open(own || get(), { plan: '2026-09-27', at: SAT_1014, desk: true, wait: false, bars: true });
+    try {
+      const deadline = Date.now() + 15000;
+      while (!(await page.evaluate(() => (window.__glide || []).some((g) => g.top > 20)))) {
+        assert.ok(Date.now() < deadline, 'the glide starts');
+        await sleep(5);
+      }
+      await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; });
+      await page.clock.setFixedTime(SAT_1015);
+      const mid = await page.evaluate(() => {
+        document.body.dataset.busy = 'test-tick';
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete document.body.dataset.busy;
+        const list = document.querySelector('#plan .plan-list');
+        return list.dataset.old ? null : list.scrollTop;
+      });
+      assert.notEqual(mid, null, 'the tick redrew the rows mid-glide');
+      await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the glide reaches Sunday after the repaint');
+      await settled(page);
+      const gutter = await page.evaluate(() => { const l = document.querySelector('#plan .plan-list'); return l.offsetWidth - l.clientWidth; });
+      assert.ok(gutter >= 10, `the list's scrollbar takes room: ${gutter}px`);
+      // The reader goes back up, into Saturday's last rows.
+      await wheel(page, -160);
+      const where = () => page.evaluate(() => {
+        const list = document.querySelector('#plan .plan-list');
+        const top = list.getBoundingClientRect().top;
+        const row = [...list.children].find((r) => r.dataset.night && r.getBoundingClientRect().bottom > top + 2);
+        return { row: `${row.dataset.night}#${row.dataset.stop || row.className}`, at: Math.round(row.getBoundingClientRect().top - top), scrollTop: Math.round(list.scrollTop) };
+      });
+      const before = await where();
+      assert.ok(before.scrollTop < mid - 20 || before.scrollTop > mid + 20, `the reader is somewhere the glide was not when the tick came (${JSON.stringify(before)}, the tick at ${mid})`);
+      // A friend's pick on Sunday redraws the rows: Ana picks Parcels too.
+      const sel = doc.festivals['portola-2026'].selections;
+      sel.Parcels = { ...sel.Parcels, Ana: 3 };
+      await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; document.dispatchEvent(new Event('visibilitychange')); });
+      await until(() => page.evaluate(() => !document.querySelector('#plan .plan-list').dataset.old), 'the friend\'s pick redrew the rows');
+      await settled(page);
+      const after = await where();
+      assert.ok(after.row === before.row && Math.abs(after.at - before.at) <= 1, `the repaint kept the reader where they were: ${JSON.stringify(before)} → ${JSON.stringify(after)} (the tick came at ${mid})`);
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+    } finally { await ctx.close(); if (own) await own.close(); }
   });
 
   test(`${name}: the last day can come to the top — ACL's short Sunday under W2 Saturday, named in the head and the Share`, { skip }, async () => {
