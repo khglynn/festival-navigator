@@ -149,13 +149,15 @@ test('a highlight ranks by the highlighted: the five are the most of them, and e
 
 // Sol, on the release head (2026-09-26): the route's Pier Stage stop ran on
 // to 8:15 past Zara Larsson's 8:05, so at 8:10 the Share said "Pier Stage for
-// Zara Larsson @ now till 8:05pm". Nothing is "now" once it is over.
+// Zara Larsson @ now till 8:05pm". Nothing is "now" once it is over. Since P4
+// (2026-09-27) her stop ends at 8:05 and the Warehouse's ten minutes of
+// Tiësto after it stand as a stop: the same words, now the peek's too.
 test('Sunday 8:10 PM: a set that ended at 8:05 is gone, and every "now" is still on', () => {
   const { text } = at('2026-09-27T20:10:00-07:00');
   assert.equal(text, [
     'Our crew\'s main picks for Sun Portola, now till end of day',
     '',
-    'Warehouse for Tiësto @ now till 8:15pm', // a fork of her stop, and still on
+    'Warehouse for Tiësto @ now till 8:15pm', // the stop now (it was a fork of hers before P4), and still on
     'Warehouse for Overmono @ 8:20pm',
     'Pier Stage for Swedish House Mafia @ 8:45pm',
     'Crane Stage for Parcels @ 10pm',

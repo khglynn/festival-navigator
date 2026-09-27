@@ -82,7 +82,7 @@ import { FEST_ROOM, passesPeople } from './filters.js';
 export const STEP = 5;          // minutes per slice
 export const FLOOR_MIN = 3;     // Kevin: never one or two people
 export const FLOOR_SHARE = 1 / 4;
-export const MIN_STOP = 15;     // a blip shorter than this folds into its neighbour or drops
+export const MIN_STOP = 15;     // a blip shorter than this folds into the stop before it while that stop's place plays on; after, it stands; first, it drops
 export const CHANGEOVER = 20;   // a gap shorter than this is walking between sets, not "scattered"
 export const barFor = (n) => Math.max(FLOOR_MIN, Math.ceil(n * FLOOR_SHARE));
 // Rule 10: a highlighted group's bar. One person is their own day (1); two to
@@ -432,6 +432,15 @@ function slicesOf(here, us, picks, doubled, bar, { group = null, solo = null } =
   return slices;
 }
 
+// Where what a place is FOR ends: a set's (or a party's) act, a room's
+// close. The NOW row's till reads it (tillOf), and a stop never runs past it
+// (routeOf's blip fold).
+const actEnd = (place) => { const a = place.acts[0]; return a && a.to != null ? a.to : place.end; };
+const playsTill = (place) => (place.kind === 'room' ? place.end : actEnd(place));
+// Whether a run's place is still on at minute `to` (a run's place is its
+// first slice's top: blips folded in later only add slices after it).
+const playsThrough = (run, to) => { const end = playsTill(run.slices[0].ranked[0].place); return end == null || end >= to; };
+
 // Slices -> stops, forks and scattered stretches (the prototype's routeOf).
 // `size`: how many the tier is judged against (US, or rule 10's group).
 function routeOf(nightId, slices, size, bar) {
@@ -442,13 +451,20 @@ function routeOf(nightId, slices, size, bar) {
     const last = runs[runs.length - 1];
     if (last && last.id === id) { last.to = s.t + STEP; last.slices.push(s); } else runs.push({ id, from: s.t, to: s.t + STEP, slices: [s] });
   }
-  // Fold blips: a stop shorter than MIN_STOP joins the stop before it, else
-  // is nothing (a set's last five minutes while the next one starts).
+  // Fold blips: a stop shorter than MIN_STOP joins the stop before it while
+  // that stop's place still plays through it (a crowd flicker inside one set
+  // or room). Once the place before it is over, the blip stands as a short
+  // stop of its own — it is a real crowd, at the bar, at a shown place — and
+  // never carries the stop before it past its own end (P4, 2026-09-27: the
+  // nine's ten-minute Tiësto blip had kept Zara Larsson's stop, and the
+  // peek's NOW, running ten minutes after her set). With no stop before it,
+  // a blip is nothing (a set's last five minutes while the next one starts).
   for (let i = runs.length - 1; i >= 0; i--) {
     const r = runs[i];
     if (r.id && r.to - r.from < MIN_STOP) {
       const prev = runs[i - 1];
-      if (prev && prev.id) { prev.to = r.to; prev.slices.push(...r.slices); runs.splice(i, 1); } else r.id = null;
+      if (!prev || !prev.id) r.id = null;
+      else if (playsThrough(prev, r.to)) { prev.to = r.to; prev.slices.push(...r.slices); runs.splice(i, 1); }
     }
   }
   for (let i = runs.length - 1; i > 0; i--) {
@@ -687,9 +703,7 @@ export function headlinersOf(stop, picks) {
 // on before the set is over — and a room's stop end.
 export function tillOf(stop) {
   if (!stop) return null;
-  if (stop.place.kind === 'room') return stop.to;
-  const a = stop.place.acts[0];
-  return (a && a.to != null) ? a.to : stop.place.end;
+  return stop.place.kind === 'room' ? stop.to : actEnd(stop.place);
 }
 
 // The row's "also …": each other play once — on the same night by its time,

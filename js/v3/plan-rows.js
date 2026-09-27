@@ -550,9 +550,10 @@ function placeForTitle(stop, picks, people) {
 
 // When a line stops being true: the route moves on (its `to`), or what it is
 // for is over — a set's or a party's act (tillOf), a room's close — whichever
-// comes first. The route can outrun its act: a blip too short to be a stop
-// folds into the stop before it (plan.js routeOf), so Sunday's Zara Larsson
-// stop runs to 8:15 on a set that ends at 8:05.
+// comes first. Since P4 (2026-09-27) the route never outruns its act (plan.js
+// routeOf folds a blip in only while the stop's place plays through it), so
+// this is the stop's `to` in practice; the Share still reads the act's own
+// end, so no later fold can make it say "now" for a set that is over.
 const endOf = (s) => Math.min(...[s.to, tillOf(s), s.place.end].filter((t) => t != null));
 // The "till" a live line says: its act's end, a room's stop end, never past
 // the place's own end.

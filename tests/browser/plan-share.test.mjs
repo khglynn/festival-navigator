@@ -242,12 +242,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   });
 
   // Sunday 8:10 PM (Sol, on the release head): Zara Larsson ended at 8:05,
-  // and the route's stop for her runs on to 8:15 (a ten-minute blip at the
-  // Warehouse folds into it) — the Share said "now till 8:05pm". It now
+  // and the route's stop for her ran on to 8:15 (a ten-minute blip at the
+  // Warehouse folded into it) — the Share said "now till 8:05pm". It now
   // starts with what is still on, and every line it sends is a row the open
   // plan is showing (round two: the Share had named an or-line the rows never
-  // draw). The peek's own "NOW · till 8:05 PM" for those ten minutes is v101's
-  // and stays for now; the model's fix is the plan-days design round's.
+  // draw). The peek's own "NOW · till 8:05 PM" for those ten minutes went with
+  // the plan-days build's P4 (2026-09-27): her stop ends with her set, and the
+  // Tiësto minutes stand as a stop (tests/browser/plan-stop-ends.test.mjs).
   test(`${name}: Sunday 8:10 PM, the Share leads with what is still on, and every line it sends is a row in the open plan`, { skip }, async () => {
     const { ctx, page, errors, crewToken } = await open(get(), { at: new Date('2026-09-27T20:10:00-07:00') });
     try {

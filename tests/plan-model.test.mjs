@@ -72,7 +72,10 @@ const stopOf = (plan, id, name) => stops(plan, id).find((s) => s.acts.some((a) =
 // Parcels at 3) — so Soulwax holds the route until 10:55 and Public Works
 // starts there; and on Sunday Eli stays at Public Works through Overmono
 // (both 3) instead of leaving at 1:30 AM for SG Lewis (3), so the Great
-// Northern stop is three of us, not four.
+// Northern stop is three of us, not four. And one with where a stop ends
+// (P4, 2026-09-27): Zara Larsson's stop ends with her set at 8:05, where the
+// Warehouse's ten-minute Tiësto blip used to fold in and carry it to 8:15;
+// the blip stands, a short stop of its own.
 const THU = ['most 9:30 PM–12 AM 5 Regency Ballroom'];
 const FRI = ['some 8 PM–8:45 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
 const SAT = [
@@ -92,7 +95,8 @@ const SAT = [
 const SUN_TAIL = [
   'most 5:35 PM–6:35 PM 5 Pier Stage (Mochakk)', // folded: starts 5:35 (bodies placed before hiding)
   'some 6:45 PM–7:05 PM 4 Warehouse (Tiësto)',
-  'some 7:05 PM–8:15 PM 4 Pier Stage (Zara Larsson)',
+  'some 7:05 PM–8:05 PM 4 Pier Stage (Zara Larsson)', // ends with her set (P4): the Tiësto blip no longer carries it
+  'some 8:05 PM–8:15 PM 4 Warehouse (Tiësto)', // ten minutes, after her set: a short stop of its own
   'some 8:20 PM–8:45 PM 3 Warehouse (Overmono)',
   'most 8:45 PM–10 PM 8 Pier Stage (Swedish House Mafia)',
   'some 10 PM–10:45 PM 4 Crane Stage (Parcels)',
@@ -122,7 +126,7 @@ test('golden: Portola + the made-up nine reproduce the approved prototype, stop 
   assert.deepEqual(rows(plan, '2026-09-25'), FRI);
   assert.deepEqual(rows(plan, '2026-09-26'), SAT, 'Sat: twelve stops');
   assert.deepEqual(rows(plan, '2026-09-27'), SUN);
-  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 2, 12, 11]);
+  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 2, 12, 12]);
 });
 
 test('golden, Folsom hidden: only Sunday changes, and Mochakk\'s stop starts 5:35 PM (bodies placed before hiding)', () => {
@@ -132,7 +136,7 @@ test('golden, Folsom hidden: only Sunday changes, and Mochakk\'s stop starts 5:3
   assert.deepEqual(rows(plan, '2026-09-25'), FRI, 'Horse Meat Disco is billed to Afters too, so it stays');
   assert.deepEqual(rows(plan, '2026-09-26'), SAT);
   assert.deepEqual(rows(plan, '2026-09-27'), SUN_FOLDED);
-  assert.equal(plan.night('2026-09-27').stops, 13);
+  assert.equal(plan.night('2026-09-27').stops, 14);
   // Cy, Dot, Fay and Hal are still at the fair (hidden), so Mochakk's crowd
   // before 6 PM is Ana, Ben and Ivy — never the fair's crowd re-seated.
   const mochakk = stopOf(plan, '2026-09-27', 'Mochakk');
@@ -588,14 +592,23 @@ test('the trip: never for the tail of a set long under way — only for one they
   assert.deepEqual(rows(fresh, SATD), ['most 8 PM–9 PM 3 Club', 'most 9 PM–10 PM 3 X (Long)']);
 });
 
-test('route: a stop under 15 minutes folds into the stop before it; a blip with nothing before it is nothing', () => {
-  const fest = synth({
-    sat: [set('Pre', 'Z', '7:50 PM - 8:00 PM'), set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:10 PM - 10:00 PM')],
-  });
+test('route: a stop under 15 minutes folds into the stop before it while that stop\'s set still plays; after the set, it stands; with nothing before it, it is nothing', () => {
   const three = lv(2, 'Ana', 'Ben', 'Cy');
-  const plan = planFor(fest, { Pre: three, Xa: three, Ya: { ...lv(3, 'Ana', 'Ben', 'Cy'), Dot: 3 }, Wa: three });
-  assert.deepEqual(rows(plan, SATD), ['most 8 PM–9:10 PM 3 X (Xa)', 'most 9:10 PM–10 PM 3 W (Wa)']);
-  assert.deepEqual(stops(plan, SATD)[0].forks, [], 'the ten-minute set is too short to be a fork too');
+  const four = { ...lv(3, 'Ana', 'Ben', 'Cy'), Dot: 3 };
+  // Ya's ten minutes come after Xa is over: folding them in would carry Xa's
+  // stop, and the peek's NOW for it, past its own end (P4, 2026-09-27: the
+  // nine's Tiësto blip after Zara Larsson). They stand, a short stop.
+  const after = planFor(synth({
+    sat: [set('Pre', 'Z', '7:50 PM - 8:00 PM'), set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:10 PM - 10:00 PM')],
+  }), { Pre: three, Xa: three, Ya: four, Wa: three });
+  assert.deepEqual(rows(after, SATD), ['most 8 PM–9 PM 3 X (Xa)', 'most 9 PM–9:10 PM 4 Y (Ya)', 'most 9:10 PM–10 PM 3 W (Wa)'], 'Pre\'s ten minutes open the night: nothing');
+  assert.deepEqual(stops(after, SATD)[0].forks, [], 'the ten-minute set is too short to be a fork too');
+  // The same ten minutes while Xa still plays (to 9:30): a flicker inside
+  // its set, folded in.
+  const during = planFor(synth({
+    sat: [set('Xa', 'X', '8:00 PM - 9:30 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:30 PM - 10:00 PM')],
+  }), { Xa: three, Ya: four, Wa: three });
+  assert.deepEqual(rows(during, SATD), ['most 8 PM–9:30 PM 3 X (Xa)', 'most 9:30 PM–10 PM 3 W (Wa)']);
 });
 
 test('route: a gap under 20 minutes is a changeover, not scattered; a longer one is scattered', () => {
