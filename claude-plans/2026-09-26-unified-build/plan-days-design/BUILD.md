@@ -148,7 +148,7 @@ crew link, no database writes (previews and `vercel dev` use production's).
       change its height and the test's own precondition failed (`pinned 744`,
       `caught.height 744`).
    **Gate on 599138d** (a snapshot of HEAD): `npm test` 1278 tests, 1275 pass, 1 fail
-   (the SW stamp), 2 skipped; plan-share 39/39 at 0 and at 700; plan-drag 38/39 at 0
+   (the SW stamp), 1 skipped, 1 todo; plan-share 39/39 at 0 and at 700; plan-drag 38/39 at 0
    and at 700 (the one skip is WebKit's keyboard test, on purpose).
    **Doubts.** (1) `thinnedWords` is a copy of v104's in wall.js until the merge; the
    hunk is v104's side. (2) peekOf's `people` option, `hasAny` and planPicks'
