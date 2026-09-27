@@ -20,6 +20,8 @@ each table; the rules live in RUNBOOK.md.
 
 | Version | What | PR | Rollback target | Shipped | Verified |
 |---|---|---|---|---|---|
+| v105 | Our picks across the days: Despacio (an all-day drop-in room the file declares) never a stop, an "or" or the NOW — one quiet line a day; the open plan scrolls on through later nights, what's over folds into Earlier, a later night's link glides to it; the Show and people menus open over the plan, a highlight filters the route; a stop ends by the time its place does (the ≤10-minute stale NOW is gone); one NOW under a held grabber | #67 | `festival-navigator-7j1xl38cs` (v104) | 2026-09-27 1:03 PM | smoke PASS (festival-nav-v105 / ff9c337c); PostHog 0 exceptions in 2 h; CI green after one rerun of a zoom-still-hand WebKit timing flake (fixed test-only after) |
+| v104 | NOW first in the day row, never moving between days; the List filters by highlight (a run of empty Late-nights dates is one line); the crew playlist's top songs with Spotify rate limits honoured, writes never repeated blind, recorded once at the end; focus kept through a friend's repaint; a note's composer keeps the keyboard; tests on a pinned clock | #66 | `festival-navigator-g96ahmtep` (v103 + docs #65) | 2026-09-27 12:17 PM | smoke PASS (festival-nav-v104 / 82d97c76); PostHog 0 exceptions in 3 h; Kevin moved it up from Monday ("not like a ton of folks are using the app") |
 | v103 | the Share for Our picks: up to five lines read from exactly the rows the open plan just drew at the tap's minute (nothing sent under a held paint), "Full rundown:" + a link with `&plan=<date>` that opens that night's plan after the peek rises; the welcome ✕; "Share the crew link" in the Show menu; each share holds a new build's reload with its own mark (`data-sharing`). Cut after five Sol rounds: the stop-end cap and the v101 window catches (tag `back-pocket/window-catches`) | #64 | `festival-navigator-pkrxh4ryv` (v102 + #63) | 2026-09-26 10:18 PM | smoke PASS (festival-nav-v103 / 9182c367); CI browser green 3× on 259da5e and on the final head (one rerun of a known now-jump 320 flake); PostHog 0 exceptions in the 6 h before |
 | data | nine more Portola ticket prices (the Midway $70, Boys Noize $88, SG Lewis $35, Azzecca $30, JT $30, NAKED SOCIAL $61, US! $18, Fist Buds $43; GRUNT door-only) + a Price column in the map generator | #63 | n/a (data only) | 2026-09-26 4:47 PM | validator 0 errors; npm 1247 pass; prices on all 3 hosts |
 | v102 | the Spotify playlist names: "Portola peeps’ picks" for the crew, "Portola me" for yours | #61 | `festival-navigator-8vfsmrygp` (v101) | 2026-09-26 2:56 PM | smoke PASS (festival-nav-v102 / d64fb64b); Sol clean |
@@ -132,6 +134,12 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 33. **v104 waits for Monday** so NOW doesn't move on friends' phones on Portola's last day; the stop-end timing fix moves into the plan-days build ("bumping that is fine").
 34. **A trip-planning Claude** gets the festival list from the public JSON (`/data/festivals/index.json`, `portola-2026.json`) and a pasted block of when he must be inside the festival; crew picks stay out of other chats (the crew link is also the edit key).
 
+
+## Kevin's calls, 2026-09-27 (Sunday, chat)
+
+35. **Ship today, not Monday** (~11:10 AM): "We need the Despacio fix out at least — that's for this festival. today", with the List filter and anything else ready; usage is light, so changes mid-festival are fine. v104 went at 12:17 PM, v105 (Despacio) at 1:03 PM, before Despacio's 3:30 set.
+36. **"Rolling" only when something is running**: say "Idle until <event>" otherwise, and skip night-time FYIs that don't need him.
+
 ## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
 
 1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
@@ -159,7 +167,7 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 23. **Pinned notes on the wall** (a festival or day note as the room head's whisper): offered, no answer.
 24. **Import follow-ons**: a second door in the just-joined welcome; Portola-only. Likely yes ("all those changes seem chill"); confirm before building.
 25. **Read festival data from `origin/main`, never a local checkout**: the map's first pass read a checkout five releases old and found 10 Folsom parties instead of 64.
-26. **A note can lose keystrokes mid-typing** (tap-shelf-contract's composer test, 3 of ~250 CI jobs, once before the Share existed): the typed text stops right after a space, focus leaving the textarea. Maybe a real "keyboard drops while typing a note" bug; instrumented copy at tag `back-pocket/composer-probe`.
+26. **(Fixed in v104)** **A note can lose keystrokes mid-typing** (tap-shelf-contract's composer test, 3 of ~250 CI jobs, once before the Share existed): the typed text stops right after a space, focus leaving the textarea. Maybe a real "keyboard drops while typing a note" bug; instrumented copy at tag `back-pocket/composer-probe`.
 27. **The playlist ledger is an array** (`artists`), and jsonb_deep_merge replaces arrays: two members topping up at once can drop each other's confirmations (songs aren't doubled; the drill's count reads low). Key it by artist, read both shapes (V103-BUILD.md T3).
 28. **now-jump "WebKit 320: NOW slides SAT AFTERS"** flakes on loaded CI (once on v104's branch, once on the v103 release).
 29. **The v101 window catches** (a touch mid-arrival, a grab mid-slide, a font mid-arrival) are banked with their tests at tag `back-pocket/window-catches` and the plan-days DESIGN.md; the build owes a window model that passes Linux WebKit 3× without touching refit timing.
@@ -167,3 +175,7 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 31. **Pen flags** (2026-09-26): "Take Austin seasons live" (3e70501e…81ec) has no Project; city seasons has no alias of its own; no Peep row for Ray.
 32. **Worktrees symlink node_modules into each other**: the wrap cleanup broke the v103 builder's install (memory: worktree-cleanup-breaks-node-modules). Link new worktrees to the root's install.
 33. **Root checkout drifts behind origin during a worktree release train** (RUNBOOK step 7 now fast-forwards it after each merge).
+34. **The day row's NOW sits behind the fade at phone width under a highlight** (v104's resting rule, Kevin's option a; v105 makes it the NOW door more often). Measure whether a tighter phone row fits NOW beside the day.
+35. **zoom-still-hand's WebKit glide tests** measured NOW mid-slide on late-starting Linux WebKit → a test-only fix (wait for the rail's motion, aim by measurement); **list-view "un-pick A, then B"** waited 30 s on a closed zoom — make it non-waiting and try to reproduce a laptop-List zoom closing under a still mouse.
+36. **pastMayMove never retries when a hold clears** (a share, a thin): a set that ended while the phone was locked stays unfolded until the next unlock or NOW tap. Pre-existing; a deferred check when the hold clears.
+37. **Five browser suites filter "ResizeObserver loop"**: fix the rail's observer (TAP-BUILD follow-up 6), then drop all five filters.
