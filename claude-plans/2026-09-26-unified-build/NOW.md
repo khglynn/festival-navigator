@@ -34,9 +34,15 @@
   11 findings fixed) — Despacio as a drop-in room, the plan scrolling on
   through later days, both menus over it with a highlight filtering the
   route (one NOW kept under a highlight, Kevin's call), a short changeover
-  standing as its own stop so no stop outlives its act, ACL goldens. Local
-  gate green; CI's browser job red on two Linux WebKit glide tests. Next:
-  that fix round and the short-plan default, CI three greens, Sol, walker;
+  standing as its own stop so no stop outlives its act, ACL goldens. Since:
+  the CI glide fix, the short-plan default, the morning after, Sol's first
+  round fixed (`plan-days-design/SOL-R1.md`), a real-input walk green on
+  both engines (`plan-days-design/WALK-1.md`) and Sol's recheck
+  (`plan-days-design/SOL-R2.md`; its close-and-repaint revival fixed in
+  3f5a337). The composer flake is a real bug on main, caught by a CI probe:
+  notes.js `dialogize()` focuses the sheet a frame late and can take the
+  keyboard from a composer already typing; its guarded fix rides in this
+  round. Next: the builder's handback, CI three greens, Sol's final check;
   merge v104 Monday and re-gate; SHA to the coordinator for ACL Late nights
   (Tue Sep 29).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
