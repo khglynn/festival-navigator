@@ -378,10 +378,19 @@ for (const [label, selections, roomAbove] of [['room above to hold by', LONG, tr
       // control, never a wrap): real clicks on its box until nothing is left.
       const face = (bb) => ({ x: bb.x + bb.width * 0.25, y: bb.y + bb.height * 0.3 });
       const onZoomOf = (a) => page.waitForFunction((n) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown')].some((z) => (z.querySelector('.f-name') || {}).textContent === n), a, { timeout: 4000 });
-      const minusAll = async () => {
-        for (let i = 0; i < 4; i++) {
-          const m = await page.locator('#zoom-layer .zoom-slot.shown .f-step.minus').boundingBox();
-          if (!m) break;
+      // Steps until the card reads un-picked, and asks for the − rather than
+      // waiting on it: a locator's boundingBox waits for its element, so once
+      // a zoom had gone the old four blind clicks sat 30 s on it (CI, run
+      // 36344505362 attempt 2, on Robyn). While the pick is still on, the hand
+      // is on the card, and its zoom has to stand with the − in it.
+      const minusTill = async (a) => {
+        for (let i = 0; i < 4 && (await has(a)) !== 'dim'; i++) {
+          const m = await page.evaluate(() => {
+            const e = document.querySelector('#zoom-layer .zoom-slot.shown .f-step.minus');
+            const r = e && e.getBoundingClientRect();
+            return r && r.width ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+          });
+          assert.ok(m, `${a} is still picked, the pointer on it, and its zoom stands with its − (step ${i + 1})`);
           await page.mouse.click(m.x + m.width / 2, m.y + m.height / 2);
           await sleep(200);
         }
@@ -391,7 +400,7 @@ for (const [label, selections, roomAbove] of [['room above to hold by', LONG, tr
       let at = face(b);
       await page.mouse.move(at.x, at.y, { steps: 4 });
       await sleep(500);
-      await minusAll();
+      await minusTill('Tricky');
       await sleep(600);
       assert.equal(await has('Tricky'), 'dim', 'Tricky dimmed, still there under the pointer');
       // Down to Robyn, watching where it is from the moment the pointer leaves Tricky.
@@ -406,7 +415,7 @@ for (const [label, selections, roomAbove] of [['room above to hold by', LONG, tr
       at = { x: b.x + b.width / 2, y: b.y + b.height * 0.85 };
       await page.mouse.move(at.x, at.y, { steps: 8 });
       await onZoomOf('Robyn');
-      await minusAll(); // must → nothing
+      await minusTill('Robyn'); // must → nothing
       await sleep(1200);
       await motionDone(page, { within: '#wall-root' });
       assert.equal(await has('Robyn'), 'dim', 'Robyn un-picked, dimmed, held');
