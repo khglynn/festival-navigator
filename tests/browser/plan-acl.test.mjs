@@ -293,11 +293,39 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
 const SUN_OCT11_9PM = new Date('2026-10-11T21:00:00-05:00');   // The xx, the festival's last set
 const SUN_OCT11_1130PM = new Date('2026-10-11T23:30:00-05:00'); // nothing left today
 const MON_OCT12_501AM = new Date('2026-10-12T05:01:00-05:00');  // the festival's night is behind the phone
+const MON_OCT12_502AM = new Date('2026-10-12T05:02:00-05:00');
+const MON_OCT12_503AM = new Date('2026-10-12T05:03:00-05:00');
 async function tick(page, at) {
   await page.clock.setFixedTime(at);
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await sleep(60);
   await settled(page);
+}
+// A close by the grabber with a repaint during its motion: the minute turns,
+// and the page repaints right after the close has begun (a listener on the
+// document runs after the shelf's own pointerup, which starts the close), as
+// a tick or a friend's update can. What the shelf was just before, and just
+// after, that repaint.
+async function closeWithRepaint(page, at) {
+  await page.clock.setFixedTime(at);
+  await page.evaluate(() => {
+    window.__closeRepaint = null;
+    document.addEventListener('pointerup', () => {
+      const el = document.getElementById('plan');
+      const was = { hidden: el.hidden, state: el.dataset.state, moving: el.getAnimations().length };
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.__closeRepaint = { was, then: { hidden: el.hidden, state: el.dataset.state } };
+    }, { once: true });
+  });
+  const box = await page.locator('#plan .plan-grab').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  return page.evaluate(() => window.__closeRepaint);
+}
+// Poll from Node, in real time (the page's timers ride the fake clock).
+async function until(ok, what, ms = 4000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { if (await ok()) return; await sleep(50); }
+  assert.fail(`timed out waiting: ${what}`);
 }
 // How bright each of a night's lines is drawn: its opacity times any opacity
 // filter — the past's dim, whichever property carries it.
@@ -309,7 +337,7 @@ const brightness = (page, night) => page.evaluate((n) => [...document.querySelec
 }), night);
 for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
   const skip = engine ? false : NO_BROWSER;
-  test(`${name}: the morning after, a plan left open draws the last night as past, sends it whole, and a close lets the shelf go`, { skip }, async () => {
+  test(`${name}: the morning after, a plan left open draws the last night as past, sends it whole, and a close lets the shelf go — a repaint during the close too`, { skip }, async () => {
     const { ctx, page, errors } = await open(engine, { at: SUN_OCT11_9PM });
     try {
       await page.waitForSelector('#plan:not([hidden])', { timeout: 15000 });
@@ -356,8 +384,16 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       assert.ok(text.endsWith('&plan=2026-10-11'), `the link opens on Sunday:\n${text}`);
       assert.doesNotMatch(text, /now till|@ now/, 'Sunday reads whole, not from now');
       assert.match(text, /The xx/, text);
-      await grab();
-      assert.equal(await planState(page), 'none', 'a close lets the shelf go');
+      // The close has no row to go back to, so the shelf leaves. A repaint in
+      // that motion (5:02 AM's tick) is not an arrival: the shelf goes, and
+      // the next minute leaves it gone (Sol's recheck on daf9c3b: it came
+      // back as a peek with no row).
+      const hit = await closeWithRepaint(page, MON_OCT12_502AM);
+      assert.ok(hit && !hit.was.hidden && hit.was.state === 'open', `the repaint came while the shelf was closing: ${JSON.stringify(hit)}`);
+      assert.notEqual(hit.then.state, 'peek', `the repaint did not bring the shelf back: ${JSON.stringify(hit)}`);
+      await until(async () => (await planState(page)) === 'none', 'a close lets the shelf go, repaint and all');
+      await tick(page, MON_OCT12_503AM);
+      assert.equal(await planState(page), 'none', 'and the next minute leaves it gone');
       assert.deepEqual(errors(), []);
     } finally { await ctx.close(); }
   });

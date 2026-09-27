@@ -97,7 +97,15 @@ let held = false;    // an answer that came in under a hand: drawn when it lets 
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 
 export const planShelf = () => el;
-export const planIsOpen = () => mode === 'open';
+// Open, and not on its way out. A plan with no row to close to (a highlight
+// emptied it, or the morning after) leaves from open, and `mode` stays open
+// until the leave ends; the app reads this to keep an open plan a highlight
+// emptied (planAnswer's fallback), so it read "open" all through the leave
+// and a tick or a friend's update brought the shelf back as a peek with no
+// row (Sol's recheck on daf9c3b). Every caller agrees: a closing plan is not
+// kept (planAnswer), offered or opened from a link (both ask planHere first),
+// and Escape passes it by — the close it would ask for is under way.
+export const planIsOpen = () => mode === 'open' && !leaving;
 // Whether there is a plan on screen to open: the peek or the open plan, not
 // one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;

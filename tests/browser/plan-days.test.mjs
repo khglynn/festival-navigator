@@ -32,6 +32,8 @@ const chromium = await launchBrowser();
 const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00');     // Portola: Dog Blood on the Pier Stage, 8 picked
+const SAT_941 = new Date('2026-09-26T21:41:00-07:00');
+const SAT_942 = new Date('2026-09-26T21:42:00-07:00');
 const SAT_1014 = new Date('2026-09-26T22:14:00-07:00');    // a minute before Dog Blood ends
 const SAT_1015 = new Date('2026-09-26T22:15:00-07:00');
 const ACL_W1_SUN = new Date('2026-10-04T19:00:00-05:00');  // ACL W1 Sunday: Mon and Tue ahead have nothing picked
@@ -195,6 +197,26 @@ async function until(ok, what, ms = 8000) {
   assert.fail(`timed out waiting: ${what}`);
 }
 const planState = (page) => page.evaluate(() => { const el = document.getElementById('plan'); return el && !el.hidden ? el.dataset.state : 'none'; });
+// A close by the grabber with a repaint during its motion: the minute turns,
+// and the page repaints right after the close has begun (a listener on the
+// document runs after the shelf's own pointerup, which starts the close), as
+// a tick or a friend's update can. What the shelf was just before, and just
+// after, that repaint.
+async function closeWithRepaint(page, at) {
+  await page.clock.setFixedTime(at);
+  await page.evaluate(() => {
+    window.__closeRepaint = null;
+    document.addEventListener('pointerup', () => {
+      const el = document.getElementById('plan');
+      const was = { hidden: el.hidden, state: el.dataset.state, moving: el.getAnimations().length };
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.__closeRepaint = { was, then: { hidden: el.hidden, state: el.dataset.state } };
+    }, { once: true });
+  });
+  const box = await page.locator('#plan .plan-grab').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  return page.evaluate(() => window.__closeRepaint);
+}
 async function openPlan(page) {
   const box = await page.locator('#plan .plan-grab').boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -796,7 +818,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // plan must never take it away: it stays open on today, saying why, its
   // Share resting. Closed, there is no peek, so the shelf goes; Everyone
   // brings the peek back, and the open menu grows its Our picks row.
-  test(`${name}: a highlight that empties the plan keeps it open under the menu — the day says why and the Share rests; closed, the shelf goes, and Everyone brings it back`, { skip }, async () => {
+  test(`${name}: a highlight that empties the plan keeps it open under the menu — the day says why and the Share rests; closed, the shelf goes (a repaint during the close too), and Everyone brings it back`, { skip }, async () => {
     const { ctx, page, errors } = await open(get());
     try {
       await openPlan(page);
@@ -816,9 +838,19 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await menuGone(page, '#dock-you-wrap .hl-pop');
       await settled(page);
       assert.equal(await planState(page), 'open', 'and still open once the menu has gone');
-      const box = await page.locator('#plan .plan-grab').boundingBox();
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-      await until(async () => ['none', 'gone'].includes(await planState(page)), 'closed with no peek, the shelf goes');
+      // Closed with no row to go back to, the shelf leaves. A repaint in that
+      // motion (the minute's tick) is not an arrival: the shelf goes, and the
+      // next minute leaves it gone (Sol's recheck on daf9c3b: it came back as
+      // a peek with no row).
+      const hit = await closeWithRepaint(page, SAT_941);
+      assert.ok(hit && !hit.was.hidden && hit.was.state === 'open', `the repaint came while the shelf was closing: ${JSON.stringify(hit)}`);
+      assert.notEqual(hit.then.state, 'peek', `the repaint did not bring the shelf back: ${JSON.stringify(hit)}`);
+      await until(async () => (await planState(page)) === 'none', 'closed with no peek, the shelf goes, repaint and all', 4000);
+      await page.clock.setFixedTime(SAT_942);
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await sleep(60);
+      await settled(page);
+      assert.equal(await planState(page), 'none', 'and the next minute leaves it gone');
       // With a highlight on, the avatar's slot is the pill: its faces reopen the menu.
       await tap(page, '#dock-you-wrap .hl-pill .hl-faces');
       await menuUp(page, '#dock-you-wrap .hl-pop');
@@ -827,7 +859,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await until(async () => (await planState(page)) === 'peek', 'Everyone brings the peek back');
       await until(async () => !!(await planRow(page, '#dock-you-wrap')), 'and the open menu its Our picks row');
       assert.match(await tagged(page), /^Now: Dog Blood, Pier Stage/);
-      assert.deepEqual(errors, []);
+      // (A visibilitychange asks the service worker to update, and the
+      // harness blocks service workers: that throw is the harness's.)
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); }
   });
 
