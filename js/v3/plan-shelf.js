@@ -351,21 +351,32 @@ function paintHead(id) {
 }
 // The last day can scroll to the top like every other (the plan-days round):
 // a short Sunday under a tall panel otherwise bottoms out with Saturday still
-// at the top, and the head and the Share would never name it. The list's
-// bottom padding grows by just what that takes, remeasured on every draw and
-// refit (a font, a rotation).
+// at the top, and the head and the Share would never name it. The room it
+// takes is the list's last box (`.plan-tail`, draw), sized on every draw,
+// settle and refit (a font, a rotation) from where the rows end — the box's
+// own top, so it is never in its own measure — and never by clearing and
+// measuring again: a cleared room shrinks the scroll range under a reader
+// parked on the last day, both engines clamp the scroll, and the head and
+// the Share turned back to Saturday (the P1–P3 review's first finding,
+// 2026-09-27). Offsets, not rects: the list is the rows' offsetParent (as
+// nightAtTop reads it), and a row in motion keeps its offset.
+//
+// Only while the rows alone overflow the list's box — the shelf at its cap,
+// or the laptop's panel, which is full height anyway. A plan that fits has
+// nowhere to scroll: room there would only be a gap under its last row,
+// growing a content-sized shelf, and a jump in the window's motion. (How a
+// later day reaches the top of a plan that fits is Kevin's open question —
+// the plan-days build log, the review's fixes.)
 function fitTail() {
-  if (!listEl || !listEl.classList.contains('days')) return;
-  listEl.style.paddingBottom = '';
+  const tail = listEl ? listEl.querySelector(':scope > .plan-tail') : null;
+  if (!tail) return;
   const heads = listEl.querySelectorAll(':scope > .plan-day');
   const last = heads[heads.length - 1];
-  if (!last || mode !== 'open') return;
   const base = parseFloat(window.getComputedStyle(listEl).paddingBottom) || 0;
-  // Rects, not offsetTop: the list is not the head's offsetParent.
-  const at = last.getBoundingClientRect().top - listEl.getBoundingClientRect().top + listEl.scrollTop;
-  const tail = listEl.scrollHeight - base - at;
-  const need = listEl.clientHeight - base - tail;
-  if (need > 0) listEl.style.paddingBottom = `${base + need}px`;
+  const box = listEl.clientHeight;
+  const end = tail.offsetTop;
+  const room = last && end + base > box + 0.5 ? Math.max(0, Math.ceil(last.offsetTop + box - end - base)) : 0;
+  if (tail.style.height !== `${room}px`) tail.style.height = `${room}px`;
 }
 function onListScroll() {
   if (mode !== 'open' || !data) return;
@@ -391,6 +402,10 @@ function draw() {
     earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
     dayOf: (id) => (a.dayOf ? a.dayOf(id) : {}), emptyWords: a.emptyWords || (() => ''),
   });
+  // The room under the last day (fitTail): the list's last box, empty.
+  const tail = mk('div', 'plan-tail');
+  tail.setAttribute('aria-hidden', 'true');
+  list.append(tail);
   list.addEventListener('click', onRowTap);
   list.addEventListener('scroll', onListScroll, { passive: true });
   for (const t of ['wheel', 'touchstart', 'pointerdown', 'keydown']) list.addEventListener(t, () => { gliding = null; }, { passive: true });
@@ -617,6 +632,7 @@ function play(before, { duration, easing }) {
   }
   let arrivals = 0;
   for (const r of listEl.children) {
+    if (r.classList.contains('plan-tail')) continue;
     const was = before.rows.get(r.dataset.stop);
     const now = r.getBoundingClientRect().top;
     const shown = r.style.opacity === '' ? 1 : Number(r.style.opacity);
@@ -738,7 +754,7 @@ function settleTo(target, { instant = false } = {}) {
   const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
   headEl.animate(fade, timing);
   footEl.animate(fade, timing);
-  for (const r of listEl.children) if (!r.classList.contains('tagged')) r.animate(fade, timing);
+  for (const r of listEl.children) if (!r.classList.contains('tagged') && !r.classList.contains('plan-tail')) r.animate(fade, timing);
   if (geo.desk) {
     corner.head.animate(fade, timing);
     corner.close.animate(fade, timing);
