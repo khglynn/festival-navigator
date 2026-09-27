@@ -160,3 +160,64 @@ crew link, no database writes (previews and `vercel dev` use production's).
    venue: a room across town open since 6 PM is not "worth the trip" at 7 (the tail
    rule). Portola's rooms are on the grounds, so nothing moves; the design didn't
    cover it.
+3. **P2 (done at dc31d42, builder):** across the days (B1–B4). Most of B1–B4 came
+   with the prototype, whose code P1 kept: the head's turn, the Share per day, `fitTail`,
+   Earlier's span, bare runs ahead of today, the laptop corner. P2 pins each with a
+   browser suite and builds the two things the prototype did not do.
+   a. **b45ae37** a link for a later night opens the plan on that night (the brief's
+      default, flagged below). The window grows from tonight's peek row as it always
+      does, and once it has landed the list glides to the named night, the head turning
+      over as that night reaches the top. It is instant under Reduce Motion or Low
+      power, and a hand on the window or a scroll of the person's own keeps things where
+      they are. A night already over still lands on the wall (plan-share's "a plan link
+      for another night"). Bare runs fold behind Earlier as they do ahead of today (with
+      Earlier open, ACL W1 Sunday showed MON and TUE as two empty heads), and a run's
+      rows name every night in it (`data-nights`), so a link for Tue Oct 6 finds it.
+   b. **42d6bf7** `tests/browser/plan-days.test.mjs`, in Chromium and WebKit, on Portola
+      and a made-up ACL eight (`tests/fixtures/plan-crew-acl.json`). The head and the
+      Share follow the day at the top, and the head turns from the side the list moves
+      toward (recorded `Element.animate`, 200 ms). Reduce Motion changes the day at once.
+      A later night's link glides there (the list's scroll positions recorded, each with
+      whether the window was still growing). ACL's short last Sunday reaches the top.
+      Earlier's date span past three nights opens dimmed under its heads. Bare runs are
+      one head and one reason, and their Share rests. The laptop's corner stays
+      today's.
+   c. **dc31d42** the glide carries on across a repaint. A tick or a friend's pick
+      mid-glide replaced the list and left it short of the night. The glide now
+      remembers where it is going until it lands or a hand takes over. The top night is
+      read from offsets (the list is the rows' offsetParent), not rects: a repaint's
+      rows travel to their new places, and a rect read mid-motion put Saturday in the
+      head with Sunday at the top.
+   **Red first.** On main (250bc45), 14 of 14 fail, e.g. `'Share our picks'` for
+   `'Share today’s picks'`, "a row for 2026-09-27 in the open plan" (main's plan
+   holds one night), ACL W2 `['SAT','Oct 10 · 8 picking','Share our picks']` (the
+   last day never reaches the top), and the bare run `null`. On the P1 head (599138d),
+   4 fail: the later-night link, both engines (`TimeoutError: waiting for
+   locator('#plan[data-state="open"]')`, because it landed on the wall), and Earlier
+   open on ACL W1 Sunday, both engines (`'MONOct 5','TUEOct 6'` for `'MON · TUEOct 5 –
+   6'`). The glide, against a version that scrolled the list in the open's own frame:
+   `the list moved only once the window had landed: [{"top":511,"moving":true}]`. The
+   carry-on test, without the continuation: `timed out waiting: the glide reaches
+   Sunday after the repaint`. With rects in `nightAtTop`, at 700: `'SAT' !== 'SUN'`.
+   **Gate on dc31d42:** a snapshot of HEAD: `npm test` 1278 tests, 1275
+   pass, 1 fail (the SW stamp), 1 skipped, 1 todo; plan-share 39/39 at 0 and at 700;
+   plan-drag 38/39 at 0 and at 700 (WebKit's keyboard test skips, on purpose);
+   plan-days 16/16 at 0 and at 700. (The same gate on 42d6bf7, before the carry-on:
+   the same lines, plan-days 14/14.)
+   **Doubts, and what the design didn't settle.**
+   (1) **For the coordinator:** a later night's link opens the plan and glides to that
+   night, the brief's default. The other way is the old one, landing on the wall.
+   (2) A past night's link still lands on the wall: the words were about a day that is
+   gone.
+   (3) Bare runs fold behind Earlier too. The frames only show them ahead; I used one
+   rule both ways.
+   (4) With Earlier open, a past night at the top can be shared: the button names it
+   ("Share Thursday’s picks") and sends it whole. Its link lands on the wall, because
+   the night is over. The design didn't say, and I didn't disable the Share for past
+   days. It's a small call for Kevin.
+   (5) A bare run's head and Share name its first night ("Nothing to share Monday" for
+   Mon–Tue), per frame D5.
+   (6) The glide is the browser's native smooth scroll, about 350 ms here, not a
+   motion.js curve. A designed curve would need a scroll driven from script.
+   (7) When a repaint lands mid-glide, the rows' travel and the glide run together.
+   The test checks that this is correct, not how it feels, so a walker should look.
