@@ -760,3 +760,11 @@ crew link, no database writes (previews and `vercel dev` use production's).
    36320693628): the browser job green, 463 tests, 459 pass, 0 fail, 4 skipped; the
    glide carry-on on Linux WebKit is the only new skip (its probe saw 1 place in 344
    ms, Linux Chromium's 22 in 430 ms). The checks job is red on the SW stamp alone.
+   **Gate on 2679514 and 98548e4** (j, then k, which changes only plan-days' tests):
+   on 2679514, `npm test` the same (the stamp alone red) and every browser suite at 0,
+   one at a time, with the plan suites at 700 too, all green with the counts above but
+   for plan-days, 32/32 with j's test. On 98548e4: plan-days 33/34 at 0 and at 700 (the
+   racing carry-on skipped on WebKit, with its reason), the glide tests three more times,
+   and `npm test` the same. CI on 98548e4 (run 36326580757): the browser job green, 467
+   tests, 463 pass, 0 fail, 4 skipped (the WebKit racing carry-on and the three older
+   skips); the checks job red on the SW stamp alone.
