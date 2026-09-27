@@ -320,7 +320,7 @@ crew link, no database writes (previews and `vercel dev` use production's).
    unit test.
    (4) Under a highlight, the Share breaks a tie in count by MOST, as the crew's does.
    MOST is the group's own now; the old path skipped it because MOST was the crew's.
-5. **P4 (in progress, builder, from db99c3d):** where a stop ends. The rig
+5. **P4 (done at 724d0bb, builder, from db99c3d):** where a stop ends. The rig
    (`stop-ends.mjs`) matches P4-PREP.md on db99c3d: the nine meet one carry (Zara
    Larsson, Sunday 8:05–8:15), the ACL nine none, and forks never outlive their stop.
    **Everything that reads a stop's end, listed again on db99c3d before the fix**
@@ -356,3 +356,65 @@ crew link, no database writes (previews and `vercel dev` use production's).
    `crew-acl.mjs`), and six seeded nines the rig found carrying a stop (Portola 7919,
    15838, 31676; ACL 55433, 79190, 95028). Test 5 is a browser suite,
    `tests/browser/plan-stop-ends.test.mjs`.
+   a. **628d855** the Share sweep draws the plan without paint. A CPU profile of
+      plan-text (288 s on db99c3d; main's was 58 s) put jsdom's CSS parser, reading
+      the rows' aura gradients (`nodeEl`, `whoEl`), under nearly all of it: each
+      drawing of the plan-days list draws every later night. `tests/helpers/
+      paint-free.mjs` makes `background` and `border` write nothing, for tests that
+      read words and classes. plan-text runs in 50 s. (The review's item 11.)
+   b. **a3d59cb** a stop ends by the time its place does. routeOf folds a blip into
+      the stop before it only while that stop's set (its act's end, what tillOf
+      reads) or room (its close) plays through the blip; after that the blip stands
+      as a short stop of its own; with no stop before it, it is nothing, as before.
+      `tillOf` and the fold share one reading (`actEnd`, `playsTill`). On Sunday:
+      "NOW · Tiësto · Warehouse · till 8:15 PM" from 8:05, which the Share already
+      sent. The rig after: 0 carries across the nine, the ACL nine and 240 seeded
+      crews (215 stops before). Stops grow 3–7% at Portola (x5 466→478, x9
+      1121→1187, x15 1302→1397) and under 1% at ACL (2110→2111, 3741→3757,
+      3947→3970). Goldens: Zara Larsson 7:05–8:05, then Tiësto 8:05–8:15 (the
+      crew's golden, Folsom hidden, and the Despacio crew's); Sunday has 12 stops,
+      13 with Folsom hidden → 14. The blip rule's test gains the case where the set
+      still plays (Xa to 9:30: the ten minutes fold in; its timeline skips 9:00
+      and 9:05, where the three were at Y). Comments that described the carry
+      (plan-rows `endOf`, plan-text's and plan-share's 8:10 notes, `MIN_STOP`) are
+      rewritten. `endOf`'s min stays as a guard: the stop's `to` in practice now.
+   c. **724d0bb** the frames E1–E5 (`node frames.mjs E`): Sunday 7:50 open, 8:10
+      peek, open and the laptop's corner, and Ben, Eli + Gus at 9:25.
+   **Red first.** On db99c3d, `tests/plan-stop-ends.test.mjs`: test 1 fails with
+   `the peek says NOW for Zara Larsson (Pier Stage), over at 8:05 PM` and `the NOW
+   row is Zara Larsson (Pier Stage), over at 8:05 PM` (the nine, 2026-09-27 8:05 and
+   8:10), then the seeded crews' carries (Fcukers 5:30, Bassvictim 7:40, ...); its
+   route form fails with `Zara Larsson (Pier Stage) 7:05 PM–8:15 PM, over at 8:05
+   PM`, and under a highlight `the nine [Ben,Eli,Gus], 2026-09-27: Overmono
+   (Warehouse) 8:20 PM–9:30 PM, over at 9:20 PM`. Tests 2, 3 and 4 pass on db99c3d:
+   the head has no cap, forks are built from the stop's own slices, and the Share
+   reads the rows. They guard against the fix that was cut from the Share release,
+   so their red is shown on a scratch copy of db99c3d with that cap put back
+   (e93c876's parent: stop and fork `to` = min(run end, place end)): test 2 fails
+   with `the or-line Tiësto (Warehouse) (on till 8:15 PM) is not on screen — its
+   row, Zara Larsson (Pier Stage) 7:05 PM–8:05 PM, is over` (plus two seeded ACL
+   crews), test 4 with `Tiësto (Warehouse) 7:05 PM–8:15 PM under Zara Larsson (Pier
+   Stage) 7:05 PM–8:05 PM is not inside its stop`, and test 1 passes there. Test 3
+   is the Share release's sweep, kept in plan-text, and here run over the seeded
+   crews too; it passes on db99c3d and on the cap, since the Share reads the rows'
+   own rules. Its red is the Share release's. The browser suite (test 5) fails on
+   db99c3d with `20:05: Zara Larsson ended at 8:05; the crew is at Tiësto` (the
+   minute log shows "Now: Zara Larsson, Pier Stage, till 8:05 PM" at 8:05). Its
+   one-NOW assertion passes on db99c3d; with paintNowTabs' `planShowsNow()` switched
+   off in a scratch copy, it fails at once: `19:58: the NOW tab and the plan's NOW
+   both show`. On the fix, the minute log shows the tab stepping in for the walk
+   (8:15–8:19, the peek saying NEXT Overmono) and out at 8:20.
+   **The short stops: they do not read as noise to me, and it is Kevin's look.**
+   The nine meet one (Tiësto, 8:05–8:15, "catch the end of Tiësto" before Overmono
+   at the same Warehouse); the ACL nine and the ACL crew none, highlights included;
+   Ben, Eli + Gus one (Swedish House Mafia 9:20–9:30, "Ben + Eli, 2 of 3", then Four
+   Tet 9:30 with Eli + Gus); seeded Portola nines 1.7 per crew of about 30 stops over
+   four nights, seeded ACL nines 0.4 of about 94. In E1 the short Tiësto row sits
+   right under Zara's "or Tiësto" line, so Tiësto is named twice. That is the rows'
+   existing grammar, not a new one: Parcels' "or Four Tet" above "Four Tet 10:45 PM"
+   in the same frame does the same on db99c3d. In E5 the ten-minute NOW row says
+   "till 10 PM" (Swedish House Mafia's set), with Four Tet 9:30 under it: the till is
+   the set's, as for every set the route leaves early. If Kevin reads either as noise,
+   the fallback is the changeover (the Share's 8:10 golden then loses its Tiësto
+   line); I haven't chosen it.
+
