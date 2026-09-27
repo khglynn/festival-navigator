@@ -1,7 +1,7 @@
 // Sharing our picks (the Share build, 2026-09-26), with real input: the open
 // plan's "Share our picks" hands the share sheet the day in words and the
 // link that opens on the plan; with no share sheet it copies them. A link
-// with &plan=open lands a member on the plan open, and a newcomer on the
+// with &plan=<its night> lands a member on the plan open, and a newcomer on the
 // welcome card first (its ✕ is Look around by another name), then the plan.
 // The Show menu's "Share the crew link" hands over the crew link. The real
 // app, the made-up nine (tests/fixtures/plan-crew-nine.json), /api answered
@@ -25,14 +25,16 @@ const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 picked
+const SAT = '2026-09-26';
 const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag (plan-shelf.js quietUntil, 400)
 
 // `share`: a share sheet (a stub keeping its payload), 'refuses' (a sheet
 // the browser will not raise: it rejects NotAllowedError), or none. `guest`:
 // no name on this phone, so the welcome card comes first. `plan`: the link
-// says &plan=open. `linkFest`: the festival the link names (this phone keeps
-// the crew on Portola). `mobile`: a phone's coarse pointer (Chromium).
-async function open(engine, { share = true, guest = false, plan = false, desk = false, linkFest = FID, mobile = false } = {}) {
+// says &plan=<night> (true: Saturday's, the night the clock is on).
+// `linkFest`: the festival the link names (this phone keeps the crew on
+// Portola). `mobile`: a phone's coarse pointer (Chromium). `at`: the clock.
+async function open(engine, { share = true, guest = false, plan = false, desk = false, linkFest = FID, mobile = false, at = SAT_940 } = {}) {
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
     viewport: desk ? { width: 1280, height: 800 } : { width: 390, height: 844 },
@@ -75,8 +77,8 @@ async function open(engine, { share = true, guest = false, plan = false, desk = 
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.clock.setFixedTime(SAT_940);
-  await page.goto(`${server.origin}/#g=${crewToken}&f=${linkFest}${plan ? '&plan=open' : ''}`);
+  await page.clock.setFixedTime(at);
+  await page.goto(`${server.origin}/#g=${crewToken}&f=${linkFest}${plan ? `&plan=${plan === true ? SAT : plan}` : ''}`);
   await fontsIn(page);
   return { ctx, page, errors, crewToken };
 }
@@ -120,7 +122,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const lines = text.split('\n');
       assert.equal(lines[0], 'Our crew\'s main picks for Sat Portola, now till end of day');
       assert.equal(lines[2], 'Pier Stage for Dog Blood @ now till 10:15pm');
-      assert.equal(lines.at(-1), `Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=open`);
+      assert.equal(lines.at(-1), `Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=${SAT}`);
       for (const who of NINE.members) assert.doesNotMatch(text, new RegExp(`\\b${who}\\b`), `${who} is not named`);
       assert.equal(await planState(page), 'open', 'the plan stays open behind the sheet');
       assert.equal(await page.evaluate(() => document.body.dataset.busy || null), null, 'and the busy mark is given back');
@@ -128,7 +130,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  test(`${name}: a link with &plan=open lands a member on the plan open, and the address keeps no flag`, { skip }, async () => {
+  test(`${name}: a link with &plan=<tonight> lands a member on the plan open, and the address keeps no flag`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { plan: true });
     try {
       await page.waitForSelector('#plan[data-state="open"]:not([hidden])', { timeout: 15000 });
@@ -144,7 +146,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  test(`${name}: a newcomer's &plan=open waits for the welcome card; its ✕, upper right, lets the plan rise open`, { skip }, async () => {
+  test(`${name}: a newcomer's plan link waits for the welcome card; its ✕, upper right, lets the plan rise open`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { guest: true, plan: true });
     try {
       await page.waitForSelector('#welcome-card', { timeout: 15000 });
@@ -184,9 +186,53 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The wish is for the link's night too (Sol, on the release head): the
+  // words were about Friday, so on Saturday the link lands on the wall and
+  // Saturday's plan, which is not what it was about, stays a peek.
+  test(`${name}: a plan link for another night lands on the wall, and opens nothing`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { plan: '2026-09-25' });
+    try {
+      await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
+      await settled(page);
+      await page.waitForFunction(() => !/plan=/.test(location.hash), null, { timeout: 5000 });
+      assert.equal(await planState(page), 'peek', 'Saturday\'s plan is not the Friday plan the link was about');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Sunday 8:10 PM (Sol, on the release head): Zara Larsson ended at 8:05,
+  // and the route's stop for her used to run on to 8:15 — the peek said
+  // "NOW · till 8:05 PM" and the Share "now till 8:05pm". The peek hands on
+  // as at any changeover; the Share starts with what is still on.
+  test(`${name}: Sunday 8:10 PM, the set that ended at 8:05 is not NOW in the peek, the open plan or the Share`, { skip }, async () => {
+    const { ctx, page, errors, crewToken } = await open(get(), { at: new Date('2026-09-27T20:10:00-07:00') });
+    try {
+      await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
+      await settled(page);
+      const peek = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        return { tag: el.dataset.tag, text: el.textContent.replace(/\s+/g, ' ') };
+      });
+      assert.equal(peek.tag, 'next', `the peek: ${peek.text}`);
+      assert.doesNotMatch(peek.text, /till 8:05/);
+      await openPlanByGrabber(page);
+      const live = await page.locator('#plan .plan-row.live').count();
+      assert.equal(live, 0, 'no NOW row in the open plan');
+      await page.locator('#plan .plan-share').click();
+      await sleep(100);
+      const [{ text }] = await page.evaluate(() => window.__shared);
+      const lines = text.split('\n');
+      assert.equal(lines[0], 'Our crew\'s main picks for Sun Portola, now till end of day');
+      assert.equal(lines[2], 'Warehouse for Tiësto @ now till 8:15pm');
+      assert.doesNotMatch(text, /Zara Larsson|till 8:05/);
+      assert.equal(lines.at(-1), `Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=2026-09-27`, 'the link names the night the words are about');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   // "Pick shows" on the welcome card reads the card and raises the join
   // shelf: the plan waits behind the question, and opens when it is left.
-  test(`${name}: a newcomer's &plan=open waits behind the join shelf, and opens when Look around leaves it`, { skip }, async () => {
+  test(`${name}: a newcomer's plan link waits behind the join shelf, and opens when Look around leaves it`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { guest: true, plan: true });
     try {
       await page.waitForSelector('#welcome-card', { timeout: 15000 });
@@ -194,8 +240,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await page.locator('#welcome-card .welcome-join').click();
       await page.waitForSelector('.join-shelf', { timeout: 5000 });
       await page.waitForSelector('#welcome-card', { state: 'detached', timeout: 5000 });
-      await sleep(700); // the card's leaving repaints the plan (app.js's card observer)
-      assert.notEqual(await planState(page), 'open', 'nothing opens under the question');
+      // The card's leaving repaints the plan (app.js's card observer): the
+      // peek rises behind the question — and does not open under it.
+      await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 5000 });
+      await settled(page);
+      assert.equal(await planState(page), 'peek', 'nothing opens under the question');
       await motionDone(page, { within: '.join-shelf' });
       await page.locator('.join-shelf .js-look').click();
       await page.waitForSelector('#plan[data-state="open"]:not([hidden])', { timeout: 5000 });
@@ -240,7 +289,7 @@ test('Chromium, no share sheet: Copy our picks copies the same words, and the bu
     await sleep(100);
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     assert.match(copied, /^Our crew's main picks for Sat Portola, now till end of day\n\nPier Stage for Dog Blood @ now till 10:15pm\n/);
-    assert.ok(copied.endsWith(`Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=open`));
+    assert.ok(copied.endsWith(`Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=${SAT}`));
     assert.equal((await button.textContent()).trim(), 'Copied ✓');
     await sleep(1900);
     assert.equal((await button.textContent()).trim(), 'Copy our picks', 'and goes back to its words');
@@ -275,7 +324,7 @@ test('Chromium, a refused share sheet: both shares copy instead, and say so wher
     await button.click();
     await sleep(150);
     assert.equal((await page.evaluate(() => window.__shared)).length, 1, 'the sheet was asked');
-    assert.ok((await page.evaluate(() => navigator.clipboard.readText())).endsWith(`Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=open`));
+    assert.ok((await page.evaluate(() => navigator.clipboard.readText())).endsWith(`Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=${SAT}`));
     assert.equal((await button.textContent()).trim(), 'Copied ✓');
     assert.equal(await page.evaluate(() => document.body.dataset.busy || null), null);
     await page.keyboard.press('Escape');

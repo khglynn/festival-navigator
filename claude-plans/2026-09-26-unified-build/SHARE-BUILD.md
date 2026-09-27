@@ -127,3 +127,49 @@ PR and merges; this branch is never stamped here.
     only over fc86005: WebKit's widen-to-a-laptop-and-back; 7ad9721: show-links' Tix door
     60 ms after a +). Neither appears in the last 20 failed runs on other branches; both
     pass locally 5 of 5 and 3 of 3 at 700 ms late. The failed job was re-run.
+13. **Sol's release round** (gpt-6-sol high, on the coordinator's release head 52653f1;
+    one blocker, two important, one nit, all real, all fixed on `live/share` after
+    merging main; each new test fails before its fix):
+    a. **A stop outlasted its set** (the blocker). routeOf folds a blip (a crowd shift
+       under 15 minutes) into the stop before it, and that carried the stop past its own
+       set: with the nine on Sunday, the Warehouse's ten-minute Tiësto blip kept the Pier
+       Stage stop to 8:15 while Zara Larsson ended at 8:05, so from 8:05 to 8:15 the peek
+       said "NOW · Zara Larsson · till 8:05 PM" and the Share "now till 8:05pm". Live in
+       production since v101 (checked on main 5bf380f), at most ten minutes after a set,
+       wherever a crew's picks make such a blip. The fix is in the model: a stop and a
+       fork end where their place does (plan.js routeOf, `endOf`). The blip still folds;
+       its minutes become the changeover they are. Everything that reads a stop's end was
+       listed first: atOn's NOW (the peek), planAt's "last night still going", forkFor's
+       overlap, the NOW row's till (a room's is its stop's end), the open plan's Earlier
+       fold, the Share's "still to come", the shelf's repaint key. Seating and the trip
+       rule are upstream of the route and do not read it. What those ten minutes show
+       now: exactly what 8:15 to 8:20 already showed, the changeover's rule — the peek
+       says NEXT for the next time most of us meet (Swedish House Mafia, 8:45), the dock's
+       NOW tab comes back (the one-NOW rule: no NOW row), and Zara's row folds into
+       Earlier at 8:05. Two goldens moved and say why: Sunday's Zara stop ends 8:05, and
+       the tiny festival's fold test ends X at 9, not 9:10. New: no stop or fork outlasts
+       its place on any Portola night; the peek at 8:04, 8:05, 8:10, 8:14 and 8:17; the
+       Sunday 8:10 text word for word; and a browser test at Sunday 8:10 in both engines
+       (the peek, the open plan, the Share), which fails on the unfixed model with the
+       peek reading "NOW till 8:05 PM".
+    b. **The plan link forgot its day.** `&plan=open` became `&plan=<the night's date>`
+       (crew.js `PLAN_NIGHT_RE`; `planFromHash` returns the date). The receiver opens
+       the plan only when it is on that night; on any other the link lands on the wall
+       with its peek, because the open plan shows one night and a Saturday text's
+       "Full rundown" must not open Sunday's. When the plan scrolls across the days (the
+       design round's B), the link can land on its own day instead. No `&plan=open` link
+       exists in the wild (v103 is unreleased), so there is no old form to read. New:
+       the link test, and a browser test for a Friday link opened on Saturday; a
+       mutation run without the night check fails it.
+    c. **A highlight's Share named the whole crowd's acts and ranked by the whole
+       crew.** Under a highlight a place now counts only the highlighted people at it (a
+       stop's timeline, a fork's peak crowd), a room is named for what they picked
+       there, and the five are the most of them, then the earliest. A person is only
+       seated at their own picks, so every act named passes `passesPeople` — the test
+       asserts it for four highlights. Cy at 9:40 now reads "Public Works for Milli Meng
+       and Fcukers" (she picked no Chloé Caillet); Ben, Eli and Gus at 11 AM get the five
+       places all three are at, not the crew's big stops. The head still says "Our
+       crew's main picks": its words under a highlight are the design round's question
+       C5.
+    d. The join-shelf test's fixed 700 ms sleep now waits for the peek rising behind the
+       question, then asserts it did not open.

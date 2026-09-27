@@ -411,12 +411,17 @@ function routeOf(nightId, slices, us) {
       }
     }
     const place = peak.place;
+    // A stop ends where its place does (Sol, 2026-09-26): a blip folded in
+    // above keeps its minutes out of the route, but it must not carry this
+    // stop past its own set — the peek said NOW for a set already over. The
+    // same for a fork, whose last five-minute slice can overhang its end.
+    const endOf = (p, to) => (p.end != null ? Math.min(to, p.end) : to);
     items.push({
       kind: 'stop', tier: peak.people.length * 2 > us.length ? 'most' : 'some', nightId, place, placeKind: place.kind, acts: place.acts,
-      from: r.from, to: r.to, count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
+      from: r.from, to: endOf(place, r.to), count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
       leansOnDoubles: peak.maybe.length * 2 >= peak.people.length, alsoAt: [], timeline,
       forks: [...forks.values()].filter((f) => f.to - f.from >= MIN_STOP)
-        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people })),
+        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: endOf(f.place, f.to), count: f.peak.people.length, people: f.peak.people })),
     });
   }
   // A short gap is a changeover (walking to the next stage), not scattered;
