@@ -768,3 +768,124 @@ crew link, no database writes (previews and `vercel dev` use production's).
    and `npm test` the same. CI on 98548e4 (run 36326580757): the browser job green, 467
    tests, 463 pass, 0 fail, 4 skipped (the WebKit racing carry-on and the three older
    skips); the checks job red on the SW stamp alone.
+10. **Sol's recheck and the walk's catch (builder, 2026-09-27).** From d5731a9: Sol
+    rechecked daf9c3b (`SOL-R2.md`, with the lead's check of each point) and the
+    real-input walk passed on both engines, phone and laptop (`WALK-1.md`). One
+    commit per item, each red first on the code before it where behaviour changed.
+    a. **A repaint during a close brought the shelf back (3f5a337).** A plan with no
+       row to close to (the morning after, a highlight emptied it) leaves from open,
+       and `mode` stays open until the leave ends. planIsOpen() said open all through
+       the leave, so a tick or a friend's update in that motion got planAnswer's
+       fallback answer (the rule that keeps an open plan a highlight emptied), and
+       paintPlanShelf took it for an arrival: cancelLeave, draw, arrive. The shelf
+       came back as a peek with no row. planIsOpen is now open and not leaving. Each
+       caller in app.js:
+       - planAnswer's fallback (~1335) no longer keeps a closing plan: the answer is
+         null and the leave runs on.
+       - The people menu's row (~1441, 2462) and a plan link (~1471–1482) ask
+         planHere() first, which already said no while leaving.
+       - Escape (~5057) passes a closing plan by. Its close is under way, and with
+         nothing else open the fall-through does nothing.
+       **Red first**, both engines. The tests dispatch the repaint from a document
+       pointerup listener, which runs right after the shelf's own pointerup starts
+       the close. The morning after (plan-acl, Mon Oct 12 5:01 AM, the close at 5:02)
+       and a highlight that empties the plan (plan-days, Gus + Hal at 9:40 PM, the
+       close at 9:41) both read `the repaint did not bring the shelf back:
+       {"was":{"hidden":false,"state":"open","moving":1},"then":{"hidden":false,
+       "state":"peek"}}`. Green at 0 and 700, and each test holds the shelf gone at
+       the next minute. The highlight test now filters the harness's service-worker
+       throw on visibilitychange, as the other tests do.
+    b. **The pinned height after a later day goes: logged, not changed.** A tap pins
+       the phone shelf's height while it is open (main's rule: the window never moves
+       under a finger; unpinned on the open, the close, an arrival, and a refit
+       whenever the shelf is not open). If the later day goes while the shelf is open
+       (the 5 AM rollover, a highlight, an unpick), the blank room under the last row
+       stays until the close. That is the look the short-plan default (9e) already
+       has, and resizing under a reader is worse.
+    c. **The crossing tests wait for the new layout (2ab870a, Sol's nit).** plan-tail's
+       layout-crossing tests slept 400 ms after setViewportSize. They now poll from
+       Node, on a 4 s real-time deadline, until the shelf's side says the new layout
+       (`data-side="open"` for the open laptop panel, none on the phone; settleState
+       writes it), then wait for the motion. The flag flips both ways, so each wait is
+       real. Green at 0 and 700.
+    d. **Sol's grown-card "blocker": refuted, now guarded (ca12ba2).** Grown cards do
+       carry `data-night`: planDays' night() tags every row dayRows returns, grownEl's
+       included. plan-text now asserts every direct child of the list names its night.
+       It runs with every stop grown and Earlier shut and open, on Portola (Sat 9:40
+       PM, Sun 5 PM, and Gus + Hal, whose days are empty) and ACL (Tue Sep 29 with the
+       bare Mon · Tue ahead, and Sat Oct 10). It also asserts the cases drew grown
+       cards, empty lines and a bare run's rows, so the coverage it names is real. No
+       behaviour change. As a mutation, a tag() that skips `.plan-grow` fails it.
+    e. **The Earlier line is never cut (8f76795, the lead's look at the walk).** On
+       Portola Sunday at 390px it read "EARLIER · THU · FRI · SAT · 4 S…". Its words
+       had only the name's column (138px at 320, 192px at 390), with the time and
+       count columns empty beside them. Two changes:
+       - Three nights behind on consecutive dates are one range, "Thu – Sat", the way
+         a bare run is "Oct 5 – 6". Three with a gap keep their labels. Two stay as
+         the wall writes them ("Thu · Fri"): a range would be no shorter. Past three
+         nights, the date span stands. isoAfter moves to plan.js, shared with app.js's
+         tomorrow check.
+       - The row has no time and no count, so its words run to the row's end
+         (grid-column 2 / 5), padded clear of the chevron. The chevron keeps its place
+         at the end of the count column. Spanning the time column alone left ACL's
+         "SEP 29 – OCT 9 · 2 STOPS" 2px short at 320.
+       bd7a0cb then drops a wrapper 8f76795 added for nothing (the range reads
+       nightLabelOf directly). Its message says "plan-text 16/16"; the count was 15/15.
+       **Red first:** plan-days, measured, both engines, Portola Sun 9 PM: `the Earlier
+       line's words fit their box: {"text":"Earlier · Thu · Fri · Sat · 6
+       stops","scroll":210,"client":138}` at 320 (client 192 at 390). plan-text's
+       range test read `'Earlier · Thu · Fri · Sat'`. Green at 320 and 390 on Portola
+       Sunday and ACL's second Saturday (9 PM, stops folded), at 0 and 700. The
+       chevron is asserted at the row's end, clear of the words. Checked by eye, shut
+       and open, at 320, 390 and 1280.
+       **For Kevin's look:** a two-night Earlier stays "Thu · Fri". Say if you'd rather
+       every consecutive run read as a range.
+    f. **The composer flake:** its cause (notes.js dialogize's held-frame focus) is
+       fixed on fix/composer-focus, riding v104.
+    **Gate on 435f92b** (the round's last code; dfdec8d after it is the lead's NOW line),
+    started 09:29 PDT: `npm test` 1295 tests, 1292 pass, 1 fail (the SW stamp, left for
+    the lead), 1 skipped, 1 todo. Every browser suite at 0, one at a time, and the plan
+    suites at 700 too. At 0 and 700: plan-acl 8/8, plan-days 37/38 (the WebKit racing
+    carry-on skipped), plan-drag 38/39 (the WebKit keyboard skip), plan-share 39/39,
+    plan-stop-ends 6/6, plan-tail 38/38. At 0: now-jump 61/61, people-menu 24, by-time
+    4, error-report 1, fold-intent 4, guest-tap-route 6, heads 7, hover 11, import-flow
+    4, list-view 12, meter 27, shell 11, show-links 6, show-menu-stacking 2, stack-row
+    9, strip-follow 3, touch-ghost 2, zoom-chips-burst 8, zoom-chips 45, zoom-chrome 18,
+    zoom-door-row 8, zoom-notes-chip 1, zoom-still-hand 6, all green. tap-shelf 29/31:
+    the two reds are the clock below, not this round.
+    CI on 8f76795 (run 36332455417), 435f92b (run 36333299701) and dfdec8d (run
+    36333619449): the browser job green each time, 471 tests, 467 pass, 0 fail, 4
+    skipped; the checks job red on the SW stamp alone. All three ran before 10 AM PDT.
+    **From 10 AM PDT on Portola Sunday the suites fail on the machine's clock, on main
+    too.** Aftershock (Folsom, Saturday night, 3 AM - 10 AM) is Saturday's last window.
+    Once it ends, the wall judges Saturday over and folds it behind the Earlier line
+    (wall.js foldPast), so Saturday's cards and heads leave the DOM. Every test that
+    boots Portola on the machine's clock and reaches for a Saturday card then reads
+    null. A browser probe on this build, Chromium at 1280: at 9:55 AM Saturday's block
+    is drawn with Tove Lo in it; at 10:05 AM the wall is Sunday alone under "Earlier ·
+    THU · FRI · SAT". The same tests fail the same way on a main snapshot (250bc45).
+    - `npm test` at 10:38 AM: 63 fail, the stamp and 62 in 11 files (tap-shelf 23,
+      first-open-guest 13, zoom-door-row 8, first-open-guest-doors 8,
+      first-open-joins-hold 3, warm-open-shared-file 2, warm-open-custom 2, warm-open,
+      offline-add-casing, first-open-tap-welcome, first-open-shelf-close). The night
+      clock proves the cause: at 9:50 AM tap-shelf, first-open-guest, zoom-door-row and
+      warm-open pass, and at 10:05 AM they fail 23, 13, 8 and 1. With the whole suite
+      pinned a week before (NIGHT_CLOCK=2026-09-19T16:00:00Z) it is the stamp alone.
+    - The browser suites: tap-shelf's keyboard test went red in the gate at about 10
+      AM, in both engines (`page.evaluate: TypeError: null is not an object
+      (evaluating 'el.scrollIntoView')`). It boots on the machine's clock on purpose,
+      because Playwright's fixed clock holds requestAnimationFrame. A second sweep at
+      0, from 10:11 AM, added heads-contract's long name and "Portola hidden" tests,
+      whose openPhone pins a clock only when a test asks. Every other suite was green.
+    The failures last until Sunday's night is over. Its last window, Real Bad 37, ends
+    at 5 AM Monday, and a festival over from end to end folds nothing: the probe has
+    Tove Lo gone at 4:55 AM Monday and back at 5:05. ACL's weekends
+    will do the same to any test that boots ACL on the machine's clock. The lead has
+    the fix, verified and not committed here, because the tests are main's.
+    - The browser tests: tap-shelf's keyboard test offsets Date alone in the page to the
+      Saturday 3:15 PM its file's other tests use (night-clock.mjs's move; frames and
+      timers stay native). heads-contract's openPhone always pins, a week before unless
+      a test names a moment. After 10 AM both files were green: tap-shelf 31/31, and
+      heads 7/7 twice.
+    - The unit suite: one pin for the whole run, or a clock for each of those 11 files.
+      That is the lead's call.
