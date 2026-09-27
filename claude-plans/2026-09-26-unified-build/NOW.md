@@ -28,11 +28,17 @@
   Portola's last day is Sunday (Kevin agreed, 2026-09-26 evening). Kevin's
   call on NOW at phone width: option a, as built.
 - **Next build: Our picks across days** (`live/plan-days-design`, the
-  sibling session; Kevin approved every default on its design page, C6
-  included): Despacio as a drop-in room, the plan scrolling on through later
-  days, both menus over the open plan with a highlight that filters the
-  route; the window model and the banked catches come back here. Aimed at
-  ACL Late nights (Tue Sep 29).
+  sibling session; log `plan-days-design/BUILD.md`; Kevin approved every
+  default on its design page, C6 included): P1–P5 built by an Opus builder
+  and through an independent review (`plan-days-design/REVIEW-P1P3.md`,
+  11 findings fixed) — Despacio as a drop-in room, the plan scrolling on
+  through later days, both menus over it with a highlight filtering the
+  route (one NOW kept under a highlight, Kevin's call), a short changeover
+  standing as its own stop so no stop outlives its act, ACL goldens. Local
+  gate green; CI's browser job red on two Linux WebKit glide tests. Next:
+  that fix round and the short-plan default, CI three greens, Sol, walker;
+  merge v104 Monday and re-gate; SHA to the coordinator for ACL Late nights
+  (Tue Sep 29).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
   `gen.py`, prices); a Google My Map in his personal account, link-shared.
   The in-app version is a Pen card (the 2027 reference tab).
