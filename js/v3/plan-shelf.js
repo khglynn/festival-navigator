@@ -929,10 +929,29 @@ function unpin() {
 // reads true through it. Waited for, it landed on the old numbers and the
 // window then dropped in one frame — a font landing mid-arrival on a first
 // visit, 23px (the Share build, banked in v101).
+// A layout that crosses between the phone's and the laptop's (a rotation, a
+// window dragged across 720px) waits for nothing: no motion in flight is aimed
+// at the new layout, so each one ends where it was going and the window is
+// measured at once — the panel's side and the phone's pin go with the layout
+// now, not when a row's motion ends. Waiting kept an open plan the phone's on
+// a laptop for as long as a row moved, and a motion that never ended kept it
+// so, a wait already queued included (Sol's fourth round; the widen test's
+// WebKit failures on CI, 2026-09-26).
 let refitQueued = false;
+const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
 export function refitPlanShelf() {
-  if (!el || mode === 'gone' || leaving || drag || refitQueued) return;
-  const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
+  if (!el || mode === 'gone' || leaving || drag) return;
+  if (geo && geo.desk !== isDesk()) {
+    for (const a of motions()) if (!endless(a)) a.finish();
+    lifting = null;
+    arrival = null;
+    if (mode !== 'open' || isDesk()) unpin();
+    measure();
+    apply(mode === 'open' ? 1 : 0);
+    settleState();
+    return;
+  }
+  if (refitQueued) return;
   const moving = motions().filter((a) => a.playState === 'running' && !endless(a));
   if (showing(lifting) && motions().every((a) => a === lifting || endless(a) || !showing(a))) { reaim(); return; }
   if (moving.length) {

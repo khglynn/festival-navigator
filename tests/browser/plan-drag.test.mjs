@@ -812,9 +812,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // the plan's state, so data-side="open" (the laptop's panel) stayed on a
   // phone whenever the refit after it did not settle either. On CI that was
   // reaim's "nothing changed" return (three WebKit failures of the widen
-  // test). Held here without retries: an animation in the plan that never
-  // ends keeps every refit waiting (refitPlanShelf), so the scroll frame's
-  // measure is the only one that runs.
+  // test). Held here without retries, with an animation in the plan that
+  // never ends: then, every refit waited for it and the scroll frame's
+  // measure was the only one to run. Since the fourth round a layout
+  // crossing 720px also refits at once (the test after this one), and both
+  // readings must leave the same state.
   test(`${name} 1280: narrowed to a phone with a scroll in the same moment — the panel's side goes with the laptop, whatever the refit is waiting for`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { desk: true });
     try {
@@ -841,6 +843,46 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       });
       assert.equal(after.state, 'open');
       assert.equal(after.side, null);
+      assert.ok(Math.abs(after.bottom - after.dockTop) <= 0.5, `the open plan stands on the dock: ${JSON.stringify(after)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The other way, with no scroll at all (Sol's fourth round, and the widen
+  // test's WebKit failure on b2206a5): a refit waits for the plan's motion
+  // before it measures, so an open phone plan widened to a laptop while a row
+  // was moving stayed the phone's — no panel side, the phone's pin — until
+  // that motion ended; a motion that never ended kept it so. A layout
+  // crossing 720px now ends the plan's motion and measures at once.
+  test(`${name}: widened to a laptop while a row is moving — the plan is the panel at once, and narrowed back it is the phone's at once`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      const g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await settled(page);
+      const hold = () => page.evaluate(() => {
+        const r = document.querySelector('#plan .plan-list > .plan-row:not(.tagged)');
+        window.__held = r.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 600000 });
+      });
+      const frames = () => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)))));
+      const side = () => page.evaluate(() => document.getElementById('plan').dataset.side || null);
+      await hold();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await frames();
+      assert.equal(await side(), 'open', 'the laptop\'s panel, before any motion ends');
+      await page.evaluate(() => window.__held.cancel());
+      await settled(page);
+      await hold();
+      await page.setViewportSize({ width: 390, height: 844 });
+      await frames();
+      assert.equal(await side(), null, 'the phone\'s plan, before any motion ends');
+      await page.evaluate(() => window.__held.cancel());
+      await settled(page);
+      const after = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        return { state: el.dataset.state, side: el.dataset.side || null, bottom: el.getBoundingClientRect().bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top };
+      });
+      assert.equal(after.state, 'open');
       assert.ok(Math.abs(after.bottom - after.dockTop) <= 0.5, `the open plan stands on the dock: ${JSON.stringify(after)}`);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
