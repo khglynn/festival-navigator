@@ -348,7 +348,9 @@ build log (`SHARE-BUILD.md` on `live/share`, items 7, 10f, 15–19).
 - **Why they came out.** v101's widen test ("a card grown in the open plan, then the
   window widened to a laptop and back", in `tests/browser/plan-drag.test.mjs`) failed on
   CI's Linux WebKit on branches carrying the catches: runs 36288154945 (b2206a5) and
-  36290138756 (release/share 58d423b), each leaving `data-side="open"` on a phone. Two
+  36290138756 (release/share 58d423b), each leaving `data-side="open"` on a phone. (Run
+  36290075549 on 89a3f92 failed a different v101 test once: in WebKit at 1280 the peek
+  never came back after the welcome card. It isn't proven to be the same cause.) Two
   fixes didn't hold (round three's settle in measure, round four's flip rule), and no
   local run reproduced it, even with animations starting 700, 1200 or 2000 ms late. Main
   (v102) passes the same test. The refit's state had come to depend on timing it cannot
