@@ -71,7 +71,7 @@ crew link, no database writes (previews and `vercel dev` use production's).
    guard, `holdForShare`). The signature is per night (`rowsKey`, plus the drop-in
    lines). The per-day Share sends the day at the top, with a link that opens on that
    night (`linkOf(id)`). npm test shows the prototype's same four expected reds.
-2. **P1 (in progress, builder, from 31d06f2):** the prototype becomes the product.
+2. **P1 (done at 599138d, builder, from 31d06f2):** the prototype becomes the product.
    Baseline on 31d06f2: `npm test` 1262 tests, 4 fail (the three the prototype turned
    red, plus the SW stamp); `plan-share` 39 tests, 4 fail (the button's words: the
    prototype says "Share today's picks" where the suite says "Share our picks");
@@ -140,3 +140,23 @@ crew link, no database writes (previews and `vercel dev` use production's).
       test ("the menu opens over the open plan and leaves it open"). The prototype
       passes both new tests: it already behaved this way, and the old tests were the
       stale half.
+   g. **599138d** the browser suites read the days list: plan-share's button words
+      ("Share today’s picks", "Copy today’s picks"; red on main, which says "Share our
+      picks"), plan-drag's grown-card keys carry the night, and the pinned catch runs
+      at Portola's last night (Sunday 11:30 PM), where the open window is shorter
+      than the screen. On Saturday the days list already fills it, so a pin cannot
+      change its height and the test's own precondition failed (`pinned 744`,
+      `caught.height 744`).
+   **Gate on 599138d** (a snapshot of HEAD): `npm test` 1278 tests, 1275 pass, 1 fail
+   (the SW stamp), 2 skipped; plan-share 39/39 at 0 and at 700; plan-drag 38/39 at 0
+   and at 700 (the one skip is WebKit's keyboard test, on purpose).
+   **Doubts.** (1) `thinnedWords` is a copy of v104's in wall.js until the merge; the
+   hunk is v104's side. (2) peekOf's `people` option, `hasAny` and planPicks'
+   `highlight` still exist, read only by tests: the app filters by planOf now. P3
+   removes them with the highlighted Share's tests. (3) A stray grid set's `dropIn`
+   was the prototype's gap, closed here with a test. (4) A single stop that is over
+   folds into Earlier (the old one-night list waited for two); the design's frames
+   show it, so it stands. (5) A drop-in venue is judged by the trip rule like any
+   venue: a room across town open since 6 PM is not "worth the trip" at 7 (the tail
+   rule). Portola's rooms are on the grounds, so nothing moves; the design didn't
+   cover it.
