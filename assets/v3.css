@@ -2050,7 +2050,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
 .plan-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
 .plan-row.past { opacity: .42; }
-/* ---- the plan-days round (2026-09-26, design branch) ----------------------
+/* ---- every day, a drop-in room (the plan-days build, 2026-09-26) ------------
  * Every day in the open plan: an in-list day head per night after the one the
  * list lands on (the wall's head grammar, the weekday in the header colour,
  * the date in the sub); a night with no stop says why in one quiet line;
@@ -2075,18 +2075,6 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-row.scattered.drift .plan-what .nm { font-style: normal; }
 .plan-row.scattered.drift .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
 .plan-row.scattered.drift .plan-n b { font-size: 14px; color: var(--text-body); }
-.plan-row.back { --plan-nm: 13px; }
-.plan-row.back .plan-what .nm { font-weight: 600; color: var(--text-body); }
-.plan-row.back .plan-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
-.plan-row.back .plan-node { width: 7px; height: 7px; margin-top: 5px; background: var(--plan-bg, var(--dock));
-                            box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--plan-bg, var(--dock)); }
-.plan-row.back .plan-n b { font-size: 14px; color: var(--text-body); }
-/* A highlight (the people menu's "just Ross") dims the stops and forks none
- * of them is in — the wall card's .dim, on the row's CONTENT: the row's own
- * opacity belongs to the peek's window and to .past, and the path through the
- * nodes stays unbroken. plan-shelf.js fades it in place (--plan-dim). */
-.plan-row.dim > .plan-node, .plan-row.dim > .plan-what, .plan-row.dim > .plan-when, .plan-row.dim > .plan-n,
-.plan-grow.dim > .sheet-card { opacity: var(--plan-dim); }
 
 /* 4 · how many picked it ("5 picked") */
 .plan-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
@@ -2110,7 +2098,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-grow.some .sheet-card .f-name { font-size: 14.5px; }
 
 /* ---- the phone: the shelf that is the peek and the day ---------------------- */
-.plan-shelf { --plan-bg: var(--dock); --plan-dim: .28; position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
+.plan-shelf { --plan-bg: var(--dock); position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
               display: flex; flex-direction: column; max-height: calc(100dvh - var(--dock-h) - 56px);
               background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
               box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }

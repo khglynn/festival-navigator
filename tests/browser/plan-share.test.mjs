@@ -99,7 +99,7 @@ async function until(ok, what, ms = 6000) {
   while (Date.now() < end) { if (await ok()) return; await sleep(50); }
   assert.fail(`timed out waiting: ${what}`);
 }
-// The or-line under the NOW row (planList draws it after the row and its
+// The or-line under the NOW row (planDays draws it after the row and its
 // grown card, keyed to the row's stop).
 const orLine = (page) => page.evaluate(() => {
   const now = document.querySelector('#plan .plan-row.tagged');

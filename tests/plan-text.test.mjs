@@ -21,7 +21,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const P = await import('../js/v3/plan.js');
-const { planText, planPicks, planList } = await import('../js/v3/plan-rows.js');
+const { planText, planPicks, planDays } = await import('../js/v3/plan-rows.js');
 const { passesPeople } = await import('../js/v3/filters.js');
 const state = await import('../js/state.js');
 const NINE = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/plan-crew-nine.json'), 'utf8'));
@@ -37,6 +37,11 @@ const ctx = { picks: NINE.picks };
 const TOKEN = 'madeuptoken_0123456789'; // made up, never a real link
 const linkFor = (night) => `https://fest.kevinhg.com/f/portola-2026#g=${TOKEN}&f=portola-2026&plan=${night}`; // app.js planLink's shape
 const LINK = linkFor('2026-09-26');
+
+// The open plan's rows for the night it lands on (plan-rows.js planDays, the
+// list the shelf draws): the rows that night carries, the Earlier line included.
+const nightRows = (route, { ctx: cx, plan: pl, peek = null, nowMin = null }) => [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin })
+  .querySelectorAll('.plan-row')].filter((r) => r.dataset.night === route.id);
 
 // What app.js hands planText for a moment: the peek's night, the clock on it.
 function at(iso, highlight = []) {
@@ -176,7 +181,7 @@ test('Friday 8:45 PM: an or-line the open plan does not show is not in the Share
   const { route, opts, text } = at('2026-09-25T20:45:00-07:00');
   assert.match(text, /1015 Folsom for 2manydjs @ ~12:30am/);
   assert.doesNotMatch(text, /Regency Ballroom/, 'the Regency stop is over, and its later or-line is not the row\'s');
-  const rows = [...planList(route, opts).querySelectorAll('.plan-row')].filter((r) => !r.classList.contains('past')).map((r) => r.textContent);
+  const rows = nightRows(route, opts).filter((r) => !r.classList.contains('past')).map((r) => r.textContent);
   assert.ok(!rows.some((t) => t.includes('Regency Ballroom')), 'the rows show no Regency line either');
 });
 
@@ -219,7 +224,7 @@ test('the Share only ever names what the open plan shows, and "now" only while i
           const nowMin = now && now.night.id === peek.night.id ? now.minutes : null;
           const key = [peek.night.id, nowMin, peek.tag, peek.stop.from, peek.stop.place.id].join('|');
           if (!shown.has(key)) {
-            shown.set(key, [...planList(peek.night, { ctx: cx, plan: pl, peek, nowMin }).querySelectorAll('.plan-row')]
+            shown.set(key, nightRows(peek.night, { ctx: cx, plan: pl, peek, nowMin })
               .filter((r) => !r.classList.contains('past') && !r.classList.contains('earlier')).map((r) => r.textContent));
           }
           const rows = shown.get(key);

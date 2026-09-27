@@ -76,6 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
+import { thinnedWords } from './wall.js'; // the List's words for a highlight with nothing here (v103's)
 import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
@@ -1192,7 +1193,7 @@ function setPeopleFilter(names) {
   renderPersonChips();
   if (zoomedCard()) { repaintWall(); return; }
   dimInPlace();
-  paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
+  paintPlan(); // the plan re-plans for them (plan.js rule 10), and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
 function dimInPlace() {
@@ -1293,14 +1294,10 @@ function paintNowTabs(date = ctx.now || new Date()) {
 function currentPlan() {
   if (planDirty || !planModel) {
     const fest = state.fest();
-    // The plan-days round (design branch): the highlight is an input now
-    // (rule 10 — it filters the route; bodies are still seated on the whole
-    // crew), and rule 9's drop-in rooms. `window.__planDesign` is the frame
-    // rig's switch between the round's options (DESIGN-ONLY: the build keeps
-    // the chosen rule and drops the switch).
-    const design = (typeof window !== 'undefined' && window.__planDesign) || {};
+    // The highlight is an input (plan.js rule 10): it filters the route to
+    // the highlighted people, and bodies are still seated on the whole crew.
     planModel = fest ? planOf(fest, { picks: ctx.picks, members: state.activePeople().map(([n]) => n), folded: ctx.folded,
-      people: design.filter === false ? [] : (ctx.filterPeople || []), dropIn: design.dropIn || 'declared', groupBar: design.groupBar || null }) : null;
+      people: ctx.filterPeople || [] }) : null;
     planDirty = false;
     planGen += 1;
   }
@@ -1316,8 +1313,8 @@ function currentPlan() {
 //   · a night ahead only when it is TOMORROW's — after tonight's last stop the
 //     peek says where we start tomorrow, and the days before a festival have
 //     no peek at all (Kevin, 2026-09-26: "tomorrow only, as built");
-//   · with a highlight on, only the highlighted people's stops (peekOf) —
-//     and the rows none of them is in step back, as their cards do.
+//   · with a highlight on, the plan is theirs (plan.js rule 10): the peek
+//     reads their route, and nothing dims.
 function planAnswer(date) {
   const fest = state.fest();
   if (!fest || !state.getCrewToken() || ctx.query) return null;
@@ -1326,12 +1323,7 @@ function planAnswer(date) {
   if ($('screen-app').querySelector(':scope > .bring-offer')) return null;
   const plan = currentPlan();
   if (!plan || !plan.available) return null;
-  // Rule 10: the route is already the highlighted people's, so nothing dims
-  // and the peek reads the route as it is (DESIGN-ONLY switch: filter false
-  // keeps today's dim).
-  const design = (typeof window !== 'undefined' && window.__planDesign) || {};
-  const highlight = design.filter === false ? (ctx.filterPeople || []) : [];
-  let peek = peekOf(plan, fest, date, { people: highlight });
+  let peek = peekOf(plan, fest, date);
   const at = planAt(plan, fest, date);
   const tonight = at ? at.night.iso : festivalClock(date, fest.timezone || null).iso;
   if (peek && !peek.today && peek.night.iso !== isoAfter(tonight)) peek = null;
@@ -1373,11 +1365,11 @@ function planAnswer(date) {
   // A night with no stop says why, in one quiet line (plan.js night().why).
   const emptyWords = (route) => {
     if (route.why === 'no-times') return 'No set times yet';
-    if (route.why === 'unpicked') return plan.group ? capital(thinnedWordsLocal(plan.highlight, ctx.meName)) : 'Nothing picked yet';
+    if (route.why === 'unpicked') return plan.group ? capital(thinnedWords(plan.highlight, ctx.meName)) : 'Nothing picked yet';
     return plan.group ? 'Never together — no stop' : 'Scattered all day';
   };
   return {
-    plan, peek, route: peek.night, gen: planGen, highlight,
+    plan, peek, route: peek.night, gen: planGen,
     nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: dayOf(landing).sub,
@@ -1397,15 +1389,6 @@ function planAnswer(date) {
 }
 const FULL_DAY = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
 const capital = (w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w);
-// v103's words for "nothing these people picked" (wall.js thinnedWords on
-// origin/live/v103, 4b7f92d). DESIGN-ONLY copy: the build imports v103's.
-function thinnedWordsLocal(people, meName = null) {
-  const who = (people || []).map((p) => (p === meName ? 'you' : p));
-  if (!who.length) return '';
-  if (who.length === 1) return `nothing ${who[0]} picked`;
-  if (who.length === 2) return `nothing ${who[0]} or ${who[1]} picked`;
-  return 'nothing they picked';
-}
 // "9 picking" for the crew; under a highlight, who: "Gus", "you + Cy",
 // "Ana, Cy + Hal", "5 of us".
 function pickingWords(plan) {

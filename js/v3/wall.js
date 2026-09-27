@@ -1891,6 +1891,19 @@ function foldPast(root, ctx, { days, weekends }) {
   }
 }
 
+// The words for a highlight with nothing here: "nothing Ross picked" — the
+// List's quiet line (v103, origin/live/v103 4b7f92d) and Our picks' empty day
+// (plan-days). v103's function byte for byte, at v103's place: at the v104
+// merge this is one hunk, and v104's side (which carries the same function)
+// is the one to keep.
+export function thinnedWords(people, meName = null) {
+  const who = people.map((p) => (p === meName ? 'you' : p));
+  if (!who.length) return '';
+  if (who.length === 1) return `nothing ${who[0]} picked`;
+  if (who.length === 2) return `nothing ${who[0]} or ${who[1]} picked`;
+  return 'nothing they picked';
+}
+
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches(NOW_HOSTS) ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll(NOW_HOSTS)]) {

@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, hasAny, STEP } from './plan.js';
+import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, STEP } from './plan.js';
 
 // What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
 // was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
@@ -160,7 +160,7 @@ const approxOf = (stop, picks) => {
 // tag 'now': the time says till when, the count is the count at this minute.
 // tag 'next': the time says from when (with the weekday when the stop is not
 // tonight's). Otherwise the quiet start. `grow` says the stop's real card is
-// grown under it (planList puts it there as the row's next sibling, so the
+// grown under it (planDays puts it there as the row's next sibling, so the
 // row stays one row tall — the peek's window is exactly the row); a grown
 // stop's faces are on its card, not repeated on the row.
 export function stopRow(stop, opts) {
@@ -287,21 +287,8 @@ function dropInRow(d, { ctx, plan, nowMin = null }) {
   return r;
 }
 
-// The lighter touch's repeat (the rejected alternative, for frames): the
-// route going back to a drop-in room it already stopped at.
-function backRow(it, { plan }) {
-  const r = mk('div', 'plan-row back');
-  r.dataset.stop = `back|${stopKey(it)}`;
-  const w = mk('span', 'plan-what');
-  const nm = mk('span', 'nm');
-  nm.append(mk('i', null, 'back to'), whereOf(it));
-  w.appendChild(nm);
-  r.append(mk('span', 'plan-node'), w, whenEl({ text: quietClock(it.from), soft: true }), countEl(it.count, plan));
-  return r;
-}
-
-// Two or more stops over fold into one line — the List's grammar for the
-// past (`EARLIER · N STOPS ⌄`). It is a button: it opens in place.
+// What is over folds into one line — the List's grammar for the past
+// (`EARLIER · N STOPS ⌄`). It is a button: it opens in place.
 function earlierRow(n, open, onToggle, days = []) {
   const r = mk('button', 'plan-row earlier');
   r.type = 'button';
@@ -357,10 +344,10 @@ export function rowsKey(route, { plan, peek = null, nowMin = null } = {}) {
 // lines, the scattered stretches, and rule 9's quiet line merged in at its
 // start. `route` is plan.night(id); `peek` is peekOf's answer (its stop is
 // tagged when it is on this night); `nowMin` is the clock on this night's
-// axis (null for a night that is not tonight) — what is over is `.past`;
-// `highlight` dims the rows none of them is in (today's model; under rule 10
-// the route is already theirs and nothing dims). Returns an array of rows.
-function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(), nightLabelOf = () => '', dayWord = '', highlight = [], skip = null } = {}) {
+// axis (null for a night that is not tonight) — what is over is `.past`.
+// Nothing dims: under a highlight the route is already theirs (plan.js rule
+// 10). Returns an array of rows.
+function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(), nightLabelOf = () => '', dayWord = '', skip = null } = {}) {
   const rows = [];
   if (!route) return rows;
   const tagged = peek && peek.stop ? stopKey(peek.stop) : null;
@@ -373,27 +360,19 @@ function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set
     const past = overAt(it, nowMin);
     if (it.kind === 'scattered') { const r = scatteredRow({ ...it, nightId: route.id }, plan, ctx.meName); if (past) r.classList.add('past'); rows.push(r); continue; }
     if (it.kind === 'dropin') { const r = dropInRow(it, { ctx, plan, nowMin }); if (past) r.classList.add('past'); rows.push(r); continue; }
-    if (it.kind === 'back') { const r = backRow(it, { plan }); if (past) r.classList.add('past'); rows.push(r); continue; }
     const key = stopKey(it);
     const tag = key === tagged ? peek.tag : null;
     const r = stopRow(it, {
       ctx, plan, tag, count: tag ? peek.count : it.count, faces: true, also: true,
       grow: grown.has(key), nightLabelOf, dayWord: tag === 'next' ? dayWord : '',
     });
-    const dim = !hasAny(it, highlight);
     if (past) r.classList.add('past');
-    if (dim) r.classList.add('dim');
     rows.push(r);
-    if (grown.has(key)) {
-      const g = grownEl(it, ctx);
-      if (dim) g.classList.add('dim');
-      rows.push(g);
-    }
+    if (grown.has(key)) rows.push(grownEl(it, ctx));
     const f = orLineOf(it, { plan, peek, nowMin });
     if (f) {
       const fr = forkRow(f, it, { ctx, plan });
       if (past) fr.classList.add('past');
-      if (!hasAny(f, highlight)) fr.classList.add('dim');
       rows.push(fr);
     }
   }
@@ -413,23 +392,6 @@ function markEnds(rows) {
   flush();
 }
 
-// The single day (the peek's night) with its own Earlier fold — the model
-// before the plan-days round, kept for the tests that read one night.
-export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(),
-  earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', highlight = [] } = {}) {
-  const list = mk('div', 'plan-list');
-  if (!route) return list;
-  const rows = [];
-  const over = nowMin == null ? [] : route.items.filter((i) => i.kind === 'stop' && i.to <= nowMin);
-  const folding = over.length > 1 && !earlierOpen;
-  if (over.length > 1) rows.push(earlierRow(over.length, earlierOpen, onEarlier));
-  rows.push(...dayRows(route, { ctx, plan, peek, nowMin, grown, nightLabelOf, dayWord, highlight,
-    skip: folding ? (i) => i.kind !== 'dropin' && i.to <= nowMin : null }));
-  markEnds(rows);
-  rows.forEach((r) => list.appendChild(r));
-  return list;
-}
-
 // ---- every day (the plan-days round, 2026-09-26) ---------------------------------
 // Kevin: "yes focus on today but scroll to all future days and include our
 // expand past days show option." The open plan lands on the peek's night and
@@ -439,7 +401,8 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
 // Fri · 2 stops", open: "Hide earlier"). The peek night's own head is the
 // shelf's head while its rows lead the list; once the past is open above it,
 // it gets an in-list head like every other day.
-//   `plan`, `peek`: as planList; `from`: the night id the list lands on (the
+//   `plan`: plan.js planOf's; `peek`: peekOf's answer (its stop is tagged
+//   where it is drawn); `from`: the night id the list lands on (the
 //   peek's); `nowMin`: the clock on that night (null when it is not tonight);
 //   `dayOf(id)` → { weekday, sub } for a night's head; `emptyWords(route)` →
 //   the line a night with no stop shows.

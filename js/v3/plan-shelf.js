@@ -245,7 +245,8 @@ function railBottom() {
 
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
-//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
+//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, who,
+//     dayOf, emptyWords,          (each night's head and words, planDays)
 //     fest, day, linkOf, opens,   (the Share's: planText, and what its link opens on)
 //     repaint }                   (app.js paintPlan at this minute: the Share's first step)
 export function paintPlanShelf(host, ctx, answer) {
@@ -291,7 +292,7 @@ function signature(a) {
   const rows = a.plan && a.plan.nights
     ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id), a.route && n.id === a.route.id ? a.nowMin : null)}`).join(';')
     : nightRows(a.route, a.nowMin);
-  return [a.gen, a.route && a.route.id, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(','), (a.plan && a.plan.group || []).join(',')].join('|');
+  return [a.gen, a.route && a.route.id, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.plan && a.plan.group || []).join(',')].join('|');
 }
 
 // The night the view is reading: the day of the first row whose bottom is
@@ -583,21 +584,14 @@ function redraw() {
 
 function snapshot() {
   const rows = new Map();
-  const dims = new Set();
   if (listEl) {
     for (const r of listEl.children) {
-      if (!r.dataset.stop) continue;
-      rows.set(r.dataset.stop, r.getBoundingClientRect().top);
-      if (r.classList.contains('dim')) dims.add(r.dataset.stop);
+      if (r.dataset.stop) rows.set(r.dataset.stop, r.getBoundingClientRect().top);
     }
   }
-  return { rows, dims, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
+  return { rows, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
 }
-// A row's content — never the row, whose opacity is the window's — steps back
-// or forward when a highlight changes (v3.css .dim), the wall's dim in place.
-const DIMMED = ':scope > .plan-node, :scope > .plan-what, :scope > .plan-when, :scope > .plan-n, :scope > .sheet-card';
 
-const dimOf = (r) => Number(window.getComputedStyle(r).getPropertyValue('--plan-dim')) || 0.28;
 function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
@@ -612,13 +606,6 @@ function play(before, { duration, easing }) {
     if (was == null) {
       if (shown > 0) r.animate([{ opacity: 0 }, { opacity: shown }], { duration: CASCADE_MS, delay: arrivals++ * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       continue;
-    }
-    const dimmed = r.classList.contains('dim');
-    if (before.dims.has(r.dataset.stop) !== dimmed) {
-      for (const c of r.querySelectorAll(DIMMED)) {
-        const to = Number(window.getComputedStyle(c).opacity);
-        c.animate([{ opacity: dimmed ? 1 : dimOf(r) }, { opacity: to }], { duration, easing });
-      }
     }
     const dy = was - now - (before.top - top);
     // The row that WAS the peek's leaves the window as it scrolls by: seen
@@ -868,7 +855,7 @@ async function sharePlan() {
   const landed = !!a.route && id === a.route.id;
   const route = landed ? a.route : a.plan.night(id);
   const text = planText(route, {
-    ctx: ctxRef, plan: a.plan, peek: landed ? a.peek : null, nowMin: landed ? a.nowMin : null, highlight: a.highlight || [],
+    ctx: ctxRef, plan: a.plan, peek: landed ? a.peek : null, nowMin: landed ? a.nowMin : null,
     fest: a.fest || '', day: a.nightLabelOf ? a.nightLabelOf(id) : (a.day || ''), today: landed && !!a.peek.today, link: a.linkOf ? a.linkOf(id) : '',
   });
   // A new build waits while the sheet is up or the copy is on its way: a
