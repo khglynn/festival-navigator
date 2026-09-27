@@ -113,9 +113,15 @@ export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !l
 export const planNight = () => (planHere() && data && data.route ? data.route.iso : null);
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
+// Asked of the answer the rows on screen were drawn from (`drawn`), never the
+// last paint's (`data`): under a hand the rows wait (flushHeld), and at a
+// NEXT→NOW minute `data` said NOW while the peek still read NEXT, so the tab
+// stepped aside for a NOW nobody could see — no NOW anywhere, and two the other
+// way round (Sol on the v104 release, 2026-09-27; in the shelf since v103).
+// When the held rows are drawn, the answer's onDrawn repaints the tab.
 export function planShowsNow() {
-  return (mode === 'peek' || mode === 'open') && !leaving && !!data && !!data.peek
-    && data.peek.tag === 'now' && !!el && el.getClientRects().length > 0;
+  return (mode === 'peek' || mode === 'open') && !leaving && !!drawn && !!drawn.peek
+    && drawn.peek.tag === 'now' && !!el && el.getClientRects().length > 0;
 }
 
 function mk(tag, cls) {
@@ -1005,6 +1011,9 @@ function flushHeld() {
   sig = signature(data);
   draw();
   measure();
+  // The rows now say what the last paint said: the NOW tab asks again
+  // (planShowsNow reads the rows drawn), so there is still exactly one NOW.
+  if (typeof data.onDrawn === 'function') data.onDrawn();
 }
 // A settle still playing when a hand or a key takes the window: the window is
 // caught where it stands on screen, its motion stopped, and whatever comes

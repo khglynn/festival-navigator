@@ -26,6 +26,8 @@ const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 picked
+const SAT_444 = new Date('2026-09-26T16:44:00-07:00'); // the peek says NEXT, and a set is live on the wall
+const SAT_445 = new Date('2026-09-26T16:45:00-07:00'); // the minute the peek turns to NOW
 // The last night's last hours: the open list is short (no day after it), so
 // the window's own height is under the screen's and a grown card changes it.
 const SUN_1130 = new Date('2026-09-27T23:30:00-07:00'); // Public Works, then the Midway and the Great Northern
@@ -478,6 +480,47 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(g.state, 'open');
       assert.equal(g.running, 0, 'nothing animates after the hand lets go');
       assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // ONE NOW under a hand (Sol on the v104 release, 2026-09-27; in the shelf
+  // since v103). While a hand holds the window, a new answer waits to be drawn
+  // (plan-shelf.js flushHeld), and the day row's NOW tab asked the waiting
+  // answer, not the rows on screen: at 4:45 PM the peek turns from NEXT to NOW,
+  // and with the hand down the tab stepped aside for a NOW the peek did not
+  // show yet. Counted as a person sees them: the tab (shown, not leaving) and
+  // the peek's NOW tag. The hand moves past the tap slop and comes back, so its
+  // release settles to the peek rather than opening the plan.
+  test(`${name}: at a NEXT→NOW minute under a still hand there is exactly one NOW — the tab while the peek still says NEXT, the peek's once the hand lets go`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { at: SAT_444 });
+    try {
+      const nows = () => page.evaluate(() => {
+        const tab = document.getElementById('dock-now');
+        const plan = document.getElementById('plan');
+        const tag = (plan.querySelector('.plan-row[data-tag]') || {}).dataset || {};
+        return { tab: !!tab && !tab.hidden && !tab.dataset.leaving, peek: tag.tag || null, state: plan.dataset.state,
+          count: (tab && !tab.hidden && !tab.dataset.leaving ? 1 : 0) + (!plan.hidden && tag.tag === 'now' ? 1 : 0) };
+      });
+      assert.deepEqual(await nows(), { tab: true, peek: 'next', state: 'peek', count: 1 }, 'at 4:44 PM the peek says NEXT and the tab is the one NOW');
+      const from = await grabAt(page);
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      for (let k = 1; k <= 4; k++) { await page.mouse.move(from.x, from.y - 5 * k); await sleep(16); }
+      for (let k = 3; k >= 0; k--) { await page.mouse.move(from.x, from.y - 5 * k); await sleep(16); }
+      assert.equal(await page.evaluate(() => document.body.dataset.busy), 'plan-drag', 'the hand is on the window');
+      await page.clock.setFixedTime(SAT_445);
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await sleep(300);
+      const held = await nows();
+      assert.equal(held.count, 1, `one NOW while the hand holds the window: ${JSON.stringify(held)}`);
+      assert.deepEqual([held.tab, held.peek], [true, 'next'], 'the rows wait for the hand, and the tab stays with them');
+      await page.mouse.up();
+      await settled(page);
+      const after = await nows();
+      assert.deepEqual(after, { tab: false, peek: 'now', state: 'peek', count: 1 }, `once the hand lets go, the peek's NOW is the one: ${JSON.stringify(after)}`);
+      // (The tick's visibilitychange asks the service worker to update, and the
+      // harness blocks it: the throw the other tick tests filter.)
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); }
   });
 }

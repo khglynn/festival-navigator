@@ -1655,6 +1655,9 @@ function planAnswer(date) {
     // The Share's first step: this paint again at the tap's minute, so the
     // words come from the rows on screen (plan-shelf.js sharePlan).
     repaint: () => paintPlan(),
+    // Rows that waited for a hand are drawn when it lets go (plan-shelf.js
+    // flushHeld): the NOW tab asks again then, of the rows on screen.
+    onDrawn: () => paintNowTabs(),
   };
 }
 const FULL_DAY = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
