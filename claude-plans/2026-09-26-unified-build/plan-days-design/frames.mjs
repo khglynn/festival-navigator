@@ -18,6 +18,9 @@ const SAT_645 = PT('2026-09-26T18:45:00');
 const FRI_7PM = PT('2026-09-25T19:00:00');
 const ACL_SAT_W2 = CT('2026-10-10T16:00:00'); // ACL's second Saturday, 4 PM Austin
 const ACL_SUN_W1 = CT('2026-10-04T19:00:00');
+const SUN_750 = PT('2026-09-27T19:50:00'); // P4: Zara Larsson on till 8:05, then ten minutes of Tiësto
+const SUN_810 = PT('2026-09-27T20:10:00');
+const SUN_925 = PT('2026-09-27T21:25:00'); // Ben, Eli, Gus: ten minutes of Swedish House Mafia between two Warehouse sets
 
 const OUT = new URL('./shots/', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
@@ -198,6 +201,17 @@ FRAMES.push(
   phone('D3-share-three-390', SAT_645, async (p) => { await openPlan(p); await highlight('Ana', 'Cy', 'Hal')(p); await closeMenus(p); await tapShare(p); }, { ...opts('declared'), expect: 'Our picks for Sat' }),
   phone('D4-share-gus-390', SAT_645, async (p) => { await openPlan(p); await highlight('Gus')(p); await closeMenus(p); await tapShare(p); }, { ...opts('declared'), expect: '"shared":"Picks for Sat' }),
   phone('D5-acl-bare-day-390', ACL_SUN_W1, async (p) => { await openPlan(p); await scrollToNight(p, '2026-10-05'); }, { fest: 'acl-2026', ...opts('declared'), expect: 'Nothing to share Monday' }),
+);
+// E — where a stop ends (P4, 2026-09-27): a blip after a set is over stands
+// as a short stop of its own. Is it noise? The nine meet one (Tiësto, 8:05–
+// 8:15, before Overmono at the same Warehouse); Ben, Eli and Gus meet one
+// (Swedish House Mafia, 9:20–9:30, between two Warehouse sets).
+FRAMES.push(
+  phone('E1-sun-750-open-390', SUN_750, openPlan, { ...opts('declared'), expect: 'Tiësto, Warehouse, 8:05 PM' }),
+  phone('E2-sun-810-peek-390', SUN_810, async () => {}, { ...opts('declared'), expect: 'Now: Tiësto' }),
+  phone('E3-sun-810-open-390', SUN_810, openPlan, { ...opts('declared'), expect: 'Now: Tiësto' }),
+  desk('E4-sun-810-corner-1280', SUN_810, async () => {}, { ...opts('declared'), expect: 'Tiësto' }),
+  phone('E5-sun-925-ben-eli-gus-390', SUN_925, async (p) => { await openPlan(p); await highlight('Ben', 'Eli', 'Gus')(p); await closeMenus(p); }, { ...opts('declared'), expect: 'Swedish House Mafia' }),
 );
 const only = process.argv.slice(2);
 const todo = FRAMES.filter((f) => !only.length || only.some((o) => f.id.startsWith(o)));
