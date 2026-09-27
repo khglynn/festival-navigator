@@ -440,7 +440,16 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
         await openPlan(page, from >= 720);
         await toSunday(page);
         await page.setViewportSize(to >= 720 ? { width: 1280, height: 800 } : { width: 390, height: 844 });
-        await sleep(400); // the page's resize timer (app.js, 160 ms) and its refit
+        // The shelf has refitted to the new layout once its side says so: the
+        // open laptop panel is `data-side="open"`, the phone's shelf has none
+        // (plan-shelf.js settleState). Polled from Node on a real-time
+        // deadline, not a fixed beat (a loaded runner's resize timer runs late).
+        const desk = to >= 720;
+        const end = Date.now() + 4000;
+        while (await page.evaluate(() => document.getElementById('plan').dataset.side === 'open') !== desk) {
+          assert.ok(Date.now() < end, `the shelf refits to the ${desk ? 'laptop' : 'phone'} layout`);
+          await sleep(50);
+        }
         await settled(page);
         assert.equal(await planState(page), 'open', 'the plan stays open across the layout');
         const r = await read(page);
