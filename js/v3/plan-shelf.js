@@ -365,12 +365,16 @@ function paintHead(id) {
 // 2026-09-27). Offsets, not rects: the list is the rows' offsetParent (as
 // nightAtTop reads it), and a row in motion keeps its offset.
 //
-// Only while the rows alone overflow the list's box — the shelf at its cap,
-// or the laptop's panel, which is full height anyway. A plan that fits has
-// nowhere to scroll: room there would only be a gap under its last row,
-// growing a content-sized shelf, and a jump in the window's motion. (How a
-// later day reaches the top of a plan that fits is Kevin's open question —
-// the plan-days build log, the review's fixes.)
+// While the plan has a later day (`data-later`, draw), or while the rows
+// alone overflow the list's box. A later day is the short-plan default
+// (Kevin's to overrule; the plan-days build log, 2026-09-27): the phone's
+// shelf is laid out at its cap and the list fills the window (v3.css) — the
+// laptop's panel is full height anyway — so a plan that fits can still bring
+// its later day to the top, where the head and the Share name it. Before it, a plan that fitted
+// had nowhere to scroll, and its later day could never be shared from the
+// plan. A plan whose last day is today stays content-sized and has no room:
+// there it would only be a gap under its last row, growing the shelf, and a
+// jump in the window's motion.
 function fitTail() {
   const tail = listEl ? listEl.querySelector(':scope > .plan-tail') : null;
   if (!tail) return;
@@ -379,8 +383,15 @@ function fitTail() {
   const base = parseFloat(window.getComputedStyle(listEl).paddingBottom) || 0;
   const box = listEl.clientHeight;
   const end = tail.offsetTop;
-  const room = last && end + base > box + 0.5 ? Math.max(0, Math.ceil(last.offsetTop + box - end - base)) : 0;
+  const reach = el.hasAttribute('data-later') || end + base > box + 0.5;
+  const room = last && reach ? Math.max(0, Math.ceil(last.offsetTop + box - end - base)) : 0;
   if (tail.style.height !== `${room}px`) tail.style.height = `${room}px`;
+}
+// Whether the plan holds a day after the one it lands on (planDays draws
+// every night from the landing night on).
+function laterDay(a) {
+  const ids = a && a.plan && a.plan.nights ? a.plan.nights.map((n) => n.id) : [];
+  return Math.max(0, ids.indexOf(a && a.route ? a.route.id : null)) < ids.length - 1;
 }
 function onListScroll() {
   if (mode !== 'open' || !data) return;
@@ -477,6 +488,8 @@ function draw() {
     earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
     dayOf: (id) => (a.dayOf ? a.dayOf(id) : {}), emptyWords: a.emptyWords || (() => ''),
   });
+  // A later day: the phone's shelf takes its full height (fitTail).
+  el.toggleAttribute('data-later', laterDay(a));
   // The room under the last day (fitTail): the list's last box, empty.
   const tail = mk('div', 'plan-tail');
   tail.setAttribute('aria-hidden', 'true');

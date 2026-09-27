@@ -33,6 +33,7 @@ const SAT = '2026-10-10';
 const SUN = '2026-10-11';
 const W2_SAT_4PM = new Date('2026-10-10T16:00:00-05:00');   // Arcy Drive on Beatbox, 3:30–4:30
 const W2_SAT_431 = new Date('2026-10-10T16:31:00-05:00');   // it is over: the minute folds it into Earlier
+const W2_SUN_845 = new Date('2026-10-11T20:45:00-05:00');   // The xx on T-Mobile, the festival's last set
 const QUIET_MS = 450; // the shelf swallows the click just after a tap (plan-shelf.js quietUntil, 400)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
@@ -216,9 +217,7 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
         await openPlan(page, desk);
         // Two Saturday cards a person grew, so the plan still overflows once
         // the minute folds Arcy Drive and its NOW card away. A repaint that
-        // leaves a plan short enough to fit has nowhere to hold Sunday at the
-        // top — that is the short plan's case (the last test here, and Kevin's
-        // open question in the build log), not this one.
+        // leaves the plan short enough to fit is the short plan's case (below).
         for (let i = 0; i < 2; i++) {
           const more = page.locator(`#plan button.plan-row[data-night="${SAT}"]:not(.earlier):not(.tagged):not([aria-expanded="true"])`).first();
           await tap(page, more, { at: 0.35 });
@@ -333,9 +332,7 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       } finally { await ctx.close(); }
     });
 
-    // On the laptop the plan fits its panel once the stop goes, and a plan
-    // that fits had no room to bring Sunday up: the short-plan default (next).
-    test(`${how}: a pick taken back that removes a Saturday stop above keeps Sunday at the top`, { skip: skip || (desk && 'the plan fits once the stop goes: the short-plan default, next commit') }, async () => {
+    test(`${how}: a pick taken back that removes a Saturday stop above keeps Sunday at the top`, { skip }, async () => {
       const { ctx, page, doc, errors } = await open(engine, { desk });
       try {
         await openPlan(page, desk);
@@ -349,7 +346,92 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
         assert.deepEqual(errors(), []);
       } finally { await ctx.close(); }
     });
+    // The short-plan default (Kevin's to overrule; the plan-days build log,
+    // 2026-09-27): while a plan has a later day, the phone's open shelf takes
+    // its full height and the list keeps the room to bring every day to the
+    // top — the laptop's panel is full height already. Before it, a plan
+    // that fitted had nowhere to scroll: its later day never reached the
+    // top, so the head and the Share could never name it.
+    test(`${how}: a short plan with a later day lets that day come to the top, and its Share sends it`, { skip }, async () => {
+      const { ctx, page, errors } = await open(engine, { crew: SHORT_CREW, desk });
+      try {
+        await openPlan(page, desk);
+        if (!desk) {
+          const h = await page.evaluate(() => { const el = document.getElementById('plan'); return { h: el.getBoundingClientRect().height, cap: parseFloat(getComputedStyle(el).maxHeight) }; });
+          assert.ok(h.h >= h.cap - 0.5, `the open shelf takes its full height: ${JSON.stringify(h)}`);
+        }
+        await toSunday(page);
+        const text = await share(page);
+        assert.ok(text.endsWith(`&plan=${SUN}`), `the Share sends Sunday:\n${text}`);
+        assert.match(text, /The xx/, text);
+        // Arcy Drive ends and Saturday has nothing left: the plan turns to
+        // Sunday (the peek says where we start tomorrow), still open, and a
+        // plan whose last day is today is content-sized again.
+        await tick(page, W2_SAT_431);
+        assert.equal(await planState(page), 'open', 'the plan stays open as its day turns');
+        const r = await read(page);
+        assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks'], 'the head and the Share name Sunday');
+        if (!desk) {
+          const h = await page.evaluate(() => { const el = document.getElementById('plan'); return { h: el.getBoundingClientRect().height, cap: parseFloat(getComputedStyle(el).maxHeight) }; });
+          assert.ok(h.h < h.cap - 40, `a plan with no later day is content-sized: ${JSON.stringify(h)}`);
+        }
+        assert.deepEqual(errors(), []);
+      } finally { await ctx.close(); }
+    });
+
+    // The repaint case of the same default: the minute folds Arcy Drive and
+    // its NOW card away, and what is left of the crew's plan fits. The view
+    // stays on Sunday — it never goes back to today.
+    test(`${how}: Sunday at the top stays there when the minute folds a stop and leaves the plan short`, { skip }, async () => {
+      const { ctx, page, errors } = await open(engine, { desk });
+      try {
+        await openPlan(page, desk);
+        await toSunday(page);
+        await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; });
+        await tick(page, W2_SAT_431);
+        assert.equal(await page.evaluate(() => document.querySelector('#plan .plan-list').dataset.old), undefined, 'the minute redrew the rows');
+        const fits = await page.evaluate(() => {
+          const list = document.querySelector('#plan .plan-list');
+          const rows = [...list.children].filter((x) => !x.classList.contains('plan-tail'));
+          const last = rows[rows.length - 1];
+          return { end: last.offsetTop + last.offsetHeight + (parseFloat(getComputedStyle(list).paddingBottom) || 0), box: list.clientHeight, earlier: !!list.querySelector('.plan-row.earlier') };
+        });
+        assert.ok(fits.earlier && fits.end <= fits.box + 1, `the premise: Arcy Drive folded, and the rows alone fit the list: ${JSON.stringify(fits)}`);
+        const r = await read(page);
+        assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `after the fold Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+        assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks'], 'the head and the Share still name Sunday');
+        const text = await share(page);
+        assert.ok(text.endsWith(`&plan=${SUN}`), `the Share sends Sunday:\n${text}`);
+        assert.deepEqual(errors(), []);
+      } finally { await ctx.close(); }
+    });
   }
+
+  test(`${name}: a highlight changed under the people menu while Sunday is at the top keeps Sunday there, and the Share sends Sunday`, { skip }, async () => {
+    const { ctx, page, errors } = await open(engine);
+    try {
+      await openPlan(page, false);
+      await toSunday(page);
+      await tap(page, '#dock-you');
+      await page.waitForFunction(() => { const m = document.querySelector('#dock-you-wrap .hl-pop'); return !!m && m.getClientRects().length > 0 && getComputedStyle(m).visibility !== 'hidden'; }, null, { timeout: 4000 });
+      // Ada is this phone: her own day — Saturday's rows change above Sunday.
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Ada"]');
+      await page.waitForFunction(() => /just you/.test(document.querySelector('#plan .plan-head .sub').textContent), null, { timeout: 4000 });
+      await settled(page);
+      let r = await read(page);
+      assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `under the menu, Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+      assert.equal(r.wd, 'SUN');
+      await tap(page, '#dock-you');
+      await page.waitForFunction(() => { const m = document.querySelector('#dock-you-wrap .hl-pop'); return !m || !m.getClientRects().length || getComputedStyle(m).display === 'none'; }, null, { timeout: 4000 });
+      await settled(page);
+      r = await read(page);
+      assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+      assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks']);
+      const text = await share(page);
+      assert.ok(text.endsWith(`&plan=${SUN}`), `the Share sends Sunday:\n${text}`);
+      assert.deepEqual(errors(), []);
+    } finally { await ctx.close(); }
+  });
 
   for (const [from, to] of [[390, 1280], [1280, 390]]) {
     test(`${name}: crossing ${from} → ${to} with Sunday at the top keeps Sunday there`, { skip }, async () => {
@@ -369,8 +451,36 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
     });
   }
 
-  test(`${name}: a plan that fits opens and closes with no gap under its last row and no jump`, { skip }, async () => {
+  // The short plan with a later day opens to the shelf's full height: the
+  // peek is laid out at it, so the open only moves the window up and the
+  // close only moves it down — no frame resizes it (the jump the room grew
+  // in a content-sized shelf, the P1–P3 review) — and the peek's row sits on
+  // the dock before and after.
+  test(`${name}: a short plan with a later day opens at the shelf's full height and closes to the peek with no jump`, { skip }, async () => {
     const { ctx, page, errors } = await open(engine, { crew: SHORT_CREW });
+    try {
+      const peek = await page.evaluate(() => { const el = document.getElementById('plan'); return { h: el.getBoundingClientRect().height, cap: parseFloat(getComputedStyle(el).maxHeight) }; });
+      assert.ok(peek.h >= peek.cap - 0.5, `the peek is laid out at the full height: ${JSON.stringify(peek)}`);
+      assert.ok(await peekOnDock(page) <= 0.5, `the peek’s row ends on the dock: ${await peekOnDock(page)}`);
+      const opening = await framesOf(page, () => tap(page, '#plan .plan-grab'));
+      assert.equal(await planState(page), 'open');
+      const heights = new Set(opening.map((f) => f.h));
+      assert.ok(opening.length > 1 && heights.size === 1 && [...heights][0] === Math.round(peek.h * 10) / 10,
+        `the window keeps its height as it opens: ${peek.h} → ${JSON.stringify([...heights])}`);
+      const top = await page.evaluate(() => document.getElementById('plan').getBoundingClientRect().top);
+      const dock = await page.evaluate(() => document.getElementById('dock').getBoundingClientRect().top);
+      assert.ok(Math.abs(top + peek.h - dock) <= 1, `open, the shelf stands on the dock: top ${top} + ${peek.h} vs the dock at ${dock}`);
+      const closing = await framesOf(page, () => tap(page, '#plan .plan-grab'));
+      assert.equal(await planState(page), 'peek');
+      const shut = new Set(closing.map((f) => f.h));
+      assert.ok(shut.size === 1 && [...shut][0] === Math.round(peek.h * 10) / 10, `the window keeps its height as it closes: ${JSON.stringify([...shut])}`);
+      assert.ok(await peekOnDock(page) <= 0.5, `the peek’s row ends on the dock: ${await peekOnDock(page)}`);
+      assert.deepEqual(errors(), []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: a today-only plan stays content-sized: it opens and closes with no gap under its last row and no jump`, { skip }, async () => {
+    const { ctx, page, errors } = await open(engine, { crew: SHORT_CREW, at: W2_SUN_845 });
     try {
       const peek = await page.evaluate(() => document.getElementById('plan').getBoundingClientRect().height);
       const opening = await framesOf(page, () => tap(page, '#plan .plan-grab'));
@@ -391,7 +501,7 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       });
       assert.ok(box.scroll <= 1, `a plan that fits does not scroll: ${JSON.stringify(box)}`);
       assert.ok(box.gap <= box.pad + 1, `no gap under its last row (${box.last}) past the list’s own padding: ${JSON.stringify(box)}`);
-      assert.deepEqual((await read(page)).wd, 'SAT');
+      assert.deepEqual((await read(page)).wd, 'SUN');
       const closing = await framesOf(page, () => tap(page, '#plan .plan-grab'));
       assert.equal(await planState(page), 'peek');
       const shut = new Set(closing.map((f) => f.h));

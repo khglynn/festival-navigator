@@ -2104,6 +2104,19 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
               background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
               box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }
 .plan-shelf[hidden] { display: none; }
+/* A plan with a later day is laid out at the cap, peek and open alike, so
+ * every day can come to the top of the open list (plan-shelf.js fitTail: the
+ * short-plan default, Kevin's to overrule). The open only moves the window;
+ * a plan whose last day is today stays content-sized. The phone's alone: the
+ * laptop's panel is full height already. */
+@media not all and (min-width: 720px) {
+  .plan-shelf[data-later] { height: calc(100dvh - var(--dock-h) - 56px); }
+}
+/* …and its list fills the window, phone and laptop, the Share at the foot:
+ * a list sized by its rows would be sized by the room under them too, and
+ * the room is measured from the list's box (a circle that left the laptop's
+ * short plan unable to reach its Sunday). */
+.plan-shelf[data-later] .plan-list { flex-grow: 1; }
 /* The frame is the laptop's (below); on a phone it is no box at all. */
 .plan-frame { display: contents; }
 /* The grabber rides the window's top edge and the rows slide under it. */
