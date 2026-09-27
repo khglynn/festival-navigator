@@ -1345,7 +1345,7 @@ function planAnswer(date) {
     nightLabelOf,
     // The Share's words (plan-rows.js planText): "for Sat Portola", the night
     // called what tells it apart, and the link that opens on the plan.
-    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: planLink, opens: opensLine(),
+    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: () => planLink(peek.night.iso), opens: opensLine(),
   };
 }
 const isoAfter = (iso) => {
@@ -1379,9 +1379,12 @@ function paintPlan(date = ctx.now || new Date()) {
   if (planHere() !== menuHasPlan) paintHighlight();
 }
 
-// `&plan=open` (the plan's Share link, crew.js planFromHash): the first paint
-// with this crew's plan on screen opens it — a member's straight away, a
-// newcomer's once the welcome card has gone and the peek has risen. A paint
+// `&plan=<date>` (the plan's Share link, crew.js planFromHash): the first
+// paint with this crew's plan on screen opens it — a member's straight away,
+// a newcomer's once the welcome card has gone and the peek has risen — when
+// the plan is on the link's night. On another (a Saturday text opened on
+// Sunday) the link lands on the wall with its peek: the plan shows one night,
+// and that one is not what the words were about. A paint
 // that finds nothing to open with nothing in the way (the festival's over,
 // or no stop left today or tomorrow) drops the wish: a plan that turns up
 // later is not what the link opened on. While a card is up, the join shelf
@@ -1389,7 +1392,7 @@ function paintPlan(date = ctx.now || new Date()) {
 // The wish is for the link's festival: a phone that keeps this crew on
 // another one lands there (the saved festival wins, state.activateCrew) and
 // the wish goes — that festival's plan is not what the link was about.
-let planOpenFor = null; // { token, fest } while a link's wish is pending
+let planOpenFor = null; // { token, fest, night } while a link's wish is pending
 function openPlanForLink(answer) {
   if (!planOpenFor) return;
   if (planOpenFor.token !== state.getCrewToken() || planOpenFor.fest !== state.activeFestivalId) { planOpenFor = null; return; }
@@ -1401,8 +1404,9 @@ function openPlanForLink(answer) {
   // join's own welcome, or as soon as the shelf is left (planAfterShelf).
   if (joinShelf()) return;
   if (planHere()) {
+    const night = planOpenFor.night;
     planOpenFor = null;
-    if (!planIsOpen()) openPlan();
+    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) openPlan();
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
@@ -2898,11 +2902,12 @@ function inviteLink(meName = null) {
   const view = shareView();
   return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null, view && view.list ? LIST : null);
 }
-// The open plan's Share: the same link and view, opening on Our picks
-// (`&plan=open`, read once at boot). It says no one's name (no `&me=`).
-function planLink() {
+// The open plan's Share: the same link and view, opening on Our picks for
+// the night the words are about (`&plan=<date>`, read once at boot). It says
+// no one's name (no `&me=`).
+function planLink(night) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, null, view ? view.show : null, view && view.list ? LIST : null, { plan: true });
+  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
@@ -4244,9 +4249,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // A link that opens on Our picks: the wish belongs to this crew, and it
   // outlives a join's re-entry (a guest who joins from the welcome card
   // still came for the plan). Any other crew's entry ends it.
-  planOpenFor = pendingPlanOpen && pendingFestHint ? { token, fest: pendingFestHint }
+  planOpenFor = pendingPlanOpen && pendingFestHint ? { token, fest: pendingFestHint, night: pendingPlanOpen }
     : planOpenFor && planOpenFor.token === token ? planOpenFor : null;
-  pendingPlanOpen = false;
+  pendingPlanOpen = null;
   const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -4556,7 +4561,7 @@ let pendingFestHint = null; // &f= from the opened invite link, consumed by ente
 let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingViewHint = null; // &view= — Board or List (Phase 1), consumed by enterApp beside it
-let pendingPlanOpen = false; // &plan=open — the plan's Share link, consumed by enterApp (planOpenFor)
+let pendingPlanOpen = null; // &plan=<date> — the plan's Share link, consumed by enterApp (planOpenFor)
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it

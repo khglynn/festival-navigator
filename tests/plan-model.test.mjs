@@ -71,7 +71,10 @@ const stopOf = (plan, id, name) => stops(plan, id).find((s) => s.acts.some((a) =
 // Parcels at 3) — so Soulwax holds the route until 10:55 and Public Works
 // starts there; and on Sunday Eli stays at Public Works through Overmono
 // (both 3) instead of leaving at 1:30 AM for SG Lewis (3), so the Great
-// Northern stop is three of us, not four.
+// Northern stop is three of us, not four. And one line moved with the model on
+// the Share's release head: a stop never outlasts its own place, so Zara
+// Larsson's stop ends at 8:05 with her set, where a ten-minute blip at the
+// Warehouse used to carry it to 8:15 (Sol, 2026-09-26).
 const THU = ['most 9:30 PM–12 AM 5 Regency Ballroom'];
 const FRI = ['some 8 PM–8:45 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
 const SAT = [
@@ -91,7 +94,7 @@ const SAT = [
 const SUN_TAIL = [
   'most 5:35 PM–6:35 PM 5 Pier Stage (Mochakk)', // folded: starts 5:35 (bodies placed before hiding)
   'some 6:45 PM–7:05 PM 4 Warehouse (Tiësto)',
-  'some 7:05 PM–8:15 PM 4 Pier Stage (Zara Larsson)',
+  'some 7:05 PM–8:05 PM 4 Pier Stage (Zara Larsson)', // ends with her set: the Tiësto blip folds, and no longer carries it to 8:15
   'some 8:20 PM–8:45 PM 3 Warehouse (Overmono)',
   'most 8:45 PM–10 PM 8 Pier Stage (Swedish House Mafia)',
   'some 10 PM–10:45 PM 4 Crane Stage (Parcels)',
@@ -587,14 +590,50 @@ test('the trip: never for the tail of a set long under way — only for one they
   assert.deepEqual(rows(fresh, SATD), ['most 8 PM–9 PM 3 Club', 'most 9 PM–10 PM 3 X (Long)']);
 });
 
-test('route: a stop under 15 minutes folds into the stop before it; a blip with nothing before it is nothing', () => {
+test('route: a stop under 15 minutes folds into the stop before it, which still ends with its set; a blip with nothing before it is nothing', () => {
   const fest = synth({
     sat: [set('Pre', 'Z', '7:50 PM - 8:00 PM'), set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:10 PM - 10:00 PM')],
   });
   const three = lv(2, 'Ana', 'Ben', 'Cy');
   const plan = planFor(fest, { Pre: three, Xa: three, Ya: { ...lv(3, 'Ana', 'Ben', 'Cy'), Dot: 3 }, Wa: three });
-  assert.deepEqual(rows(plan, SATD), ['most 8 PM–9:10 PM 3 X (Xa)', 'most 9:10 PM–10 PM 3 W (Wa)']);
+  // Ya's ten minutes are no stop: they fold into X's run, and X still ends at
+  // 9 with Xa (a stop never outlasts its place), so 9 to 9:10 is a changeover.
+  assert.deepEqual(rows(plan, SATD), ['most 8 PM–9 PM 3 X (Xa)', 'most 9:10 PM–10 PM 3 W (Wa)']);
   assert.deepEqual(stops(plan, SATD)[0].forks, [], 'the ten-minute set is too short to be a fork too');
+});
+
+// A stop never outlasts its own place (Sol, on the Share's release head,
+// 2026-09-26). A blip folded into the stop before it used to carry that stop
+// past its set's end, so from 8:05 to 8:15 on Sunday the peek (and the Share)
+// said "NOW · Zara Larsson · till 8:05 PM". The blip still folds — it is no
+// stop of its own — but the stop ends where its place does, and the minutes
+// after are the changeover they are.
+test('route: no stop or fork outlasts its own place — every Portola night, the nine', () => {
+  const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+  let n = 0;
+  for (const night of plan.nights) {
+    for (const s of stops(plan, night.id)) {
+      n++;
+      assert.ok(s.to <= s.place.end, `${night.id}: ${row(s)} runs past its place's end, ${q(s.place.end)}`);
+      for (const f of s.forks) assert.ok(f.to <= f.place.end, `${night.id}: the fork ${f.place.place} ${q(f.from)}–${q(f.to)} runs past ${q(f.place.end)}`);
+    }
+  }
+  assert.equal(n, 26, 'every stop was looked at');
+});
+
+test('the minutes after a set: Sunday 8:05 to 8:15 PM, Zara Larsson is over, and the peek hands on as at any changeover', () => {
+  const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+  const sun = (hm) => new Date(`2026-09-27T${hm}:00-07:00`);
+  const peek = (hm) => {
+    const k = P.peekOf(plan, PORTOLA, sun(hm));
+    return k && [k.tag, k.stop.acts[0].name, q(k.tag === 'now' ? P.tillOf(k.stop) : k.stop.from)];
+  };
+  assert.deepEqual(peek('20:04'), ['now', 'Zara Larsson', '8:05 PM'], 'her last minute');
+  // What the peek already said from 8:15, the changeover's rule: the next
+  // time MOST of us meet, before a nearer SOME stop (Overmono at 8:20).
+  for (const hm of ['20:05', '20:10', '20:14', '20:17']) assert.deepEqual(peek(hm), ['next', 'Swedish House Mafia', '8:45 PM'], hm);
+  assert.equal(P.planAt(plan, PORTOLA, sun('20:10')).current, null, 'no stop is on');
+  assert.equal(stopOf(plan, '2026-09-27', 'Zara Larsson').to, M(20, 5), 'her stop ends with her set');
 });
 
 test('route: a gap under 20 minutes is a changeover, not scattered; a longer one is scattered', () => {

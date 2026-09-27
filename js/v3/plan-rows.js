@@ -286,7 +286,7 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
 //   Pier Stage for Dog Blood @ now till 10:15pm
 //   Ship Tent for Jamie xx @ 10:30pm
 //
-//   Full rundown: https://fest.kevinhg.com/f/portola-2026#g=…&plan=open
+//   Full rundown: https://fest.kevinhg.com/f/portola-2026#g=…&plan=2026-09-26
 //
 // At most five: "our top picks overall across all locations based on applied
 // filters". The candidates are the day's stops and their or-lines still to
@@ -300,33 +300,61 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
 const typed = (min) => quietClock(min).replace(' ', '').toLowerCase();
 const andList = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
 
-// A stop or a fork as "Location for Title": a set's (or a party's) act; a
-// room's headliners, unless the room is named for the one act in it.
-function placeForTitle(stop, picks) {
+// A stop or a fork as "Location for Title", and the acts it names: a set's
+// (or a party's) act; a room's headliners among `people` (whoever of us is
+// there — with a highlight on, only the highlighted), unless the room is
+// named for the one act in it.
+function placeForTitle(stop, picks, people) {
   const where = whereOf(stop);
   if (kindOf(stop) !== 'room') {
     const act = actsOf(stop)[0];
-    return act && act.name !== where ? `${where} for ${act.name}` : where;
+    return { title: act && act.name !== where ? `${where} for ${act.name}` : where, acts: act ? [act.name] : [] };
   }
-  const acts = headlinersOf({ ...stop, people: stop.people || [] }, picks).map((h) => h.name);
-  return !acts.length || (acts.length === 1 && acts[0] === where) ? where : `${where} for ${andList(acts)}`;
+  const acts = headlinersOf({ ...stop, people }, picks).map((h) => h.name);
+  return { title: !acts.length || (acts.length === 1 && acts[0] === where) ? where : `${where} for ${andList(acts)}`, acts };
 }
 
-// The five (`limit`), in time order: { line, from, count } each.
+// Who of us is at a stop or a fork, and how many at once: its crowd — or,
+// with a highlight on, only the highlighted people in it (Sol, on the
+// release head: the Share named the whole crowd's acts and ranked by the
+// whole crew under a highlight). A stop reads its timeline, a fork its peak
+// crowd, as hasAny does; a person is only ever seated at their own picks
+// (plan.js rule 3), so every act this names is one they picked — the List's
+// question, filters.js passesPeople.
+function whoAt(s, highlight) {
+  if (!highlight.length) return { people: s.people || [], count: s.count };
+  const theirs = (list) => (list || []).filter((p) => highlight.includes(p));
+  if (!s.timeline) { const people = theirs(s.people); return { people, count: people.length }; }
+  const all = new Set();
+  let count = 0;
+  for (const x of s.timeline) {
+    const here = theirs(x.people);
+    here.forEach((p) => all.add(p));
+    count = Math.max(count, here.length);
+  }
+  return { people: [...all], count };
+}
+
+// The five (`limit`), in time order: { line, from, count, acts } each. With a
+// highlight on, a count is how many of THEM, and the most of them win, then
+// the earliest (the crew's MOST is the rest of the crew's say, not theirs).
 export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], limit = 5 } = {}) {
   if (!route) return [];
+  const hl = highlight || [];
   // One line a place (a set, a room on its night, a party): a room the route
   // comes back to, or that is another stop's or-line later on, is still the
   // one room, at the first time it is ours, counted at its biggest.
   const byPlace = new Map();
   const add = (s) => {
     if (nowMin != null && s.to <= nowMin) return;
-    if (!hasAny(s, highlight)) return;
+    const who = whoAt(s, hl);
+    if (!who.count) return;
     const key = (s.place && s.place.id) || stopKey(s);
     const had = byPlace.get(key);
-    if (!had) { byPlace.set(key, { stop: s, count: s.count, most: s.tier === 'most' }); return; }
-    if (s.from < had.stop.from) had.stop = s;
-    had.count = Math.max(had.count, s.count);
+    if (!had) { byPlace.set(key, { stop: s, count: who.count, people: new Set(who.people), most: s.tier === 'most' }); return; }
+    if (s.from < had.stop.from) { had.stop = s; if (!hl.length) had.people = new Set(who.people); }
+    if (hl.length) who.people.forEach((p) => had.people.add(p));
+    had.count = Math.max(had.count, who.count);
     had.most = had.most || s.tier === 'most';
   };
   for (const it of route.items) {
@@ -335,14 +363,15 @@ export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], lim
     for (const f of it.forks || []) if (f.count >= plan.bar) add(f);
   }
   return [...byPlace.values()]
-    .sort((a, b) => b.count - a.count || b.most - a.most || a.stop.from - b.stop.from)
+    .sort((a, b) => b.count - a.count || (hl.length ? 0 : b.most - a.most) || a.stop.from - b.stop.from)
     .slice(0, limit)
     .sort((a, b) => a.stop.from - b.stop.from)
-    .map(({ stop, count }) => {
+    .map(({ stop, count, people }) => {
       const live = nowMin != null && stop.from <= nowMin;
       const till = live ? tillOf(stop) : null;
       const when = live ? `now${till != null ? ` till ${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
-      return { line: `${placeForTitle(stop, ctx.picks)} @ ${when}`, from: stop.from, count };
+      const { title, acts } = placeForTitle(stop, ctx.picks, [...people]);
+      return { line: `${title} @ ${when}`, from: stop.from, count, acts };
     });
 }
 
