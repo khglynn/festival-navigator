@@ -430,6 +430,45 @@ test('a highlight that empties the open plan: today says nothing is left and its
   assert.equal(plan().dataset.state, 'peek');
 });
 
+// The P1–P3 review's ninth finding (2026-09-27): the Share's words sat in a
+// polite live region, and paintHead wrote them on every draw, changed or not —
+// a screen reader said the button again at every minute's repaint, every tap
+// and every day the list scrolled through. The words are the button's name,
+// read when a person reaches it; the live region says a copy's result, once
+// (main's rule before the plan-days round).
+test('the Share’s words are its name, not a live region: repaints and a tap say nothing again, and a copy is said once', async () => {
+  await repaint();
+  const grab = plan().querySelector('.plan-grab');
+  grab.click();
+  const share = plan().querySelector('.plan-share');
+  const live = [...plan().querySelectorAll('[aria-live]')];
+  const said = [];
+  const watch = new dom.window.MutationObserver((l) => said.push(...l.map((m) => m.target.textContent || m.target.nodeValue)));
+  for (const n of live) watch.observe(n, { childList: true, characterData: true, subtree: true });
+  await repaint(); // the plan goes with the search's query and comes back with it cleared
+  grab.click();
+  const row = [...plan().querySelectorAll('button.plan-row')].find((r) => !r.classList.contains('tagged') && !r.classList.contains('earlier'));
+  row.querySelector('.plan-what').click(); // its card grows: the rows are drawn again
+  await settle(20);
+  watch.takeRecords().forEach((m) => said.push(m.target.textContent));
+  assert.deepEqual(said, [], 'nothing a screen reader would say again: the words did not change');
+  assert.ok(live.length >= 1 && live.every((n) => !share.contains(n)), 'a live region, outside the button: its words are its name');
+  const nav = dom.window.navigator;
+  const had = Object.getOwnPropertyDescriptor(nav, 'clipboard');
+  Object.defineProperty(nav, 'clipboard', { configurable: true, value: { writeText: async () => {} } });
+  try {
+    share.click();
+    await settle(20);
+    assert.deepEqual(live.map((n) => n.textContent).filter(Boolean), ['Copied ✓'], 'a copy is said, once');
+    assert.equal(share.textContent.trim(), 'Copied ✓', 'and the button shows it');
+  } finally {
+    if (had) Object.defineProperty(nav, 'clipboard', had); else delete nav.clipboard;
+    watch.disconnect();
+  }
+  grab.click();
+  assert.equal(plan().dataset.state, 'peek');
+});
+
 test('nothing two days before the festival; the day before, tomorrow’s first stop with its weekday', async () => {
   setClock(TUE_NOON);
   await repaint();

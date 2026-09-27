@@ -63,6 +63,7 @@ let footEl = null;   // the open plan's last line: its Share
 let footOpens = null; // what the Share's link opens on, beside it
 let shareBtn = null;  // the Share itself (it rests on a day with nothing to send)
 let shareWords = null;
+let shareSaid = null; // the live region: a copy's result, said once (sayOnShare)
 let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
 let ctxRef = null;
@@ -191,11 +192,16 @@ function build(host) {
   const share = mk('button', 'plan-share btn-tonal');
   shareBtn = share;
   share.type = 'button';
+  // The words are the button's name (the day it sends, read when a person
+  // reaches it), not a live region: paintHead writes them as the list scrolls
+  // through the days, and a live region there was said again at every draw
+  // (the P1–P3 review, 2026-09-27). A copy's result is said once, beside it.
   shareWords = spanOf('w', shareLabel());
-  shareWords.setAttribute('aria-live', 'polite');
   share.append(glyph(canShare() ? SHARE_MARK : COPY_MARK), shareWords);
   share.addEventListener('click', sharePlan);
-  footEl.append(footOpens, share);
+  shareSaid = spanOf('sr-only');
+  shareSaid.setAttribute('aria-live', 'polite');
+  footEl.append(footOpens, share, shareSaid);
   body.append(headEl, listEl, footEl);
   el.append(grab, body);
   frame.appendChild(el);
@@ -338,7 +344,8 @@ function paintHead(id) {
   }
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
-  if (!shareTimer) shareWords.textContent = shareLabel(d);
+  const words = shareLabel(d);
+  if (!shareTimer && shareWords.textContent !== words) shareWords.textContent = words;
   shareBtn.disabled = !!(d && d.bare);
   shareWords.dataset.night = id;
 }
@@ -929,7 +936,12 @@ const shareLabel = (d = null) => (d && d.bare ? `Nothing to share ${d.name}`
 function sayOnShare(words) {
   clearTimeout(shareTimer);
   shareWords.textContent = words;
-  shareTimer = setTimeout(() => { shareTimer = 0; shareWords.textContent = shareLabel(data && data.dayOf ? data.dayOf(topNight) : null); }, 1800);
+  shareSaid.textContent = words;
+  shareTimer = setTimeout(() => {
+    shareTimer = 0;
+    shareWords.textContent = shareLabel(data && data.dayOf ? data.dayOf(topNight) : null);
+    shareSaid.textContent = ''; // so the next copy is said again
+  }, 1800);
 }
 
 // Nothing under the peek's window is a control of its own: a tap there opens
