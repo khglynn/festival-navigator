@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, STEP } from './plan.js';
+import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, isoAfter, STEP } from './plan.js';
 
 // What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
 // was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
@@ -308,7 +308,8 @@ function earlierRow(n, open, onToggle, days = []) {
   w.appendChild(nm);
   const chev = mk('span', 'chev');
   chev.setAttribute('aria-hidden', 'true');
-  r.append(mk('span', 'plan-node'), w, mk('span'), chev);
+  // No time and no count: its words run across their columns too (v3.css).
+  r.append(mk('span', 'plan-node'), w, chev);
   r.addEventListener('click', onToggle);
   return r;
 }
@@ -429,10 +430,18 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, l
   const tag = (els, id) => { for (const e of els) e.dataset.night = id; return els; };
   const hasPast = before.length > 0 || overToday.length > 0;
   // More than three nights behind (ACL's second weekend has nine): the
-  // line names the span, not every night — "Earlier · Sep 29 – Oct 9".
+  // line names the span, not every night — "Earlier · Sep 29 – Oct 9". Up
+  // to three, each night by its label, but three on consecutive dates are
+  // one range, "Thu – Sat", the way a bare run is "Oct 5 – 6": the line is
+  // one line of small capitals, and "Thu · Fri · Sat · 4 stops" was cut at
+  // a phone's width (the lead's look at the walk, 2026-09-27). Two stay as
+  // the wall writes them ("Thu · Fri"), no longer than a range.
+  const labelOf = (id) => nightLabelOf(id);
+  const running = before.length === 3 && before.every((id, i) => i === 0
+    || isoAfter((plan.night(before[i - 1]) || {}).iso) === ((plan.night(id) || {}).iso || '-'));
   const pastWords = before.length > 3
     ? [`${(dayOf(before[0]) || {}).date || nightLabelOf(before[0])} – ${(dayOf(before[before.length - 1]) || {}).date || nightLabelOf(before[before.length - 1])}`]
-    : before.map((id) => nightLabelOf(id));
+    : running ? [`${labelOf(before[0])} – ${labelOf(before[2])}`] : before.map(labelOf);
   if (hasPast) rows.push(tag([earlierRow(overToday.length, earlierOpen, onEarlier, pastWords)], before[0] || ids[at])[0]);
   const dayHead = (id, { quietPast = false } = {}) => {
     const d = dayOf(id) || {};

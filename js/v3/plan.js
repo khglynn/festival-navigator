@@ -738,3 +738,13 @@ export function alsoOf(stop, plan) {
 
 // "9 PM", "9:40 PM", "12 AM": the clock with ":00" dropped.
 export const quietClock = (min) => clockLabel(min).replace(':00 ', ' ');
+
+// The ISO date after `iso`, or null when it is not a date: whether a peek's
+// night is tomorrow's (app.js planAnswer), and whether nights run on
+// consecutive dates (plan-rows.js, the Earlier line's range).
+export const isoAfter = (iso) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};

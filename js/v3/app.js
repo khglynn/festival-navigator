@@ -74,7 +74,7 @@ import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, remem
 import { showJoinShelf, joinShelf } from './join-shelf.js';
 // Our plan (2026-09-26): the model, the phone's peek-and-day shelf, and the
 // floor they change (the dock plus the peek).
-import { planOf, planAt, peekOf } from './plan.js';
+import { planOf, planAt, peekOf, isoAfter } from './plan.js';
 import { shortDate } from './events.js';
 import { thinnedWords } from './wall.js'; // the List's words for a highlight with nothing here (v103's)
 import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
@@ -1410,12 +1410,6 @@ function pickingWords(plan) {
   if (names.length <= 3) return `${names.slice(0, -1).join(', ')} + ${names[names.length - 1]}`;
   return `${names.length} of us`;
 }
-const isoAfter = (iso) => {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
-};
 
 // ONE paint for the peek and then the NOW tab, on one date — so they can never
 // disagree across a minute (the tab reads whether the peek says NOW). Called

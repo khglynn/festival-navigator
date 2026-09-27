@@ -370,3 +370,27 @@ test('every direct child of the open plan’s list names its night — grown car
   }
   assert.ok(grownSeen > 20 && emptySeen > 0 && runSeen > 0, `grown cards, empty lines and a bare run's rows were drawn and checked: ${JSON.stringify({ grownSeen, emptySeen, runSeen })}`);
 });
+
+// The Earlier line names up to three nights behind by their labels, and three
+// on consecutive dates as one range, "Thu – Sat" (the walk, 2026-09-27: "THU ·
+// FRI · SAT · 4 S…" was cut at 390px). Three with a gap between them keep
+// their labels; past three the date span stands (plan-acl's goldens).
+test('the Earlier line: three nights on consecutive dates are one range, three with a gap are three labels', () => {
+  const day = (wd, iso, name) => [wd, { wd: wd.slice(0, 3), date: iso, iso, stages: ['X'], artists: [{ name, stage: 'X', time: '8:00 PM - 9:00 PM' }] }];
+  const festOf = (nights) => ({
+    id: 'plan-synth', name: 'Synth Fest', status: 'scheduled', timezone: 'America/Chicago', artists: [],
+    dayMeta: Object.fromEntries(nights.map(([wd, d]) => [wd, { wd: d.wd, date: d.date, iso: d.iso }])),
+    days: Object.fromEntries(nights.map(([wd, d]) => [wd, { stages: d.stages, artists: d.artists }])),
+  });
+  const words = (nights) => {
+    const fest = festOf(nights);
+    const picks = Object.fromEntries(nights.map(([, d]) => [d.artists[0].name, { Ana: 4, Ben: 4, Cy: 4 }]));
+    const pl = P.planOf(fest, { picks, members: NINE.members });
+    const last = pl.nights[pl.nights.length - 1].id;
+    const list = planDays(pl, { ctx: { picks }, from: last, nightLabelOf: (id) => pl.night(id).wd, dayOf: (id) => ({ weekday: pl.night(id).wd, date: pl.night(id).iso }) });
+    return list.querySelector('.plan-row.earlier').textContent;
+  };
+  assert.equal(words([day('Thursday', '2026-10-01', 'A'), day('Friday', '2026-10-02', 'B'), day('Saturday', '2026-10-03', 'C'), day('Sunday', '2026-10-04', 'D')]), 'Earlier · Thu – Sat');
+  assert.equal(words([day('Thursday', '2026-10-01', 'A'), day('Saturday', '2026-10-03', 'C'), day('Sunday', '2026-10-04', 'D'), day('Monday', '2026-10-05', 'E')]), 'Earlier · Thu · Sat · Sun');
+  assert.equal(words([day('Friday', '2026-10-02', 'B'), day('Saturday', '2026-10-03', 'C'), day('Sunday', '2026-10-04', 'D')]), 'Earlier · Fri · Sat');
+});

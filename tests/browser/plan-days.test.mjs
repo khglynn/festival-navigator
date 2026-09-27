@@ -38,20 +38,22 @@ const SAT_1014 = new Date('2026-09-26T22:14:00-07:00');    // a minute before Do
 const SAT_1015 = new Date('2026-09-26T22:15:00-07:00');
 const ACL_W1_SUN = new Date('2026-10-04T19:00:00-05:00');  // ACL W1 Sunday: Mon and Tue ahead have nothing picked
 const ACL_W2_SAT = new Date('2026-10-10T16:00:00-05:00');  // ACL W2 Saturday: nine nights behind, a short Sunday ahead
+const ACL_W2_SAT_9PM = new Date('2026-10-10T21:00:00-05:00');
+const SUN_9PM = new Date('2026-09-27T21:00:00-07:00');      // Portola Sunday: three nights behind and four stops over
 const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag (plan-shelf.js quietUntil, 400)
 
 // `fest`: which festival and made-up crew. `plan`: the link's &plan=<night>.
-// `desk`: a laptop. `reduced`: Reduce Motion. `at`: the clock. `wait: false`
+// `desk`: a laptop (else a phone `width` wide). `reduced`: Reduce Motion. `at`: the clock. `wait: false`
 // hands the page back as soon as it has loaded, before the plan settles.
 // `bars`: a scrollbar that takes room, as Windows and a Mac with a mouse draw
 // one (Chromium needs a browser launched with its scrollbars on). `holdGlide`:
 // the glide held part of the way (the held glide, below). The crew's doc
 // comes back too: a friend's pick is a change to it, then a pull.
-async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false, holdGlide = false } = {}) {
+async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false, holdGlide = false, width = 390 } = {}) {
   const crew = CREWS[fest];
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
-    viewport: desk ? { width: 1280, height: 800 } : { width: 390, height: 844 },
+    viewport: desk ? { width: 1280, height: 800 } : { width, height: 844 },
     hasTouch: !desk, deviceScaleFactor: 2, timezoneId: crew.tz, serviceWorkers: 'block',
     reducedMotion: reduced ? 'reduce' : 'no-preference',
   });
@@ -613,6 +615,42 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
+
+  // The Earlier line is one line of small capitals, and its words are never
+  // cut: on Portola Sunday at 390px it read "EARLIER · THU · FRI · SAT · 4 S…"
+  // (the lead's look at the walk's frames, 2026-09-27). A run of three nights
+  // or more on consecutive dates is one range, "Thu – Sat", the way a bare run
+  // is "Oct 5 – 6"; past three nights the date span stands. Measured, never
+  // compared as a string: the words' own box holds all of them.
+  for (const width of [320, 390]) {
+    test(`${name} ${width}: the Earlier line's words are never cut — Portola Sunday with stops folded, ACL's second Saturday`, { skip }, async () => {
+      for (const [fest, at] of [['portola-2026', SUN_9PM], ['acl-2026', ACL_W2_SAT_9PM]]) {
+        const { ctx, page, errors } = await open(get(), { fest, at, width });
+        try {
+          await openPlan(page);
+          const line = await page.evaluate(() => {
+            const nm = document.querySelector('#plan .plan-row.earlier .plan-what .nm');
+            return nm && { text: nm.textContent, scroll: nm.scrollWidth, client: nm.clientWidth };
+          });
+          assert.ok(line && /\d+ stops?$/.test(line.text), `${fest}: an Earlier line with stops folded: ${JSON.stringify(line)}`);
+          assert.ok(line.scroll <= line.client, `${fest}: the Earlier line's words fit their box: ${JSON.stringify(line)}`);
+          // Portola's three nights behind run on consecutive dates: one range.
+          if (fest === 'portola-2026') assert.match(line.text, /^Earlier · Thu – Sat · \d+ stops$/);
+          // The chevron sits clear of the words, at the row's end.
+          const clear = await page.evaluate(() => {
+            const row = document.querySelector('#plan .plan-row.earlier');
+            const nm = row.querySelector('.plan-what .nm').getBoundingClientRect();
+            const words = document.createRange();
+            words.selectNodeContents(row.querySelector('.plan-what .nm'));
+            const chev = row.querySelector('.chev').getBoundingClientRect();
+            return { wordsEnd: Math.round(words.getBoundingClientRect().right), boxEnd: Math.round(nm.right), chev: Math.round(chev.left), rowEnd: Math.round(row.getBoundingClientRect().right) };
+          });
+          assert.ok(clear.wordsEnd < clear.chev - 4 && clear.chev > clear.rowEnd - 24, `${fest}: the chevron is at the row's end, clear of the words: ${JSON.stringify(clear)}`);
+          assert.deepEqual(errors, []);
+        } finally { await ctx.close(); }
+      }
+    });
+  }
 
   test(`${name}: a run of bare nights is one head and its reason, and its Share rests (ACL's Mon and Tue)`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { fest: 'acl-2026', at: ACL_W1_SUN });
