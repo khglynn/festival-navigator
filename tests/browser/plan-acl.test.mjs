@@ -299,6 +299,14 @@ async function tick(page, at) {
   await sleep(60);
   await settled(page);
 }
+// How bright each of a night's lines is drawn: its opacity times any opacity
+// filter — the past's dim, whichever property carries it.
+const brightness = (page, night) => page.evaluate((n) => [...document.querySelectorAll(`#plan .plan-list > [data-night="${n}"]`)].map((r) => {
+  const cs = getComputedStyle(r);
+  const m = /opacity\(([\d.]+)(%?)\)/.exec(cs.filter || '');
+  const f = m ? Number(m[1]) / (m[2] ? 100 : 1) : 1;
+  return { past: r.classList.contains('past'), head: r.classList.contains('plan-day'), lit: Math.round(Number(cs.opacity) * f * 100) / 100 };
+}), night);
 for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
   const skip = engine ? false : NO_BROWSER;
   test(`${name}: the morning after, a plan left open draws the last night as past, sends it whole, and a close lets the shelf go`, { skip }, async () => {
@@ -316,12 +324,32 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       await tick(page, SUN_OCT11_1130PM);
       assert.equal(await planState(page), 'open', 'open past the last stop');
       assert.equal((await state(page)).off, true, 'at 11:30 PM nothing is left to send today');
-      await tick(page, MON_OCT12_501AM);
+      // The minute turns past 5 AM, and its repaint's motion — Sunday's lines
+      // arriving — is held near its end: a past line is never drawn brighter
+      // than it rests. (The dim used to be the rows' own opacity, which every
+      // fade of the window's also writes: a line faded in to full and then
+      // dropped to the dim, a pop — and CI's Linux WebKit, reading mid-fade,
+      // saw two of five lines undimmed, run 36319088534.)
+      await page.clock.setFixedTime(MON_OCT12_501AM);
+      const held = await page.evaluate(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        const moving = document.getElementById('plan').getAnimations({ subtree: true })
+          .filter((a) => Number.isFinite(a.effect.getComputedTiming().endTime));
+        for (const a of moving) {
+          const t = a.effect.getComputedTiming();
+          a.pause();
+          a.currentTime = (t.delay || 0) + t.activeDuration * 0.95;
+        }
+        return moving.length;
+      });
+      const mid = await brightness(page, '2026-10-11');
+      await page.evaluate(() => document.getElementById('plan').getAnimations({ subtree: true }).forEach((a) => { try { a.finish(); } catch { /* an endless one */ } }));
+      await settled(page);
       assert.equal(await planState(page), 'open', 'open across the rollover');
-      const rows = await page.evaluate((n) => [...document.querySelectorAll(`#plan .plan-list > [data-night="${n}"]`)]
-        .map((r) => ({ past: r.classList.contains('past'), head: r.classList.contains('plan-day'), dim: Number(getComputedStyle(r).opacity) < 0.6 })), '2026-10-11');
+      const rows = await brightness(page, '2026-10-11');
       assert.ok(rows.length > 2 && rows[0].head, `Sunday under its own head: ${JSON.stringify(rows)}`);
-      assert.ok(rows.every((r) => r.past && r.dim), `every Sunday line is drawn past, dimmed: ${JSON.stringify(rows)}`);
+      assert.ok(rows.every((r) => r.past && r.lit < 0.6), `every Sunday line is drawn past, dimmed: ${JSON.stringify(rows)}`);
+      assert.ok(held === 0 || mid.every((r) => r.lit <= rows[0].lit + 0.02), `a past line never shows brighter than it rests, even as it arrives (${held} motions held near their end): ${JSON.stringify(mid)}`);
       const s = await state(page);
       assert.deepEqual([s.wd, s.share, s.off], ['SUN', 'Share Sun Oct 11’s picks', false], 'the head and the Share name Sunday by its date');
       const text = await share(page);

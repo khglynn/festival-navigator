@@ -448,7 +448,31 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal((await earlier.textContent()).trim(), 'Earlier · Sep 29 – Oct 9');
       const box = await earlier.boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      // The nights behind arrive dimmed and stay so: held near the end of
+      // their arrival, no past line is brighter than it rests. (The dim was
+      // the rows' own opacity, which the arrival's fade also writes: they
+      // faded in to full, then dropped to the dim — a pop.)
+      const lit = () => page.evaluate(() => [...document.querySelectorAll('#plan .plan-list > .past')].map((r) => {
+        const cs = getComputedStyle(r);
+        const m = /opacity\(([\d.]+)(%?)\)/.exec(cs.filter || '');
+        return Math.round(Number(cs.opacity) * (m ? Number(m[1]) / (m[2] ? 100 : 1) : 1) * 100) / 100;
+      }));
+      const held = await page.evaluate(() => {
+        const moving = document.getElementById('plan').getAnimations({ subtree: true })
+          .filter((a) => Number.isFinite(a.effect.getComputedTiming().endTime));
+        for (const a of moving) {
+          const t = a.effect.getComputedTiming();
+          a.pause();
+          a.currentTime = (t.delay || 0) + t.activeDuration * 0.95;
+        }
+        return moving.length;
+      });
+      const arriving = await lit();
+      await page.evaluate(() => document.getElementById('plan').getAnimations({ subtree: true }).forEach((a) => { try { a.finish(); } catch { /* an endless one */ } }));
       await settled(page);
+      const resting = await lit();
+      assert.ok(resting.length > 8 && resting.every((v) => v < 0.6), `the nights behind rest dimmed: ${JSON.stringify(resting)}`);
+      assert.ok(held > 0 && Math.max(...arriving) <= Math.max(...resting) + 0.02, `no past line is brighter as it arrives than at rest (${held} motions held near their end): ${JSON.stringify(arriving)}`);
       assert.equal((await earlier.textContent()).trim(), 'Hide earlier');
       const past = await page.evaluate(() => [...document.querySelectorAll('#plan .plan-day')]
         .filter((h) => h.classList.contains('past')).map((h) => h.textContent.trim().replace(/\s+/g, ' ')));

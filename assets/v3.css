@@ -2050,7 +2050,12 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-tag.now { background: rgb(var(--brand)); color: var(--page); }
 .plan-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
 .plan-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
-.plan-row.past { opacity: .42; }
+/* The past's dim is a filter, never the row's own opacity: the window's fades
+ * (an arrival, a repaint's play, a drag, the open) own that property, and a
+ * dim written there was overwritten by every one of them — a past line faded
+ * in to full, then dropped to the dim at the end, a pop (the CI round,
+ * 2026-09-27). A filter's opacity multiplies with theirs. */
+.plan-row.past { filter: opacity(.42); }
 /* ---- every day, a drop-in room (the plan-days build, 2026-09-26) ------------
  * Every day in the open plan: an in-list day head per night after the one the
  * list lands on (the wall's head grammar, the weekday in the header colour,
@@ -2058,7 +2063,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
  * rule 9's drop-in room is one quiet line a night; a gap it fills says so. */
 .plan-day { padding: 16px 0 4px; }
 .plan-day .wd { color: var(--text-header); }
-.plan-day.past { opacity: .42; }
+.plan-day.past { filter: opacity(.42); } /* a filter, as .plan-row.past's */
 .plan-row.empty .plan-what .nm { font: var(--plan-line); color: var(--text-tertiary); font-style: italic; }
 .plan-row.empty .plan-node { visibility: hidden; }
 .plan-row.empty::before { display: none; }
