@@ -74,4 +74,33 @@ crew link, no database writes (previews and `vercel dev` use production's).
 2. **P1 (in progress, builder, from 31d06f2):** the prototype becomes the product.
    Baseline on 31d06f2: `npm test` 1262 tests, 4 fail (the three the prototype turned
    red, plus the SW stamp); `plan-share` 39 tests, 4 fail (the button's words: the
-   prototype says "Share today's picks" where the suite says "Share our picks").
+   prototype says "Share today's picks" where the suite says "Share our picks");
+   `plan-drag` 39 tests, 4 fail (two tests per engine: the fold-grow test's keys
+   predate the night in `stopKey`, and the pinned catch needs a window that can grow,
+   which a days list no longer is at Saturday 9:40 PM).
+   a. **1f25ceb** `barForGroup`: 1, 2 for 2–4, `barFor(n)` from five (C3/C6). Red on
+      31d06f2: `[1,2,2,2,2,2,2,3,3,4,5]` vs `[1,2,2,2,3,3,3,3,3,4,5]` (five to eight
+      highlighted took 2).
+   b. **1acf9b7** one path: `window.__planDesign`, planOf's `dropIn` modes and
+      `groupBar`, `lightTouch`, `backRow` (and its CSS), the highlight's dim (the rows,
+      the shelf's dim animation, `--plan-dim`) and `thinnedWordsLocal` are gone.
+      `thinnedWords` sits in wall.js at v104's own anchor, byte for byte, so the merge
+      is one trivial hunk (v104's side wins); app.js imports it on its own line because
+      v104 edits line 12. `planList` is gone (planDays draws every night); plan-text's
+      goldens read the landing night's rows of `planDays`. A stray grid set (a stage
+      that is not a column) now carries its `dropIn` like a grid cell (the prototype
+      dropped it).
+   c. Rule 9's model tests (plan-model section 6, eight tests): the Despacio crew's
+      nights equal the nine's goldens plus one line each (Fri `Pier 80 (loyalty
+      invite) 5 PM–11 PM 7`, Sat `Despacio 2:45 PM–9:45 PM 7`, Sun `3:30 PM–10:30 PM
+      7`); a sweep at every five minutes Thu noon to Mon 5 AM that no drop-in is a
+      stop, an "or" or the peek; seating (a must on the room yields to a 1); the trip
+      (a must on a drop-in never holds a body against a room); the drift caption at
+      the bar and not under it; the line counts pickers even when nobody sits there;
+      a hidden drop-in has no line; a mixed venue is not a drop-in; a stray declared
+      set is. Red on main (250bc45): 8 of 8 fail, e.g. Friday `'most 5 PM–9:30 PM 7
+      Pier 80 (loyalty invite)'` where the golden starts at Regency 8 PM, and the
+      synth seating `'most 2 PM–10 PM 3 W (Room)'`. Red on the prototype (31d06f2):
+      the stray test, `undefined` vs `true`. Mutants (each rule 9 line of plan.js
+      removed in turn: aheadAt, the seating key, the ranked filter, the hidden line,
+      every→some, the drift caption) are each caught by at least one test.
