@@ -41,8 +41,8 @@
   (`plan-days-design/SOL-R2.md`; its close-and-repaint revival fixed in
   3f5a337). The composer flake is a real bug on main, caught by a CI probe:
   notes.js `dialogize()` focuses the sheet a frame late and can take the
-  keyboard from a composer already typing; its guarded fix rides in this
-  round. Next: the builder's handback, CI three greens, Sol's final check;
+  keyboard from a composer already typing; its guard is on its own branch,
+  `fix/composer-focus`, riding v104. Next: the builder's handback, CI three greens, Sol's final check;
   merge v104 Monday and re-gate; SHA to the coordinator for ACL Late nights
   (Tue Sep 29).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
