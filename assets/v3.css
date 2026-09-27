@@ -2005,8 +2005,9 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-what .pl .also { color: var(--text-tertiary); }
 .plan-what .pl .also::before { content: ' · '; }
 /* The open plan's head turns over with the day at the top (plan-shelf paintHead):
- * the weekday must be a box for its transform. */
-.plan-head .room-head .wd { display: inline-block; }
+ * the weekday must be a box for its transform — in the phone's head and in the
+ * laptop panel's head line alike. */
+.plan-head .room-head .wd, .plan-grab .pc-head .wd { display: inline-block; }
 /* Rule 10: under a highlight of a few, who is there ("· you + Cy"). */
 .plan-what .with { color: var(--text-body); }
 .plan-what .with::before { content: ' · '; color: var(--text-tertiary); }
@@ -2130,10 +2131,14 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 /* A pill of its own height for a mouse; a finger keeps the 44px floor, which
  * a class rule here would out-rank if it were not kept off coarse pointers. */
 @media not all and (pointer: coarse) { .plan-share { min-height: 36px; } }
-.plan-share svg { width: 13px; height: 13px; flex: none; }
-/* A day with nothing to send: the button rests and says so (plan-days round). */
+/* A day with nothing to send: the button rests and says so (plan-days round).
+ * Its mark goes the way it came: it fades as it narrows to nothing and the
+ * pill closes up behind it (the button's gap too), never gone in one frame
+ * (the P1–P3 review, 2026-09-27). Instant under Reduce Motion or Low power
+ * (the tokens' kill rules). */
+.plan-share svg { width: 13px; height: 13px; flex: none; transition: opacity .15s ease, width .15s ease, margin-right .15s ease; }
 .plan-share:disabled { opacity: .5; cursor: default; }
-.plan-share:disabled svg { display: none; }
+.plan-share:disabled svg { opacity: 0; width: 0; margin-right: -7px; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */
 #screen-app.searching .plan-shelf { display: none; }

@@ -66,8 +66,9 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
     }, true);
     const animate = Element.prototype.animate;
     Element.prototype.animate = function recorded(frames, opts) {
-      if (this.matches && this.matches('#plan .plan-head .wd, #plan .plan-head .sub')) {
-        window.__turns.push({ part: this.className, from: (frames[0] || {}).transform, duration: typeof opts === 'number' ? opts : (opts || {}).duration });
+      // The phone's head, and the laptop panel's head line (`corner`).
+      if (this.matches && this.matches('#plan .plan-head .wd, #plan .plan-head .sub, #plan .pc-head .wd, #plan .pc-head .sub')) {
+        window.__turns.push({ part: this.className, where: this.closest('.pc-head') ? 'corner' : 'head', from: (frames[0] || {}).transform, duration: typeof opts === 'number' ? opts : (opts || {}).duration });
       }
       return animate.call(this, frames, opts);
     };
@@ -395,6 +396,84 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await scrollToNight(page, '2026-10-05');
       const r = await read(page);
       assert.deepEqual([r.wd, r.share, r.shareOff], ['MON', 'Nothing to share Monday', true], 'a day with nothing to send says so and rests');
+      // Its mark went the way it came — faded as it narrowed, the pill closing
+      // up behind it — not gone in one frame (the P1–P3 review, 2026-09-27).
+      const mark = await page.evaluate(() => {
+        const cs = getComputedStyle(document.querySelector('#plan .plan-share svg'));
+        const eased = (prop) => { const i = cs.transitionProperty.split(', ').indexOf(prop); return i >= 0 && parseFloat(cs.transitionDuration.split(', ')[i]) > 0; };
+        return { display: cs.display, opacity: cs.opacity, width: cs.width, eased: ['opacity', 'width'].every(eased) };
+      });
+      assert.deepEqual(mark, { display: 'block', opacity: '0', width: '0px', eased: true }, `the Share’s mark eases out: ${JSON.stringify(mark)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The P1–P3 review's eighth finding (2026-09-27): closing from a later day
+  // swapped the list and the head back to today in the close's first frame,
+  // so its fade showed today, not the day being closed. The fade shows the
+  // day being closed, and today's head is painted once it is out of sight;
+  // the peek lands on the dock (measured at the list's top, not scrolled).
+  test(`${name}: closing from a later day fades that day out — its rows and its head — and the peek lands on the dock`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get());
+    try {
+      await openPlan(page);
+      await scrollToNight(page, '2026-09-27');
+      assert.equal((await read(page)).wd, 'SUN');
+      await page.evaluate(() => {
+        window.__close = [];
+        window.__rec = true;
+        // From the press on: the frames before it are the open plan at rest.
+        document.addEventListener('pointerdown', () => { window.__close = []; }, { capture: true, once: true });
+        const plan = document.getElementById('plan');
+        const step = () => {
+          if (!window.__rec) return;
+          const list = plan.querySelector('.plan-list').getBoundingClientRect();
+          const hit = document.elementFromPoint(list.left + list.width / 2, list.top + 12);
+          const row = hit && hit.closest('#plan .plan-list > [data-night]');
+          window.__close.push({ top: Math.round(plan.getBoundingClientRect().top), wd: plan.querySelector('.plan-head .wd').textContent, night: row ? row.dataset.night : null });
+          requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+      const grab = await page.locator('#plan .plan-grab').boundingBox();
+      await page.mouse.click(grab.x + grab.width / 2, grab.y + grab.height / 2);
+      await settled(page);
+      const frames = await page.evaluate(() => { window.__rec = false; return window.__close; });
+      assert.equal(await planState(page), 'peek');
+      const rest = frames[frames.length - 1].top;
+      const moving = frames.filter((f) => f.top < rest - 2);
+      if (!process.env.LATE_ANIMATIONS_MS) assert.ok(moving.length > 0, `frames of the close were seen: ${JSON.stringify(frames.slice(0, 3))}`);
+      const wrong = moving.filter((f) => f.wd !== 'SUN' || (f.night && f.night !== '2026-09-27'));
+      assert.deepEqual(wrong, [], `while it closes, the head and the rows are Sunday’s: ${wrong.length} of ${moving.length} frames are not, from ${JSON.stringify(wrong[0])}`);
+      const dock = await page.evaluate(() => {
+        const r = document.querySelector('#plan .plan-row.tagged').getBoundingClientRect();
+        return { row: document.querySelector('#plan .plan-row.tagged').getAttribute('aria-label'), off: Math.round((r.bottom - document.getElementById('dock').getBoundingClientRect().top) * 10) / 10 };
+      });
+      assert.match(dock.row, /^Now: Dog Blood, Pier Stage/);
+      assert.ok(Math.abs(dock.off) <= 0.5, `the peek’s row ends on the dock: ${dock.off}`);
+      assert.equal((await read(page)).wd, 'SAT', 'once it is out of sight, the head is today’s again');
+      await openPlan(page);
+      const r = await read(page);
+      assert.deepEqual([r.wd, r.top], ['SAT', 0], 'opened again, it lands on today');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The P1–P3 review's seventh finding (2026-09-27): the laptop's head never
+  // turned over — the turn played on the phone's head, which is display:none
+  // there, and the panel's head line was swapped in place.
+  test(`${name} laptop: the panel's head line turns over as Sunday comes to the top`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { desk: true });
+    try {
+      const card = await page.locator('#plan .plan-row.tagged').boundingBox();
+      await page.mouse.click(card.x + card.width * 0.4, card.y + card.height / 2);
+      await settled(page);
+      await page.evaluate(() => { window.__turns = []; });
+      await scrollToNight(page, '2026-09-27');
+      const turns = await page.evaluate(() => window.__turns);
+      const corner = turns.filter((t) => t.where === 'corner');
+      assert.ok(corner.length >= 2 && corner.every((t) => t.from === 'translateY(10px)' && t.duration === 200), `the panel’s head line rose in from below: ${JSON.stringify(turns)}`);
+      assert.equal(await page.locator('#plan .pc-head .wd').textContent(), 'SUN');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

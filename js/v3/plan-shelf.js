@@ -338,12 +338,16 @@ function paintHead(id) {
   x.setAttribute('aria-label', CLOSE_WORDS);
   x.addEventListener('click', () => closePlan());
   headEl.append(head, x);
-  if (turn) {
-    const rise = [{ transform: `translateY(${turn * 10}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }];
-    for (const part of head.querySelectorAll('.wd, .sub')) part.animate(rise, { duration: 200, easing: 'cubic-bezier(.2, .9, .3, 1.1)' });
-  }
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
+  // The turn plays on the head a person sees: the panel's head line on a
+  // laptop (the phone's head is display:none there, and the corner's was
+  // swapped in place — the P1–P3 review, 2026-09-27), the head on a phone.
+  if (turn) {
+    const rise = [{ transform: `translateY(${turn * 10}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }];
+    const shown = isDesk() ? corner.head : head; // the media query v3.css shows one by
+    for (const part of shown.querySelectorAll('.wd, .sub')) part.animate(rise, { duration: 200, easing: 'cubic-bezier(.2, .9, .3, 1.1)' });
+  }
   const words = shareLabel(d);
   if (!shareTimer && shareWords.textContent !== words) shareWords.textContent = words;
   shareBtn.disabled = !!(d && d.bare);
@@ -504,7 +508,9 @@ const below = () => (geo && geo.desk ? `translate(${-SIDE}px, ${geo.H}px)` : `tr
 // The laptop's window: the card's box in the corner at 0, the whole panel at 1.
 const clipAt = (q) => `inset(0px ${SIDE * (1 - q)}px ${(geo.H - geo.cardH) * (1 - q)}px ${SIDE * (1 - q)}px round ${RADIUS * (1 - q)}px)`;
 
-function settleState() {
+// `headLater`: a close that animates keeps the head (and the Share's words)
+// on the day it is closing until its fade is done (settleTo).
+function settleState({ headLater = false } = {}) {
   el.dataset.state = mode;
   frame.dataset.state = mode;
   if (geo && geo.desk && mode === 'open') el.dataset.side = 'open'; else delete el.dataset.side;
@@ -533,7 +539,13 @@ function settleState() {
   }
   listEl.classList.toggle('scrolls', !peek);
   fitTail();
-  if (peek) { listEl.scrollTop = 0; if (data && data.route && topNight !== data.route.id) paintHead(data.route.id); }
+  if (peek) listEl.scrollTop = 0;
+  // The head names the day at the top: today's in the peek (its row is
+  // today's), else the day the list is reading.
+  if (!headLater && data) {
+    const id = peek ? (data.route ? data.route.id : '') : nightAtTop();
+    if (id && id !== topNight) paintHead(id);
+  }
   // A focused ✕ or row that the peek just hid hands its focus to the grabber.
   if (peek && f && f !== grab && el.contains(f)) grab.focus({ preventScroll: true });
   grab.setAttribute('aria-label', peek ? OPEN_WORDS : CLOSE_WORDS);
@@ -738,13 +750,33 @@ function settleTo(target, { instant = false } = {}) {
   if (target === 0 && data && !data.peek.stop) { leave({ instant }); return; }
   const seen = seenTop();
   if (target === 1 && mode !== 'open') unpin();
+  // Closing from further down the list (a later day at the top): the peek's
+  // row is today's, at the list's top, so the list goes back there before
+  // the window is measured — measured scrolled, the rows' shift came out
+  // short by the scroll and the peek showed the wrong rows. What was on
+  // screen stays where it was while it fades (`lift`, below), and the peek's
+  // row comes down to its place from where it was, or fades in there if it
+  // was out of sight.
+  const lift = target === 0 && listEl ? listEl.scrollTop : 0;
+  const peekRow = lift ? taggedRow() : null;
+  const seenRow = !!peekRow && (() => {
+    const lb = listEl.getBoundingClientRect();
+    const rb = peekRow.getBoundingClientRect();
+    return rb.bottom > lb.top && rb.top < lb.bottom;
+  })();
+  if (lift) listEl.scrollTop = 0;
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
   apply(caughtAt(seen, p));
   const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
   apply(target);
-  settleState();
-  if (instant || !canAnimate(el, ctxRef) || from.p === target) return;
+  const moves = !instant && canAnimate(el, ctxRef) && from.p !== target;
+  // The close's fade shows the day being closed — its head and its Share's
+  // words included — and today's head is painted once they are out of sight
+  // (the P1–P3 review, 2026-09-27: the first frame of the close swapped to
+  // today).
+  settleState({ headLater: moves && target === 0 });
+  if (!moves) return;
   const timing = target === 1 ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_LEAVE };
   el.animate(geo.desk
     ? [{ transform: from.el, clipPath: from.clip }, { transform: el.style.transform, clipPath: el.style.clipPath }]
@@ -752,14 +784,25 @@ function settleTo(target, { instant = false } = {}) {
   body.animate([{ transform: from.body }, { transform: body.style.transform || 'none' }], timing);
   const fade = [{ opacity: from.p }, { opacity: target }];
   const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
-  headEl.animate(fade, timing);
+  const headFade = headEl.animate(fade, timing);
   footEl.animate(fade, timing);
-  for (const r of listEl.children) if (!r.classList.contains('tagged') && !r.classList.contains('plan-tail')) r.animate(fade, timing);
+  const held = lift ? `translateY(${-lift}px)` : null;
+  for (const r of listEl.children) {
+    if (r.classList.contains('plan-tail')) continue;
+    if (!r.classList.contains('tagged')) r.animate(held ? [{ opacity: from.p, transform: held }, { opacity: target, transform: held }] : fade, timing);
+    else if (held) r.animate(seenRow ? [{ transform: held }, { transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }], timing);
+  }
   if (geo.desk) {
     corner.head.animate(fade, timing);
     corner.close.animate(fade, timing);
     corner.line.animate(unfade, timing);
     corner.open.animate(unfade, timing);
+  }
+  if (target === 0) {
+    // Ended or caught by a hand: the peek's head is today's either way (a
+    // plan opened again meanwhile names the day at its top itself).
+    const today = () => { if (mode === 'peek' && data && data.route && topNight !== data.route.id) paintHead(data.route.id); };
+    headFade.finished.then(today, today);
   }
 }
 
