@@ -573,3 +573,25 @@ by the brief); CI 36285983812: **browser green**, checks red on the stamp only.
 Local: the List browser suite 20 of 20 (both §8 cases), `list-highlight-pick`
 8 of 8. The leftover re-filmed (`filmsheet-left.png`): the zoom shrinks away,
 the row fades, the rows below slide up — unchanged by the per-row settling.
+
+## Sol's round 3 on e2988ee (2026-09-26 ~6:50 PM PT) — the mechanism cut
+
+Review: `~/.codex-runs/cx-20260926-184621-58555-af5a91/last-message.md`. The
+hidden-tab watch is clean. This is the third round on Spotify's ambiguous
+writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
+
+- [ ] T1 BLOCKER — no early record, no mid-flight resume, no read-back-and-
+      add-the-missing. A 5xx on a write is never repeated (a 429 still waits
+      and resends: a refusal). The crew playlist is recorded ONCE, at the end,
+      by the finished Make's own path — and the drill is redrawn then, so the
+      button in front of you is the recorded playlist's Add new picks, never
+      Make playlist. On a failure after a confirmed create it is recorded with
+      the artists whose songs were confirmed so far, and the words say "Spotify
+      made the playlist but didn’t confirm every song — Add new picks finishes
+      it". No shared crew record exists mid-run (which also removes the window
+      where a friend saw an empty-ledger playlist). Test in the open drill,
+      without reopening it.
+- [ ] T2 IMPORTANT — rows are kept by their occurrence and room, not the
+      artist's name: un-pick Horse Meat Disco while holding its Afters row, and
+      its Folsom row still leaves.
+- [ ] T3 IMPORTANT, pre-existing on main — banked below, not fixed now.
