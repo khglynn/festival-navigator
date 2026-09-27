@@ -1346,6 +1346,9 @@ function planAnswer(date) {
     // The Share's words (plan-rows.js planText): "for Sat Portola", the night
     // called what tells it apart, and the link that opens on the plan.
     fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: () => planLink(peek.night.iso), opens: opensLine(),
+    // The Share's first step: this paint again at the tap's minute, so the
+    // words come from the rows on screen (plan-shelf.js sharePlan).
+    repaint: () => paintPlan(),
   };
 }
 const isoAfter = (iso) => {

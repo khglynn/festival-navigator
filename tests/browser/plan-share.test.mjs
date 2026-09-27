@@ -83,6 +83,36 @@ async function open(engine, { share = true, guest = false, plan = false, desk = 
   return { ctx, page, errors, crewToken };
 }
 const settled = async (page) => { await motionDone(page, { within: '#plan' }); await sleep(QUIET_MS); };
+// Poll from Node, in real time, until `ok` (a timer inside the page runs on
+// the fake clock: the harness traps).
+async function until(ok, what, ms = 6000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { if (await ok()) return; await sleep(50); }
+  assert.fail(`timed out waiting: ${what}`);
+}
+// The or-line under the NOW row (planList draws it after the row and its
+// grown card, keyed to the row's stop).
+const orLine = (page) => page.evaluate(() => {
+  const now = document.querySelector('#plan .plan-row.tagged');
+  const or = now && document.querySelector(`#plan .plan-row.or[data-stop="or|${CSS.escape(now.dataset.stop)}"]`);
+  return or ? or.textContent : '';
+});
+// Every picks line of a shared text is a row the open plan is showing (a
+// set by its place and act; a room by its place and first act named).
+async function linesInRows(page, text) {
+  const rows = await page.evaluate(() => [...document.querySelectorAll('#plan .plan-row:not(.past):not(.earlier)')].map((r) => r.textContent));
+  const lines = text.split('\n');
+  const picks = lines.slice(2, lines.indexOf('', 2));
+  for (const line of picks) {
+    const [where, act] = line.split(' @ ')[0].split(' for ');
+    assert.ok(rows.some((r) => r.includes(where) && (!act || r.includes(act.split(/, | and /)[0]))), `"${line}" is a row in the open plan:\n${rows.join('\n')}`);
+  }
+  return picks;
+}
+// 5:59 to 6:00 changes nothing the rows showed before but the or-line: the same
+// NOW, the same count, nothing newly over (checked minute by minute).
+const SAT_559 = new Date('2026-09-26T17:59:30-07:00'); // Tove Lo on the Pier Stage; or Groove Armada, till 6
+const SAT_6 = new Date('2026-09-26T18:00:30-07:00'); // Groove Armada's set is over: the or-line is DJ Shadow's
 const planState = (page) => page.evaluate(() => {
   const el = document.getElementById('plan');
   return el && !el.hidden ? el.dataset.state : 'none';
@@ -219,13 +249,56 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(lines[2], 'Warehouse for Tiësto @ now till 8:15pm');
       assert.doesNotMatch(text, /Zara Larsson|till 8:05/);
       assert.equal(lines.at(-1), `Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=2026-09-27`, 'the link names the night the words are about');
-      const rows = await page.evaluate(() => [...document.querySelectorAll('#plan .plan-row:not(.past):not(.earlier)')].map((r) => r.textContent));
-      const picks = lines.slice(2, lines.indexOf('', 2));
-      assert.equal(picks.length, 5);
-      for (const line of picks) {
-        const [where, act] = line.split(' @ ')[0].split(' for ');
-        assert.ok(rows.some((r) => r.includes(where) && (!act || r.includes(act.split(/, | and /)[0]))), `"${line}" is a row in the open plan:\n${rows.join('\n')}`);
-      }
+      assert.equal((await linesInRows(page, text)).length, 5);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Sol, round three on the release head (2026-09-26): at Saturday 6:00 PM
+  // the NOW row's or-line moves on (Groove Armada's set under Tove Lo ends;
+  // DJ Shadow's is still to come), but the open plan's repaint signature had
+  // no or-line in it: a plan left open kept Groove Armada, and the Share, on
+  // the fresh minute, could name the other. The rows now repaint when their
+  // or-line changes, and the Share draws the plan at the current minute and
+  // reads the very answer that drawing used.
+  test(`${name}: a plan left open across Saturday 6:00 PM — the NOW row's or-line moves on from Groove Armada to DJ Shadow`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { at: SAT_559 });
+    try {
+      await openPlanByGrabber(page);
+      assert.match(await orLine(page), /Groove Armada/, 'at 5:59 the or-line is Groove Armada');
+      await page.clock.setFixedTime(SAT_6);
+      // The minute's tick as its interval runs it (app.js tickClock). A shown
+      // page also judges the past again (recomputePast), which repaints the
+      // wall and with it everything; a busy page skips that part (pastMayMove),
+      // so this is the tick alone.
+      await page.evaluate(() => {
+        document.body.dataset.busy = 'test-tick';
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete document.body.dataset.busy;
+      });
+      await until(async () => /DJ Shadow/.test(await orLine(page)), 'the or-line moves on to DJ Shadow');
+      assert.equal(await planState(page), 'open');
+      // The dispatched visibilitychange also reaches index.html's ask for a
+      // new worker, which under serviceWorkers: 'block' has no registration
+      // (the rig's, as in plan-drag).
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: Share at Saturday 6:00 PM, before the minute's tick — the plan is drawn at this minute, and every line shared is one of its rows`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { at: SAT_559 });
+    try {
+      await openPlanByGrabber(page);
+      assert.match(await orLine(page), /Groove Armada/);
+      await page.clock.setFixedTime(SAT_6);
+      await page.locator('#plan .plan-share').click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'one share');
+      assert.match(await orLine(page), /DJ Shadow/, 'the tap drew the plan at this minute');
+      const [{ text }] = await page.evaluate(() => window.__shared);
+      assert.equal(text.split('\n')[0], 'Our crew\'s main picks for Sat Portola, now till end of day');
+      assert.doesNotMatch(text, /Groove Armada/, 'a set over at 6:00 is not shared');
+      assert.ok((await linesInRows(page, text)).length > 0);
+      assert.equal(await planState(page), 'open');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
