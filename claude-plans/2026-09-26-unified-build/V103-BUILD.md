@@ -566,3 +566,10 @@ happened".
       visible. **Done:** the watch stops on a hidden page and restarts when the
       page is seen (the clock's visibility handler calls it); test watches the
       app's 400 ms timers across hidden → visible (red first).
+
+**Gate of round two, at 80b2cb9:** npm test at UTC / Asia/Tokyo / the night
+clock 1295 of 1298 each — the one red the service-worker stamp (not stamped,
+by the brief); CI 36285983812: **browser green**, checks red on the stamp only.
+Local: the List browser suite 20 of 20 (both §8 cases), `list-highlight-pick`
+8 of 8. The leftover re-filmed (`filmsheet-left.png`): the zoom shrinks away,
+the row fades, the rows below slide up — unchanged by the per-row settling.
