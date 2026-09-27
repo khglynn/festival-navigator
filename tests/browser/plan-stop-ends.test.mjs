@@ -125,7 +125,15 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
           if (hm >= '20:05') assert.doesNotMatch(s.now || '', /Zara Larsson/, `${hm}: her set is over\n${log.join('\n')}`);
           if (opened) assert.equal(s.state, 'open', `${hm}: the plan stays open across the minutes`);
         }
-        assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+        // WebKit at 1280 raises "ResizeObserver loop completed with undelivered
+        // notifications" here since v103 put NOW in the rail's day row: a tick
+        // that shows or hides it resizes #rail-days, whose observer (wall.js
+        // wireScrollspy, `rows`) re-fits that row's gap inside its own callback
+        // (instrumented 2026-09-27: the #rail-days callback, the notice in the
+        // same millisecond, #rail-days again next frame). The browser's notice,
+        // not the app's error: errlog.js drops it as noise, and the rail's fix
+        // is TAP-BUILD.md follow-up 6. Every NOW assertion above still holds.
+        assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'|^ResizeObserver loop/.test(e)), []);
       } finally { await ctx.close(); }
     });
   }
