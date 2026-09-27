@@ -511,3 +511,10 @@ no highlight or filter wrote to the crew.
   committed with this step, as the coordinator asked; the walker reports 8 of
   8 PASS on bfcf621 (its first table's three FAILs were its own measurements,
   read above).
+
+**Gate of the review round, at d6cd473:** npm test at UTC / Asia/Tokyo / the
+night clock 1290 of 1293 each — the one red the service-worker stamp (not
+stamped, by the brief); validate-festivals 0 errors. CI 36284277397:
+**browser green** (Linux Chromium + WebKit), checks red on the stamp only.
+Earlier heads this round: 421c141 (Spotify) browser green; 83b486c browser red
+once on the NOW helper race fixed at d6cd473 (read above).
