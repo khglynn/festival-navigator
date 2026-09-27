@@ -2,7 +2,7 @@
 
 Newest first. One entry per meaningful unit of work.
 
-## 2026-09-26 — Portola Saturday: v92 to v102 in one day
+## 2026-09-26 — Portola Saturday: v92 to v103 in one day
 
 Kevin at Portola on his phone; one coordinator session released, builders
 worked in worktrees, a sibling session built Our picks. Per-release rows,
@@ -27,6 +27,21 @@ reviews and his calls: `claude-plans/2026-09-25-portola-live/LEDGER.md`.
   answer; an ordered poll does. (4) Read festival data from `origin/main`: a
   map built from a five-releases-old local checkout found 10 Folsom parties
   instead of 64.
+- **Evening (v103, data #63, v104 held):** nine more ticket prices went
+  into the data and onto a Google My Map of the Folsom parties and afters
+  (link-shared, in Kevin's personal account). The Share for Our picks took
+  five Sol rounds and shipped at 10:18 PM; v104 (NOW first in the day row,
+  the List filter, the playlist fix) passed three rounds and a walk and waits
+  for Monday so NOW doesn't move on the festival's last day.
+- **Lessons from the evening.** (5) A feature that computes in parallel with
+  what is on screen will disagree with it at every edge: the Share's rounds
+  one to three were the same class until it read the rows the plan had just
+  drawn. (6) A CI failure that only happens on one branch, twice fixed and
+  still red, is the mechanism talking: cutting the v101 window catches
+  cleared a resize test that had failed on six heads. (7) Round three on
+  Spotify's ambiguous writes cut the resume path instead of patching it —
+  record once, at the end. (8) Cleaning up worktrees broke a live builder's
+  symlinked node_modules; link new worktrees to the root's install.
 
 ## 2026-09-24 → 26 — v87 to v91 during Portola, and the live-ops lane
 
