@@ -2631,11 +2631,52 @@ function alignHighlightMenu(wrap, pop) {
   }
 }
 
+// A keyboard keeps its place through a repaint. Every node on the wall is a
+// new one, and a focused node taken out drops the focus to <body>: the next
+// Tab starts at the top of the page, and a keyboard zoom handed to the fresh
+// card stands on with nothing focused in it (v103's walk: a row leaving under
+// a keyboard-held row, in both engines — and then the row itself leaving
+// while the keyboard stood on the room head after it). The same place takes
+// the focus back: a card by its row (wall.js rowKey), anything else a Tab
+// reaches by its day, room and kind — the nth of its key — quietly (no fresh
+// keyboard zoom; a standing one is handed over by repaintWall itself), and
+// only when the focus went nowhere. A place that is gone keeps nothing.
+const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"]), .card[data-artist]';
+function placeKey(el) {
+  const card = el.closest('.card[data-artist]');
+  if (card) return `card|${rowKey(card)}`;
+  const room = el.closest('.room');
+  const day = el.closest('.day-block');
+  return [day ? day.dataset.day : '', room ? room.dataset.room : '', room && room.dataset.iso ? room.dataset.iso : '',
+    el.tagName, el.classList[0] || '', el.dataset.past || ''].join('|'); // never its words: a count in them is what changes
+}
+function placesLike(key) {
+  const root = $('wall-root');
+  const pool = key.startsWith('card|') ? root.querySelectorAll('.card[data-artist]') : root.querySelectorAll(TABBABLE);
+  return [...pool].filter((el) => placeKey(el) === key);
+}
+function focusedPlace() {
+  const a = document.activeElement;
+  if (!a || !a.closest || !$('wall-root').contains(a) || a === $('wall-root')) return null;
+  const el = a.closest('.card[data-artist]') || a;
+  const key = placeKey(el);
+  return { key, n: Math.max(0, placesLike(key).indexOf(el)) };
+}
+function refocusPlace(was) {
+  if (!was) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && a.isConnected) return; // it went somewhere real
+  const same = placesLike(was.key);
+  const el = same[was.n] || same[0];
+  if (el) focusQuietly(el);
+}
+
 function repaintWall() {
   // Rows the person is still on stay through the repaint in a filtered List
   // (a friend's pick arriving on the poll must not pull the row you just
   // un-picked out from under you) — read before the zoom is let go.
   const hold = rowsInHand();
+  const focused = focusedPlace();
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
   // must not eat the card you are resting on); a card that is gone — a
@@ -2654,6 +2695,7 @@ function repaintWall() {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
+  refocusPlace(focused);
   renderDayNav();
   paintShowMenus();
   positionNowMarks($('wall-root'), ctx.now || new Date());

@@ -253,4 +253,16 @@ test('one artist in two rooms: holding its Afters row does not hold its Folsom r
   assert.equal(level('Horse Meat Disco'), 0, 'must → nothing');
   await until(() => !cardIn(fri('Folsom'), 'Horse Meat Disco'), 'the Folsom row to leave while the Afters row is held', 2000);
   assert.ok(card() && card().classList.contains('dim'), 'the Afters row, with the keyboard on it, stays dimmed');
+  // The Folsom row leaving repaints the wall, and every card is a new node:
+  // the keyboard keeps its place on the held row (a real-browser walk found
+  // focus dropped to <body> — the next Tab went to the top of the page, and
+  // the row's keyboard zoom stood on with nothing focused in it).
+  assert.equal(document.activeElement, card(), 'the keyboard is still on the Afters row after the repaint');
+  // The focus moves on (to the days line, the next thing a Tab can reach
+  // here — the earlier tests un-picked Kevin's other rows): the Afters row goes too.
+  window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  daysLine().focus();
+  await until(() => !card(), 'the Afters row to leave once the keyboard moved on', 2000);
+  // …and that repaint keeps the keyboard where it went, too (not <body>).
+  assert.equal(document.activeElement, daysLine(), 'the keyboard is still on the days line after the row left');
 });

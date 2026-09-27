@@ -620,6 +620,32 @@ writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
       picked by Kevin, which Portola shows on Friday under Afters AND Folsom;
       the keyboard on the Afters row un-picks it; the Folsom row leaves, the
       Afters row stays dimmed.
+      **Found walking it, and fixed (call 3a):** the real-browser walk
+      (`v103-twice.mjs`, Chromium and WebKit, real Enter and Tab) showed the
+      Folsom row leave as it should — and the keyboard lose its place. The
+      Folsom row leaving repaints the wall, every card is a new node, and the
+      focused Afters card was replaced: focus fell to `<body>`, so the next
+      Tab went to the top of the page, and the row's keyboard zoom (handed to
+      the fresh card by the repaint) stood on with nothing focused in it,
+      holding the row until something else closed it. Then, once the row did
+      leave, the same repaint dropped the focus from the room head the
+      keyboard had just reached. On main every repaint (a friend's pick on the
+      25 s poll) drops keyboard focus the same way; v103 made it matter,
+      because "a keyboard is on the row" is what holds a row. Fix, in the one
+      repaint path (`repaintWall`): read where the focus is before the render
+      — a card by its row key, anything else a Tab reaches by its day, room
+      and kind, the nth of that key — and hand it back to the same place
+      afterwards, quietly (`focusQuietly`: no fresh keyboard zoom), only when
+      the focus went nowhere. Never by its words (a count in them is what
+      changes). Tests, red first, in the Horse Meat Disco test: after the
+      Folsom row leaves, the focus is still on the Afters row (was `<body>`);
+      the focus moved to the days line, the Afters row leaves and the focus is
+      still on the days line (was `<body>`). Walk after the fix, both engines:
+      focus stays on the row; Tab walks the zoom's "Add a note" and "More"
+      (row stays), then the next room head (row gone, focus kept there), then
+      Despacio. Frames: `v103-shots/twice-{chromium,webkit}-{1-before,2-held,
+      3-left}.png` — the Our picks peek goes from "NOW till 9 PM" to "till 11
+      PM" as Horse Meat Disco comes off Kevin's night.
 - [ ] T3 IMPORTANT, pre-existing on main — banked below, not fixed now.
 
 ### T3, banked: the crew playlist's ledger is one array, and arrays don't merge
