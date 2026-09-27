@@ -91,3 +91,27 @@ test('viewFromHash reads list or board and nothing else, whatever surrounds it',
   assert.equal(crew.festFromHash(), 'portola-2026');
   globalThis.location.hash = '';
 });
+
+// The plan's Share (2026-09-26): `&plan=<date>` opens the link on Our picks
+// for the night its words were about. (A bare `&plan=open` opened whatever
+// night it was when the link was opened: Sol, on the release head — a
+// Saturday text opened on Sunday showed Sunday's plan as its "Full rundown".)
+test('crewLink puts &plan=<date> last, only for a date and only beside a festival; planFromHash reads the date and nothing like it', () => {
+  const T = 'viewpersist_aaaa_0123456';
+  assert.equal(crew.crewLink(T, 'portola-2026', null, ['folsom'], 'list', { plan: '2026-09-26' }),
+    `https://fest.kevinhg.com/f/portola-2026#g=${T}&f=portola-2026&show=folsom&view=list&plan=2026-09-26`);
+  assert.doesNotMatch(crew.crewLink(T, 'portola-2026', null, null, null), /plan=/, 'an ordinary link says nothing');
+  assert.doesNotMatch(crew.crewLink(T, null, null, null, null, { plan: '2026-09-26' }), /plan=/, 'no festival, no plan');
+  assert.doesNotMatch(crew.crewLink(T, 'portola-2026', null, null, null, { plan: true }), /plan=/, 'no night, no plan');
+  assert.doesNotMatch(crew.crewLink(T, 'portola-2026', null, null, null, { plan: 'Sat' }), /plan=/, 'a night is a date');
+  const at = (hash) => { globalThis.location.hash = hash; return crew.planFromHash(); };
+  assert.equal(at(`#g=${T}&f=portola-2026&plan=2026-09-26`), '2026-09-26');
+  assert.equal(at(`#g=${T}&plan=2026-09-26&f=portola-2026`), '2026-09-26');
+  assert.equal(at(`#g=${T}&plan=open`), null, 'no night, no open');
+  assert.equal(at(`#g=${T}&plan=2026-09-266`), null);
+  assert.equal(at(`#g=${T}&myplan=2026-09-26`), null, 'another key that ends in plan is not the plan');
+  assert.equal(at(`#g=${T}`), null);
+  globalThis.location.hash = `#g=${T}&f=portola-2026&view=list&plan=2026-09-26`;
+  assert.equal(crew.viewFromHash(), 'list', 'the view before it reads as it always did');
+  globalThis.location.hash = '';
+});

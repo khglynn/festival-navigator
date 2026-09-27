@@ -117,9 +117,12 @@ test('coming back to the tab is a re-check too', () => {
   assert.equal(p.reloads, 1);
 });
 
-test('in progress means: a busy flag, a sheet, a zoom, or a field in use', () => {
+test('in progress means: a busy flag, a share sheet, a sheet, a zoom, or a field in use', () => {
   const blockers = {
     'crew being created': (d) => { d.body.dataset.busy = 'create'; },
+    // A share's own mark (the busy one has one owner, and a share can start
+    // while another holds it: Sol, round four on the Share, 2026-09-26).
+    'share sheet up': (d) => { d.body.dataset.sharing = 'plan'; },
     'sheet open': (d) => { const b = d.createElement('div'); b.id = 'sheet-backdrop'; d.body.appendChild(b); },
     'card zoomed': (d) => { const l = d.createElement('div'); l.id = 'zoom-layer'; const s = d.createElement('div'); s.className = 'zoom-slot'; l.appendChild(s); d.body.appendChild(l); },
     'focused empty field': (d) => { d.getElementById('screen-landing').style.display = ''; const i = d.createElement('input'); d.getElementById('landing-you').appendChild(i); i.focus(); },

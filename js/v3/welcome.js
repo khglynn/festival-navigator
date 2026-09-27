@@ -164,6 +164,13 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   const cluster = faces.length ? facesRow(faces) : null;
   if (cluster) head.appendChild(cluster);
   head.appendChild(node('span', 'micro-label', copy.label));
+  // The ✕ every other card and sheet has (Kevin, 2026-09-26: "an x in the
+  // upper right of that welcome popup like all the others"). It is Look
+  // around by another name: the card is read and goes.
+  const close = node('button', 'sheet-close', '✕');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close');
+  head.appendChild(close);
   const text = node('div', 'bring-text');
   // "More info" is the explanation's last words, not a third button: the
   // card's choice is two doors of one width (the guest shelf round,
@@ -206,11 +213,13 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
     ));
   }
 
-  yes.addEventListener('click', () => {
+  const gotIt = () => {
     rememberWelcomeSeen(); // the guest card's marker (a member knows the app now too); the just-joined card was marked when it showed
     dismissWelcome({ ctx });
     if (onGotIt) onGotIt();
-  });
+  };
+  yes.addEventListener('click', gotIt);
+  close.addEventListener('click', gotIt);
   // More info (the How it works page) leaves the card where it is: Settings hides it with the wall,
   // and coming back finds it still there for its quiet button — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.

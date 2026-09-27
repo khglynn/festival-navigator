@@ -17,8 +17,8 @@ Address, Start, End, Time band, Link. 130 rows total.
    group. Do not touch any other tab.
 2. Go to `https://www.google.com/maps/d/` (My Maps). Read which Google account
    is signed in (the account avatar's label). It must be Kevin's PERSONAL
-   account (kevin@trimm.co or a gmail.com address). If it is a tecovas.com
-   account, or you cannot tell, STOP and report — do not create anything.
+   account, not his work one. If you cannot tell, STOP and report — do not
+   create anything.
 3. Create a new map. Title: `Portola 2026 · Folsom + afters`. Description:
    `Thu Sep 24 to Sun Sep 27, 2026. One layer per night and type. Pins colored by time band.`
 4. For each CSV, in this order: Sat Folsom, Sat Afters, Sun Folsom,

@@ -194,3 +194,14 @@ by hand once a promoter announces.
 - **RATED X and NOCTURNAL EXTREME** have no End time — not a gap in my
   extraction, the source data itself has no `close` for either (confirmed
   in its meta note: "an end the page does not print stays unprinted").
+
+## What was built (2026-09-26)
+
+A private-by-default Google My Map in Kevin's personal account, then shared
+by link at his request (not listed in search): four layers (Sat/Sun × Folsom/
+Afters, 23 / 15 / 21 / 25 pins), styled by Time band, with a Price line from
+the festival file. Imported from Drive copies of these CSVs, since the My Maps
+upload picker is a cross-origin frame browser automation cannot reach; a
+layer's ⋮ → Reimport and merge → Replace all items swaps in new CSVs and keeps
+the layer's name and styling. The link lives in Kevin's Pen card for the
+in-app venue map, not here (this repo is public).

@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -539,10 +539,10 @@ function togglePast(key) {
 // Judge the past again, now, holding the page by time: a set that ended
 // while the phone was locked folds away, and the set at the top of what you
 // saw — or the nearest one after it — stays where it was on screen. Only
-// when nothing is in progress: a zoom, a sheet, the menu or a fold in flight
-// keep the wall as it is until the next chance.
+// when nothing is in progress: a zoom, a sheet (a share's included), the menu
+// or a fold in flight keep the wall as it is until the next chance.
 function pastMayMove() {
-  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy
+  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy && !document.body.dataset.sharing
     && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast && !pendingThin;
 }
 function recomputePast() {
@@ -1199,7 +1199,7 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace 
   });
   shelf = showJoinShelf({
     artist, intent, people, offline, ctx, opener,
-    onLook: () => { pendingJoin = null; popShelfEntry(); },
+    onLook: () => { pendingJoin = null; popShelfEntry(); planAfterShelf(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
   });
@@ -1231,8 +1231,13 @@ function leaveShelf(via = 'escape') {
   shelf.leave();
   pendingJoin = null;
   if (via !== 'back') popShelfEntry();
+  planAfterShelf();
   return true;
 }
+// A plan link's wish waited behind the join shelf (openPlanForLink): the
+// shelf left without a join, so the plan the link came for opens now, as
+// the shelf goes down. Nothing else repaints the plan at this moment.
+function planAfterShelf() { if (planOpenFor) paintPlan(); }
 // The shelf's history entry, popped by its own ways out (Look around, the
 // wall, the handle) so Back never lands on a dead step. After a join, the
 // entry is already the wall's (enterApp rewrote it) and is left alone.
@@ -1596,6 +1601,12 @@ function planAnswer(date) {
     sub: [when, `${plan.us.length} picking`].filter(Boolean).join(' · '),
     dayWord: peek.today ? '' : (entry.wd || ''),
     nightLabelOf,
+    // The Share's words (plan-rows.js planText): "for Sat Portola", the night
+    // called what tells it apart, and the link that opens on the plan.
+    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: () => planLink(peek.night.iso), opens: opensLine(),
+    // The Share's first step: this paint again at the tap's minute, so the
+    // words come from the rows on screen (plan-shelf.js sharePlan).
+    repaint: () => paintPlan(),
   };
 }
 const isoAfter = (iso) => {
@@ -1614,16 +1625,60 @@ const isoAfter = (iso) => {
 // plan existed.
 function paintPlan(date = ctx.now || new Date()) {
   if ($('screen-app').style.display !== 'none') {
-    try { paintPlanShelf($('screen-app'), ctx, planAnswer(date)); } catch (e) {
+    let answer = null;
+    try { answer = planAnswer(date); paintPlanShelf($('screen-app'), ctx, answer); } catch (e) {
       record('plan:paint', e);
+      answer = null;
       try { hidePlanShelf({ instant: true }); } catch { /* already gone */ }
     }
+    openPlanForLink(answer);
   }
   paintNowTabs(date);
   // The people menu offers Our plan only while there is one: a plan that
   // comes or goes (the minute past the last stop, the welcome card leaving)
   // redraws the menu's rows, an open menu's included (Codex, 2026-09-26).
   if (planHere() !== menuHasPlan) paintHighlight();
+}
+
+// `&plan=<date>` (the plan's Share link, crew.js planFromHash): the first
+// paint with this crew's plan on screen opens it — a member's as soon as the
+// peek has risen (plan-shelf.js afterArrival: the rise, then the plan grows),
+// a newcomer's once the welcome card has gone and the peek has risen — when
+// the plan is on the link's night. On another (a Saturday text opened on
+// Sunday) the link lands on the wall with its peek: the plan shows one night,
+// and that one is not what the words were about. A paint
+// that finds nothing to open with nothing in the way (the festival's over,
+// or no stop left today or tomorrow) drops the wish: a plan that turns up
+// later is not what the link opened on. While a card is up, the join shelf
+// is asking, a search is on, or the festival is still loading, it waits.
+// The wish is for the link's festival: a phone that keeps this crew on
+// another one lands there (the saved festival wins, state.activateCrew) and
+// the wish goes — that festival's plan is not what the link was about.
+let planOpenFor = null; // { token, fest, night } while a link's wish is pending
+function openPlanForLink(answer) {
+  if (!planOpenFor) return;
+  if (planOpenFor.token !== state.getCrewToken() || planOpenFor.fest !== state.activeFestivalId) { planOpenFor = null; return; }
+  // The welcome is decided before the wall's first paint and mounts after
+  // it: a peek that rose in between is about to step aside for the card.
+  if (welcomeDue()) return;
+  // "Pick shows" on the welcome card: the card is read and gone, and the
+  // join shelf is asking. The plan opens once it has its answer — after the
+  // join's own welcome, or as soon as the shelf is left (planAfterShelf).
+  if (joinShelf()) return;
+  if (planHere()) {
+    const { token, fest, night } = planOpenFor;
+    planOpenFor = null;
+    // The open waits for the peek's rise, and the page can move on meanwhile:
+    // it opens only on the wall, on the crew, festival and night the link
+    // named (Sol, 2026-09-26: Settings opened mid-rise got the plan opened
+    // behind it, there when the reader came back).
+    const still = () => $('screen-app').style.display !== 'none' && !planIsOpen()
+      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === night;
+    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (still()) openPlan(); });
+    return;
+  }
+  const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
+  if (!answer && !waiting) planOpenFor = null;
 }
 
 // Everything in a row that NOW changes slides from where it was to where it
@@ -2400,6 +2455,7 @@ function buildShowMenu(rooms, folded, { views = false } = {}) {
   }
   if (rooms.length > 1) pop.appendChild(menuDivider());
   if (views) pop.append(viewRow(), menuDivider());
+  pop.append(shareLinkRow().parentElement, menuDivider());
   const settings = showMenuRow('Settings', { settings: true });
   settings.addEventListener('click', () => {
     closeShowMenu({ instant: true });
@@ -2408,6 +2464,67 @@ function buildShowMenu(rooms, folded, { views = false } = {}) {
   });
   pop.appendChild(settings.parentElement);
   return pop;
+}
+
+// Share the crew link (the Share round, Kevin's pick 2026-09-26): the invite
+// sheet's link, one tap from the fest name. The phone's share sheet, or a copy
+// and "Copied ✓" on the row where there is none. The link carries what this
+// phone is showing, and the row says so under its words (the v92 rule: every
+// place that hands out a link says what it opens on) — repainted with the
+// checks, since a room tapped in the open menu changes it.
+const SHARE_ROW_WORDS = () => (canShare() ? 'Share the crew link' : 'Copy the crew link');
+function shareLinkRow() {
+  const row = showMenuRow(SHARE_ROW_WORDS());
+  row.classList.add('share-link');
+  const check = row.querySelector('.check');
+  check.textContent = '';
+  check.appendChild(glyph(canShare() ? SHARE_MARK : COPY_MARK));
+  const words = row.children[1];
+  words.className = 'words';
+  const said = document.createElement('span');
+  said.className = 'w';
+  said.textContent = SHARE_ROW_WORDS();
+  said.setAttribute('aria-live', 'polite');
+  const opens = document.createElement('span');
+  opens.className = 'opens';
+  words.replaceChildren(said, opens);
+  paintShareRow(row);
+  let timer = 0;
+  const say = (text) => {
+    clearTimeout(timer);
+    said.textContent = text;
+    timer = setTimeout(() => { said.textContent = SHARE_ROW_WORDS(); }, 1800);
+  };
+  // The menu stays up under the share sheet and goes once the sheet has its
+  // answer, sent or dismissed; a sheet the browser refused copies instead and
+  // says so in the menu, like a browser with no sheet at all. A new build
+  // waits for either: the share holds its own mark for its length
+  // (plan-shelf.js holdForShare), so neither the menu going early nor any
+  // other owner of the page's busy mark letting go can drop the guard.
+  const done = () => { if (openMenu && openMenu.pop.contains(row)) closeShowMenu(); };
+  row.addEventListener('click', async () => {
+    const link = inviteLink();
+    stampInviteFest();
+    const letGo = holdForShare('crew');
+    try {
+      if (canShare()) {
+        try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); done(); return; }
+        catch (e) { if (e && e.name === 'AbortError') { done(); return; } }
+      }
+      try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
+    } finally {
+      letGo();
+    }
+  });
+  return row;
+}
+function paintShareRow(row) {
+  const opens = row && row.querySelector('.opens');
+  if (!opens) return;
+  const line = opensLine();
+  if (opens.textContent !== line) opens.textContent = line;
+  opens.hidden = !line;
+  row.classList.toggle('says', !!line);
 }
 
 // A menu leaving the page (its rooms changed): closed and its fade ended
@@ -2453,6 +2570,7 @@ function paintShowMenus() {
       for (const b of existing.querySelectorAll('.view-row [data-view]')) {
         b.setAttribute('aria-selected', b.dataset.view === ctx.view ? 'true' : 'false');
       }
+      paintShareRow(existing.querySelector('.share-link'));
       continue;
     }
     if (existing) dropShowMenu(existing);
@@ -3092,13 +3210,31 @@ function inviteLink(meName = null) {
   const view = shareView();
   return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null, view && view.list ? LIST : null);
 }
+// The open plan's Share: the same link and view, opening on Our picks for
+// the night the words are about (`&plan=<date>`, read once at boot). It says
+// no one's name (no `&me=`).
+function planLink(night) {
+  const view = shareView();
+  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
+}
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
-function inviteViewLine() {
+function opensLine() {
   const view = shareView();
   if (!view) return '';
-  const opens = view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
-  return `${opens} — what you’re showing now.`;
+  return view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
+}
+function inviteViewLine() {
+  const opens = opensLine();
+  return opens ? `${opens} — what you’re showing now.` : '';
+}
+// Only a member stamps the crew's invite festival: a guest writes nothing
+// into the crew until they join (v92). Every door that hands out the crew
+// link does it (the invite sheet, the Show menu's row).
+function stampInviteFest() {
+  if (!ctx.meName || (state.crewDoc.meta || {}).inviteFestId === state.activeFestivalId) return;
+  state.recordInviteFest(state.activeFestivalId);
+  sync.scheduleSync();
 }
 
 // The first-open extras (v92) — the link's view, the welcome — are never
@@ -3306,12 +3442,7 @@ function openInvite({ moment = false } = {}) {
   const viewLine = inviteViewLine();
   if (viewLine) sub.append(document.createElement('br'), viewLine);
   const link = inviteLink();
-  // Only a member stamps the crew's invite festival: a guest writes nothing
-  // into the crew until they join (v92).
-  if (member && (state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
-    state.recordInviteFest(state.activeFestivalId);
-    sync.scheduleSync();
-  }
+  stampInviteFest();
   const actions = document.createElement('div');
   actions.className = 'inv-actions';
   if (navigator.share) {
@@ -4423,6 +4554,12 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   const viewHint = pendingViewHint;
   pendingShowHint = null;
   pendingViewHint = null;
+  // A link that opens on Our picks: the wish belongs to this crew, and it
+  // outlives a join's re-entry (a guest who joins from the welcome card
+  // still came for the plan). Any other crew's entry ends it.
+  planOpenFor = pendingPlanOpen && pendingFestHint ? { token, fest: pendingFestHint, night: pendingPlanOpen }
+    : planOpenFor && planOpenFor.token === token ? planOpenFor : null;
+  pendingPlanOpen = null;
   const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -4732,6 +4869,7 @@ let pendingFestHint = null; // &f= from the opened invite link, consumed by ente
 let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingViewHint = null; // &view= — Board or List (Phase 1), consumed by enterApp beside it
+let pendingPlanOpen = null; // &plan=<date> — the plan's Share link, consumed by enterApp (planOpenFor)
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it
@@ -4745,6 +4883,7 @@ export async function boot() {
   pendingMeHint = crew.meFromHash();
   pendingShowHint = crew.showFromHash();
   pendingViewHint = crew.viewFromHash();
+  pendingPlanOpen = crew.planFromHash();
   pendingJoin = null; // a guest's question belongs to the wall it was asked on
   // sp=1 -> reopen the drill. sp=connect -> reopen it AND continue the connect
   // the person already asked for on the other host.
@@ -5088,7 +5227,7 @@ export function init() {
   // always did, and the menu goes with the page — as it does when the page
   // is put away.
   window.addEventListener('popstate', () => closeShowMenu({ instant: true }));
-  window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); });
+  window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); dropShares(); });
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));

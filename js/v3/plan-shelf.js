@@ -22,12 +22,19 @@
 // laptop; a click anywhere on the card opens it. No backdrop: the wall stays
 // usable beside the panel, and a zoom keeps left of it (foot.js sideLeft).
 //
+// The open plan ends on one action, its Share (2026-09-26): the day in words
+// (plan-rows.js planText) with the link that opens on it, handed to the
+// phone's share sheet, or copied where there is none. It sits under the rows,
+// not in the head: the laptop's head is a button of its own (the grabber), and
+// a button cannot hold one. So it is the same on both, in reach of a thumb,
+// and out of the peek's window like the head.
+//
 // No history entry (the v93 Show menu's lesson). It closes by a drag down, a
 // tap on the grabber, its ✕ and Escape (app.js); the open state is dropped on
 // pagehide, boot, a crew switch and any other screen. Back does what it does
 // from the wall: it leaves it.
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { planList, planHead, stopKey, PLAN_NAME } from './plan-rows.js';
+import { planList, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
 
 const ID = 'plan';
@@ -52,10 +59,16 @@ let grab = null;     // the grabber (a button: the keyboard's way in and out)
 let body = null;     // head + list, the part the window shifts
 let headEl = null;
 let listEl = null;
+let footEl = null;   // the open plan's last line: its Share
+let footOpens = null; // what the Share's link opens on, beside it
+let shareWords = null;
+let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
 let ctxRef = null;
 let data = null;     // the last paint's answer (see paintPlanShelf)
 let sig = '';        // what that answer drew, to skip repaints that change nothing
+let drawn = null;    // the answer the rows on screen were drawn from (draw): the Share's words
+let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
 let geo = null;      // { H, peekH, shift } measured after every draw
@@ -76,6 +89,7 @@ let nightId = '';    // `${fid}|${route id}` of the day the rows are drawn for
 let drag = null;
 let leaving = null;  // { timer } while the shelf drops out of sight
 let arrival = null;  // the arrival's animation, while it plays
+let stint = 0;       // counts arrivals, leaves and drops: an afterArrival from an older one runs nothing
 let quietUntil = 0;  // the click that follows a drag or a peek tap is not a second tap
 let held = false;    // an answer that came in under a hand: drawn when it lets go
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
@@ -85,6 +99,8 @@ export const planIsOpen = () => mode === 'open';
 // Whether there is a plan on screen to open: the peek or the open plan, not
 // one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
+// The night the plan on screen is drawn for (its route's date), or null.
+export const planNight = () => (planHere() && data && data.route ? data.route.iso : null);
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
 export function planShowsNow() {
@@ -103,17 +119,45 @@ function spanOf(cls, text) {
   if (text != null) e.textContent = text;
   return e;
 }
-function chevron(up) {
+export function glyph(path) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('width', '11'); s.setAttribute('height', '11'); s.setAttribute('viewBox', '0 0 12 12');
   s.setAttribute('aria-hidden', 'true');
   const d = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  d.setAttribute('d', up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
+  d.setAttribute('d', path);
   d.setAttribute('fill', 'none'); d.setAttribute('stroke', 'currentColor'); d.setAttribute('stroke-width', '1.7');
   d.setAttribute('stroke-linecap', 'round'); d.setAttribute('stroke-linejoin', 'round');
   s.appendChild(d);
   return s;
 }
+const chevron = (up) => glyph(up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5');
+// The system's share mark (an arrow out of a tray), and two sheets for a copy.
+// The Show menu's crew-link row draws the same marks (app.js).
+export const SHARE_MARK = 'M6 7.2V1.6M3.9 3.7 6 1.6l2.1 2.1M4.2 5.4H3.1v5.1h5.8V5.4H7.8';
+export const COPY_MARK = 'M4.3 4.3h5.2v6.2H4.3zM7.7 4.3V2.5H2.5v6.2h1.8';
+export const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+// A share in progress — its sheet up, or its copy on the way — holds a new
+// build's reload with a mark of its own on the body, data-sharing (index.html
+// quiet() reads it; so does app.js pastMayMove, which keeps the wall and the
+// plan still under the sheet). Its own because the page's busy mark has one
+// owner, and whoever held that when the tap came can let go mid-sheet. One
+// hold per share, so two at once keep the mark until both have answered; the
+// mark names what is sharing ("plan", "crew", "plan crew"). The page going
+// away lets go of every hold (app.js pagehide): a page kept in the
+// back/forward cache with a share that never answered must not come back
+// with every reload held. (Sol, on the Share's release head, 2026-09-26.)
+const shares = new Map();
+const markShares = () => {
+  if (shares.size) document.body.dataset.sharing = [...shares.values()].join(' ');
+  else delete document.body.dataset.sharing;
+};
+export function holdForShare(what) {
+  const hold = {};
+  shares.set(hold, what);
+  markShares();
+  return () => { if (shares.delete(hold)) markShares(); };
+}
+export function dropShares() { shares.clear(); markShares(); }
 
 function build(host) {
   frame = mk('div', 'plan-frame');
@@ -141,7 +185,16 @@ function build(host) {
   body = mk('div', 'plan-body');
   headEl = mk('div', 'plan-head');
   listEl = mk('div', 'plan-list');
-  body.append(headEl, listEl);
+  footEl = mk('div', 'plan-foot');
+  footOpens = spanOf('opens');
+  const share = mk('button', 'plan-share btn-tonal');
+  share.type = 'button';
+  shareWords = spanOf('w', shareLabel());
+  shareWords.setAttribute('aria-live', 'polite');
+  share.append(glyph(canShare() ? SHARE_MARK : COPY_MARK), shareWords);
+  share.addEventListener('click', sharePlan);
+  footEl.append(footOpens, share);
+  body.append(headEl, listEl, footEl);
   el.append(grab, body);
   frame.appendChild(el);
   // Right after the day rail in the page's order, so a keyboard meets the
@@ -190,7 +243,9 @@ function railBottom() {
 
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
-//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight }
+//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
+//     fest, day, linkOf, opens,   (the Share's: planText, and what its link opens on)
+//     repaint }                   (app.js paintPlan at this minute: the Share's first step)
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -202,7 +257,12 @@ export function paintPlanShelf(host, ctx, answer) {
   const next = signature(answer);
   const arriving = mode === 'gone' || !!leaving;
   data = answer;
-  if (!arriving && next === sig) return;
+  // The link carries the rooms and the view this phone shows, and the foot
+  // says so beside the button (the v92 rule: every place that hands out a
+  // link says what it opens on). Not part of the rows' signature: a List
+  // switch changes the words and nothing else.
+  if (footOpens.textContent !== (answer.opens || '')) footOpens.textContent = answer.opens || '';
+  if (!arriving && next === sig && !forced) return;
   // A hand on the window: a repaint would put the window back where the
   // last settle left it, out from under the finger, and the release would
   // then decide from there. The rows wait for the hand (flushHeld).
@@ -218,15 +278,16 @@ export function paintPlanShelf(host, ctx, answer) {
 }
 
 // Everything the rows show, as one string: a minute that changes nothing
-// (the usual tick) draws nothing.
+// (the usual tick) draws nothing. The route's part is plan-rows.js's own
+// (rowsKey), from the rules planList draws by.
 function signature(a) {
-  const rows = a.route ? a.route.items.map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}:${i.tier || ''}`).join(',') : '';
-  const over = a.nowMin == null || !a.route ? '' : a.route.items.filter((i) => i.to <= a.nowMin).length;
-  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
+  const rows = rowsKey(a.route, { plan: a.plan, peek: a.peek, nowMin: a.nowMin });
+  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
 }
 
 function draw() {
   const a = data;
+  drawn = a;
   const ctx = ctxRef;
   headEl.textContent = '';
   const head = planHead({ weekday: a.weekday, sub: a.sub });
@@ -328,6 +389,7 @@ function apply(q) {
   const o = p === 1 ? '' : String(p);
   const back = p === 0 ? '' : String(k);
   headEl.style.opacity = o;
+  footEl.style.opacity = o;
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.style.opacity = o;
   corner.line.style.opacity = back;
   corner.open.style.opacity = back;
@@ -351,6 +413,7 @@ function settleState() {
   // What the peek hides is not there for a keyboard or a screen reader either.
   const peek = mode !== 'open';
   headEl.inert = peek;
+  footEl.inert = peek;
   for (const r of listEl.children) {
     r.inert = peek && !r.classList.contains('tagged');
     // A row is a control in the open plan (Enter grows its card), and the
@@ -378,6 +441,7 @@ function settleState() {
 // ---- arriving, leaving, repainting -----------------------------------------------
 // Storyboard 1: the peek grows out of the dock's top edge.
 function arrive() {
+  stint += 1;
   el.hidden = false;
   mode = 'peek';
   unpin();
@@ -396,12 +460,13 @@ function arrive() {
 // timer finishes the job if the animation never ends (a backgrounded tab).
 function leave({ instant = false } = {}) {
   if (!el || mode === 'gone') return;
+  stint += 1;
   endDrag();
   const done = () => {
     cancelLeave();
     const f = document.activeElement;
     if (f && el.contains(f)) f.blur();
-    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = ''; held = false;
+    el.hidden = true; mode = 'gone'; sig = ''; data = null; drawn = null; grown = null; earlierOpen = false; nightId = ''; held = false;
     frame.dataset.state = 'gone'; delete el.dataset.side;
     document.documentElement.style.removeProperty('--plan-corner-h');
     measureFoot();
@@ -504,6 +569,21 @@ export function openPlan({ instant = false, focus = false } = {}) {
   settleTo(1, { instant });
   if (focus) grab.focus({ preventScroll: true });
 }
+// `fn` once the peek has landed: now when nothing is arriving, else when the
+// arrival ends. An open during the arrival cancels it, and the peek appears
+// in its place for a frame before it grows, so the Share's link opens after
+// the rise (two beats). An arrival that never lands (a hand caught it, the
+// plan left) runs nothing: the person took over, or there is nothing to open.
+// Nor does one the page moved on from while it rose — the wall left for
+// another screen (dropPlan), the plan gone, or a new arrival since (`stint`):
+// the rise that ends is not the one `fn` was waiting for (Sol, on the
+// Share's release head, 2026-09-26). The caller checks its own identity too.
+export function afterArrival(fn) {
+  const a = arrival;
+  if (!a) { fn(); return; }
+  const mine = stint;
+  a.finished.then(() => { if (el && stint === mine && mode === 'peek' && !leaving) fn(); }, () => {});
+}
 export function closePlan({ instant = false } = {}) {
   if (!el || mode !== 'open') return;
   settleTo(0, { instant });
@@ -511,6 +591,7 @@ export function closePlan({ instant = false } = {}) {
 // Gone with the page: pagehide, boot, a crew switch, another screen.
 export function dropPlan() {
   if (!el) return;
+  stint += 1;
   endDrag();
   flushHeld();
   if (mode === 'open') settleTo(0, { instant: true });
@@ -539,6 +620,7 @@ function settleTo(target, { instant = false } = {}) {
   const fade = [{ opacity: from.p }, { opacity: target }];
   const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
   headEl.animate(fade, timing);
+  footEl.animate(fade, timing);
   for (const r of listEl.children) if (!r.classList.contains('tagged')) r.animate(fade, timing);
   if (geo.desk) {
     corner.head.animate(fade, timing);
@@ -561,7 +643,7 @@ function onDown(e) {
   if (geo && geo.desk) return; // a laptop's card is a button: its click opens it (onClickPeek)
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
-  if (e.target.closest('.sheet-close')) return;
+  if (e.target.closest('.sheet-close') || footEl.contains(e.target)) return; // controls, not handles
   const seen = seenTop();
   if (mode !== 'open') unpin();
   measure();
@@ -680,6 +762,54 @@ const cssDriven = (a) => (typeof window.CSSAnimation === 'function' && a instanc
 function motions() {
   if (!el || typeof el.getAnimations !== 'function') return [];
   return el.getAnimations({ subtree: true }).filter((a) => !cssDriven(a));
+}
+
+// ---- the Share ---------------------------------------------------------------------
+// The day the rows show, as words, to the share sheet — and only there:
+// nothing else leaves the phone. A dismissed sheet is a choice; a sheet that
+// fails, or a browser with none, copies instead and says so on the button.
+// One source (Sol, round three on the Share's release head, 2026-09-26): the
+// tap first paints the plan at this minute through the app's own paint (the
+// peek, its rows and the dock's NOW tab, on one date), drawn even when the
+// signature says nothing changed, and the words come from the answer those
+// rows were drawn from. Three rounds had found the words and the rows
+// disagreeing — the words worked out at the tap's minute, the rows at the
+// last paint's — and rules shared between two workings never hold across a
+// clock both read.
+async function sharePlan() {
+  if (mode !== 'open' || !data) return;
+  if (data.repaint) {
+    forced = true;
+    try { data.repaint(); } finally { forced = false; }
+  }
+  // Only rows this tap drew. A paint that came in under a hand on the window
+  // waits for the hand (paintPlanShelf), so a Share tapped by a second finger
+  // while the first holds the grabber would read rows on an older minute:
+  // nothing is sent, and the tap after the hand lets go shares (Sol, round
+  // four, 2026-09-26). Nor when this minute took the plan away.
+  const a = drawn;
+  if (mode !== 'open' || leaving || held || !a || a !== data) return;
+  const text = planText(a.route, {
+    ctx: ctxRef, plan: a.plan, peek: a.peek, nowMin: a.nowMin, highlight: a.highlight || [],
+    fest: a.fest || '', day: a.day || '', today: !!a.peek.today, link: a.linkOf ? a.linkOf() : '',
+  });
+  // A new build waits while the sheet is up or the copy is on its way: a
+  // reload would take the plan, and the words, from under either.
+  const letGo = holdForShare('plan');
+  try {
+    if (canShare()) {
+      try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
+  } finally {
+    letGo();
+  }
+}
+const shareLabel = () => `${canShare() ? 'Share' : 'Copy'} ${PLAN_NAME.toLowerCase()}`; // "Share our picks"
+function sayOnShare(words) {
+  clearTimeout(shareTimer);
+  shareWords.textContent = words;
+  shareTimer = setTimeout(() => { shareWords.textContent = shareLabel(); }, 1800);
 }
 
 // Nothing under the peek's window is a control of its own: a tap there opens
