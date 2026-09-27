@@ -418,3 +418,35 @@ crew link, no database writes (previews and `vercel dev` use production's).
    the fallback is the changeover (the Share's 8:10 golden then loses its Tiësto
    line); I haven't chosen it.
 
+   **Gate on 934cece** (a snapshot started at 724d0bb's code; 4892932 and 934cece add
+   only docs): `npm test` 1284 tests, 1281 pass, 1 fail (the SW stamp), 1 skipped, 1
+   todo. Every browser suite at 0, one at a time, and the plan suites at 700 too:
+   plan-days 26/26, plan-drag 38/39 (the WebKit keyboard skip), plan-share 39/39 and
+   plan-stop-ends 6/6, each at 0 and 700; people-menu 24, by-time 4, error-report 1,
+   fold-intent 4, guest-tap-route 6, heads 7, hover 11, import-flow 4, list-view 12,
+   meter 27, shell 11, show-links 6, show-menu-stacking 2, stack-row 9, strip-follow
+   3, tap-shelf 31, touch-ghost 2, zoom-chips-burst 8, zoom-chips 45, zoom-chrome 18,
+   zoom-door-row 8, zoom-notes-chip 1, zoom-still-hand 6, all green. now-jump 42/58:
+   the sixteen highlighted cases, the product question P3 raised, answered next.
+6. **now-jump under ONE NOW (624c495, builder).** Kevin chose (a) on 2026-09-27 ("k ya
+   that works", in chat with the lead): ONE NOW holds under a highlight, as built. A
+   highlighted person's live pick is the plan's NOW, and the NOW tab steps aside for
+   it; the wall's NOW under a highlight is tested where the plan says nothing now.
+   a. The sixteen cases keep what they test (NOW lands on the live pick, slides the
+      row, pulses the fresh card, cycles the stops, Reduce Motion) with the person
+      highlighted beside someone who has nothing on at that minute: Dee at 10:30 PM
+      (DJ Shadow and Despacio are over by 9:45) for Ross, Nhu and Kat; Nhu at 7 PM
+      (Soulwax, Prospa and Galen all start after 9) for Dee. Two highlighted need a
+      shared stop (GROUP_FLOOR 2), and these pairs share only Despacio, a drop-in and
+      never a stop, so there is no stop and no peek, and the tab is there. The
+      highlight lets both people's cards through, and the quiet one has none on, so
+      the tab lands where it did for one person. None retired.
+   b. New, at 390, 1280 and WebKit 390: nobody highlighted, the tab is there (the crew
+      never gathers its bar of three); Ross alone, the plan says NOW ("Now: Public
+      Works, till 11:45 PM", Milli Meng in the row) and the tab is gone; Dee added
+      beside him, the tab is back.
+   **Red first.** The sixteen failed on the P4 head as the P3 gate found (`element is
+   not visible`, the tab stepped aside); rewritten, all pass there. The three new cases
+   pass on the P4 head too: they pin the rule as built, for Kevin's (a). A mutation
+   with paintNowTabs' `planShowsNow()` switched off fails them (the same mutation as
+   P4's test 5). **At 0 on the P4 head's code: 61/61.**
