@@ -621,10 +621,40 @@ function play(before, { duration, easing }) {
 function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 // `focus`: a keyboard opened it from somewhere else (the people menu's row),
 // so its focus comes along to the grabber, as if Enter had been pressed there.
-export function openPlan({ instant = false, focus = false } = {}) {
+// `night`: a later night the plan opens on (a Share's link for it, app.js
+// openPlanForLink — the plan-days build: a link opens on the day its words
+// were about). See glideTo.
+export function openPlan({ instant = false, focus = false, night = null } = {}) {
   if (!el || mode === 'gone' || leaving) return;
   settleTo(1, { instant });
+  if (night) glideTo(night);
   if (focus) grab.focus({ preventScroll: true });
+}
+// The plan opens on today, as it always does — the peek's row is where the
+// window grows from — and once it has landed, the list glides down to the
+// night the link was about, the head turning over as that night reaches the
+// top: every piece travels to where it is going, nothing jumps. Scrolled
+// before the open, the peek's own row would have left the window in place.
+// Instant under Reduce Motion or Low power. A hand on the window, a scroll of
+// the person's own, or a plan closed meanwhile keeps things where they are.
+let glide = 0;
+function glideTo(id) {
+  const mine = ++glide;
+  const from = listEl ? listEl.scrollTop : 0;
+  const go = () => {
+    if (mine !== glide || mode !== 'open' || drag || leaving || !listEl || Math.abs(listEl.scrollTop - from) > 1) return;
+    const row = [...listEl.children].find((r) => r.dataset.night === id || (r.dataset.nights || '').split(' ').includes(id));
+    if (!row) return;
+    fitTail();
+    const top = listEl.scrollTop + row.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
+    if (canAnimate(el, ctxRef) && typeof listEl.scrollTo === 'function') { listEl.scrollTo({ top, behavior: 'smooth' }); return; }
+    listEl.scrollTop = top;
+    onListScroll();
+  };
+  const moving = motions().filter((a) => a.playState === 'running'
+    && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
+  if (!moving.length) { go(); return; }
+  Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(go);
 }
 // `fn` once the peek has landed: now when nothing is arriving, else when the
 // arrival ends. An open during the arrival cancels it, and the peek appears

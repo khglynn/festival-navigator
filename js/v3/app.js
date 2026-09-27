@@ -1433,9 +1433,11 @@ function paintPlan(date = ctx.now || new Date()) {
 // paint with this crew's plan on screen opens it — a member's as soon as the
 // peek has risen (plan-shelf.js afterArrival: the rise, then the plan grows),
 // a newcomer's once the welcome card has gone and the peek has risen — when
-// the plan is on the link's night. On another (a Saturday text opened on
-// Sunday) the link lands on the wall with its peek: the plan shows one night,
-// and that one is not what the words were about. A paint
+// the plan lands on the link's night, or on an earlier one: the open plan
+// holds every night from today on, so a Sunday text read on Saturday opens
+// scrolled to Sunday (the plan-days build, BUILD.md P2). A night already over
+// (a Saturday text opened on Sunday) lands on the wall with its peek: the
+// words were about a day that is gone. A paint
 // that finds nothing to open with nothing in the way (the festival's over,
 // or no stop left today or tomorrow) drops the wish: a plan that turns up
 // later is not what the link opened on. While a card is up, the join shelf
@@ -1461,9 +1463,11 @@ function openPlanForLink(answer) {
     // it opens only on the wall, on the crew, festival and night the link
     // named (Sol, 2026-09-26: Settings opened mid-rise got the plan opened
     // behind it, there when the reader came back).
+    const landed = answer && answer.route ? answer.route.iso : null;
+    const later = !!landed && night > landed && answer.plan.nights.find((n) => n.iso === night);
     const still = () => $('screen-app').style.display !== 'none' && !planIsOpen()
-      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === night;
-    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (still()) openPlan(); });
+      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === landed;
+    if ((landed === night || later) && !planIsOpen()) afterArrival(() => { if (still()) openPlan({ night: later ? later.id : null }); });
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');

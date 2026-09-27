@@ -462,12 +462,13 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
     out.push(...body);
     rows.push(...tag(out, id));
   };
-  // Nights after the landing one. A run of nights with nothing to show and
-  // the same reason (ACL's Mon and Tue between weekends) is ONE head and one
-  // line — "MON · TUE  OCT 5 – 6", "Nothing picked yet" — not a ladder of
-  // empty days.
+  // A run of nights with nothing to show and the same reason (ACL's Mon and
+  // Tue between weekends) is ONE head and one line — "MON · TUE  OCT 5 – 6",
+  // "Nothing picked yet" — not a ladder of empty days; ahead of the landing
+  // night and, once Earlier is open, behind it. The run's rows name every
+  // night in it (`data-nights`), so a link for any of them finds its place.
   const bare = (id) => { const r = plan.night(id); return r && !r.stops && !(r.dropIns || []).length ? r.why : null; };
-  const emptyRun = (run) => {
+  const emptyRun = (run, { past = false } = {}) => {
     const first = dayOf(run[0]) || {};
     const last = dayOf(run[run.length - 1]) || {};
     const h = mk('div', 'plan-day room-head');
@@ -480,19 +481,21 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
     h.append(name, mk('span', 'sub', span), mk('span', 'line'));
     h.dataset.stop = `day|${run[0]}`;
     const e = emptyRow(plan.night(run[0]));
+    for (const r of [h, e]) { r.dataset.nights = run.join(' '); if (past) r.classList.add('past'); }
     rows.push(...tag([h, e], run[0]));
-    for (const id of run.slice(1)) tag([], id);
   };
-  if (earlierOpen) for (const id of before) night(id, { head: true, past: true });
+  const nightsOf = (list, { past = false } = {}) => {
+    for (let i = 0; i < list.length; i++) {
+      const why = bare(list[i]);
+      let j = i;
+      while (why && j + 1 < list.length && bare(list[j + 1]) === why) j++;
+      if (j > i) { emptyRun(list.slice(i, j + 1), { past }); i = j; continue; }
+      night(list[i], { head: true, past });
+    }
+  };
+  if (earlierOpen) nightsOf(before, { past: true });
   night(ids[at], { head: earlierOpen && before.length > 0, clock: nowMin, fold: !earlierOpen && overToday.length > 0 });
-  const later = ids.slice(at + 1);
-  for (let i = 0; i < later.length; i++) {
-    const why = bare(later[i]);
-    let j = i;
-    while (why && j + 1 < later.length && bare(later[j + 1]) === why) j++;
-    if (j > i) { emptyRun(later.slice(i, j + 1)); i = j; continue; }
-    night(later[i], { head: true });
-  }
+  nightsOf(ids.slice(at + 1));
   markEnds(rows);
   rows.forEach((r) => list.appendChild(r));
   return list;
