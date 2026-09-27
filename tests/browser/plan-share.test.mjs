@@ -550,6 +550,25 @@ test('Chromium: a plan link whose peek was caught mid-rise opens nothing', { ski
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });
+// The rise ends on another screen: Settings opened while the peek rose. The
+// link's open was for the wall it landed on, so nothing opens behind
+// Settings, and the wall comes back with its peek (Sol, 2026-09-26).
+test('Chromium: a plan link whose peek is still rising when Settings opens opens nothing, there or back on the wall', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors } = await open(chromium, { plan: true, before: holdArrival });
+  try {
+    assert.equal((await landHeld(page)).state, 'peek');
+    await page.click('#gear-btn');
+    await page.waitForSelector('#screen-settings', { state: 'visible', timeout: 5000 });
+    await page.evaluate(() => window.__arrival.finish());
+    await sleep(600);
+    assert.equal(await planState(page), 'peek', 'nothing opens behind Settings');
+    await page.goBack();
+    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 5000 });
+    await settled(page);
+    assert.equal(await planState(page), 'peek', 'back on the wall, the plan is its peek');
+    assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+  } finally { await ctx.close(); }
+});
 
 // Copying needs the clipboard, which Playwright grants only in Chromium.
 test('Chromium, no share sheet: Copy our picks copies the same words, and the button says so', { skip: chromium ? false : NO_BROWSER }, async () => {
