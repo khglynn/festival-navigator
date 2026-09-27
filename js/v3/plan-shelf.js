@@ -71,15 +71,6 @@ let drawn = null;    // the answer the rows on screen were drawn from (draw): th
 let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
-// A few pixels the window stands off its place, apart from p (the Share build,
-// 2026-09-26). Two kinds of motion move the window: a settle changes p, and an
-// arrival or a redraw's slide moves the window to a place without changing p.
-// A hand or a key that catches the window mid-motion must keep it where it is
-// on screen, so a caught settle becomes progress (and any overshoot past the
-// ends becomes lift), and a caught arrival or slide becomes lift alone — p
-// stays at the peek. The next settle takes the lift home. At rest it is 0.
-let lift = 0;
-let lifting = null;  // the arrival's or the slide's animation, while it moves the window
 let geo = null;      // { H, peekH, shift } measured after every draw
 // Whose cards are grown under their rows: null = the default (the NOW row's
 // alone), else the set of stop keys a person left grown (NOW's included until
@@ -351,12 +342,6 @@ function taggedRow() {
 // drew no faces) — and slide into view as it opens.
 function measure() {
   const desk = isDesk();
-  // The layout crossed between the phone's and the laptop's: the state goes
-  // with it wherever the ruler is read (below). A laptop narrowed while the
-  // page scrolled was measured by the scroll's frame, which settled nothing,
-  // and the refit after it found no new numbers — data-side="open" stayed
-  // on a phone (Sol, round three, 2026-09-26; three WebKit failures on CI).
-  const flipped = !!geo && geo.desk !== desk;
   const T = desk ? railBottom() : 0;
   el.style.top = desk ? `${T}px` : '';
   // Boxes, not offsets: offsetHeight rounds, and a row 61.1px tall measured as
@@ -382,7 +367,6 @@ function measure() {
   el.dataset.peekH = desk ? '0' : String(geo.peekH);
   const root = document.documentElement.style;
   if (desk) root.setProperty('--plan-corner-h', `${geo.cardH + GAP}px`); else root.removeProperty('--plan-corner-h');
-  if (flipped && mode !== 'gone') settleState();
 }
 
 // p → the window. Opacity rides the same number: the head and every row but
@@ -392,10 +376,10 @@ function apply(q) {
   p = Math.max(0, Math.min(1, q));
   const k = 1 - p;
   if (geo.desk) {
-    el.style.transform = `translate(${-SIDE * k}px, ${(geo.H - geo.cardH - GAP) * k + lift}px)`;
+    el.style.transform = `translate(${-SIDE * k}px, ${(geo.H - geo.cardH - GAP) * k}px)`;
     el.style.clipPath = clipAt(p);
   } else {
-    el.style.transform = `translateY(${(geo.H - geo.peekH) * k + lift}px)`;
+    el.style.transform = `translateY(${(geo.H - geo.peekH) * k}px)`;
     el.style.clipPath = '';
   }
   body.style.transform = p === 1 ? 'none' : `translateY(${-geo.shift * k}px)`;
@@ -464,8 +448,7 @@ function arrive() {
     const a = el.animate([{ transform: below() }, { transform: el.style.transform }],
       { duration: GROW_MS, easing: EASE_ARRIVE });
     arrival = a;
-    lifting = a;
-    a.onfinish = () => { if (arrival === a) arrival = null; if (lifting === a) lifting = null; };
+    a.onfinish = () => { if (arrival === a) arrival = null; };
   }
 }
 
@@ -483,8 +466,6 @@ function leave({ instant = false } = {}) {
     document.documentElement.style.removeProperty('--plan-corner-h');
     measureFoot();
   };
-  lift = 0;
-  lifting = null; // leaving is its own motion: no catch reads it
   if (instant || !geo || !canAnimate(el, ctxRef)) { done(); return; }
   if (leaving) return;
   // Leaving while it is still arriving (the welcome card mounts in the same
@@ -509,7 +490,6 @@ function cancelLeave() {
   clearTimeout(leaving.timer);
   leaving = null;
   arrival = null;
-  lifting = null;
   if (el) el.getAnimations().forEach((x) => { x.onfinish = null; x.cancel(); });
 }
 
@@ -547,11 +527,7 @@ function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
   if (Math.abs(before.top - top) > 0.5) {
-    // The window slides to its new place without its progress changing: a
-    // grab mid-slide takes the slide's offset as lift (caughtAt).
-    const a = el.animate([{ transform: `translateY(${before.top - top}px) ${el.style.transform}` }, { transform: el.style.transform }], { duration, easing });
-    lifting = a;
-    a.onfinish = () => { if (lifting === a) lifting = null; };
+    el.animate([{ transform: `translateY(${before.top - top}px) ${el.style.transform}` }, { transform: el.style.transform }], { duration, easing });
   }
   let arrivals = 0;
   for (const r of listEl.children) {
@@ -588,6 +564,16 @@ export function openPlan({ instant = false, focus = false } = {}) {
   settleTo(1, { instant });
   if (focus) grab.focus({ preventScroll: true });
 }
+// `fn` once the peek has landed: now when nothing is arriving, else when the
+// arrival ends. An open during the arrival cancels it, and the peek appears
+// in its place for a frame before it grows, so the Share's link opens after
+// the rise (two beats). An arrival that never lands (a hand caught it, the
+// plan left) runs nothing: the person took over, or there is nothing to open.
+export function afterArrival(fn) {
+  const a = arrival;
+  if (!a) { fn(); return; }
+  a.finished.then(() => { if (el && mode === 'peek' && !leaving) fn(); }, () => {});
+}
 export function closePlan({ instant = false } = {}) {
   if (!el || mode !== 'open') return;
   settleTo(0, { instant });
@@ -610,13 +596,11 @@ function settleTo(target, { instant = false } = {}) {
   if (target === 1 && mode !== 'open') unpin();
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
   apply(caughtAt(seen, p));
-  const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p, lift };
+  const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
-  lift = 0; // a settle ends where its state says, lift and all
-  lifting = null;
   apply(target);
   settleState();
-  if (instant || !canAnimate(el, ctxRef) || (from.p === target && Math.abs(from.lift) < 0.5)) return;
+  if (instant || !canAnimate(el, ctxRef) || from.p === target) return;
   const timing = target === 1 ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_LEAVE };
   el.animate(geo.desk
     ? [{ transform: from.el, clipPath: from.clip }, { transform: el.style.transform, clipPath: el.style.clipPath }]
@@ -749,24 +733,13 @@ function seenTop() {
 // placed at `rest` and read, and p moves by the difference over its reach —
 // the phone's H − peekH, the laptop's drop from the panel to the corner card.
 // `rest`: where the window is when nothing was playing.
-// An arrival or a slide caught (`lifting`) keeps p at `rest` and becomes lift
-// alone; a settle caught becomes progress, and what p cannot hold (the
-// arrival curve's overshoot past an end) becomes lift.
-const showing = (a) => !!a && (a.pending || a.playState === 'running' || a.playState === 'paused');
 function caughtAt(top, rest) {
   if (top == null) return rest;
-  const placed = showing(lifting);
-  lifting = null;
   motions().forEach((a) => a.cancel());
-  lift = 0;
   apply(rest);
-  const off = top - el.getBoundingClientRect().top; // down is positive
   const reach = geo.desk ? geo.H - geo.cardH - GAP : geo.H - geo.peekH;
-  const q = placed || !(reach > 0) ? rest : rest - off / reach;
-  const at = Math.max(0, Math.min(1, q));
-  lift = placed || !(reach > 0) ? off : (at - q) * reach;
-  if (Math.abs(lift) < 0.5) lift = 0;
-  return at;
+  if (!(reach > 0)) return rest;
+  return Math.max(0, Math.min(1, rest - (top - el.getBoundingClientRect().top) / reach));
 }
 
 // The window's own motion (Web Animations) — not what CSS drives: the nodes'
@@ -924,36 +897,11 @@ function unpin() {
 // tap's pinned height is the phone's: a window that has become the laptop's
 // panel reaches the bottom again, and its state follows the layout (the
 // panel bounds the zoom only while it is one).
-// One motion is re-aimed instead of waited for: the window's own arrival (or
-// a slide), which moves the whole window and nothing inside it, so the ruler
-// reads true through it. Waited for, it landed on the old numbers and the
-// window then dropped in one frame — a font landing mid-arrival on a first
-// visit, 23px (the Share build, banked in v101).
-// A layout that crosses between the phone's and the laptop's (a rotation, a
-// window dragged across 720px) waits for nothing: no motion in flight is aimed
-// at the new layout, so each one ends where it was going and the window is
-// measured at once — the panel's side and the phone's pin go with the layout
-// now, not when a row's motion ends. Waiting kept an open plan the phone's on
-// a laptop for as long as a row moved, and a motion that never ended kept it
-// so, a wait already queued included (Sol's fourth round; the widen test's
-// WebKit failures on CI, 2026-09-26).
 let refitQueued = false;
-const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
 export function refitPlanShelf() {
-  if (!el || mode === 'gone' || leaving || drag) return;
-  if (geo && geo.desk !== isDesk()) {
-    for (const a of motions()) if (!endless(a)) a.finish();
-    lifting = null;
-    arrival = null;
-    if (mode !== 'open' || isDesk()) unpin();
-    measure();
-    apply(mode === 'open' ? 1 : 0);
-    settleState();
-    return;
-  }
-  if (refitQueued) return;
-  const moving = motions().filter((a) => a.playState === 'running' && !endless(a));
-  if (showing(lifting) && motions().every((a) => a === lifting || endless(a) || !showing(a))) { reaim(); return; }
+  if (!el || mode === 'gone' || leaving || drag || refitQueued) return;
+  const moving = motions().filter((a) => a.playState === 'running'
+    && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
   if (moving.length) {
     refitQueued = true;
     Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(() => { refitQueued = false; refitPlanShelf(); });
@@ -963,42 +911,6 @@ export function refitPlanShelf() {
   measure();
   apply(mode === 'open' ? 1 : 0);
   settleState();
-}
-
-// The window's arrival or slide, re-aimed at the window's new place from
-// where it is on screen. On a phone the window stands on the dock, so a box
-// that grew has already moved its top edge up by the growth in this frame,
-// before anything painted it: the catch reads the edge where the last frame
-// put it, and the motion goes on from there for what was left of it.
-function reaim() {
-  const a = lifting;
-  const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
-  const left = t ? Math.max(0, (t.endTime || 0) - (t.localTime || 0)) : GROW_MS;
-  const g0 = geo;
-  const seen = el.getBoundingClientRect().top;
-  const wasArrival = arrival === a;
-  if (mode !== 'open' || isDesk()) unpin();
-  measure();
-  // The observers' first answer (and any that changes nothing) leaves the
-  // motion alone: only new numbers re-aim it. The state is checked against
-  // the page, not the last numbers: numbers another reading already took
-  // (the scroll's frame) must still leave the panel's side as the layout is.
-  if (g0 && ['desk', 'T', 'H', 'peekH', 'cardH', 'shift'].every((k) => Math.abs((g0[k] || 0) - (geo[k] || 0)) < 0.5 && g0.desk === geo.desk)) {
-    if ((el.dataset.side === 'open') !== (geo.desk && mode === 'open')) settleState();
-    return;
-  }
-  const grew = g0 && !geo.desk && !g0.desk ? geo.H - g0.H : 0;
-  const rest = mode === 'open' ? 1 : 0;
-  apply(caughtAt(seen + grew, rest));
-  settleState();
-  const from = el.style.transform;
-  lift = 0;
-  apply(rest);
-  if (!canAnimate(el, ctxRef) || from === el.style.transform) return;
-  const b = el.animate([{ transform: from }, { transform: el.style.transform }], { duration: Math.max(left, 150), easing: EASE_ARRIVE });
-  lifting = b;
-  if (wasArrival) arrival = b; // a leave while it plays still goes back the way it came
-  b.onfinish = () => { if (lifting === b) lifting = null; if (arrival === b) arrival = null; };
 }
 
 // The window's numbers come from its boxes, so whatever resizes one refits
