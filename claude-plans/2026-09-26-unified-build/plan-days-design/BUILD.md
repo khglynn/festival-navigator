@@ -580,3 +580,139 @@ crew link, no database writes (previews and `vercel dev` use production's).
    4, list-view 12, meter 27, shell 11, show-links 6, show-menu-stacking 2, stack-row
    9, strip-follow 3, tap-shelf 31, touch-ghost 2, zoom-chips-burst 8, zoom-chips 45,
    zoom-chrome 18, zoom-door-row 8, zoom-notes-chip 1, zoom-still-hand 6. All green.
+9. **The CI round and Sol's first review (builder, 2026-09-27).** CI's browser job had
+   two Linux WebKit reds; Sol reviewed 0f076a6 (`SOL-R1.md`) alongside. One commit per
+   item, each red first on the code before it.
+   a. **A, the glide on Linux WebKit (DIAG 471ae9b, fix eca35e2).** The diagnostic
+      answered the question before any fix. On CI's Linux WebKit the app's one ask,
+      `scrollTo({top: 508, behavior: 'smooth'})` from 0 once the window had landed,
+      fired ONE scroll event, at 508, and a Node sampler saw 0 then 508. A scratch
+      scroller on a clock-free page moved `[0, 1964, 2000]` over 673 ms (Node saw
+      1416 once). So the engine does move in time, but in two or three steps, too
+      coarse for a test (or an eye) to see rows go by. Chromium showed 44 positions
+      for the same probe; a Mac's WebKit a dozen. Linux WebKit is not a platform a
+      friend uses, and a real Safari animates it, so I found no reason to drive the
+      glide from script: the app keeps the native glide. The tests are now engine
+      aware: every engine is held to the intent (one ask, `smooth`, from tonight's
+      top to Sunday's head, made once the window had landed, and the list moving only
+      after), and "through the rows between" is asserted only where a probe sees the
+      in-between. The probe asks a scratch scroller in a settled app page (the tests'
+      own fake clock and late starts) for 500px and counts the places its scroll
+      events report; three or more, as the glide test counts, means it shows. It runs
+      once per engine and prints its verdict with `t.diagnostic`. The carry-on test
+      skips where it doesn't show ("no mid-glide to repaint in"), and where it does it
+      now also checks the new list was asked to carry on from where the old one had
+      got to, to Sunday's head. The diagnostic code is gone. CI on eca35e2 (run
+      36319088534) bears it out: Linux WebKit's probe saw 2 places in 540 ms, its link
+      test passed on the intent (`[508]` went to a diagnostic) and the carry-on
+      skipped with its reason; Linux Chromium saw 22 places and ran both whole.
+   b. **B, the bare run's Share mark (b66da93).** Read at the end of its transition
+      (the mark's own animations finished, 3 s real-time cap), not at a fixed moment.
+      Proved by holding the transition open at 1.5 s: the old read failed, the new one
+      waited.
+   c. **C, the welcome card at WebKit 1280 (run 36310811089): not this branch.** The
+      same test timed out waiting for the peek in 4 of the 147 failed runs among CI's
+      last 200 (all branches, since 2026-09-26 17:37Z): this branch's b0b5642,
+      back-pocket/composer-probe bc6a61e, live/share 89a3f92, and release/share
+      dccf078, which is in origin/main. This branch never changed the welcome → peek
+      path (only openPhone's clock in plan-drag, the highlight condition in paintPlan,
+      and openPlanForLink). A flake on main's code; not fixed here.
+   d. **Sol 1, the blocker: a redraw keeps the reader's place (625f82b).** draw() kept
+      the list's scrollTop, a number: a friend's pick above Sunday slid Sunday down
+      under it, and the head and the Share turned to Saturday. The place is now the row
+      nightAtTop names (its night and stop), how far into it the list's top edge sits,
+      and the rows after it on that night. It is taken on every scroll the reader or a
+      glide makes (not one a width change made), and put back after every draw, settle
+      and refit, before the head is painted. A row that has gone hands its place to the
+      next of its night, then the night's head, then the nearest later night. A glide
+      keeps aiming at its night and, on the list it is scrolling, is asked again only
+      if the night moved (a smooth scroll asked twice restarts its curve).
+      **Red first** (plan-tail): `Chromium: a friend's pick that adds a Saturday stop
+      above…: Sunday's head is still at the top: 81.84375 (scrollTop 521)` (all four
+      layouts × engines red, 81.1–81.8); `WebKit: crossing 390 → 1280…: 64.109375
+      (scrollTop 454)` (Chromium's own scroll anchoring hid the crossing there). A
+      removal above passed on the phone before (the tail's exact room clamps it). The
+      laptop's removal and a highlight while on Sunday failed at scrollTop 0 before
+      and after: both leave a plan that fits, which had no room, so they went in with
+      D.
+   e. **D, the short-plan default (d621145): item 7's question, answered with its (1).**
+      Kevin's to overrule. While a plan has a later day, the phone's shelf is laid out
+      at its cap, peek and open alike, and its list fills the window with the Share at
+      the foot; the list keeps the room to bring every day to the top. A plan whose
+      last day is today stays content-sized.
+      The laptop's panel was full height already; its list now fills it too while a
+      later day exists. The fill matters: a list sized by its rows is sized by the
+      room under them, and the room is measured from the list's box, a circle that
+      left the laptop's short plan unable to reach its Sunday (found on the way,
+      measured: the new list 589px tall with a 223px room, then 654 with 446, the
+      scroll range short of Sunday by 65px). showGrown's floor needs no change: at the
+      cap it never pins, it scrolls. plan-tail's "plan that fits" test is now the
+      today-only plan (ACL's last Sunday, The xx), and still asserts no gap under the
+      last row and no resize through open and close.
+      **Red first:**
+      - ACL short plan (the made-up three: Arcy Drive now, The xx Sunday): `the open
+        shelf takes its full height: {"h":530.67,"cap":743}`; laptop `Sunday's head is
+        at the top: 222.67`.
+      - The repaint case (the crew's plan, the minute folding Arcy Drive leaves it
+        short): `after the fold Sunday's head is still at the top: 340.05 (scrollTop
+        0)` (338, 325.69, 323).
+      - Open and close: `the peek is laid out at the full height: {"h":530.67,
+        "cap":743}`.
+      - Sol's two that needed it: laptop removal `419.08 (scrollTop 0)`, highlight
+        `under the menu … 186.28 (scrollTop 0)`.
+      A short plan whose day turns while open (the last stop of Saturday ends: the
+      peek becomes tomorrow's) drops to content-sized; the redraw slides the window's
+      top down to it (play), and the test holds the head and the Share on Sunday.
+      **For Kevin's look:** with a later day the Share sits at the window's foot, on
+      the laptop too, under blank room when the plan is short (it always did for a
+      plan that overflowed). That is not a separate choice: a list with the room to
+      bring its last day up is always at least its box's height. Screens of the
+      made-up three, phone and laptop, were checked by eye.
+   f. **E, "also" across ACL's weekends: no change.** PLAN.md §5 question 5 settles it
+      with Kevin's default: "only a different place does" count as playing twice, so
+      `stage|weekday` is intended, Paris Paloma's same-stage time shift included (8c).
+   g. **Sol 2, the morning after (2e6fe66).** Past 5 AM after the festival's last
+      night, a plan left open fell back to that night with no clock, and Sunday came
+      back whole, undimmed, its Share on. Chosen: keep it open, drawn as a night
+      before today (dimmed under its head, as an opened Earlier draws one); its Share
+      names it by its date and sends it whole, as any past night's does; a close lets
+      the shelf go. Why not close at the rollover: a clock tick would take the plan
+      from under a reader (the same rule that keeps an open plan a highlight emptied),
+      and a past night is already shareable whole from an opened Earlier, so this is
+      the same object, not a new one. **Red first:** the ACL golden's new crossing
+      (Sun Oct 11 11:30 PM open, then Mon Oct 12 5:01 AM) got Sunday's four lines
+      without a head or `(past)`; the browser case, both engines, `Sunday under its
+      own head: [{"past":false,"head":false,"dim":false}, ×4]`. Green: the goldens
+      5/5, plan-acl (browser) 8/8, and the new case at 700.
+   h. **Sol 3, the nit (51e28cb).** The Share helpers in plan-acl, plan-days and
+      plan-tail wait for the stub's text on the real clock (4 s), then a beat to see
+      one text came, not two.
+   i. **The past's dim, found by CI on eca35e2 (9052fb7).** Run 36319088534: the
+      morning-after case read two of Sunday's five lines undimmed on Linux WebKit.
+      The coordinator suspected a read mid-fade, and it was that and something real
+      under it: `.plan-row.past` and `.plan-day.past` dimmed with the row's own
+      opacity, the property every fade of the window's writes (a repaint's play,
+      Earlier's arrival, the drag, the open). A past line faded in to full, then
+      dropped to .42 at the end: a pop, since P2. The dim is now `filter:
+      opacity(.42)`, which multiplies with the fades; the look at rest is the same.
+      **Red first**, each motion held at 95% of its run: the morning after, `a past
+      line never shows brighter than it rests, even as it arrives (10 motions held
+      near their end): [… "lit":1 ×5]`; Earlier opened on ACL's second Saturday, `(55
+      motions held near their end): [1,1,1, … ×37]`. Both engines, green at 0 and 700.
+      The morning-after case now reads brightness (opacity × any opacity filter) at
+      rest, not a computed opacity mid-fade.
+   **Gate on eca35e2** (A to Sol 3; 9052fb7 after it changes only the past's dim and
+   its two tests): `npm test` 1293 tests, 1290 pass, 1 fail (the SW stamp, left for the
+   lead), 1 skipped, 1 todo. Every browser suite at 0, one at a time, and the plan
+   suites at 700 too. At 0 and 700: plan-acl 8/8, plan-days 30/30, plan-drag 38/39 (the
+   WebKit keyboard skip), plan-share 39/39, plan-stop-ends 6/6, plan-tail 38/38. At 0:
+   now-jump 61/61, people-menu 24, by-time 4, error-report 1, fold-intent 4,
+   guest-tap-route 6, heads 7, hover 11, import-flow 4, list-view 12, meter 27, shell
+   11, show-links 6, show-menu-stacking 2, stack-row 9, strip-follow 3, tap-shelf 31,
+   touch-ghost 2, zoom-chips-burst 8, zoom-chips 45, zoom-chrome 18, zoom-door-row 8,
+   zoom-notes-chip 1, zoom-still-hand 6. All green.
+   **On 9052fb7, again:** the six plan suites at 0 and 700 with the same counts, now-jump
+   61/61 at 0, and `npm test` the same (the stamp alone red). CI on 9052fb7 (run
+   36320693628): the browser job green, 463 tests, 459 pass, 0 fail, 4 skipped; the
+   glide carry-on on Linux WebKit is the only new skip (its probe saw 1 place in 344
+   ms, Linux Chromium's 22 in 430 ms). The checks job is red on the SW stamp alone.
