@@ -789,3 +789,15 @@ test('no plan where there is no clock: Seismic 9 and a lineup with days have no 
   assert.equal(P.peekOf(plan, lineup, CT('2026-10-10T20:00:00')), null);
   assert.equal(P.peekOf(P.planOf(null, crew), null, CT('2026-10-10T20:00:00')), null);
 });
+
+// ---- 7. rule 10: a highlight filters (the plan-days build, 2026-09-26) ------------------
+// Kevin: "filter to, because of how the picks view works". The highlighted
+// people's plan: bodies are still seated on the whole crew, then only their
+// seats count. The bar (DESIGN.md C3 and C6, settled 2026-09-26): one person
+// is their own day (1); two to four are "two is together" (2); five and up
+// take the crew's own bar, barFor — so five friends never get a busier plan
+// as a highlight than they would as a crew of their own.
+test('rule 10\'s bar: 1 for one person, 2 for two to four, the crew\'s own barFor from five', () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 8, 9, 12, 13, 17].map(P.barForGroup), [1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 5]);
+  for (let n = 5; n <= 40; n++) assert.equal(P.barForGroup(n), P.barFor(n), `${n} highlighted`);
+});
