@@ -47,10 +47,12 @@ async function open(engine, { crew = ACL_CREW, desk = false, at = W2_SAT_4PM } =
     hasTouch: !desk, deviceScaleFactor: 2, timezoneId: 'America/Chicago', serviceWorkers: 'block',
   });
   await lateStarts(ctx);
+  // The crew doc the page pulls, as it is when it asks: a test changes a
+  // friend's picks here, then `pull` (below) has the page ask again.
   const doc = {
     v: 4, meta: { name: 'Crew', inviteFestId: FID }, spotify: {}, affinity: {},
     people: Object.fromEntries(crew.members.map((n, i) => [n, { colorIndex: i }])),
-    festivals: { [FID]: { selections: crew.picks } },
+    festivals: { [FID]: { selections: structuredClone(crew.picks) } },
   };
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
@@ -75,7 +77,22 @@ async function open(engine, { crew = ACL_CREW, desk = false, at = W2_SAT_4PM } =
   await page.waitForSelector('#plan:not([hidden])', { timeout: 15000 });
   await fontsIn(page);
   await settled(page);
-  return { ctx, page, errors: () => errors.filter((e) => !/reg\.update|reading 'update'/.test(e)) };
+  return { ctx, page, doc, errors: () => errors.filter((e) => !/reg\.update|reading 'update'/.test(e)) };
+}
+// A friend's pick reaching an open page: the doc changed on the server, and
+// the page, shown again, polls it (app.js visibilitychange → pollSync). Waits
+// for the rows the new doc draws (`drawn`: a check on the page), then rest.
+async function pull(page, drawn, what) {
+  await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; });
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  const end = Date.now() + 8000;
+  for (;;) {
+    const ok = await page.evaluate(`(() => { const list = document.querySelector('#plan .plan-list'); return !list.dataset.old && (${drawn})(list); })()`);
+    if (ok) break;
+    assert.ok(Date.now() < end, `the page drew the friend's change: ${what}`);
+    await sleep(50);
+  }
+  await settled(page);
 }
 const settled = async (page) => { await motionDone(page, { within: '#plan' }); await sleep(QUIET_MS); };
 const planState = (page) => page.evaluate(() => { const el = document.getElementById('plan'); return el && !el.hidden ? el.dataset.state : 'none'; });
@@ -290,6 +307,63 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
         assert.ok(fit.card <= fit.bottom, `the card is whole inside the list: ${JSON.stringify(fit)}`);
         const now = (await row.boundingBox()).y;
         assert.ok(Math.abs(now - was) <= 1, `${pick.label}: the row stayed under the finger (${was} → ${now}; the list scrolled ${topWas} → ${(await read(page)).top})`);
+        assert.deepEqual(errors(), []);
+      } finally { await ctx.close(); }
+    });
+
+    // Sol's blocker on 0f076a6 (2026-09-27): a redraw kept a NUMBER, not a
+    // place. A friend's pick that adds a Saturday stop above slides Sunday
+    // down under the same offset, and Saturday's rows came to the top — the
+    // head and the Share turned to Saturday, and a Share sent Saturday.
+    test(`${how}: a friend's pick that adds a Saturday stop above keeps Sunday at the top, and the Share sends Sunday`, { skip }, async () => {
+      const { ctx, page, doc, errors } = await open(engine, { desk });
+      try {
+        await openPlan(page, desk);
+        await toSunday(page);
+        // Dee, Eve and Gil pick Bleachers (T-Mobile, 6:15 PM): a stop of three
+        // between Ryan Beatty and Lorde.
+        doc.festivals[FID].selections.Bleachers = { Dee: 3, Eve: 3, Gil: 3 };
+        await pull(page, `(list) => [...list.querySelectorAll('.plan-row')].some((r) => r.dataset.night === '${SAT}' && /Bleachers/.test(r.textContent))`, 'a Bleachers stop on Saturday');
+        const r = await read(page);
+        assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+        assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks'], 'the head and the Share still name Sunday');
+        const text = await share(page);
+        assert.ok(text.endsWith(`&plan=${SUN}`), `the Share sends Sunday:\n${text}`);
+        assert.deepEqual(errors(), []);
+      } finally { await ctx.close(); }
+    });
+
+    // On the laptop the plan fits its panel once the stop goes, and a plan
+    // that fits had no room to bring Sunday up: the short-plan default (next).
+    test(`${how}: a pick taken back that removes a Saturday stop above keeps Sunday at the top`, { skip: skip || (desk && 'the plan fits once the stop goes: the short-plan default, next commit') }, async () => {
+      const { ctx, page, doc, errors } = await open(engine, { desk });
+      try {
+        await openPlan(page, desk);
+        await toSunday(page);
+        // Cal takes back Ryan Beatty: two is under the crew's bar, and the stop goes.
+        delete doc.festivals[FID].selections['Ryan Beatty'].Cal;
+        await pull(page, `(list) => ![...list.querySelectorAll('.plan-row')].some((r) => r.dataset.night === '${SAT}' && /Ryan Beatty/.test(r.textContent))`, 'no Ryan Beatty stop on Saturday');
+        const r = await read(page);
+        assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+        assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks']);
+        assert.deepEqual(errors(), []);
+      } finally { await ctx.close(); }
+    });
+  }
+
+  for (const [from, to] of [[390, 1280], [1280, 390]]) {
+    test(`${name}: crossing ${from} → ${to} with Sunday at the top keeps Sunday there`, { skip }, async () => {
+      const { ctx, page, errors } = await open(engine, { desk: from >= 720 });
+      try {
+        await openPlan(page, from >= 720);
+        await toSunday(page);
+        await page.setViewportSize(to >= 720 ? { width: 1280, height: 800 } : { width: 390, height: 844 });
+        await sleep(400); // the page's resize timer (app.js, 160 ms) and its refit
+        await settled(page);
+        assert.equal(await planState(page), 'open', 'the plan stays open across the layout');
+        const r = await read(page);
+        assert.ok(Math.abs(await nightTop(page, SUN)) <= 2, `Sunday's head is still at the top: ${await nightTop(page, SUN)} (scrollTop ${r.top})`);
+        assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sun Oct 11’s picks']);
         assert.deepEqual(errors(), []);
       } finally { await ctx.close(); }
     });

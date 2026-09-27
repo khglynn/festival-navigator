@@ -388,8 +388,79 @@ function onListScroll() {
     const row = rowOfNight(gliding);
     if (!row || Math.abs(row.offsetTop - listEl.scrollTop) <= 1) gliding = null;
   }
+  // A scroll the layout made (a width change reflowed the rows under the same
+  // number, and the engine clamped or anchored it) is not the reader's: the
+  // refit that follows puts the place back from the anchor taken before it.
+  if (listEl.clientWidth === placeW) takePlace();
   const id = nightAtTop();
   if (id && id !== topNight) paintHead(id);
+}
+
+// Where the reader is (Sol's first review of the plan-days build, 0f076a6,
+// 2026-09-27): the row at the list's top — the one nightAtTop names — and how
+// far into it the top edge sits, with the rows after it on the same night.
+// A redraw used to keep the list's scrollTop, a number: a friend's pick that
+// added a Saturday stop slid Sunday down under it, Saturday's rows came to
+// the top, and the head and the Share turned to Saturday; a 720px crossing
+// reflowed the rows under the same number in WebKit (Chromium's own scroll
+// anchoring hid it there). Taken on every scroll the reader (or a glide)
+// makes, and put back after every draw, settle and refit (keepPlace), before
+// the head is painted. Null is the list's top: a new list starts there.
+let place = null;
+let placeW = -1; // the list's width the place was read at: a different one is a reflow
+const placeKey = (r) => (r.dataset.stop ? `${r.dataset.night || ''}#${r.dataset.stop}` : '');
+function takePlace() {
+  placeW = listEl ? listEl.clientWidth : -1;
+  place = null;
+  if (!listEl || mode !== 'open' || listEl.scrollTop < 1) return;
+  const top = listEl.scrollTop;
+  const kids = [...listEl.children];
+  const i = kids.findIndex((r) => r.dataset.night && r.offsetTop + r.offsetHeight > top + 2);
+  if (i < 0) return;
+  const night = kids[i].dataset.night;
+  // The row's successors on its night, in order: a row that has gone (a stop
+  // the minute folded into Earlier, a pick taken back) hands its place to the
+  // next one still there, so what was under it stays where it was.
+  const keys = [];
+  for (let j = i; j < kids.length && kids[j].dataset.night === night; j++) keys.push(placeKey(kids[j]));
+  place = { keys, night, delta: top - kids[i].offsetTop };
+}
+// Back to the place: the same row (its night and stop), else the next of its
+// night's rows still there, else the night's head (a run of empty nights
+// counts for each of them), else the nearest later night, else the end. A
+// glide in progress keeps aiming at its night: on the list it is scrolling,
+// only the aim is checked (glideOn); a new list (`fresh`, draw) starts from
+// where the old one had got to and carries on from there.
+function keepPlace({ fresh = false } = {}) {
+  if (!listEl || mode !== 'open') return;
+  if (gliding && !fresh) { glideOn(); return; }
+  placeW = listEl.clientWidth;
+  restorePlace();
+  if (gliding) glideOn();
+}
+function restorePlace() {
+  if (!place) return;
+  const kids = [...listEl.children];
+  const byKey = new Map(kids.map((r) => [placeKey(r), r]));
+  let row = null;
+  let delta = 0;
+  for (const [k, key] of place.keys.entries()) {
+    const r = byKey.get(key);
+    if (r) { row = r; delta = k === 0 ? place.delta : 0; break; }
+  }
+  const n = place.night;
+  if (!row) row = kids.find((r) => r.classList.contains('plan-day') && (r.dataset.night === n || (r.dataset.nights || '').split(' ').includes(n)));
+  if (!row && data && data.plan) {
+    const ids = data.plan.nights.map((x) => x.id);
+    const at = ids.indexOf(n);
+    row = kids.find((r) => r.dataset.night && !r.classList.contains('earlier') && ids.indexOf(r.dataset.night) >= at)
+      || kids.filter((r) => r.dataset.night).pop() || null;
+  }
+  if (!row) return;
+  const want = row.offsetTop + delta;
+  listEl.classList.add('scrolls');
+  // Only a real move: rewriting the same number stops a momentum scroll (iOS).
+  if (Math.abs(listEl.scrollTop - want) > 0.5) listEl.scrollTop = want;
 }
 
 function draw() {
@@ -419,14 +490,16 @@ function draw() {
   // resting on a row through the minute's repaint, keeps its place. A stop
   // the minute has folded into Earlier hands it to that line (else the NOW
   // row, else the grabber): a focus is never dropped on the page.
-  const keep = mode === 'open' ? listEl.scrollTop : 0;
+  // The place is read from the rows on screen unless a reflow has moved them
+  // under the scroll since it was last read (a width change the refit has
+  // not answered yet): then the place from before it stands.
+  if (mode === 'open' && listEl.clientWidth === placeW) takePlace();
   const f = document.activeElement;
   const focused = f && f !== listEl && listEl.contains(f) && f.dataset.stop ? f.dataset.stop : null;
   listEl.replaceWith(list);
   listEl = list;
   fitTail();
-  if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
-  if (gliding) glideOn();
+  keepPlace({ fresh: true });
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
   if (focused) {
     const again = [...list.children].find((r) => r.dataset.stop === focused)
@@ -539,7 +612,7 @@ function settleState({ headLater = false } = {}) {
   }
   listEl.classList.toggle('scrolls', !peek);
   fitTail();
-  if (peek) listEl.scrollTop = 0;
+  if (peek) { listEl.scrollTop = 0; place = null; } else keepPlace();
   // The head names the day at the top: today's in the peek (its row is
   // today's), else the day the list is reading.
   if (!headLater && data) {
@@ -686,6 +759,7 @@ export function openPlan({ instant = false, focus = false, night = null } = {}) 
 // night from wherever the list had got to (`gliding`, draw).
 let glide = 0;
 let gliding = null;
+let aim = null; // the glide's last ask: { list, top } — asked again only when the night has moved
 function glideTo(id) {
   const mine = ++glide;
   gliding = null;
@@ -693,6 +767,7 @@ function glideTo(id) {
   const go = () => {
     if (mine !== glide || mode !== 'open' || drag || leaving || !listEl || Math.abs(listEl.scrollTop - from) > 1) return;
     gliding = id;
+    aim = null;
     glideOn();
   };
   const moving = motions().filter((a) => a.playState === 'running'
@@ -703,11 +778,16 @@ function glideTo(id) {
 const rowOfNight = (id) => [...listEl.children].find((r) => r.dataset.night === id || (r.dataset.nights || '').split(' ').includes(id));
 function glideOn() {
   const row = gliding && mode === 'open' && !drag && !leaving && listEl ? rowOfNight(gliding) : null;
-  if (!row) { gliding = null; return; }
+  if (!row) { gliding = null; aim = null; return; }
   fitTail();
   const top = row.offsetTop; // where the night's head sits in the list's scroll space (nightAtTop)
+  // A settle or a refit on the way asks again only if the night has moved: a
+  // smooth scroll asked twice starts its curve again, a hitch mid-glide.
+  if (aim && aim.list === listEl && Math.abs(aim.top - top) < 1) return;
+  aim = { list: listEl, top };
   if (canAnimate(el, ctxRef) && typeof listEl.scrollTo === 'function') { listEl.scrollTo({ top, behavior: 'smooth' }); return; }
   gliding = null;
+  aim = null;
   listEl.scrollTop = top;
   onListScroll();
 }
