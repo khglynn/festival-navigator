@@ -213,3 +213,51 @@ test('EVERYTHING ELSE (a scheduled festival\'s dayless names) filters too — an
     delete state.crewDoc.festivals[FX];
   }
 });
+
+// A run of empty dates is ONE quiet line (the coordinator's call on 2f, after
+// the v104 walk counted ten "nothing Ross picked" lines in a row on ACL's Late
+// nights). A dated section is a room per date; consecutive dates the
+// highlighted people picked nothing on become one line that names the span —
+// "LATE NIGHTS  SEP 29 – OCT 8 · NOTHING ROSS PICKED" — while a single empty
+// date keeps its own quiet line. Same quiet style, no new controls.
+test('ACL Late nights, a highlighted person with no late-night picks: one quiet line for the whole run, naming its span', () => {
+  const ACL = 'acl-2026';
+  FESTIVALS[ACL] = JSON.parse(readFileSync(join(ROOT, `data/festivals/${ACL}.json`), 'utf8'));
+  if (!FESTIVAL_INDEX.some((f) => f.id === ACL)) FESTIVAL_INDEX.push({ id: ACL, status: 'scheduled' });
+  const lateRooms = (root) => [...root.querySelectorAll('.day-block[data-day="Late nights"] > .room')];
+  const say = (r) => {
+    const h = r.querySelector(':scope > .room-head');
+    return [h.querySelector('.wd')?.textContent || '', h.querySelector('.label').textContent, h.querySelector('.sub').textContent, h.querySelector('.quiet-words')?.textContent || ''].filter(Boolean).join(' | ');
+  };
+  const at = (selections, people) => {
+    state.crewDoc.festivals[ACL] = { selections };
+    state.setActiveFestivalId(ACL);
+    return render({ fid: ACL, picks: model.picksFor(state.crewDoc, ACL), filterPeople: people, now: new Date('2026-09-20T12:00:00-05:00') });
+  };
+  try {
+    // Ross picked nothing late: the whole section is one line.
+    let root = at({ Turnstile: { Ross: 3 } }, ['Ross']);
+    let rooms = lateRooms(root);
+    assert.equal(rooms.length, 1, `one line for the run: ${rooms.map(say)}`);
+    assert.equal(say(rooms[0]), 'LATE NIGHTS | Sep 29 – Oct 10 | nothing Ross picked');
+    assert.ok(rooms[0].classList.contains('quiet'));
+    assert.equal(rooms[0].querySelector(':scope > .room-head').tagName, 'DIV', 'no new control: a span is not one date’s door');
+    assert.equal(rooms[0].dataset.isos.split(' ').length, 10, 'it stands for its ten dates (the day-of open still lands on it)');
+    // One pick on Oct 9: the run before it, the night itself, and Oct 10 alone.
+    root = at({ Turnstile: { Ross: 3 }, 'Noga Erez': { Ross: 2 } }, ['Ross']);
+    rooms = lateRooms(root);
+    assert.deepEqual(rooms.map(say), [
+      'LATE NIGHTS | Sep 29 – Oct 8 | nothing Ross picked',
+      'FRI | LATE NIGHTS | Oct 9 · around Austin',
+      'SAT | LATE NIGHTS | Oct 10 | nothing Ross picked',
+    ]);
+    assert.deepEqual(names(rooms[1]), ['Noga Erez']);
+    assert.equal(rooms[2].querySelector(':scope > .room-head').tagName, 'BUTTON', 'a single empty date keeps its own door');
+    // Unfiltered: every date its own room, as ever.
+    root = at({ Turnstile: { Ross: 3 } }, []);
+    assert.equal(lateRooms(root).length, 10);
+  } finally {
+    state.setActiveFestivalId(FID);
+    delete state.crewDoc.festivals[ACL];
+  }
+});

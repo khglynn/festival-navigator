@@ -486,3 +486,28 @@ dimmed is the Board dimming. (8) The 9 "refused writes" before its pick are
 `POST /api/person`, the boot's person ping, one per page it opened (the rig's
 own report says so for every frame: "writes refused: N (POST /api/person)");
 no highlight or filter wrote to the crew.
+
+- [x] R6 (the coordinator's call on 2f, after the walk) — a run of consecutive
+      empty date-rooms of one dated section is ONE quiet line naming its span:
+      "LATE NIGHTS  SEP 29 – OCT 10 · NOTHING BEN PICKED" (frame
+      `list-acl-ben-390`, where there were ten lines). A single empty date keeps
+      its own quiet line and its door; the span's line is a plain head (no new
+      control — a span is not one date's thread; the all-notes sheet still lists
+      any notes on those dates) and keeps every date it stands for
+      (`data-isos`), so the day-of open still lands on it (`scrollToNowLine`).
+      Test in `tests/list-highlight.test.mjs` (ACL, red first): nothing late →
+      one line; one pick on Oct 9 → "Sep 29 – Oct 8" · the Oct 9 room ·
+      Oct 10 alone.
+- [x] `nowInView`, as the NIT meant, caught a real race on CI (36283368547,
+      WebKit 390, Nhu highlighted): the row was taken to its start, then the
+      highlight's pill refit brought it back to rest (`scrollLeft` 57) and NOW
+      stayed cut — the old helper had hidden this by letting Playwright's
+      click scroll for it. The helper now swipes again when the row comes to
+      rest with NOW still cut (a person would), with an 8 s budget, and still
+      fails with the geometry; `tests/browser/now-in-view.test.mjs` has the
+      re-resting row as a third case. Locally the NOW, List, people-menu and
+      helper suites: 104 of 104.
+- The v104 walk files (`V104-WALK.md`, `v104-walk.mjs`, the walker's) are
+  committed with this step, as the coordinator asked; the walker reports 8 of
+  8 PASS on bfcf621 (its first table's three FAILs were its own measurements,
+  read above).

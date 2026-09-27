@@ -100,11 +100,15 @@ export async function launchWebkit() {
 // For the tests whose subject is what a tap on NOW does, this is that swipe's
 // stand-in: the row to its start, then wait until NOW is whole and the row is
 // still, so the tap that follows lands on NOW and not where it was a frame
-// ago (Linux WebKit's taps missed it, v103's first CI runs). When NOW never
-// comes whole and still it FAILS, with where NOW and the row are — it used to
-// swallow its timeout and let the tap go ahead, which moved the failure
-// somewhere with no clue in it (Sol's review of v103).
-export async function nowInView(page, door = 'dock', { timeout = 4000 } = {}) {
+// ago (Linux WebKit's taps missed it, v103's first CI runs). The app can
+// bring the row back to rest after that first scroll — a highlight's pill
+// arriving refits and re-rests the row (CI caught exactly that once this
+// helper stopped hiding its timeout) — so, as a person would swipe again,
+// a row that has come to rest with NOW still cut is taken back to its start.
+// When NOW never comes whole and still it FAILS, with where NOW and the row
+// are — it used to swallow its timeout and let the tap go ahead, which moved
+// the failure somewhere with no clue in it (Sol's review of v103).
+export async function nowInView(page, door = 'dock', { timeout = 8000 } = {}) {
   await page.evaluate((d) => {
     const row = document.getElementById(`${d}-days`);
     const now = document.getElementById(`${d}-now`);
@@ -123,7 +127,11 @@ export async function nowInView(page, door = 'dock', { timeout = 4000 } = {}) {
       const w = window.__nowStill || (window.__nowStill = { left: NaN, n: 0 });
       if (row.scrollLeft !== w.left) { w.left = row.scrollLeft; w.n = 0; return false; }
       w.n += 1;
-      return w.n >= 3 && b.left >= r.left - 0.5 && b.right <= r.right + 0.5;
+      if (w.n < 3) return false;
+      if (b.left >= r.left - 0.5 && b.right <= r.right + 0.5) return true;
+      row.scrollTo({ left: 0, behavior: 'auto' }); // at rest with NOW cut: swipe again
+      w.n = 0;
+      return false;
     }, door, { timeout, polling: 50 });
   } catch (e) {
     const at = await page.evaluate((d) => {

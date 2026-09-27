@@ -44,3 +44,20 @@ test('NOW that can never be whole (wider than its row): it fails, and says where
   });
   await p.context().close();
 });
+
+test('the page brings the row back to rest after the first scroll (a pill\'s refit): it swipes again, and resolves', { skip }, async () => {
+  const p = await page(`${row(40, 200, 150)}<script>
+    // Once the row reaches its start, put it back where it rested, a beat later — once.
+    const r = document.getElementById('dock-days');
+    let done = false;
+    r.addEventListener('scroll', () => { if (!done && r.scrollLeft === 0) { done = true; setTimeout(() => { r.scrollLeft = 150; }, 60); } });
+  </script>`);
+  await nowInView(p, 'dock');
+  const r = await p.evaluate(() => {
+    const a = document.getElementById('dock-now').getBoundingClientRect();
+    const b = document.getElementById('dock-days').getBoundingClientRect();
+    return a.left >= b.left - 0.5 && a.right <= b.right + 0.5;
+  });
+  assert.equal(r, true, 'NOW whole in the end');
+  await p.context().close();
+});

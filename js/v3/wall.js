@@ -1026,7 +1026,7 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
   const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`)
-    || root.querySelector(`.day-block .room[data-iso="${todayIso}"]`);
+    || root.querySelector(`.day-block .room[data-iso="${todayIso}"], .day-block .room[data-isos~="${todayIso}"]`);
   if (!day) return null;
   // The block's scroll-margin-top is the sticky chrome's height (app.js
   // measures it into --jump-offset); land below it like a day-tab jump does —
@@ -1956,6 +1956,38 @@ function thinByPeople(root, ctx) {
     if (sub) sub.after(said);
     else head.insertBefore(said, head.querySelector('.line'));
   }
+  // A run of empty DATES is one line (the coordinator's call on 2f, after the
+  // v104 walk met ten "nothing Ross picked" lines in a row on ACL's Late
+  // nights): consecutive quiet rooms of one dated section become a single
+  // quiet line naming the span — "LATE NIGHTS  SEP 29 – OCT 8 · NOTHING ROSS
+  // PICKED". A single empty date keeps its own line and its door. The span's
+  // line opens nothing (a span is not one date's thread — the all-notes sheet
+  // still lists any notes there), and it keeps every date it stands for
+  // (`data-isos`), so the day-of open still lands on it (scrollToNowLine).
+  for (const block of root.querySelectorAll(':scope > .day-block')) {
+    let run = [];
+    const flush = () => {
+      if (run.length > 1) collapseQuietRun(run, words);
+      run = [];
+    };
+    for (const el of [...block.children]) {
+      const empty = el.classList.contains('room') && el.classList.contains('quiet') && !!el.dataset.iso;
+      if (!empty) { flush(); continue; }
+      if (run.length && run[0].dataset.room !== el.dataset.room) flush();
+      run.push(el);
+    }
+    flush();
+  }
+}
+function collapseQuietRun(run, words) {
+  const [first] = run;
+  const isos = run.map((r) => r.dataset.iso);
+  const label = (first.querySelector(':scope > .room-head .label') || {}).textContent || first.dataset.room;
+  const head = roomHead({ label, sub: `${shortDate(isos[0])} – ${shortDate(isos[isos.length - 1])}` });
+  head.insertBefore(mk('span', 'quiet-words', words), head.querySelector('.line'));
+  first.replaceChildren(head);
+  first.dataset.isos = isos.join(' ');
+  for (const r of run.slice(1)) r.remove();
   // (A day block is never emptied: a composed day holds only rooms, and a
   // room stays as its quiet line — so every day tab still lands.)
 }
