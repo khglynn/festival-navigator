@@ -291,3 +291,61 @@ for (const [name, get, width] of ENGINES) {
     } finally { await ctx.close(); }
   });
 }
+
+// 7. A pick that stops belonging, filtered to yourself (Sol's review of v103;
+// call 2d): un-pick a row and it DIMS where it is, stays while you are on it —
+// the mouse resting there, the finger's shelf up — and leaves once you let it
+// go, the rows closing up and the room's count right. Real input only.
+for (const [name, get, width] of ENGINES) {
+  const skip = get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER);
+  const bar = width < 720 ? 'dock' : 'rail';
+  test(`${name}: filtered to yourself, an un-picked row dims where it is, stays while you are on it, and leaves when you let it go`, { skip }, async () => {
+    const { ctx, page, errors, writes, phone } = await open(get(), { width });
+    try {
+      await scrollAt(page, '.day-block[data-day="Saturday"] .room[data-room=":fest"]', 120);
+      await press(page, phone, `#${bar}-you`);
+      await sleep(400);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person="Kevin"]`);
+      await motionDone(page, { within: '#wall-root' });
+      await press(page, phone, `#${bar}-you`); // the menu away
+      await sleep(500);
+      const robyn = '#wall-root .room[data-room=":fest"] .card[data-artist="Robyn"]';
+      const rows = () => page.evaluate(() => [...document.querySelectorAll('#wall-root .room[data-room=":fest"] .card[data-artist]')].map((c) => `${c.dataset.artist}${c.classList.contains('dim') ? ':dim' : ''}`));
+      assert.deepEqual(await rows(), ['Tricky', 'Robyn'], 'yours: Tricky and Robyn');
+      await page.locator(robyn).scrollIntoViewIfNeeded();
+      const b = await page.locator(robyn).boundingBox();
+      if (phone) {
+        // A finger opens the shelf; − steps Robyn from must to nothing.
+        await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+        await page.waitForSelector('#artist-sheet .f-step.minus', { timeout: 5000 });
+        await sleep(400);
+        for (let i = 0; i < 4; i++) {
+          const m = await page.locator('#artist-sheet .f-step.minus').boundingBox();
+          await page.touchscreen.tap(m.x + m.width / 2, m.y + m.height / 2);
+          await sleep(250);
+        }
+      } else {
+        // A mouse click cycles: must → nothing. The pointer stays on the row.
+        await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 });
+        await sleep(300);
+        await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+      }
+      await sleep(1200);
+      assert.deepEqual(await rows(), ['Tricky', 'Robyn:dim'], 'dimmed where it is, and still there while you are on it');
+      // Let it go.
+      if (phone) {
+        // The finger closes the shelf the way a finger does: its ✕.
+        const x = await page.locator('#artist-sheet .sheet-close').boundingBox();
+        await page.touchscreen.tap(x.x + x.width / 2, x.y + x.height / 2);
+        await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 5000 });
+      } else {
+        await page.mouse.move(4, 4, { steps: 6 });
+      }
+      await page.waitForFunction(() => !document.querySelector('#wall-root .room[data-room=":fest"] .card[data-artist="Robyn"]'), null, { timeout: 5000 });
+      await motionDone(page, { within: '#wall-root' });
+      assert.deepEqual(await rows(), ['Tricky'], 'gone once let go');
+      assert.deepEqual(writes.filter((u) => u.includes('/api/crew')).length > 0, true, 'the un-pick itself is a real pick, sent');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}

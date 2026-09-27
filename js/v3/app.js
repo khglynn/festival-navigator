@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey, listFilters } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded, loadView, saveView, viewIsSet, LIST, BOARD } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -19,7 +19,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, focusQuietly } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, keyHand, focusQuietly } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
@@ -852,6 +852,53 @@ function refreshArtistCards(artistName) {
   // A pick changes Our plan's counts, and this path never repaints the wall
   // (so never reaches renderDayNav): the peek is painted here.
   paintPlan();
+  // In a List filtered by a highlight, a row that stopped being theirs has
+  // just dimmed where it is (refreshCard): it leaves once you leave it.
+  watchLeftovers();
+}
+
+// ---- a row that stops belonging (Sol's review of v103; call 2d) -------------------
+// Filtered to yourself, you un-pick a row: it DIMS where it is — nothing jumps
+// under your finger — and it LEAVES at the first natural moment once you have
+// let it go: the shelf closed, the zoom gone, the pointer off it, the focus
+// moved on (checked every 400 ms while one waits), or the minute tick; any
+// repaint in between (a friend's change on the poll) keeps it while you are
+// still on it. It leaves the way the filter's own changes do (thinFlow): it
+// fades, the rows close up, and the room's words and its EARLIER count are
+// right again. No leftover, no timer.
+const listThinned = () => $('wall-root').dataset.view === 'list' && listFilters(ctx);
+const leftoverRows = () => (listThinned()
+  ? [...$('wall-root').querySelectorAll('.card[data-artist]')].filter((c) => !passesPeople(ctx.picks, c.dataset.artist, ctx.filterPeople || []))
+  : []);
+// The person is on a row: a zoom is on screen (standing or still shrinking
+// away — the List does not reshape under a grown card, and a leaving one
+// takes a quarter second), a sheet is up over the wall (the finger's shelf),
+// a keyboard is on it (focus, with a key the last input — a closed shelf
+// hands focus back to its card for every hand, and that is not a finger
+// still there), or a mouse rests on it (never a finger's lingering hover).
+function inHand(card) {
+  if (zoomedCard() || document.querySelector('#zoom-layer .zoom-slot')) return true;
+  if (document.getElementById('artist-sheet')) return true;
+  const a = document.activeElement;
+  if (keyHand() && a && (a === card || card.contains(a))) return true;
+  try { return !fingerHand() && card.matches(':hover'); } catch { return false; }
+}
+function rowsInHand() {
+  return new Set(leftoverRows().filter(inHand).map((c) => c.dataset.artist));
+}
+let leftoverTimer = 0;
+function watchLeftovers() {
+  if (!leftoverRows().length) return;
+  if (!leftoverTimer) leftoverTimer = setInterval(settleLeftovers, 400);
+}
+function settleLeftovers() {
+  const rows = leftoverRows();
+  if (!rows.length) { clearInterval(leftoverTimer); leftoverTimer = 0; return; }
+  if (document.body.dataset.busy || pendingFold || pendingView || pendingPast || pendingThin) return;
+  if (rows.some(inHand)) return;
+  clearInterval(leftoverTimer);
+  leftoverTimer = 0;
+  thinFlow(thinBefore());
 }
 
 // What a press on a card means (the tap change, Kevin 2026-09-26: "a tap on
@@ -1348,6 +1395,7 @@ function tickClock(date = new Date()) {
   if (document.body.dataset.busy === 'plan-drag' && !planDragging()) delete document.body.dataset.busy;
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
+  settleLeftovers(); // a row that stopped belonging, once nobody is on it
   paintPlan(date); // the same minute decides the peek, and then whether NOW is there at all
 }
 
@@ -2482,6 +2530,10 @@ function alignHighlightMenu(wrap, pop) {
 }
 
 function repaintWall() {
+  // Rows the person is still on stay through the repaint in a filtered List
+  // (a friend's pick arriving on the poll must not pull the row you just
+  // un-picked out from under you) — read before the zoom is let go.
+  const hold = rowsInHand();
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
   // must not eat the card you are resting on); a card that is gone — a
@@ -2493,7 +2545,9 @@ function repaintWall() {
   const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
-  renderWall($('wall-root'), ctx);
+  ctx.holdRows = hold;
+  try { renderWall($('wall-root'), ctx); } finally { ctx.holdRows = null; }
+  if (hold.size) watchLeftovers(); // what was held leaves once it is let go
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });

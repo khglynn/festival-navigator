@@ -182,3 +182,34 @@ test('the filter writes nothing: the crew doc and the pending push are untouched
   assert.equal(JSON.stringify(state.crewDoc), doc);
   assert.equal(state.hasPending(), pending);
 });
+
+// Sol's review of v103: a scheduled festival's DAYLESS names (EVERYTHING ELSE —
+// billed with no day and on no grid) were drawn after the filter ran, so the
+// ones nobody highlighted picked stayed in a filtered List. Portola and ACL
+// have none today; the next scheduled festival with one would break the
+// promise. A fixture: Portola plus two names with no day.
+test('EVERYTHING ELSE (a scheduled festival\'s dayless names) filters too — and goes when none of theirs is in it', () => {
+  const base = FESTIVALS[FID];
+  const FX = 'portola-dayless-fixture';
+  FESTIVALS[FX] = { ...base, id: FX, artists: [...base.artists, { name: 'Loose Ross' }, { name: 'Loose Nobody' }] };
+  if (!FESTIVAL_INDEX.some((f) => f.id === FX)) FESTIVAL_INDEX.push({ id: FX, status: 'scheduled' });
+  state.crewDoc.festivals[FX] = { selections: { ...SELECTIONS, 'Loose Ross': { Ross: 2 } } };
+  state.setActiveFestivalId(FX);
+  try {
+    const at = (over) => {
+      const root = render({ fid: FX, picks: model.picksFor(state.crewDoc, FX), ...over });
+      const head = [...root.querySelectorAll('.list-head')].find((h) => /EVERYTHING ELSE/.test(h.textContent));
+      const grid = head ? head.nextElementSibling : null;
+      return { head, names: grid ? names(grid) : [] };
+    };
+    assert.deepEqual(at({}).names.sort(), ['Loose Nobody', 'Loose Ross'], 'unfiltered: both');
+    assert.deepEqual(at({ filterPeople: ['Ross'] }).names, ['Loose Ross'], 'Ross highlighted: only his');
+    const nhu = at({ filterPeople: ['Nhu'] });
+    assert.equal(nhu.head, undefined, 'Nhu has none there: the list goes, head and all');
+    const board = at({ view: 'board', filterPeople: ['Ross'] });
+    assert.deepEqual(board.names.sort(), ['Loose Nobody', 'Loose Ross'], 'the Board keeps both (it dims)');
+  } finally {
+    state.setActiveFestivalId(FID);
+    delete state.crewDoc.festivals[FX];
+  }
+});

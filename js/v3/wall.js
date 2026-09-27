@@ -1911,6 +1911,13 @@ function foldPast(root, ctx, { days, weekends }) {
 export function listFilters(ctx) {
   return ctx.view === 'list' && !ctx.query && (ctx.filterPeople || []).length > 0;
 }
+// Whether a row stays in a filtered List: the highlighted people picked it —
+// or it is a row the person is still ON (`ctx.holdRows`, the shell's: you
+// un-picked it and have not left it yet, so it stays, dimmed, until you do —
+// call 2d, and Sol's review of v103). Every group the List draws asks this.
+export function listKeeps(ctx, artist) {
+  return passesPeople(ctx.picks, artist, ctx.filterPeople || []) || !!(ctx.holdRows && ctx.holdRows.has(artist));
+}
 export function thinnedWords(people, meName = null) {
   const who = people.map((p) => (p === meName ? 'you' : p));
   if (!who.length) return '';
@@ -1922,7 +1929,7 @@ function thinByPeople(root, ctx) {
   if (!listFilters(ctx)) return;
   const people = ctx.filterPeople;
   for (const card of [...root.querySelectorAll('.card[data-artist]')]) {
-    if (!passesPeople(ctx.picks, card.dataset.artist, people)) card.remove();
+    if (!listKeeps(ctx, card.dataset.artist)) card.remove();
   }
   for (const band of [...root.querySelectorAll('.time-band')]) if (!band.querySelector('.card')) band.remove();
   for (const grid of [...root.querySelectorAll('.wall-grid')]) {
@@ -2536,7 +2543,11 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
   if (scheduled && plan.looseNoDay.length) {
     const onAnyGrid = new Set();
     for (const d of plan.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
-    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
+    // Drawn after foldPast, so the List's filter is applied here too (Sol's
+    // review of v103: its unpicked names stayed in a filtered List); a list
+    // left with nothing is not drawn at all, head included.
+    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)))
+      .filter((a) => !listFilters(ctx) || listKeeps(ctx, a.name));
     if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
   }
   festNotesFoot(root, ctx, fest);

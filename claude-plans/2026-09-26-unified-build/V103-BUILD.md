@@ -438,8 +438,51 @@ touch) says it is finished. Each fix gets a failing test first.
       with NOW's and the row's boxes and scroll; `tests/browser/now-in-view.test.mjs`
       (plain pages, red first). The NOW contract and the List suite pass
       with it (74 of 74).
-- [ ] R3 BLOCKER (Sol) / kept as designed (coordinator) — unpick in a filtered
+- [x] R3 BLOCKER (Sol) / kept as designed (coordinator) — unpick in a filtered
       List dims in place (call 2d), but "the next repaint" must be real and
       bounded; a pick change from elsewhere repaints the filtered List. UI test.
-- [ ] R4 IMPORTANT — the dayless EVERYTHING ELSE group renders after the
-      filter ran; it must pass the same predicate. Fixture test.
+      **Done** (after the walk finished, per the coordinator): a row that stops
+      belonging dims where it is and LEAVES at the first natural moment once you
+      have let it go — the zoom gone (standing or still shrinking), the shelf
+      closed, the mouse off it, a keyboard's focus moved on — checked every
+      400 ms while one waits, and at the minute tick; it leaves the way the
+      filter's own changes do (fades, rows slide up, the room's words and
+      EARLIER count right). Any repaint in between (a friend's change on the
+      poll) keeps a row you are still on (`ctx.holdRows`, wall.js `listKeeps`);
+      a change made elsewhere redraws the filtered List at once. A focused row
+      holds only while a key was the last input: a closed shelf hands focus back
+      to its card for every hand, and the first cut held the finger's row for
+      good because of it. Filmed at a tenth of the speed (`filmsheet-left`):
+      the zoom shrinks away, then the row fades, then the rows below slide up;
+      the first cut faded the row while the zoom was still shrinking over it.
+      Tests: `tests/list-highlight-pick.test.mjs` (the real shell: a finger's
+      shelf, a poll while the shelf is up, the room going quiet, EARLIER · 1 SET
+      staying, a keyboard's focus, a friend's sync), three red first on the old
+      code; `tests/browser/list-view.test.mjs` §7 (Chromium touch, WebKit touch,
+      1280 mouse — real input: dims, stays while you are on it, leaves).
+- [x] R4 IMPORTANT — the dayless EVERYTHING ELSE group renders after the
+      filter ran; it must pass the same predicate. Fixture test. **Done:** the
+      group is filtered by `listKeeps` (the one predicate plus rows in hand) and
+      not drawn when empty; a fixture (Portola plus two dayless names) in
+      `tests/list-highlight.test.mjs`, red first.
+
+**Also fixed on the way:** the frames rig seeded a highlight into
+localStorage, where filters.js never reads (a highlight is this tab's —
+sessionStorage), so round one's `now-sparse-hl-*` frames were not highlighted.
+Re-rendered: `sheet-now-hl.png` (390: the pill with one face and its ✕, NOW past
+the edge; 320: the pill folded to the avatar's size). And this worktree's
+`node_modules` link pointed at the removed `list` worktree (dangling since about
+5:30 PM, which also blocked the walker's start); it now points at the main
+checkout's (jsdom 30.0.1, Playwright 1.58.2, the lockfile's).
+
+**The v104 walk (`V104-WALK.md`) — its three FAILs read against the code, all
+measurement:** (1) at 1280 its "in view" compared the line to the dock's top,
+and the dock is `display: none` on a laptop (top 0), so every landing read out
+of view; at 320 its 140px swipe is shorter than the ~147px the row rests from
+its start on a Saturday — NOW came 34 of 41 px into view (that distance is call
+1c's point, not a defect). (3) The Board has 32 cards to the List's 25 because
+the Board does not fold a room's own past (LIST-BUILD call 2) — its 24 of 32
+dimmed is the Board dimming. (8) The 9 "refused writes" before its pick are
+`POST /api/person`, the boot's person ping, one per page it opened (the rig's
+own report says so for every frame: "writes refused: N (POST /api/person)");
+no highlight or filter wrote to the crew.

@@ -4,6 +4,9 @@
 //   now  — NOW arriving at and leaving the day row's start (390 dock, 1280 rail)
 //   thin — the List's highlight: Ben on (rows leave, the rest close up), then
 //          Everyone (they come back), with real taps on the people menu (390)
+//   left — filtered to yourself (Ana), a mouse un-picks a row at 1280: it dims
+//          where it is while the pointer rests there, then leaves as the
+//          pointer moves off (the review round's call 2d, made real)
 import path from 'node:path';
 import fs from 'node:fs';
 import { openRig, openApp, PT, sleep, SHOTS, tap, scrollTo } from './v103-rig.mjs';
@@ -48,6 +51,29 @@ try {
         await page.screenshot({ path: path.join(SHOTS, `film-thin-${phase}-${i}.png`), clip: { x: 150, y: 0, width: 240, height: 700 } });
         await sleep(350);
       }
+    }
+    await ctx.close();
+  }
+  if (on('left')) {
+    const { ctx, page } = await openApp(rig, { now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, view: 'list', highlight: ['Ana'] });
+    await scrollTo(page, '.day-block[data-day="Saturday"] .room[data-room=":fest"]');
+    const sel = '#wall-root .room[data-room=":fest"] .card[data-artist="Robyn"]';
+    await page.locator(sel).scrollIntoViewIfNeeded();
+    const b = await page.locator(sel).boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 });
+    await sleep(600);
+    const clip = { x: 360, y: Math.max(0, b.y - 260), width: 580, height: 620 };
+    await page.screenshot({ path: path.join(SHOTS, 'film-left-0-before.png'), clip });
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); // must → nothing
+    await sleep(900);
+    await page.screenshot({ path: path.join(SHOTS, 'film-left-1-dim-under-pointer.png'), clip });
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Animation.enable');
+    await cdp.send('Animation.setPlaybackRate', { playbackRate: 0.1 });
+    await page.mouse.move(40, 40, { steps: 6 });
+    for (let i = 0; i < 10; i++) {
+      await page.screenshot({ path: path.join(SHOTS, `film-left-${i + 2}.png`), clip });
+      await sleep(400);
     }
     await ctx.close();
   }

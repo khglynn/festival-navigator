@@ -92,7 +92,10 @@ export async function openApp(rig, { now, width = 390, height = 844, desktop = w
       localStorage.setItem('fn_errlog_off_v1', '1');
       if (!sessionStorage.getItem('rig_seeded')) {
         localStorage.setItem(`fn_view_v1_${f}`, v);
-        if (hl) localStorage.setItem(`fn_filter_people_v1_${f}`, JSON.stringify(hl));
+        // A highlight is this TAB's (filters.js keeps it in sessionStorage);
+        // the first cut seeded localStorage, where nothing reads it, so the
+        // `highlight` frames of v103's first round were not highlighted.
+        if (hl) sessionStorage.setItem(`fn_filter_people_v1_${f}`, JSON.stringify(hl));
       }
       sessionStorage.setItem('rig_seeded', '1');
       for (const [k, val] of Object.entries(st)) localStorage.setItem(k, val);
