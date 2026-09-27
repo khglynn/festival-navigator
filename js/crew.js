@@ -88,7 +88,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // (`meName`) additionally carries WHO it's for: someone added on another
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
-export function crewLink(token, festId, meName, show = null, view = null) {
+export function crewLink(token, festId, meName, show = null, view = null, { plan = null } = {}) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
   //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
@@ -128,10 +128,18 @@ export function crewLink(token, festId, meName, show = null, view = null) {
   // the same rule as `show` — and it goes LAST, so every parser before it
   // (an older build's included) reads the link exactly as it did.
   const l = ok && view === 'list' ? '&view=list' : '';
-  return `${base}#g=${token}${f}${m}${v}${l}`;
+  // The plan's own Share (2026-09-26): `&plan=<date>`, the night its words
+  // were about, so the link opens on Our picks for that night and no other
+  // (Sol: a bare `&plan=open` opened whatever night it was when the link was
+  // opened — a Saturday text opened on Sunday showed Sunday's plan). Only
+  // that Share sends it, only beside a festival, and last of all, for the
+  // same reason as the view.
+  const o = ok && typeof plan === 'string' && PLAN_NIGHT_RE.test(plan) ? `&plan=${plan}` : '';
+  return `${base}#g=${token}${f}${m}${v}${l}${o}`;
 }
 
 const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
+const PLAN_NIGHT_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // The one line an invite carries beside its link (v92): the chat bubble says
 // what this is before anyone opens it — the cheapest fix for "it's not clear
@@ -163,6 +171,16 @@ export function showFromHash() {
 // app.js decides whether it may seed this phone (seedViewOnce).
 export function viewFromHash() {
   const m = (location.hash || '').match(/[#&]view=(list|board)(?:&|$)/);
+  return m ? m[1] : null;
+}
+
+// The plan's Share link (#g=…&plan=2026-09-26): open Our picks for that
+// night on arrival. Read at boot beside viewFromHash, BEFORE enterApp's
+// replaceState strips the hash; app.js opens the plan once it has risen
+// (after the welcome card, for a newcomer), only if it is on that night, and
+// never writes it anywhere. The date, or null.
+export function planFromHash() {
+  const m = (location.hash || '').match(/[#&]plan=(\d{4}-\d{2}-\d{2})(?:&|$)/);
   return m ? m[1] : null;
 }
 

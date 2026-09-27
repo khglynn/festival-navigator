@@ -1,5 +1,5 @@
 // The show menu's view row (Phase 1, 2026-09-26): the rooms, a line, Board ·
-// List, a line, Settings. A tap switches the wall behind the menu, which
+// List, a line, Share the crew link (the Share build), a line, Settings. A tap switches the wall behind the menu, which
 // stays up (v93's popover, no history entry); the choice is this phone's per
 // festival, rides the share link, and is NEVER written to the crew — no sync
 // call, no change to the crew document. The real shell in jsdom (no layout,
@@ -56,8 +56,8 @@ const parts = () => [...menu().children].map((li) => li.className || li.querySel
 const wall = () => $('wall-root');
 const view = (v) => menu().querySelector(`.view-row [data-view="${v}"]`);
 
-test('the menu: Show, the rooms, a line, Board · List, a line, Settings — and no Earlier row', () => {
-  assert.deepEqual(parts(), ['menu-label', ':fest', 'Afters', 'Folsom', 'pop-div', 'view-row', 'pop-div', 'settings']);
+test('the menu: Show, the rooms, a line, Board · List, a line, the crew link, a line, Settings — and no Earlier row', () => {
+  assert.deepEqual(parts(), ['menu-label', ':fest', 'Afters', 'Folsom', 'pop-div', 'view-row', 'pop-div', 'share-link', 'pop-div', 'settings']);
   const row = menu().querySelector('.view-row');
   assert.equal(row.getAttribute('role'), 'group');
   assert.equal(row.getAttribute('aria-label'), 'View');
@@ -109,6 +109,35 @@ test('the rail\'s menu agrees, and a room tick in the List keeps the List', asyn
   click(menu().querySelector('[data-room="Afters"]'));
   await settle(30);
   assert.ok($('wall-root').querySelector('.room[data-room="Afters"] .card.row'), 'and back, as rows');
+});
+
+// The crew link one tap from the fest name. jsdom has no share sheet, so the
+// row is the Copy: the invite link, the view riding it, and the row saying
+// what it opens on, live as a room is ticked in the open menu. The share
+// sheet's payload is the browser suite's (tests/browser/plan-share.test.mjs).
+test('Copy the crew link: the invite link as this phone shows the wall, said under the words', async () => {
+  let copied = null;
+  Object.defineProperty(dom.window.navigator, 'clipboard', { value: { writeText: async (t) => { copied = t; } }, configurable: true });
+  const docBefore = JSON.stringify(state.crewDoc);
+  const row = menu().querySelector('.share-link');
+  assert.equal(row.querySelector('.w').textContent, 'Copy the crew link', 'no share sheet here');
+  assert.equal(row.querySelector('.opens').textContent, 'Opens as a list', 'the List rides the link, and the row says so');
+  click(menu().querySelector('[data-room="Afters"]'));
+  await settle(30);
+  assert.equal(row.isConnected, true, 'the same menu, repainted in place');
+  assert.equal(row.querySelector('.opens').textContent, 'Opens on Portola + Folsom, as a list', 'a tick in the open menu changes the line');
+  click(row);
+  await settle(10);
+  assert.match(copied, new RegExp(`^https://fest\\.kevinhg\\.com/f/${FID}#g=${TOKEN}&f=${FID}&show=`), 'the crew link');
+  assert.match(copied, /&view=list$/, 'with the view, last');
+  assert.doesNotMatch(copied, /&me=|&plan=/, 'nobody\'s name, and not the plan\'s flag');
+  assert.equal(row.querySelector('.w').textContent, 'Copied ✓');
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true', 'the menu stays up to say it');
+  click(menu().querySelector('[data-room="Afters"]'));
+  await settle(30);
+  assert.equal(row.querySelector('.opens').textContent, 'Opens as a list');
+  await settle(1500); // past the sync debounce: the stamp was already this festival
+  assert.equal(JSON.stringify(state.crewDoc), docBefore, 'the crew document is untouched');
 });
 
 test('the invite link carries the List, and says so', async () => {

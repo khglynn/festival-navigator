@@ -222,6 +222,9 @@ html { touch-action: manipulation; }
 .welcome-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .welcome-head .micro-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .welcome-head .avatar { width: 20px; height: 20px; font-size: 8.5px; }
+/* The ✕ in the card's upper right, the sheets' own button: pulled into the
+ * padding so the head row keeps the faces' height. */
+.welcome-head .sheet-close { margin: -5px -4px -5px auto; }
 .welcome-head .avatar-cluster .avatar + .avatar { margin-left: -5px; }
 .welcome-head .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; } /* +n more of the crew: solid, like a card's +n — dashed means "add" */
 .welcome-card .bring-line { font-size: 14px; }
@@ -352,6 +355,24 @@ html { touch-action: manipulation; }
  * lines up with the rooms' names above it. */
 .sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
 .sort-pop .settings .gear { display: block; }
+/* Share the crew link (the Share round, 2026-09-26): an action, so tonal
+ * text rather than a room's brand check — its share mark in the check column,
+ * its words lined up with the rooms'. Under them, what the link opens on
+ * (only when it is not everything as a board), in the rows' quiet grey. */
+.sort-pop .share-link { color: var(--tonal-text); font-weight: 700; }
+/* The mark sits on the words' first line (a box its height): centred with
+ * them alone, at the top when the line under them is there (app.js marks
+ * the row .says). */
+.sort-pop .share-link .check { display: inline-flex; align-items: center; height: 18px; }
+.sort-pop .share-link.says .check { align-self: flex-start; }
+.sort-pop .share-link .check svg { display: block; width: 12px; height: 12px; }
+.sort-pop .share-link .words { display: flex; flex-direction: column; min-width: 0; }
+.sort-pop .share-link .w { line-height: 18px; }
+/* The popover is as wide as its widest row, and a row's text wraps to the
+ * narrowest it can (the popover hangs from the small fest-name wrap), so the
+ * line asks for its own width — up to a cap, past which it wraps. */
+.sort-pop .share-link .opens { width: max-content; max-width: 210px; color: var(--text-tertiary);
+                               font-size: 11px; font-weight: 600; line-height: 1.35; margin-top: 1px; }
 /* The view row (Phase 1): Board · List, one row between the rooms and
  * Settings — the rooms above it are WHAT is on the wall, this row is HOW it
  * is laid out. Two bare glyph-and-word choices (Kevin: "I like the icon
@@ -2068,6 +2089,19 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
  * are drawn outside the node column and must not be cut. */
 .plan-shelf .plan-list { overflow: hidden; margin: 0 -8px; padding: 0 8px 14px; }
 .plan-shelf .plan-list.scrolls { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+/* The open plan's last line: its Share (plan-shelf.js sharePlan). Under the
+ * rows, never in the head: the laptop's head is a button of its own. It fades
+ * with the head and is out of the peek's window, so the peek never shows it. */
+.plan-foot { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 9px 0 12px; border-top: 1px solid var(--hairline); }
+/* What the link opens on, when it is not everything as a board (app.js
+ * opensLine): the rows' quiet grey, on the left, wrapping before the button moves. */
+.plan-foot .opens { flex: 1 1 auto; min-width: 0; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.35; }
+.plan-foot .opens:empty { display: none; }
+.plan-share { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 0 16px 0 14px; }
+/* A pill of its own height for a mouse; a finger keeps the 44px floor, which
+ * a class rule here would out-rank if it were not kept off coarse pointers. */
+@media not all and (pointer: coarse) { .plan-share { min-height: 36px; } }
+.plan-share svg { width: 13px; height: 13px; flex: none; }
 /* Searching: the wall has no clock, so neither does the plan (app.js hides the
  * peek on a query; this covers the moment the field has focus before one). */
 #screen-app.searching .plan-shelf { display: none; }
