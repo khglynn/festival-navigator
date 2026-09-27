@@ -297,14 +297,18 @@ function signature(a) {
 
 // The night the view is reading: the day of the first row whose bottom is
 // below the list's top edge (the head and the Share both follow it). Before
-// any scroll, and in the peek, it is the night the list lands on.
+// any scroll, and in the peek, it is the night the list lands on. Read in the
+// list's own scroll space (offsets: the list is the rows' offsetParent), not
+// from rects: a repaint's rows travel to their new places (play), and a rect
+// read mid-motion names the night the motion shows, which stays in the head
+// once the scroll has stopped (a tick landing mid-glide, 2026-09-26).
 let topNight = '';
 function nightAtTop() {
   if (!listEl || !data) return data && data.route ? data.route.id : '';
-  const top = listEl.getBoundingClientRect().top + 2;
+  const top = listEl.scrollTop + 2;
   for (const r of listEl.children) {
     if (!r.dataset.night) continue;
-    if (r.getBoundingClientRect().bottom > top) return r.classList.contains('earlier') && earlierOpen ? r.dataset.night : (r.classList.contains('earlier') ? data.route.id : r.dataset.night);
+    if (r.offsetTop + r.offsetHeight > top) return r.classList.contains('earlier') && earlierOpen ? r.dataset.night : (r.classList.contains('earlier') ? data.route.id : r.dataset.night);
   }
   return data.route ? data.route.id : '';
 }
@@ -358,6 +362,10 @@ function fitTail() {
 }
 function onListScroll() {
   if (mode !== 'open' || !data) return;
+  if (gliding) {
+    const row = rowOfNight(gliding);
+    if (!row || Math.abs(row.offsetTop - listEl.scrollTop) <= 1) gliding = null;
+  }
   const id = nightAtTop();
   if (id && id !== topNight) paintHead(id);
 }
@@ -378,6 +386,7 @@ function draw() {
   });
   list.addEventListener('click', onRowTap);
   list.addEventListener('scroll', onListScroll, { passive: true });
+  for (const t of ['wheel', 'touchstart', 'pointerdown', 'keydown']) list.addEventListener(t, () => { gliding = null; }, { passive: true });
   // A new list element starts at the top: an open list someone had scrolled
   // keeps its place across a tick, a pick or a tap. A row with the focus
   // hands it to the same stop's new row — a keyboard growing a card, or
@@ -391,6 +400,7 @@ function draw() {
   listEl = list;
   fitTail();
   if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
+  if (gliding) glideOn();
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
   if (focused) {
     const again = [...list.children].find((r) => r.dataset.stop === focused)
@@ -636,25 +646,35 @@ export function openPlan({ instant = false, focus = false, night = null } = {}) 
 // top: every piece travels to where it is going, nothing jumps. Scrolled
 // before the open, the peek's own row would have left the window in place.
 // Instant under Reduce Motion or Low power. A hand on the window, a scroll of
-// the person's own, or a plan closed meanwhile keeps things where they are.
+// the person's own, or a plan closed meanwhile keeps things where they are;
+// a repaint on the way (the minute's tick, a friend's pick) carries on to the
+// night from wherever the list had got to (`gliding`, draw).
 let glide = 0;
+let gliding = null;
 function glideTo(id) {
   const mine = ++glide;
+  gliding = null;
   const from = listEl ? listEl.scrollTop : 0;
   const go = () => {
     if (mine !== glide || mode !== 'open' || drag || leaving || !listEl || Math.abs(listEl.scrollTop - from) > 1) return;
-    const row = [...listEl.children].find((r) => r.dataset.night === id || (r.dataset.nights || '').split(' ').includes(id));
-    if (!row) return;
-    fitTail();
-    const top = listEl.scrollTop + row.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
-    if (canAnimate(el, ctxRef) && typeof listEl.scrollTo === 'function') { listEl.scrollTo({ top, behavior: 'smooth' }); return; }
-    listEl.scrollTop = top;
-    onListScroll();
+    gliding = id;
+    glideOn();
   };
   const moving = motions().filter((a) => a.playState === 'running'
     && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
   if (!moving.length) { go(); return; }
   Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(go);
+}
+const rowOfNight = (id) => [...listEl.children].find((r) => r.dataset.night === id || (r.dataset.nights || '').split(' ').includes(id));
+function glideOn() {
+  const row = gliding && mode === 'open' && !drag && !leaving && listEl ? rowOfNight(gliding) : null;
+  if (!row) { gliding = null; return; }
+  fitTail();
+  const top = row.offsetTop; // where the night's head sits in the list's scroll space (nightAtTop)
+  if (canAnimate(el, ctxRef) && typeof listEl.scrollTo === 'function') { listEl.scrollTo({ top, behavior: 'smooth' }); return; }
+  gliding = null;
+  listEl.scrollTop = top;
+  onListScroll();
 }
 // `fn` once the peek has landed: now when nothing is arriving, else when the
 // arrival ends. An open during the arrival cancels it, and the peek appears
@@ -730,6 +750,7 @@ function settleTo(target, { instant = false } = {}) {
 // only if it is free, give it back only if it is ours).
 function onDown(e) {
   if (mode === 'gone' || leaving || e.button > 0 || drag) return;
+  gliding = null;
   if (geo && geo.desk) return; // a laptop's card is a button: its click opens it (onClickPeek)
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag

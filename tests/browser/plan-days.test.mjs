@@ -32,13 +32,16 @@ const chromium = await launchBrowser();
 const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00');     // Portola: Dog Blood on the Pier Stage, 8 picked
+const SAT_1014 = new Date('2026-09-26T22:14:00-07:00');    // a minute before Dog Blood ends
+const SAT_1015 = new Date('2026-09-26T22:15:00-07:00');
 const ACL_W1_SUN = new Date('2026-10-04T19:00:00-05:00');  // ACL W1 Sunday: Mon and Tue ahead have nothing picked
 const ACL_W2_SAT = new Date('2026-10-10T16:00:00-05:00');  // ACL W2 Saturday: nine nights behind, a short Sunday ahead
 const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag (plan-shelf.js quietUntil, 400)
 
 // `fest`: which festival and made-up crew. `plan`: the link's &plan=<night>.
-// `desk`: a laptop. `reduced`: Reduce Motion. `at`: the clock.
-async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false } = {}) {
+// `desk`: a laptop. `reduced`: Reduce Motion. `at`: the clock. `wait: false`
+// hands the page back as soon as it has loaded, before the plan settles.
+async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true } = {}) {
   const crew = CREWS[fest];
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
@@ -94,6 +97,7 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.clock.setFixedTime(at);
   await page.goto(`${server.origin}/#g=${crewToken}&f=${fest}${plan ? `&plan=${plan}` : ''}`);
+  if (!wait) return { ctx, page, errors, crewToken };
   await page.waitForSelector('#plan:not([hidden])', { timeout: 15000 });
   await fontsIn(page);
   await settled(page);
@@ -263,6 +267,39 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // A repaint on the way — the minute's tick ending Dog Blood, a friend's
+  // pick — replaces the list's rows mid-glide. The new list keeps the place
+  // the old one had reached, and the glide carries on from there to Sunday.
+  test(`${name}: a later night's glide carries on across a repaint on the way`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { plan: '2026-09-27', at: SAT_1014, wait: false });
+    try {
+      // Mid-glide (the list has left today; the recorder in open()), the
+      // minute turns and its tick redraws the rows.
+      const deadline = Date.now() + 15000;
+      while (!(await page.evaluate(() => (window.__glide || []).some((g) => g.top > 20)))) {
+        assert.ok(Date.now() < deadline, 'the glide starts');
+        await sleep(5);
+      }
+      await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; window.__redrawn = null; });
+      await page.clock.setFixedTime(SAT_1015);
+      await page.evaluate(() => {
+        document.body.dataset.busy = 'test-tick';
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete document.body.dataset.busy;
+        const list = document.querySelector('#plan .plan-list');
+        if (!list.dataset.old) window.__redrawn = { top: list.scrollTop };
+      });
+      const redrawn = await page.evaluate(() => window.__redrawn);
+      assert.ok(redrawn, 'the tick redrew the rows');
+      await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the glide reaches Sunday after the repaint');
+      await settled(page);
+      const end = await page.evaluate(() => document.querySelector('#plan .plan-list').scrollTop);
+      assert.ok(redrawn.top < end - 20, `the repaint came mid-glide (at ${redrawn.top}, Sunday at ${end})`);
+      assert.equal((await read(page)).wd, 'SUN');
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+    } finally { await ctx.close(); }
+  });
+
   test(`${name}: the last day can come to the top — ACL's short Sunday under W2 Saturday, named in the head and the Share`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { fest: 'acl-2026', at: ACL_W2_SAT });
     try {
@@ -349,4 +386,5 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
+
 }
