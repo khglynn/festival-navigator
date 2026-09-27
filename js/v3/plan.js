@@ -404,24 +404,23 @@ function routeOf(nightId, slices, us) {
       if (top && (!peak || top.people.length > peak.people.length)) peak = { ...top, t: s.t };
       for (const c of s.ranked) {
         if (c.place.id === r.id) continue;
-        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c };
+        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c, crowds: [] };
         f.to = s.t + STEP;
+        f.crowds.push({ t: s.t, people: c.people });
         if (c.people.length > f.peak.people.length) f.peak = c;
         forks.set(c.place.id, f);
       }
     }
     const place = peak.place;
-    // A stop ends where its place does (Sol, 2026-09-26): a blip folded in
-    // above keeps its minutes out of the route, but it must not carry this
-    // stop past its own set — the peek said NOW for a set already over. The
-    // same for a fork, whose last five-minute slice can overhang its end.
-    const endOf = (p, to) => (p.end != null ? Math.min(to, p.end) : to);
     items.push({
       kind: 'stop', tier: peak.people.length * 2 > us.length ? 'most' : 'some', nightId, place, placeKind: place.kind, acts: place.acts,
-      from: r.from, to: endOf(place, r.to), count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
+      from: r.from, to: r.to, count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
       leansOnDoubles: peak.maybe.length * 2 >= peak.people.length, alsoAt: [], timeline,
       forks: [...forks.values()].filter((f) => f.to - f.from >= MIN_STOP)
-        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: endOf(f.place, f.to), count: f.peak.people.length, people: f.peak.people })),
+        // `crowds`: who is at the fork each five minutes, for the Share's "now"
+        // (plan-rows.js crowdAt). Not `timeline`: hasAny and the rows read a
+        // fork's peak crowd, and this adds nothing they read.
+        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, crowds: f.crowds })),
     });
   }
   // A short gap is a changeover (walking to the next stage), not scattered;

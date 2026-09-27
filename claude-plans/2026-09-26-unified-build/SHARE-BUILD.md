@@ -130,7 +130,8 @@ PR and merges; this branch is never stamped here.
 13. **Sol's release round** (gpt-6-sol high, on the coordinator's release head 52653f1;
     one blocker, two important, one nit, all real, all fixed on `live/share` after
     merging main; each new test fails before its fix):
-    a. **A stop outlasted its set** (the blocker). routeOf folds a blip (a crowd shift
+    a. **A stop outlasted its set** (the blocker; the model fix below was taken back
+       out in 14). routeOf folds a blip (a crowd shift
        under 15 minutes) into the stop before it, and that carried the stop past its own
        set: with the nine on Sunday, the Warehouse's ten-minute Tiësto blip kept the Pier
        Stage stop to 8:15 while Zara Larsson ended at 8:05, so from 8:05 to 8:15 the peek
@@ -173,3 +174,55 @@ PR and merges; this branch is never stamped here.
        C5.
     d. The join-shelf test's fixed 700 ms sleep now waits for the peek rising behind the
        question, then asserts it did not open.
+14. **Sol's second release round** (on the coordinator's release head 4403e58). It
+    confirmed the date link and the test wait, and found three holes, all in 13a's cap.
+    First, the capped Zara stop folded into Earlier at 8:05 and took its live Tiësto
+    or-line with it, so the open plan left out the line the Share led with. Second, a
+    highlighted "now" counted anyone who had ever been in a stop. Third, the fork's
+    15-minute check ran before the cap. That made two rounds on one mechanism, and the
+    coordinator offered two ways out: (a) fix the cap properly, or (b) take it out of this
+    release and bank it for the design round. This took (b).
+    a. **Why (b).** The holes kept coming from the Share reading the route on its own,
+       beside the rows' reading, and not only from the cap. A sweep over every Portola
+       night, every five minutes, for the whole crew and a set of highlights, found the
+       Share naming lines the open plan never draws, even on v101's model. A stop's row
+       shows ONE or-line (forkFor), while the Share listed every fork over the bar.
+       Friday 8:45 PM: "Regency Ballroom for Gelli Haha and Channel Tres @ ~9:30pm" is
+       Public Works' second or-line, and its row shows 1015 Folsom. Sol's Tiësto case is
+       the same class, made by the cap. Kevin's rule for a third round on one kind of
+       hole is to cut the mechanism, not the feature.
+    b. **What changed.**
+       1. The model cap is out: plan.js routeOf and its tests are v102's again. That
+          drops the "no stop outlasts its place" test, the peek at 8:04–8:17, and the
+          two goldens 13a moved.
+       2. Forks gain `crowds`, who is at the fork every five minutes. It is additive and
+          named apart from `timeline`, so hasAny and the rows read exactly what they did.
+       3. The Share reads the rows. Its candidates are the stops the open plan has not
+          folded, plus the one or-line each row draws: plan-rows.js `overAt` and
+          `orLineOf`, which planList now calls too. planText takes the peek the rows
+          were drawn with.
+       4. A line leaves when the route leaves it or when what it's for is over (`endOf`:
+          the act's end, a room's close). At 8:10 Zara Larsson is gone even though her
+          stop runs to 8:15.
+       5. "Now" means who is there now (`crowdAt`, that five-minute slice's crowd), with
+          or without a highlight. Ben at 7:15 is at Kettama, not Robyn.
+    c. **What the ten minutes after a set show now.** The peek and the open plan keep
+       v101's "NOW · Zara Larsson · till 8:05 PM" until 8:15, which production has shown
+       since v101. The Share leads with what is actually on (Tiësto till 8:15), and every
+       line it sends is a row in the open plan.
+    d. **Tests.** Each fails on the release head's Share code.
+       1. The every-clock sweep runs on Portola's nine and a made-up nine at ACL (its
+          rooms, its two weekends), reading over 20,000 lines in about 11 seconds. It
+          asserts that each line the Share could send is a row the open plan shows, that
+          no "now till" is already past, and that a highlighted "now" has one of them
+          there at that minute.
+       2. Ben at 7:15; Friday 8:45's or-line; the Sunday 8:10 text.
+       3. The Sunday 8:10 browser test now checks every shared line against the open
+          plan's rows, in both engines.
+       4. One expectation moved. For Ben, Eli and Gus, DJ Shadow now reads 6:30, his
+          row's time, not 6:10: that time came from the or-line under Tove Lo, and her
+          row shows Groove Armada's instead.
+    e. **Banked for the plan-days design round** (DESIGN.md on `live/plan-days-design`,
+       with acceptance tests up front): a stop that ends with its place, a live or-line
+       that outlives its stop, the fork check measured on the capped interval, and the
+       peek's stale ten minutes.

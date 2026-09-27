@@ -754,7 +754,7 @@ function motions() {
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
   const text = planText(data.route, {
-    ctx: ctxRef, plan: data.plan, nowMin: data.nowMin, highlight: data.highlight || [],
+    ctx: ctxRef, plan: data.plan, peek: data.peek, nowMin: data.nowMin, highlight: data.highlight || [],
     fest: data.fest || '', day: data.day || '', today: !!data.peek.today, link: data.linkOf ? data.linkOf() : '',
   });
   // A new build waits while the sheet is up or the copy is on its way
