@@ -310,10 +310,11 @@ function roomsAndParties(night, shownKeys) {
 // ---- who is where ------------------------------------------------------------------
 // For one person, the stretch of a place they would be at, and their picks
 // in it (`acts`: each one's window and level). Null when the place has nothing
-// of theirs. `sure` is false when every act of theirs here also plays elsewhere.
+// of theirs — "theirs" is filters.js passesPeople, the Board's and the List's
+// question. `sure` is false when every act of theirs here also plays elsewhere.
 function stretchFor(place, person, picks, doubled) {
   const lv = (name) => ((picks[name] || {})[person]) || 0;
-  const mine = place.acts.filter((a) => lv(a.name) > 0);
+  const mine = place.acts.filter((a) => passesPeople(picks, a.name, [person]));
   if (!mine.length) return null;
   const sure = mine.some((a) => !doubled.has(a.name));
   const from = Math.min(...mine.map((a) => (a.from ?? place.start)));
@@ -488,8 +489,8 @@ function routeOf(nightId, slices, size, bar) {
       leansOnDoubles: peak.maybe.length * 2 >= peak.people.length, alsoAt: [], timeline,
       forks: [...forks.values()].filter((f) => f.to - f.from >= MIN_STOP)
         // `crowds`: who is at the fork each five minutes, for the Share's "now"
-        // (plan-rows.js crowdAt). Not `timeline`: hasAny and the rows read a
-        // fork's peak crowd, and this adds nothing they read.
+        // (plan-rows.js crowdAt). Not `timeline`: the rows read a fork's peak
+        // crowd, and this adds nothing they read.
         .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, alt: f.alt, crowds: f.crowds })),
     });
   }
@@ -637,38 +638,27 @@ export function planAt(plan, fest, date) {
   return has(clock.iso) ? atOn(plan, clock.iso, clock.minutes) : null;
 }
 
-// A HIGHLIGHT (the people menu's "just Ross") is a view, like the wall's dim:
-// the route stays the whole crew's (rule 1), and a stop is one of Ross's when
-// he is in its crowd at any moment of it; a fork, in its peak crowd. No
-// highlight: every stop is.
-export function hasAny(stop, people) {
-  if (!people || !people.length) return true;
-  const at = (list) => (list || []).some((p) => people.includes(p));
-  return stop.timeline ? stop.timeline.some((x) => at(x.people)) : at(stop.people);
-}
-
 // What the peek shows: the stop the clock is in (NOW, with the count at this
 // minute), else the next time MOST of us meet, else the next stop (NEXT, with
 // its peak). When tonight has nothing left, the next night that has a stop,
-// `today: false` — whether to show it is the UI's call. With a highlight on,
-// only the highlighted people's stops are candidates: the peek never says NOW
-// for a stop the wall has dimmed (Kevin, 2026-09-26: "the filters should
-// filter the now too").
+// `today: false` — whether to show it is the UI's call. Under a highlight the
+// plan is already theirs (rule 10), so the peek is too: it never says NOW for
+// a stop none of them picked (Kevin, 2026-09-26: "the filters should filter
+// the now too").
 const nextOf = (stops) => stops.find((x) => x.tier === 'most') || stops[0] || null;
-export function peekOf(plan, fest, date, { people = [] } = {}) {
+export function peekOf(plan, fest, date) {
   if (!plan || !plan.nights || !plan.nights.length) return null;
-  const theirs = (s) => !!s && hasAny(s, people);
   const at = planAt(plan, fest, date);
   if (at) {
-    if (theirs(at.current)) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
-    const s = nextOf([at.next, ...at.later].filter(theirs));
+    if (at.current) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
+    const s = nextOf([at.next, ...at.later].filter(Boolean));
     if (s) return { night: at.night, stop: s, tag: 'next', count: s.count, today: true };
   }
   const after = at ? at.night.iso : festivalClock(date, (fest && fest.timezone) || null).iso;
   for (const n of plan.nights) {
     if (!n.iso || !(n.iso > after)) continue;
     const route = plan.night(n.id);
-    const s = nextOf(route.items.filter((i) => i.kind === 'stop' && theirs(i)));
+    const s = nextOf(route.items.filter((i) => i.kind === 'stop'));
     if (s) return { night: route, stop: s, tag: 'next', count: s.count, today: false };
   }
   return null;

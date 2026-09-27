@@ -35,6 +35,7 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard } = await import('../js/v3/wall.js');
+const { passesPeople } = await import('../js/v3/filters.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
@@ -745,28 +746,40 @@ test('a Late night with doors and no set time is no place, and a date of such sh
   assert.equal(card.dataset.nowFrom, undefined, 'and no window');
 });
 
-// Kevin, 2026-09-26: "the filters should filter the now too". The highlight
-// never moves the route; it decides which stops the peek may name.
-test('a highlight filters the peek: NOW only for a stop they are in, else their next stop, else nothing', () => {
-  const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+// Kevin, 2026-09-26: "the filters should filter the now too". Under rule 10
+// a highlight IS the plan — theirs, counted on them — so the peek is theirs
+// too: NOW only on a stop of theirs, else their next, else none at all.
+test('a highlight is the plan, and so is its peek: NOW only on a stop of theirs, else their next, else none', () => {
   const sat940 = new Date('2026-09-27T04:40:00Z'); // Saturday 9:40 PM PDT, Dog Blood on the Pier Stage
+  const planFor = (people) => P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members, people });
   const peek = (people) => {
-    const k = P.peekOf(plan, PORTOLA, sat940, { people });
+    const k = P.peekOf(planFor(people), PORTOLA, sat940);
     return k && [k.tag, k.stop.place.place, q(k.stop.from), k.count];
   };
   assert.deepEqual(peek([]), ['now', 'Pier Stage', '9 PM', 8]);
-  assert.deepEqual(peek(['Ana']), ['now', 'Pier Stage', '9 PM', 8], 'the count stays the crew\'s');
-  assert.deepEqual(peek(['Gus', 'Hal']), ['now', 'Pier Stage', '9 PM', 8], 'any one of them is enough');
-  // Gus is at none of the stops from 9 PM until the Great Northern at 1:30 AM
-  // (his Warehouse and Audio crowds are forks, which the peek never names).
-  assert.deepEqual(peek(['Gus']), ['next', 'The Great Northern', '1:30 AM', 4]);
-  assert.equal(P.peekOf(plan, PORTOLA, sat940, { people: ['Nobody'] }), null);
-  // hasAny reads a stop's whole timeline, a fork's peak crowd.
-  const sat = stops(plan, '2026-09-26');
-  assert.deepEqual(sat.map((s) => P.hasAny(s, ['Gus'])), [false, true, true, false, true, false, true, true, false, false, false, true]);
-  const soulwax = sat.find((s) => s.acts[0].name === 'Soulwax');
-  assert.deepEqual(soulwax.forks.map((f) => [f.place.place, P.hasAny(f, ['Gus'])]), [['Warehouse', true]]);
-  assert.ok(sat.every((s) => P.hasAny(s, [])), 'no highlight: every stop');
+  assert.deepEqual(peek(['Ana']), ['now', 'Pier Stage', '9 PM', 1], 'the count is theirs');
+  assert.deepEqual(peek(['Ana', 'Cy', 'Hal']), ['now', 'Pier Stage', '9 PM', 3]);
+  // Gus picked no Dog Blood: his own day's next stop, Prospa at the Warehouse.
+  assert.deepEqual(peek(['Gus']), ['next', 'Warehouse', '9:45 PM', 1]);
+  // Gus and Hal are never together again this weekend (the bar for two is
+  // two): no peek, and no stop on Sunday either.
+  assert.equal(peek(['Gus', 'Hal']), null);
+  assert.equal(planFor(['Gus', 'Hal']).night('2026-09-27').stops, 0);
+  // A stranger is no highlight: the crew's own peek.
+  assert.deepEqual(peek(['Nobody']), peek([]));
+  // Every 15 minutes of Saturday, for each one of us and a few groups: the
+  // peek's stop is one of theirs (passesPeople, the List's question) and
+  // only they are counted in it.
+  const groups = [...NINE.members.map((m) => [m]), ['Ana', 'Cy'], ['Ben', 'Eli', 'Gus'], NINE.members.slice(0, 5)];
+  for (const people of groups) {
+    const plan = planFor(people);
+    for (let t = Date.parse('2026-09-26T19:00:00Z'); t <= Date.parse('2026-09-27T12:00:00Z'); t += 15 * 60000) {
+      const k = P.peekOf(plan, PORTOLA, new Date(t));
+      if (!k) continue;
+      assert.ok(k.stop.acts.some((a) => passesPeople(NINE.picks, a.name, people)), `${people} at ${new Date(t).toISOString()}: ${k.stop.place.place} is none of theirs`);
+      assert.ok(k.stop.people.every((p) => people.includes(p)), `${people}: ${k.stop.people} counted`);
+    }
+  }
 });
 
 // ---- 5. no clock, no plan ----------------------------------------------------------------

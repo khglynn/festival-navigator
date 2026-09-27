@@ -1274,9 +1274,10 @@ const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // for its own layout: the dock under 720, the rail above.) The tab stays
 // wherever the plan is not saying NOW (nothing today, a live set that is no
 // stop of ours, a NEXT peek). A highlight filters both doors (Kevin,
-// 2026-09-26: "the filters should filter the now too"): the peek says NOW
-// only for a stop the highlighted people are in (plan.js peekOf), and where
-// it does not, the tab comes back as "what is on for Ross right now".
+// 2026-09-26: "the filters should filter the now too"): under a highlight
+// the plan is theirs (plan.js rule 10), so the peek says NOW only for a stop
+// of theirs, and where it does not, the tab comes back as "what is on for
+// Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
   const landing = nowLanding($('wall-root'), ctx, date);
   const at = landing && (landing.card || landing.line);

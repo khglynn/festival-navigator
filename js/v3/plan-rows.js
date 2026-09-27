@@ -518,9 +518,9 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
 // real second door: it clears the bar too) — so the text is a digest of the
 // Full rundown and never names a line it lacks; the rooms the Show menu hides
 // are already left out (the plan's rule 8). A line leaves once what it is for
-// is over, and "now" means who is there now. With a highlight on, only the
-// highlighted people's. The five with the most of us are kept and read in
-// time order. Times as people type them
+// is over, and "now" means who is there now. Under a highlight the plan is
+// theirs (plan.js rule 10), and so is every count here. The five with the
+// most of us are kept and read in time order. Times as people type them
 // ("5:40pm", "~1:30am") and plain punctuation (Kevin: "those en dashes … we
 // can type simpler"). Artists, places and times only: no one's name leaves
 // the phone, and no count either (his shape has none).
@@ -529,8 +529,8 @@ const andList = (names) => (names.length < 3 ? names.join(' and ') : `${names.sl
 
 // A stop or a fork as "Location for Title", and the acts it names: a set's
 // (or a party's) act; a room's headliners among `people` (whoever of us is
-// there — with a highlight on, only the highlighted), unless the room is
-// named for the one act in it.
+// there — under a highlight, of them), unless the room is named for the one
+// act in it.
 function placeForTitle(stop, picks, people) {
   const where = whereOf(stop);
   if (kindOf(stop) !== 'room') {
@@ -554,51 +554,36 @@ const tillText = (s) => { const t = tillOf(s); return t != null && s.place.end !
 // crowd (a stop's timeline, a fork's crowds), never who was there earlier.
 const crowdAt = (s, now) => ((s.timeline || s.crowds || []).find((c) => c.t <= now && now < c.t + STEP) || { people: [] }).people;
 
-// Who of us is at a stop or a fork, and how many at once: its crowd — or,
-// with a highlight on, only the highlighted people in it (Sol, on the
-// release head: the Share named the whole crowd's acts and ranked by the
-// whole crew under a highlight). A line on NOW counts the crowd at this
-// minute (round two: at 7:15 Ben had left Robyn for Kettama, and a Ben-only
-// Share still said Robyn "now"); one still to come reads a stop's timeline, a
-// fork's peak crowd, as hasAny does. A person is only ever seated at their
-// own picks (plan.js rule 3), so every act this names is one they picked —
-// the List's question, filters.js passesPeople.
-function whoAt(s, highlight, nowMin) {
-  const theirs = (list) => (list || []).filter((p) => !highlight.length || highlight.includes(p));
-  if (nowMin != null && s.from <= nowMin) { const people = theirs(crowdAt(s, nowMin)); return { people, count: people.length }; }
-  if (!highlight.length) return { people: s.people || [], count: s.count };
-  if (!s.timeline) { const people = theirs(s.people); return { people, count: people.length }; }
-  const all = new Set();
-  let count = 0;
-  for (const x of s.timeline) {
-    const here = theirs(x.people);
-    here.forEach((p) => all.add(p));
-    count = Math.max(count, here.length);
-  }
-  return { people: [...all], count };
+// Who of us is at a stop or a fork, and how many at once: its crowd (under a
+// highlight, only the highlighted are counted in it — plan.js rule 10). A
+// line on NOW counts the crowd at this minute (Sol, round two on the Share's
+// release head: at 7:15 Ben had left Robyn for Kettama, and a Ben-only Share
+// still said Robyn "now"); one still to come, its peak. A person is only ever
+// seated at their own picks (plan.js rule 3), so every act this names is one
+// they picked — the List's question, filters.js passesPeople.
+function whoAt(s, nowMin) {
+  if (nowMin != null && s.from <= nowMin) { const people = crowdAt(s, nowMin); return { people, count: people.length }; }
+  return { people: s.people || [], count: s.count };
 }
 
 // The five (`limit`), in time order: { line, from, count, acts, stop } each
 // (`stop`: the stop or or-line the line reads). `peek` is the one the rows
-// were drawn with — it picks the NOW row's or-line. With a highlight on, a
-// count is how many of THEM, and the most of them win, then the earliest (the
-// crew's MOST is the rest of the crew's say, not theirs).
-export function planPicks(route, { ctx, plan, peek = null, nowMin = null, highlight = [], limit = 5 } = {}) {
+// were drawn with — it picks the NOW row's or-line. The most of us win, then
+// a MOST stop, then the earliest.
+export function planPicks(route, { ctx, plan, peek = null, nowMin = null, limit = 5 } = {}) {
   if (!route) return [];
-  const hl = highlight || [];
   // One line a place (a set, a room on its night, a party): a room the route
   // comes back to, or that is another stop's or-line later on, is still the
   // one room, at the first time it is ours, counted at its biggest.
   const byPlace = new Map();
   const add = (s) => {
     if (nowMin != null && endOf(s) <= nowMin) return;
-    const who = whoAt(s, hl, nowMin);
+    const who = whoAt(s, nowMin);
     if (!who.count) return;
     const key = (s.place && s.place.id) || stopKey(s);
     const had = byPlace.get(key);
     if (!had) { byPlace.set(key, { stop: s, count: who.count, people: new Set(who.people), most: s.tier === 'most' }); return; }
-    if (s.from < had.stop.from) { had.stop = s; if (!hl.length) had.people = new Set(who.people); }
-    if (hl.length) who.people.forEach((p) => had.people.add(p));
+    if (s.from < had.stop.from) { had.stop = s; had.people = new Set(who.people); }
     had.count = Math.max(had.count, who.count);
     had.most = had.most || s.tier === 'most';
   };
@@ -609,7 +594,7 @@ export function planPicks(route, { ctx, plan, peek = null, nowMin = null, highli
     if (f) add(f);
   }
   return [...byPlace.values()]
-    .sort((a, b) => b.count - a.count || (hl.length ? 0 : b.most - a.most) || a.stop.from - b.stop.from)
+    .sort((a, b) => b.count - a.count || b.most - a.most || a.stop.from - b.stop.from)
     .slice(0, limit)
     .sort((a, b) => a.stop.from - b.stop.from)
     .map(({ stop, count, people }) => {
@@ -624,14 +609,14 @@ export function planPicks(route, { ctx, plan, peek = null, nowMin = null, highli
 // `day`: the night as the head names it ("Sat", or "Sat Oct 4" where two
 // nights share a weekday); `today`: the plan is tonight's, so the list runs
 // from now; `link`: the crew link that opens on the plan.
-export function planText(route, { ctx, plan, peek = null, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
+export function planText(route, { ctx, plan, peek = null, nowMin = null, fest = '', day = '', today = false, link = '' } = {}) {
   // Under a highlight (rule 10) the lines are those people's, and still no
   // name leaves the phone: "our" is whoever is sharing with whom.
   // A highlight of one shares that one person's day, still unnamed: "Picks".
   const whose = plan && plan.group ? (plan.group.length === 1 ? 'Picks' : 'Our picks') : "Our crew's main picks";
   const head = `${whose} for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
   const parts = [head];
-  const picks = planPicks(route, { ctx, plan, peek, nowMin, highlight });
+  const picks = planPicks(route, { ctx, plan, peek, nowMin });
   if (picks.length) parts.push(picks.map((x) => x.line).join('\n'));
   if (link) parts.push(`Full rundown: ${link}`);
   return parts.join('\n\n');

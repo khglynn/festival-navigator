@@ -44,12 +44,14 @@ const nightRows = (route, { ctx: cx, plan: pl, peek = null, nowMin = null }) => 
   .querySelectorAll('.plan-row')].filter((r) => r.dataset.night === route.id);
 
 // What app.js hands planText for a moment: the peek's night, the clock on it.
+// A highlight is an input to the plan (plan.js rule 10), as app.js builds it.
 function at(iso, highlight = []) {
   const date = new Date(iso);
-  const peek = P.peekOf(plan, FEST, date, { people: highlight });
-  const now = P.planAt(plan, FEST, date);
+  const pl = highlight.length ? P.planOf(FEST, { picks: NINE.picks, members: NINE.members, people: highlight }) : plan;
+  const peek = P.peekOf(pl, FEST, date);
+  const now = P.planAt(pl, FEST, date);
   const nowMin = peek.today && now && now.night.id === peek.night.id ? now.minutes : null;
-  const opts = { ctx, plan, peek, nowMin, highlight, fest: FEST.name, day: peek.night.wd, today: peek.today, link: linkFor(peek.night.iso) };
+  const opts = { ctx, plan: pl, peek, nowMin, fest: FEST.name, day: peek.night.wd, today: peek.today, link: linkFor(peek.night.iso) };
   return { route: peek.night, opts, text: planText(peek.night, opts) };
 }
 
@@ -90,19 +92,26 @@ test('the five are the most of us: nothing left out was picked by more than any 
   for (const x of everything) if (!kept.some((k) => k.line === x.line)) assert.ok(x.count <= lowest, `${x.line} (${x.count}) outranks a kept line (${lowest})`);
 });
 
-// A highlight filters the Share (Sol, on the release head): only the stops
-// the highlighted people are in, a room named for what THEY picked there, and
-// the five that are the most of THEM — passesPeople's question (filters.js,
-// the one "did they pick this"), so the List and the Share never disagree.
-test('a highlight applies: only the stops the highlighted people are in, a room named for what they picked', () => {
-  assert.equal(at('2026-09-26T21:40:00-07:00', ['Cy']).text, [
-    'Our crew\'s main picks for Sat Portola, now till end of day',
+// A highlight filters the Share (Sol, on the release head; plan.js rule 10
+// since the plan-days build): the plan is theirs, so the lines are their
+// stops, a room named for what THEY picked there, and the five that are the
+// most of THEM — passesPeople's question (filters.js, the one "did they pick
+// this"), so the List and the Share never disagree. Still no name leaves the
+// phone: one person's day goes out as "Picks", a few people's as "Our picks".
+test('a highlight applies: their day, a room named for what they picked, and the head unnamed', () => {
+  const { text } = at('2026-09-26T21:40:00-07:00', ['Cy']);
+  assert.equal(text, [
+    'Picks for Sat Portola, now till end of day',
     '',
     'Pier Stage for Dog Blood @ now till 10:15pm',
-    'Public Works for Milli Meng and Fcukers @ ~10:55pm', // Cy picked no Chloé Caillet
+    'Crane Stage for Soulwax @ 9:55pm', // the pick his day gives up for Dog Blood: its or-line
+    'Regency Ballroom for Parcels @ ~10:15pm',
+    'Public Works for Milli Meng and Fcukers @ ~10:30pm', // Cy picked no Chloé Caillet
     '',
     `Full rundown: ${LINK}`,
   ].join('\n'));
+  for (const [, acts] of text.matchAll(/ for (.+) @ /g)) for (const a of acts.split(/, | and /)) assert.ok(passesPeople(NINE.picks, a, ['Cy']), `${a}: Cy picked it`);
+  assert.match(at('2026-09-26T21:40:00-07:00', ['Ana', 'Cy', 'Hal']).text, /^Our picks for Sat Portola, now till end of day\n/);
 });
 
 test('a highlight ranks by the highlighted: the five are the most of them, and every act named is one they picked', () => {
@@ -125,14 +134,13 @@ test('a highlight ranks by the highlighted: the five are the most of them, and e
     }
   }
   // Three friends' afternoon: the places all three are at, not the crew's big
-  // stops. DJ Shadow at 6:30, his row's time: the 6:10 or-line under Tove Lo
-  // is not the one her row shows (Groove Armada's is), so the Share can't
-  // lead with it either.
+  // stops, at the times THEIR route reaches them — DJ Shadow from 6:10 and
+  // Prospa from 9:45, where the crew's route got there at 6:30 and 10:15.
   assert.deepEqual(planPicks(...(({ route, opts }) => [route, opts])(at('2026-09-26T11:00:00-07:00', ['Ben', 'Eli', 'Gus']))).map((x) => [x.line, x.count]), [
     ['Warehouse for Groove Armada @ 4:45pm', 3],
-    ['Crane Stage for DJ Shadow @ 6:30pm', 3],
+    ['Crane Stage for DJ Shadow @ 6:10pm', 3],
     ['Warehouse for Kettama @ 7:15pm', 3],
-    ['Warehouse for Prospa @ 10:15pm', 3],
+    ['Warehouse for Prospa @ 9:45pm', 3],
     ['Audio for Emilio and Airwolf Paradise @ ~11pm', 3],
   ]);
 });
@@ -210,7 +218,8 @@ test('the Share only ever names what the open plan shows, and "now" only while i
     const cx = { picks: rig.picks };
     const m = rig.members;
     const highlights = [[], [m[0]], [m[1]], [m[6]], [m[0], m[7]], [m[1], m[4], m[6]], m.slice(2, 5), m.slice(4, 9), m.slice(0, 8)];
-    const shown = new Map(); // the rows don't depend on a highlight's dim, only on the peek
+    const plans = new Map(highlights.map((hl) => [hl.join(','), hl.length ? P.planOf(rig.fest, { picks: rig.picks, members: rig.members, people: hl }) : pl]));
+    const shown = new Map();
     for (const n of pl.nights) {
       const stops = pl.night(n.id).items.filter((i) => i.kind === 'stop');
       if (!stops.length || !n.iso) continue;
@@ -218,18 +227,19 @@ test('the Share only ever names what the open plan shows, and "now" only while i
       for (let t = Math.min(...stops.map((s) => s.from)) - 30; t <= Math.max(...stops.map((s) => s.to)); t += P.STEP) {
         const date = new Date(midnight + t * 60000);
         for (const hl of highlights) {
-          const peek = P.peekOf(pl, rig.fest, date, { people: hl });
+          const hp = plans.get(hl.join(','));
+          const peek = P.peekOf(hp, rig.fest, date);
           if (!peek || !peek.today) continue;
-          const now = P.planAt(pl, rig.fest, date);
+          const now = P.planAt(hp, rig.fest, date);
           const nowMin = now && now.night.id === peek.night.id ? now.minutes : null;
-          const key = [peek.night.id, nowMin, peek.tag, peek.stop.from, peek.stop.place.id].join('|');
+          const key = [hl.join(','), peek.night.id, nowMin, peek.tag, peek.stop.from, peek.stop.place.id].join('|');
           if (!shown.has(key)) {
-            shown.set(key, nightRows(peek.night, { ctx: cx, plan: pl, peek, nowMin })
+            shown.set(key, nightRows(peek.night, { ctx: cx, plan: hp, peek, nowMin })
               .filter((r) => !r.classList.contains('past') && !r.classList.contains('earlier')).map((r) => r.textContent));
           }
           const rows = shown.get(key);
           const say = (why, x) => problems.length < 8 && problems.push(`${rig.fest.id} ${n.iso} ${P.quietClock(nowMin ?? t)} [${hl}] ${why}: ${x.line}`);
-          for (const x of planPicks(peek.night, { ctx: cx, plan: pl, peek, nowMin, highlight: hl, limit: Infinity })) {
+          for (const x of planPicks(peek.night, { ctx: cx, plan: hp, peek, nowMin, limit: Infinity })) {
             lines++;
             const title = x.line.split(' @ ')[0];
             const where = title.split(' for ')[0];
