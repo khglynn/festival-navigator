@@ -703,3 +703,15 @@ where the merge really runs: `tests/db-merge.test.mjs` (PGlite, the production
 merge SQL) with Sol's scenario — two top-ups from the same `[A, B]`, one adding
 C and one adding D, in either order, and the ledger ends `A, B, C, D`; plus a
 legacy-array crew topped up by the new code keeps its array artists.
+
+**Gate of round three, at 47f3c02:** npm test at UTC / Asia/Tokyo / the night
+clock 1295 of 1298 each — the one red the service-worker stamp (not stamped, by
+the brief; with a temporary local `--keep` stamp, restored after, the shell
+test is 3 of 3); validate-festivals 0 errors; `npm audit --omit=dev
+--audit-level=high` 0. Local `npm run test:browser`: 358 of 359 (1 skipped),
+on a quieter machine. Two runs before it, under a 15-minute load average of
+64–75 from other sessions, each had one or two different reds (people-menu's
+mid-slide read, fixed in the test; `hover-contract` "a fast click…" and
+`tap-shelf-contract` "at 320: − and +…", each green alone three times over).
+CI: 36287201762 (39c5ec5), 36288129719 (8cc4c43), 36288953285 (47f3c02) —
+**browser green** each, checks red on the stamp only.
