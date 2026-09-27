@@ -44,9 +44,13 @@
   ride v104 on their own branches: `fix/composer-focus` (the composer
   flake) and `fix/test-clocks` (in build; the suites read the machine's
   clock and go red from 10 AM Sunday until 5 AM Monday on every branch).
-  Next: Sol's two findings, merge v104 Monday, then CI three greens and the
-  walk on the final head; SHA to the coordinator for ACL Late nights (Tue
-  Sep 29).
+  **One release Monday** (the coordinator's call, 2026-09-27 noon): today
+  plan-days takes Sol's two findings, then merges `live/v103` and both fix
+  branches into one combined head, gated today (three unit clocks, every
+  browser suite, a walk over both builds' surfaces, Sol on the merge, CI
+  three greens). The coordinator cuts `release/v104` from that SHA Monday
+  morning; it ships Monday, not tonight, so nothing moves on friends'
+  phones while Portola's afters run.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
   `gen.py`, prices); a Google My Map in his personal account, link-shared.
   The in-app version is a Pen card (the 2027 reference tab).
