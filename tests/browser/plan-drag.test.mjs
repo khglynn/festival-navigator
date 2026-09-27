@@ -26,8 +26,11 @@ const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 picked
+// The last night's last hours: the open list is short (no day after it), so
+// the window's own height is under the screen's and a grown card changes it.
+const SUN_1130 = new Date('2026-09-27T23:30:00-07:00'); // Public Works, then the Midway and the Great Northern
 
-async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 0, guest = false } = {}) {
+async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 0, guest = false, at = SAT_940 } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
     viewport: desk ? { width: 1280, height: 800 } : { width: 390, height: 844 },
@@ -59,7 +62,7 @@ async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.clock.setFixedTime(SAT_940);
+  await page.clock.setFixedTime(at);
   // A held font holds Chromium's load event too (fonts requested before it
   // count), so that case waits only for the document.
   await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: fontDelayMs ? 'domcontentloaded' : 'load' });
@@ -347,11 +350,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const n1 = await look(near.key);
       assert.ok(Math.abs(n1.top - n0.top) <= 1, `the tapped row did not move: ${JSON.stringify([n0, n1])}`);
       assert.ok(n1.cardBottom <= n1.floor + 1, 'its card is whole on screen');
-      assert.deepEqual(n1.grown.sort(), ['grow|Pier Stage|1260', `grow|${near.key}`].sort(), 'and the NOW card above stayed grown');
+      // A stop's key carries its night (one list holds every day; plan-rows.js stopKey).
+      assert.deepEqual(n1.grown.sort(), ['grow|2026-09-26|Pier Stage|1260', `grow|${near.key}`].sort(), 'and the NOW card above stayed grown');
       await page.mouse.click(near.x, near.y);
       await settled(page);
       const n2 = await look(near.key);
-      assert.deepEqual(n2.grown, ['grow|Pier Stage|1260'], 'the same tap folds it');
+      assert.deepEqual(n2.grown, ['grow|2026-09-26|Pier Stage|1260'], 'the same tap folds it');
       assert.ok(Math.abs(n2.top - n0.top) <= 1, `still where it was: ${JSON.stringify([n0, n1, n2])}`);
       // A row low in the window: its card would be cut off, so the row rises —
       // by the card's overflow and no more.
@@ -425,9 +429,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // open window (storyboard 8) and the pin outlives the close, so a hand
   // that takes the window on its way down lets the pin go — and a window
   // anchored at the bottom moves its top edge by the height it gained. The
-  // catch reads the top on screen before that happens.
+  // catch reads the top on screen before that happens. The case needs a
+  // window shorter than the screen, and the open plan lists every day from
+  // today on, so it is tried on the festival's last night (the plan-days
+  // build: on Saturday the window is already as tall as it can be).
   test(`${name}: a window grown by a row tap, caught on its way down, stays under the finger`, { skip }, async () => {
-    const { ctx, page, errors } = await openPhone(get());
+    const { ctx, page, errors } = await openPhone(get(), { at: SUN_1130 });
     try {
       let g = await grabAt(page);
       await page.mouse.click(g.x, g.y);

@@ -1,8 +1,10 @@
 // Sharing our picks (the Share build, 2026-09-26), with real input: the open
-// plan's "Share our picks" hands the share sheet the day in words and the
-// link that opens on the plan; with no share sheet it copies them. A link
-// with &plan=<its night> lands a member on the plan open, and a newcomer on the
-// welcome card first (its ✕ is Look around by another name), then the plan.
+// plan's Share names the day it sends ("Share today’s picks" on the night it
+// lands on — the plan-days build, B1) and hands the share sheet that day in
+// words and the link that opens on the plan; with no share sheet it copies
+// them. A link with &plan=<its night> lands a member on the plan open, and a
+// newcomer on the welcome card first (its ✕ is Look around by another name),
+// then the plan.
 // The Show menu's "Share the crew link" hands over the crew link. The real
 // app, the made-up nine (tests/fixtures/plan-crew-nine.json), /api answered
 // in the page, every write refused; navigator.share is a stub that keeps what
@@ -138,7 +140,7 @@ async function openPlanByGrabber(page) {
 for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
   const skip = get() ? false : (name === 'WebKit' ? 'WebKit not installed' : NO_BROWSER);
 
-  test(`${name}: Share our picks hands the share sheet the day in words and the link that opens on the plan — and names no one`, { skip }, async () => {
+  test(`${name}: Share today’s picks hands the share sheet the day in words and the link that opens on the plan — and names no one`, { skip }, async () => {
     const { ctx, page, errors, crewToken } = await open(get());
     try {
       await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
@@ -150,7 +152,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(peek, { opacity: '0', inert: true }, 'the peek never shows the foot, and a keyboard never reaches it');
       await openPlanByGrabber(page);
       const button = page.locator('#plan .plan-share');
-      assert.equal((await button.textContent()).trim(), 'Share our picks');
+      assert.equal((await button.textContent()).trim(), 'Share today’s picks', 'the button names the day it sends');
       await button.click();
       await sleep(100);
       const shared = await page.evaluate(() => window.__shared);
@@ -357,7 +359,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // nothing of its own — when that owner let go, a new build could reload
   // the page under the share sheet. A share keeps its own mark,
   // data-sharing, which index.html's quiet() reads beside the busy one.
-  test(`${name}: Share our picks holds a new build's reload for as long as the sheet is up, whoever held the page's busy mark before it`, { skip }, async () => {
+  test(`${name}: the Share holds a new build's reload for as long as the sheet is up, whoever held the page's busy mark before it`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { share: 'waits' });
     try {
       await openPlanByGrabber(page);
@@ -571,12 +573,12 @@ test('Chromium: a plan link whose peek is still rising when Settings opens opens
 });
 
 // Copying needs the clipboard, which Playwright grants only in Chromium.
-test('Chromium, no share sheet: Copy our picks copies the same words, and the button says so', { skip: chromium ? false : NO_BROWSER }, async () => {
+test('Chromium, no share sheet: Copy today’s picks copies the same words, and the button says so', { skip: chromium ? false : NO_BROWSER }, async () => {
   const { ctx, page, errors, crewToken } = await open(chromium, { share: false });
   try {
     await openPlanByGrabber(page);
     const button = page.locator('#plan .plan-share');
-    assert.equal((await button.textContent()).trim(), 'Copy our picks');
+    assert.equal((await button.textContent()).trim(), 'Copy today’s picks');
     await button.click();
     await sleep(100);
     const copied = await page.evaluate(() => navigator.clipboard.readText());
@@ -584,12 +586,12 @@ test('Chromium, no share sheet: Copy our picks copies the same words, and the bu
     assert.ok(copied.endsWith(`Full rundown: ${server.origin}/f/${FID}#g=${crewToken}&f=${FID}&plan=${SAT}`));
     assert.equal((await button.textContent()).trim(), 'Copied ✓');
     await sleep(1900);
-    assert.equal((await button.textContent()).trim(), 'Copy our picks', 'and goes back to its words');
+    assert.equal((await button.textContent()).trim(), 'Copy today’s picks', 'and goes back to its words');
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });
 
-test('Chromium touch: a finger on Share our picks shares — it is a button, never a handle for the window', { skip: chromium ? false : NO_BROWSER }, async () => {
+test('Chromium touch: a finger on the Share shares — it is a button, never a handle for the window', { skip: chromium ? false : NO_BROWSER }, async () => {
   const { ctx, page, errors } = await open(chromium);
   try {
     await openPlanByGrabber(page);
@@ -612,7 +614,7 @@ test('Chromium, a refused share sheet: both shares copy instead, and say so wher
   try {
     await openPlanByGrabber(page);
     const button = page.locator('#plan .plan-share');
-    assert.equal((await button.textContent()).trim(), 'Share our picks');
+    assert.equal((await button.textContent()).trim(), 'Share today’s picks');
     await button.click();
     await sleep(150);
     assert.equal((await page.evaluate(() => window.__shared)).length, 1, 'the sheet was asked');
@@ -639,7 +641,7 @@ test('Chromium, a refused share sheet: both shares copy instead, and say so wher
 
 // The 44px floor is applied to `button` on a coarse pointer (CLAUDE.md), and
 // a class rule out-ranks it: the pill's own height is kept to a mouse.
-test('Chromium: Share our picks keeps the 44px floor under a finger, and its own 36px pill under a mouse', { skip: chromium ? false : NO_BROWSER }, async () => {
+test('Chromium: the Share keeps the 44px floor under a finger, and its own 36px pill under a mouse', { skip: chromium ? false : NO_BROWSER }, async () => {
   for (const [how, opts, min, max] of [['a phone', { mobile: true }, 44, 60], ['a laptop', { desk: true }, 34, 40]]) {
     const { ctx, page, errors } = await open(chromium, opts);
     try {
