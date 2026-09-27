@@ -62,13 +62,19 @@ async function open(engine, { share = true, guest = false, plan = false, desk = 
     localStorage.setItem('fn_coach_v1', '1');
     localStorage.setItem('fn_errlog_off_v1', '1');
     // The share sheet: a stub that keeps what it was handed and says the
-    // person sent it — or no share sheet at all.
+    // person sent it — or no share sheet at all. 'waits' stays up until the
+    // test calls window.__closeSheet().
     if (withShare) {
       window.__shared = [];
       const refuses = withShare === 'refuses';
+      const waits = withShare === 'waits';
       Object.defineProperty(Navigator.prototype, 'share', {
         configurable: true,
-        value: async (d) => { window.__shared.push(d); if (refuses) throw new DOMException('Not allowed', 'NotAllowedError'); },
+        value: async (d) => {
+          window.__shared.push(d);
+          if (waits) await new Promise((done) => { window.__closeSheet = done; });
+          if (refuses) throw new DOMException('Not allowed', 'NotAllowedError');
+        },
       });
     } else {
       delete Navigator.prototype.share;
@@ -305,6 +311,84 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
 
   // "Pick shows" on the welcome card reads the card and raises the join
   // shelf: the plan waits behind the question, and opens when it is left.
+  // Sol, round four (2026-09-26): a paint that comes in under a hand on the
+  // window waits for the hand (the rows would jump from under it), so a
+  // Share tapped by a second finger — or a key — while the first holds the
+  // grabber found the rows still on the last minute, and read its words
+  // from them. It sends nothing now; the tap after the hand lets go shares
+  // the rows the release drew.
+  test(`${name}: a hand holding the grabber across Saturday 6:00 PM — a Share tapped meanwhile sends nothing; after the hand lets go it shares the plan the release drew`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { at: SAT_559 });
+    try {
+      await openPlanByGrabber(page);
+      assert.match(await orLine(page), /Groove Armada/);
+      const g = await page.locator('#plan .plan-grab').boundingBox();
+      const x = g.x + g.width / 2;
+      const y = g.y + g.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (let k = 1; k <= 4; k++) { await page.mouse.move(x, y + k * 6); await sleep(16); }
+      await page.clock.setFixedTime(SAT_6);
+      await page.locator('#plan .plan-share').focus();
+      await page.keyboard.press('Enter');
+      await sleep(300);
+      assert.equal(await page.evaluate(() => window.__shared.length), 0, 'no words from rows a held paint left on 5:59');
+      assert.match(await orLine(page), /Groove Armada/, 'the rows wait for the hand');
+      for (let k = 3; k >= 0; k--) { await page.mouse.move(x, y + k * 6); await sleep(16); }
+      await sleep(120);
+      await page.mouse.up();
+      await settled(page);
+      assert.equal(await planState(page), 'open');
+      assert.match(await orLine(page), /DJ Shadow/, 'the release drew this minute');
+      await page.locator('#plan .plan-share').click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'one share');
+      const [{ text }] = await page.evaluate(() => window.__shared);
+      assert.doesNotMatch(text, /Groove Armada/);
+      assert.ok((await linesInRows(page, text)).length > 0);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Sol, round four: the page's busy mark has one owner, and a Share that
+  // found it taken (a laptop's Earlier fold, a hand on the window) held
+  // nothing of its own — when that owner let go, a new build could reload
+  // the page under the share sheet. A share keeps its own mark,
+  // data-sharing, which index.html's quiet() reads beside the busy one.
+  test(`${name}: Share our picks holds a new build's reload for as long as the sheet is up, whoever held the page's busy mark before it`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { share: 'waits' });
+    try {
+      await openPlanByGrabber(page);
+      await page.evaluate(() => { document.body.dataset.busy = 'past'; }); // a wall's Earlier fold in flight
+      await page.locator('#plan .plan-share').click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'the sheet is up');
+      await page.evaluate(() => { delete document.body.dataset.busy; }); // the fold lands
+      assert.equal(await page.evaluate(() => document.body.dataset.sharing), 'plan', 'the sheet still holds the reload');
+      await page.evaluate(() => window.__closeSheet());
+      await until(() => page.evaluate(() => document.body.dataset.sharing === undefined), 'the sheet lets go');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: Share the crew link holds a new build's reload for as long as the sheet is up, whoever held the page's busy mark before it`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { share: 'waits' });
+    try {
+      await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
+      await settled(page);
+      await page.evaluate(() => { document.body.dataset.busy = 'past'; }); // held before the menu opened
+      await page.locator('#dock-fest-link').click();
+      const row = page.locator('#dock-fest-wrap .sort-pop .share-link');
+      await row.waitFor({ state: 'visible' });
+      await row.click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'the sheet is up');
+      await page.evaluate(() => { delete document.body.dataset.busy; });
+      assert.equal(await page.evaluate(() => document.body.dataset.sharing), 'crew', 'the sheet still holds the reload');
+      await page.evaluate(() => window.__closeSheet());
+      await until(() => page.evaluate(() => document.body.dataset.sharing === undefined), 'the sheet lets go');
+      assert.equal(await page.locator('#dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu goes once the sheet has its answer');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   test(`${name}: a newcomer's plan link waits behind the join shelf, and opens when Look around leaves it`, { skip }, async () => {
     const { ctx, page, errors } = await open(get(), { guest: true, plan: true });
     try {

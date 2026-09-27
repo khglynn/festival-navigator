@@ -333,10 +333,12 @@
         var hadController = !!sw.controller;
         var pending = false;
         // In progress: work marked on the body while it runs (a crew being
-        // made, a join, a Spotify scan), a sheet or a zoom open, or a field in
+        // made, a join, a Spotify scan; a share sheet has a mark of its own,
+        // data-sharing, because the busy mark has one owner and a share can
+        // start while another holds it), a sheet or a zoom open, or a field in
         // use — focused, or holding words — that is on screen and editable.
         function quiet() {
-          if (document.body.dataset.busy) return false;
+          if (document.body.dataset.busy || document.body.dataset.sharing) return false;
           if (document.getElementById('sheet-backdrop') || document.querySelector('#zoom-layer .zoom-slot')) return false;
           var fields = document.querySelectorAll('input, textarea');
           for (var i = 0; i < fields.length; i++) {

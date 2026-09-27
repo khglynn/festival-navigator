@@ -776,24 +776,30 @@ async function sharePlan() {
     forced = true;
     try { data.repaint(); } finally { forced = false; }
   }
+  // Only rows this tap drew. A paint that came in under a hand on the window
+  // waits for the hand (paintPlanShelf), so a Share tapped by a second finger
+  // while the first holds the grabber would read rows on an older minute:
+  // nothing is sent, and the tap after the hand lets go shares (Sol, round
+  // four, 2026-09-26). Nor when this minute took the plan away.
   const a = drawn;
-  if (mode !== 'open' || leaving || !a) return; // this minute took the plan away
+  if (mode !== 'open' || leaving || held || !a || a !== data) return;
   const text = planText(a.route, {
     ctx: ctxRef, plan: a.plan, peek: a.peek, nowMin: a.nowMin, highlight: a.highlight || [],
     fest: a.fest || '', day: a.day || '', today: !!a.peek.today, link: a.linkOf ? a.linkOf() : '',
   });
   // A new build waits while the sheet is up or the copy is on its way
   // (index.html quiet): a reload would take the plan, and the words, from
-  // under either.
-  const mine = !document.body.dataset.busy;
-  if (mine) document.body.dataset.busy = 'plan-share';
+  // under either. The share's own mark: the page's busy mark has one owner,
+  // and whoever held it when the tap came (a fold, a hand on the window) can
+  // let go while the sheet is still up (Sol, round four).
+  document.body.dataset.sharing = 'plan';
   try {
     if (canShare()) {
       try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
   } finally {
-    if (mine && document.body.dataset.busy === 'plan-share') delete document.body.dataset.busy;
+    if (document.body.dataset.sharing === 'plan') delete document.body.dataset.sharing;
   }
 }
 const shareLabel = () => `${canShare() ? 'Share' : 'Copy'} ${PLAN_NAME.toLowerCase()}`; // "Share our picks"
