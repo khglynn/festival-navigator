@@ -889,3 +889,114 @@ crew link, no database writes (previews and `vercel dev` use production's).
       heads 7/7 twice.
     - The unit suite: one pin for the whole run, or a clock for each of those 11 files.
       That is the lead's call.
+
+11. **Sol's final check, and the combined head (builder, 2026-09-27).** From 958d96e:
+    Sol's two findings on af238e9 (`SOL-R3.md`), red first; then v104 (live/v103), the
+    composer fix and the test-clocks fix merged in, never rebased. The plan changed
+    mid-round (Kevin, via the coordinator): plan-days ships today as v105, before
+    Despacio's Sunday set, on top of v104, which the coordinator releases to main.
+    a. **The Earlier line wraps rather than cut (ea1fc0e).** 8f76795 widened the
+       line's box, but its words still inherited `nowrap` and the ellipsis from
+       `.plan-what .nm`, and three nights that are not consecutive keep three labels.
+       The longest real case: ACL's first Saturday is the one night with three behind
+       that are not consecutive (Sep 29, Oct 1, Oct 2, each a date because its weekday
+       comes twice). A crew that picked every act that night, on the grid and at the
+       late shows, has 13 stops. At 1:50 AM the last is on and 12 are over. From 2 AM
+       the plan lands on Sunday, and the line is a span. The test builds that crew
+       from ACL's own data (`ACL_ALL_SAT`).
+       - **Red** on the old CSS at 320, both engines: `the Earlier line's words fit
+         their box: {"text":"Earlier · Sep 29 · Oct 1 · Oct 2 · 12 stops",
+         "scroll":260,"client":246}`. At 390 the same line fits on the old CSS (260
+         of 314px), so 390 holds it to one line rather than going red.
+       - The fix: the line wraps (`white-space: normal`, no clip), and each label and
+         the count stay whole (`b { white-space: nowrap }`), so "SEP" never parts from
+         "29". The chevron keeps its 22px. At 320 it reads "EARLIER · SEP 29 · OCT 1 ·
+         OCT 2 ·" over "12 STOPS".
+       - Green: two lines at 320, counted by line height (a flex item has one client
+         rect whatever its lines). Every label is on one line. The node and the row
+         are within 1.5px of the words' middle, and the chevron within 2.5px: its
+         translateY(-2px) inside a 45° turn lifts its box about 1.4px, an optical
+         centre. Portola Sunday and ACL's second Saturday stay one line.
+    b. **The night guard asserts the right night (8a91df1).** ca12ba2 checked that
+       every row names a night. The guard now reads the night a row belongs to from
+       what the row is, its `data-stop`, and requires `data-night` to match:
+       - a stop's key starts with its night;
+       - grow, or and dropin carry that key after their tag;
+       - day, empty and scattered name their night;
+       - the Earlier line takes the first night behind.
+       At each day head, the first row after it is the head's night, and the row
+       before it is its own night, never the head's. Coverage over its five cases,
+       with Earlier shut and open: 165 grown cards, 42 heads, 28 grown cards right
+       before a head, 36 stops right after one. **Red** as mutations of plan-rows.js
+       in a scratch copy, because the code was right and the old guard couldn't have
+       shown it. Each mutation passed ca12ba2's guard and fails this one: the first
+       row after each head tagged with the night before; every grown card tagged
+       with the night after; each head tagged with the night before.
+    c. **live/v103 (5860ac4), with the brief's resolutions.**
+       - pastMayMove keeps both guards (`sharing`, `pendingThin`).
+       - setPeopleFilter takes v103's branch (the List thins, the Board dims), then
+         paintPlan with plan-days' comment (the plan re-plans).
+       - wall.js takes v103's side of both hunks. thinnedWords is defined once,
+         and app.js still imports it for Our picks' empty day.
+       - `passesPeople` is still the one predicate: wall.js (the dim, listKeeps),
+         app.js (thinFlow) and plan.js (the route).
+       Auto-merged and read: v3.css (the quiet room, NOW first in the day row),
+       index.html (NOW inside `#dock-days` and `#rail-days`; no plan-days code
+       reads those rows' children), the harness's `nowInView`, and now-jump.
+    d. **fix/composer-focus (0b88475)** merged clean.
+    e. **fix/test-clocks at eded04e (c52bff1).** launchBrowser keeps plan-days'
+       `scrollbars` option, with each launch wrapped in pinByDefault.
+       `tests/test-clocks.test.mjs` passes 7/7. Every plan suite, and v103's
+       people-menu, list-view and now-jump, sets page.clock before its first
+       navigation, so none inherits the week-before default by accident.
+    f. **Not fixed: now-jump's "WebKit 320: Ross highlighted".** It went red three
+       times on CI (40f8a0b, probe/composer-main, eded04e): row scrollLeft 38 of a
+       40 max, the card's right edge at 308.04 against the row's 306. It comes with
+       v104's content. The coordinator accepts it read by name for v105. Next: is
+       38 of 40 the app landing short, a target measured before a late font refit,
+       or rounding?
+    g. **One NOW under a hand (ccd23ba).** Sol, on the v104 release (in the shelf
+       since v103): while a hand holds the window, the new answer waits in `data`
+       for its rows (flushHeld), and planShowsNow read `data`. So at a NEXT→NOW
+       minute with the grabber held, the day row's NOW stepped aside while the peek
+       still read NEXT, and there was no NOW anywhere. The other way round, there
+       were two. planShowsNow now reads `drawn`, the answer the rows on screen came
+       from, cleared with `data`. flushHeld calls the answer's `onDrawn`, which is
+       app.js paintNowTabs, so the tab asks again once the held rows are drawn.
+       **Red first** in plan-drag, both engines. Portola Saturday, the peek is NEXT
+       at 4:44 PM and NOW at 4:45. A hand moves past the tap slop, comes back, and
+       holds still. The clock crosses the minute and the tick runs.
+       - Old code: `{"tab":false,"peek":"next","count":0}` under the hand.
+       - `drawn` without the hook: `{"tab":true,"peek":"now","count":2}` after the
+         release.
+       - Green: one NOW held (the tab, with the peek still NEXT), and one after the
+         release (the peek's), still a peek.
+    h. **The gate at c52bff1** (from a snapshot, 11:55 AM-12:08 PM PDT):
+       - `npm test` 1354 tests, 1 fail, the same with CI's night pin and in
+         TZ=Asia/Tokyo. The one fail is the unstamped service worker, expected: the
+         stamp is the coordinator's.
+       - plan-share 39/39, plan-drag 38/39 (its WebKit skip), plan-days 37/38 (its
+         ANIMATES skip), plan-tail 38/38, plan-acl 8/8.
+    i. **The gate at ccd23ba**, in the worktree, 12:10-12:20 PM: `npm test` 1354
+       tests, 1 fail, the stamp. plan-drag 40/41 (its WebKit skip), people-menu
+       24/24, list-view 20/20, fold-intent 4/4, zoom-still-hand 6/6, now-jump 62/62,
+       plan-stop-ends 5/6: item j.
+    j. **plan-stop-ends' corner card and the rail's ResizeObserver (25b17f0).**
+       WebKit 1280, "Sunday 7:58 to 8:22 PM, minute by minute", went red on
+       'ResizeObserver loop completed with undelivered notifications.' from the
+       live/v103 merge on: green at 958d96e and ea1fc0e, red at 5860ac4, c52bff1
+       and 374c3df, 2 of 2 at the head. live/v103 has no such test. v103 put NOW
+       in the rail's day row, so a tick that shows or hides it resizes
+       `#rail-days`, whose observer (wall.js wireScrollspy) re-fits that row's gap
+       in its own callback. Instrumented: the `#rail-days` callback, the notice in
+       the same millisecond, then `#rail-days` again the next frame. This is
+       TAP-BUILD.md follow-up 6: the browser's notice, not the app's error
+       (errlog.js drops it as noise). The test now lets it by, as plan-drag,
+       plan-share, tap-shelf and the smoke already do. Every NOW assertion holds,
+       6/6. The rail's own fix is still open, and a minute tick at 1280 now makes
+       it happen every time rather than under load.
+    k. **origin/main, v104 stamped (374c3df).** Clean. service-worker.js is main's
+       (festival-nav-v104, 82d97c76). No stamp here: v105's is the coordinator's.
+       pastMayMove is one return with both guards, and nothing calls parkNowTab,
+       which v104 removed. `npm test` at the default clock: 1354 tests, 1 fail, the
+       stamp. The one-NOW fix (ccd23ba) went in before this merge.
