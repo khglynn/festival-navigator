@@ -23,14 +23,14 @@
 - **Share for Our picks** (`live/share`, the sibling session; log
   `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
   link that opens that night's plan), the welcome card's ✕, "Share the crew
-  link" in the Show menu, the two touch-timing catches from v101. Sol's
-  release round is fixed at 1569407 (log item 13): a stop ends with its set
-  (the stale "now", live since v101 for up to 10 minutes), `&plan=<date>`
-  opens only on its night, a highlight's Share names and ranks the
-  highlighted people's picks. Waiting on the coordinator's Sol re-run. Kevin's
-  next set (Despacio crowding the route, the plan scrolling on to future
-  days, the menus while it is open) has a review page out for his calls,
-  from `live/plan-days-design`.
+  link" in the Show menu, the two touch-timing catches from v101. Sol's two
+  release rounds are fixed at e93c876 (log items 13–14): the Share reads the
+  rows the open plan shows, "now" is who is there now, `&plan=<date>` opens
+  only on its night; the model cap came out and is banked for the design
+  round (the peek's stale ten minutes after a set stay, as in production).
+  Waiting on Sol's re-run. Kevin approved every default on the design page
+  (Despacio as a drop-in room, the plan across the days, the menus over it);
+  it builds on `live/plan-days-design` after v104, aimed at ACL.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
   night and type, `gen.py`); a private Google My Map is being built from them.
   The in-app version is banked for the reference tab (2027).
