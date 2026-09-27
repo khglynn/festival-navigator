@@ -20,6 +20,8 @@ each table; the rules live in RUNBOOK.md.
 
 | Version | What | PR | Rollback target | Shipped | Verified |
 |---|---|---|---|---|---|
+| v103 | the Share for Our picks: up to five lines read from exactly the rows the open plan just drew at the tap's minute (nothing sent under a held paint), "Full rundown:" + a link with `&plan=<date>` that opens that night's plan after the peek rises; the welcome ✕; "Share the crew link" in the Show menu; each share holds a new build's reload with its own mark (`data-sharing`). Cut after five Sol rounds: the stop-end cap and the v101 window catches (tag `back-pocket/window-catches`) | #64 | `festival-navigator-pkrxh4ryv` (v102 + #63) | 2026-09-26 10:18 PM | smoke PASS (festival-nav-v103 / 9182c367); CI browser green 3× on 259da5e and on the final head (one rerun of a known now-jump 320 flake); PostHog 0 exceptions in the 6 h before |
+| data | nine more Portola ticket prices (the Midway $70, Boys Noize $88, SG Lewis $35, Azzecca $30, JT $30, NAKED SOCIAL $61, US! $18, Fist Buds $43; GRUNT door-only) + a Price column in the map generator | #63 | n/a (data only) | 2026-09-26 4:47 PM | validator 0 errors; npm 1247 pass; prices on all 3 hosts |
 | v102 | the Spotify playlist names: "Portola peeps’ picks" for the crew, "Portola me" for yours | #61 | `festival-navigator-8vfsmrygp` (v101) | 2026-09-26 2:56 PM | smoke PASS (festival-nav-v102 / d64fb64b); Sol clean |
 | v101 | Our picks (was Our plan): the peek above the dock, the day plan, the laptop panel, one NOW, the trip rule, "N picked"; welcome and join-shelf copy ("These are the crew’s picks for Portola.", "Join the crew for Robyn as…") | #60 | `dpl_77nwhMmf2AGzK66bwZpkw98bN9L1` (`3a7e195h0`, v100) | 2026-09-26 2:37 PM | smoke PASS (festival-nav-v101 / 4abcb55e); Neon branch `backup-2026-09-26-pre-v101` taken first; CI found four Linux WebKit reds the sibling's local gate missed (one real: grabbing the plan mid-settle) → fixed |
 | v100 | the laptop wall's left edge: cards, titles and times line up down one left edge; EARLIER centred on laptops | #59 | `festival-navigator-90u8ict5m` (v99) | 2026-09-26 12:17 PM | smoke PASS on rerun (festival-nav-v100 / dced8f29; first run caught one host a few seconds behind) |
@@ -74,6 +76,8 @@ each table; the rules live in RUNBOOK.md.
 | a376deb · eeba75d | v101 Our picks | Sol 6 · high (and the sibling's own rounds) | — | 0 blocking on the release head; the two touch-timing catches (a grab during a redraw slide, a touch during the peek's 240 ms arrival) banked for the Share | CI's Linux WebKit was the real gate this time |
 | 5718fff | v102 Spotify names | Sol 6 · high | — | clean | — |
 
+| 52653f1 → 4403e58 → dccf078 → cf3019c → b695d91 → 7c8b537 | v103 Share | Sol 6 · high | 5 rounds + 2 targeted | stale "now till 8:05" (a stop outlived its set) → capped, which hid a live fork → cap CUT, Share derives lines from the rendered rows; a highlighted "now" from anyone ever there → the current slice; the open plan's signature missed the or-line → single-source Share (repaint on tap, words from what was drawn); a held paint → nothing sent; a busy mark with one owner → `data-sharing` counted, dropped on pagehide; the link opened after leaving the wall → identity guard. A Linux-WebKit-only resize failure on six heads carrying the v101 window catches → catches CUT | the widen test was the mechanism, not the test |
+| bfcf621 → 02536c3 → e2988ee → 5af0f3e | v104 (live/v103) | Sol 6 · high | 3 rounds + 1 targeted | Spotify: a 5xx write retried (duplicates) → writes never repeated blind; no-song artists marked done → kept off the ledger; an early record without a drill redraw → CUT to one record at the end; rows held by artist name (Horse Meat Disco twice) → rowKey; focus lost on repaint → restored, same zoom control | walker 8/8 on bfcf621 |
 ### Model comparison so far (Kevin's ask)
 
 One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **Sol 6** was fastest (5.8 min) and found the most (7 real); **Astra 6** (8.5 min) found 5, one unique (an invalid query) and caught the worker-install gap on its first pass, reproducing two findings with probes; **Terra 5.6** (10.9 min) found 7, three unique — including the most important one of the round (a 4xx/5xx the app swallows passing the smoke) — and its own `sw-stamp --help` performed a real bump. Every model missed things another caught. Working read: Sol 6 as the gate is sound; a second model on high-stakes heads (the gesture release, Our plan) is worth its usage. Sol 6 then gated every release that night and caught a real blocker on four of six heads.
@@ -119,6 +123,15 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 28. **Later (2027), noted not built**: tabs — Discover (Ray's), Our picks, and a reference tab (grounds map, venue map, everyone's notes); city seasons leave out festival-only artists and can combine cities or "within X hours"; email Ray after ACL.
 29. **Live database access** for the Our picks export: granted in chat (read of the Portola crew doc; the demo crew's single-row delete).
 
+
+## Kevin's calls, 2026-09-26 (evening, chat)
+
+30. **Prices on the map**, and the map link-shared ("make it public"): anyone with the link can view; not listed in search.
+31. **The plan-days design page**: "All the recommendations in that artifact seem good" — every default, C6 included (from five highlighted people, a stop needs three of them together).
+32. **The Share text as shown**, and **NOW at phone width: option a** (as built, one swipe off the edge on festival days; measure a tighter row later).
+33. **v104 waits for Monday** so NOW doesn't move on friends' phones on Portola's last day; the stop-end timing fix moves into the plan-days build ("bumping that is fine").
+34. **A trip-planning Claude** gets the festival list from the public JSON (`/data/festivals/index.json`, `portola-2026.json`) and a pasted block of when he must be inside the festival; crew picks stay out of other chats (the crew link is also the edit key).
+
 ## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
 
 1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
@@ -146,3 +159,11 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 23. **Pinned notes on the wall** (a festival or day note as the room head's whisper): offered, no answer.
 24. **Import follow-ons**: a second door in the just-joined welcome; Portola-only. Likely yes ("all those changes seem chill"); confirm before building.
 25. **Read festival data from `origin/main`, never a local checkout**: the map's first pass read a checkout five releases old and found 10 Folsom parties instead of 64.
+26. **A note can lose keystrokes mid-typing** (tap-shelf-contract's composer test, 3 of ~250 CI jobs, once before the Share existed): the typed text stops right after a space, focus leaving the textarea. Maybe a real "keyboard drops while typing a note" bug; instrumented copy at tag `back-pocket/composer-probe`.
+27. **The playlist ledger is an array** (`artists`), and jsonb_deep_merge replaces arrays: two members topping up at once can drop each other's confirmations (songs aren't doubled; the drill's count reads low). Key it by artist, read both shapes (V103-BUILD.md T3).
+28. **now-jump "WebKit 320: NOW slides SAT AFTERS"** flakes on loaded CI (once on v104's branch, once on the v103 release).
+29. **The v101 window catches** (a touch mid-arrival, a grab mid-slide, a font mid-arrival) are banked with their tests at tag `back-pocket/window-catches` and the plan-days DESIGN.md; the build owes a window model that passes Linux WebKit 3× without touching refit timing.
+30. **The stop-end cap** (a stop never outlasts its place) and a live fork outliving its parent: banked in the plan-days DESIGN.md with acceptance tests; production keeps the ≤10-minute stale "NOW till <past>" until then.
+31. **Pen flags** (2026-09-26): "Take Austin seasons live" (3e70501e…81ec) has no Project; city seasons has no alias of its own; no Peep row for Ray.
+32. **Worktrees symlink node_modules into each other**: the wrap cleanup broke the v103 builder's install (memory: worktree-cleanup-breaks-node-modules). Link new worktrees to the root's install.
+33. **Root checkout drifts behind origin during a worktree release train** (RUNBOOK step 7 now fast-forwards it after each merge).
