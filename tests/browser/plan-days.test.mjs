@@ -42,9 +42,10 @@ const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag
 // `desk`: a laptop. `reduced`: Reduce Motion. `at`: the clock. `wait: false`
 // hands the page back as soon as it has loaded, before the plan settles.
 // `bars`: a scrollbar that takes room, as Windows and a Mac with a mouse draw
-// one (Chromium needs a browser launched with its scrollbars on). The crew's
-// doc comes back too: a friend's pick is a change to it, then a pull.
-async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false } = {}) {
+// one (Chromium needs a browser launched with its scrollbars on). `holdGlide`:
+// the glide held part of the way (the held glide, below). The crew's doc
+// comes back too: a friend's pick is a change to it, then a pull.
+async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false, holdGlide = false } = {}) {
   const crew = CREWS[fest];
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
@@ -63,6 +64,7 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
       if (document.head) put(); else document.addEventListener('DOMContentLoaded', put);
     });
   }
+  if (holdGlide) await ctx.addInitScript(() => { window.__holdGlide = true; });
   // The head's turn, as the page asks for it: every animation started on the
   // head's weekday or date, with its first frame and its length.
   await ctx.addInitScript(() => {
@@ -79,7 +81,9 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
     }, true);
     // Every scrollTo the app asks of the list (the glide's intent, which every
     // engine can be held to — now-jump's recorded asks are the pattern), with
-    // where the list was and whether the window itself was still moving.
+    // where the list was, the row at its top then (its night and stop, and how
+    // far into it, as the shelf keeps a place) and whether the window itself
+    // was still moving.
     window.__asks = [];
     const scrollTo = Element.prototype.scrollTo;
     Element.prototype.scrollTo = function asked(...args) {
@@ -87,7 +91,17 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
         const o = typeof args[0] === 'object' && args[0] ? args[0] : { top: args[1] };
         const plan = document.getElementById('plan');
         const moving = plan.getAnimations().some((a) => a.playState === 'running' && a.effect.getComputedTiming().endTime !== Infinity);
-        window.__asks.push({ top: o.top, behavior: o.behavior || 'auto', from: this.scrollTop, moving });
+        const row = [...this.children].find((r) => r.dataset.night && r.offsetTop + r.offsetHeight > this.scrollTop + 2);
+        window.__asks.push({ top: o.top, behavior: o.behavior || 'auto', from: this.scrollTop, moving,
+          row: row ? `${row.dataset.night}#${row.dataset.stop || row.className}` : '', at: row ? Math.round(this.scrollTop - row.offsetTop) : 0 });
+        // The held glide: the first smooth ask stops 40% of the way there and
+        // stays, and every later one lands at once.
+        if (window.__holdGlide && o.behavior === 'smooth') {
+          const first = !window.__glideHeld;
+          window.__glideHeld = true;
+          this.scrollTop = first ? this.scrollTop + (o.top - this.scrollTop) * 0.4 : o.top;
+          return undefined;
+        }
       }
       return scrollTo.apply(this, args);
     };
@@ -132,47 +146,47 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
   return { ctx, page, errors, crewToken, doc };
 }
 const settled = async (page) => { await motionDone(page, { within: '#plan' }); await sleep(QUIET_MS); };
-// Does this engine, under this harness, show an element's smooth scroll on
-// its way — or land it in one step? CI's Linux WebKit (runs 36315487924 and
-// on, 2026-09-27) asked for 508px smoothly fired ONE scroll event, at 508; a
-// scratch scroller there showed [0, 1964, 2000] over 673 ms on a clock-free
-// page — it moves in time, in steps too coarse to see rows go by — where
-// Chromium shows 40-odd positions and a Mac's WebKit a dozen. The app keeps
-// the native glide (a real Safari animates it); the tests hold every engine
-// to the glide's intent, and to "through the rows between" only where this
-// probe sees the in-between. It asks a scratch scroller in a settled app page
-// (the tests' own clock and late starts) for 500px, smoothly, and counts the
-// places its scroll events report on the way, as the glide tests count the
-// list's. Once per engine.
-const probes = new Map();
-function smoothShows(name, engine) {
-  if (!probes.has(name)) {
-    probes.set(name, (async () => {
-      const { ctx, page } = await open(engine);
-      try {
-        await page.evaluate(() => {
-          const box = document.createElement('div');
-          box.id = 'smooth-probe';
-          box.style.cssText = 'position:fixed;left:0;top:0;width:60px;height:120px;overflow-y:auto;opacity:0;pointer-events:none';
-          const inner = document.createElement('div');
-          inner.style.height = '4000px';
-          box.appendChild(inner);
-          document.body.appendChild(box);
-          window.__probe = [];
-          box.addEventListener('scroll', () => window.__probe.push(box.scrollTop));
-          box.scrollTo({ top: 500, behavior: 'smooth' });
-        });
-        const t0 = Date.now();
-        while (Date.now() - t0 < 3000 && (await page.evaluate(() => document.getElementById('smooth-probe').scrollTop)) < 499.5) await sleep(20);
-        const seen = await page.evaluate(() => window.__probe);
-        const places = new Set(seen.filter((v) => v > 0.5).map((v) => Math.round(v))).size;
-        return { shows: places >= 3, places, events: seen.length, ms: Date.now() - t0 };
-      } finally { await ctx.close(); }
-    })());
-  }
-  return probes.get(name);
+// The later-night glide is the app's ask and the engine's animation. The ask
+// is asserted on every engine: one smooth scrollTo, to the night's head, made
+// once the window has landed. The frames in between are the engine's job once
+// the ask is right, and only Chromium animates an element's smooth scroll
+// reliably under this harness: CI's Linux WebKit lands it in one to three
+// frames (a scratch scroller there went [0, 1964, 2000] over 673 ms, and the
+// list [508]), and a runtime probe of that flipped from run to run (CI
+// 36323629568 counted 3 places, read them as a glide, and three glide tests
+// failed). So "through the rows between" and a repaint racing the engine's
+// own glide are Chromium's, and every engine gets the carry-on driven
+// deterministically: the held glide (open's `holdGlide`) keeps the list part
+// of the way there for as long as a test needs it, and lands every later ask
+// at once.
+const ANIMATES = (name) => name === 'Chromium';
+// The row at the list's top — its night and stop, how far into it the top
+// edge sits, as the shelf keeps a place — and the list's scrollTop.
+const topRow = (page) => page.evaluate(() => {
+  const list = document.querySelector('#plan .plan-list');
+  const row = [...list.children].find((r) => r.dataset.night && r.offsetTop + r.offsetHeight > list.scrollTop + 2);
+  return { row: `${row.dataset.night}#${row.dataset.stop || row.className}`, at: Math.round(list.scrollTop - row.offsetTop), scrollTop: Math.round(list.scrollTop) };
+});
+// The held glide, once the first ask has stopped the list part of the way
+// and the list has told the app (its scroll event): the row at its top.
+async function heldGlide(page) {
+  await until(() => page.evaluate(() => { const l = document.querySelector('#plan .plan-list'); return !!window.__glideHeld && !!l && l.scrollTop > 20; }), 'the glide is held part of the way', 15000);
+  await sleep(200);
+  return topRow(page);
 }
-const verdict = (name, p) => `${name}'s smooth scroll here: ${p.places} place${p.places === 1 ? '' : 's'} on the way to 500px in ${p.events} scroll event${p.events === 1 ? '' : 's'}, ${p.ms} ms — ${p.shows ? 'it shows the glide on its way' : 'it lands in one step as far as a test can see'}`;
+// The minute turns (SAT_1015: Dog Blood ends) and its tick redraws the rows
+// then and there.
+async function tickRedraws(page, at) {
+  await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; });
+  await page.clock.setFixedTime(at);
+  const redrawn = await page.evaluate(() => {
+    document.body.dataset.busy = 'test-tick';
+    document.dispatchEvent(new Event('visibilitychange'));
+    delete document.body.dataset.busy;
+    return !document.querySelector('#plan .plan-list').dataset.old;
+  });
+  assert.ok(redrawn, 'the tick redrew the rows');
+}
 // Poll from Node, in real time, until `ok` (a timer inside the page runs on
 // the fake clock: the harness traps).
 async function until(ok, what, ms = 8000) {
@@ -357,8 +371,6 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // its words were about. A link for a night already over still lands on the
   // wall with its peek (plan-share's "a plan link for another night").
   test(`${name}: a link for a later night opens the plan on that night, and the peek stays tonight's`, { skip }, async (t) => {
-    const probe = await smoothShows(name, get());
-    t.diagnostic(verdict(name, probe));
     const { ctx, page, errors } = await open(get(), { plan: '2026-09-27' });
     try {
       await page.waitForSelector('#plan[data-state="open"]', { timeout: 8000 });
@@ -381,8 +393,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // not in one jump.
       const glide = (await page.evaluate(() => window.__glide)).filter((g) => g.top > 0);
       assert.ok(glide.length > 0 && glide.every((g) => !g.moving), `the list moved only once the window had landed: ${JSON.stringify(glide.slice(0, 4))}`);
-      if (probe.shows) assert.ok(new Set(glide.map((g) => g.top)).size >= 3, `it glided, through the rows between: ${JSON.stringify(glide.map((g) => g.top))}`);
-      else t.diagnostic(`the rows between are not asserted here: the list's scroll events said ${JSON.stringify(glide.map((g) => g.top))}`);
+      if (ANIMATES(name)) assert.ok(new Set(glide.map((g) => g.top)).size >= 3, `it glided, through the rows between: ${JSON.stringify(glide.map((g) => g.top))}`);
+      else t.diagnostic(`the rows between are the engine's job, asserted on Chromium (ANIMATES): the list's scroll events here said ${JSON.stringify(glide.map((g) => g.top))}`);
       // The head turned over once, upward, as Sunday reached the top.
       const turns = await page.evaluate(() => window.__turns);
       assert.deepEqual(turns.map((x) => [x.part, x.from]), [['wd', 'translateY(10px)'], ['sub', 'translateY(10px)']], 'the head turned over once, as Sunday arrived');
@@ -399,12 +411,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // A repaint on the way — the minute's tick ending Dog Blood, a friend's
   // pick — replaces the list's rows mid-glide. The new list keeps the place
   // the old one had reached, and the glide carries on from there to Sunday.
-  // Only where the engine shows a smooth scroll on its way: one that lands it
-  // in one step has no "on the way" for a repaint to come in (the probe).
-  test(`${name}: a later night's glide carries on across a repaint on the way`, { skip }, async (t) => {
-    const probe = await smoothShows(name, get());
-    t.diagnostic(verdict(name, probe));
-    if (!probe.shows) { t.skip('this engine lands a smooth scroll in one step as far as a test can see: there is no mid-glide to repaint in'); return; }
+  // Racing the engine's own glide is Chromium's (ANIMATES); the held glide
+  // below drives the same carry-on on every engine.
+  test(`${name}: a later night's glide carries on across a repaint on the way (the engine's own glide)`, { skip: skip || (ANIMATES(name) ? false : 'a repaint can race the engine\'s own glide only where the engine animates it (ANIMATES: Linux WebKit lands it in one to three frames); the held glide covers the carry-on here') }, async () => {
     const { ctx, page, errors } = await open(get(), { plan: '2026-09-27', at: SAT_1014, wait: false });
     try {
       // Mid-glide (the list has left today; the recorder in open()), the
@@ -440,56 +449,81 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  // The same repaint on the way, on a laptop whose list scrollbar takes room
-  // (Windows, a Mac with a mouse). A new list was measured for the reader's
-  // place before it was a scrolling list, 15px wider than the one it became
-  // (the scrollbar arrived with the settle), so every scroll after the glide
-  // read as a reflow and was never taken; the next repaint put the list back
-  // where the glide had been when the tick came.
-  test(`${name} laptop, a scrollbar that takes room: after a glide the reader scrolls, and the next repaint keeps where they are`, { skip }, async (t) => {
-    const probe = await smoothShows(name, get());
-    t.diagnostic(verdict(name, probe));
-    if (!probe.shows) { t.skip('this engine lands a smooth scroll in one step as far as a test can see: there is no mid-glide to repaint in'); return; }
-    const own = name === 'Chromium' ? await launchBrowser({ scrollbars: true }) : null;
-    const { ctx, page, errors, doc } = await open(own || get(), { plan: '2026-09-27', at: SAT_1014, desk: true, wait: false, bars: true });
+  // The same carry-on on every engine, driven deterministically: the glide is
+  // held part of the way (open's `holdGlide`), a friend's pick on Sunday
+  // redraws the rows under it, and the new list is asked to carry on from the
+  // row the old one had reached, to Sunday's head as the new rows place it.
+  // (A pick, not the minute: the tick that ends Dog Blood takes away the
+  // grown card the list is held in, and the place then passes to the next
+  // row by design — the racing test above takes that path.)
+  test(`${name}: a glide held part of the way across a friend's pick — the new list carries on from the row the old one had reached, to Sunday's head`, { skip }, async () => {
+    const { ctx, page, errors, doc } = await open(get(), { plan: '2026-09-27', wait: false, holdGlide: true });
     try {
-      const deadline = Date.now() + 15000;
-      while (!(await page.evaluate(() => (window.__glide || []).some((g) => g.top > 20)))) {
-        assert.ok(Date.now() < deadline, 'the glide starts');
-        await sleep(5);
-      }
-      await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; });
-      await page.clock.setFixedTime(SAT_1015);
-      const mid = await page.evaluate(() => {
-        document.body.dataset.busy = 'test-tick';
-        document.dispatchEvent(new Event('visibilitychange'));
-        delete document.body.dataset.busy;
-        const list = document.querySelector('#plan .plan-list');
-        return list.dataset.old ? null : list.scrollTop;
-      });
-      assert.notEqual(mid, null, 'the tick redrew the rows mid-glide');
+      const held = await heldGlide(page);
+      const sel = doc.festivals['portola-2026'].selections;
+      sel.Parcels = { ...sel.Parcels, Ana: 3 };
+      await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; document.dispatchEvent(new Event('visibilitychange')); });
+      await until(() => page.evaluate(() => !document.querySelector('#plan .plan-list').dataset.old), 'the friend\'s pick redrew the rows');
       await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the glide reaches Sunday after the repaint');
       await settled(page);
+      const sun = await page.evaluate(() => [...document.querySelector('#plan .plan-list').children].find((x) => x.dataset.night === '2026-09-27').offsetTop);
+      const asks = await page.evaluate(() => window.__asks);
+      assert.ok(asks.length >= 2, `the glide was asked for, then asked to carry on: ${JSON.stringify(asks)}`);
+      const [first, again, ...more] = asks;
+      assert.deepEqual([first.behavior, first.moving, again.behavior], ['smooth', false, 'smooth'], `both smoothly, the first once the window had landed: ${JSON.stringify(asks)}`);
+      assert.ok(again.row === held.row && Math.abs(again.at - held.at) <= 1 && Math.abs(again.top - sun) <= 1,
+        `the new list carried on from where the old one had got to (${JSON.stringify(held)}) to Sunday's head (${sun}): ${JSON.stringify(again)}`);
+      // A list drawn again before the landing's scroll event is asked from
+      // Sunday's head to Sunday's head: no motion. (The pull's answer is drawn
+      // twice, some 50 ms apart, on both engines; WebKit's second draw can
+      // come before that event.)
+      assert.ok(more.every((m) => Math.abs(m.from - sun) <= 1 && Math.abs(m.top - sun) <= 1), `nothing after the carry-on moved the list: ${JSON.stringify(more)}`);
+      const r = await read(page);
+      assert.deepEqual([r.wd, r.share], ['SUN', 'Share Sunday’s picks']);
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
+    } finally { await ctx.close(); }
+  });
+
+  // The held glide's repaint on a laptop whose list scrollbar takes room
+  // (Windows, a Mac with a mouse). The new list was measured for the reader's
+  // place before it was the open, scrolling list, 15px wider than the one it
+  // became, and the settle after it only re-aims a glide: every scroll after
+  // that read as a reflow and was never taken, so the next settle or repaint
+  // put the list back where the glide had been when the tick came — the
+  // landing on Sunday snapped back to Saturday, and a reader's own scroll
+  // after it was lost the same way.
+  test(`${name} laptop, a scrollbar that takes room: a glide across a repaint stays where it lands, and the next repaint keeps where the reader scrolls to`, { skip }, async () => {
+    const own = name === 'Chromium' ? await launchBrowser({ scrollbars: true }) : null;
+    const { ctx, page, errors, doc } = await open(own || get(), { plan: '2026-09-27', at: SAT_1014, desk: true, wait: false, bars: true, holdGlide: true });
+    try {
+      const held = await heldGlide(page);
+      await tickRedraws(page, SAT_1015);
+      await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the glide reaches Sunday after the repaint');
+      await settled(page);
+      assert.ok(Math.abs(await nightTop(page, '2026-09-27')) <= 2, `Sunday's head is still at the top once everything has settled: ${JSON.stringify(await topRow(page))} (the glide was held at ${JSON.stringify(held)})`);
       const gutter = await page.evaluate(() => { const l = document.querySelector('#plan .plan-list'); return l.offsetWidth - l.clientWidth; });
       assert.ok(gutter >= 10, `the list's scrollbar takes room: ${gutter}px`);
-      // The reader goes back up, into Saturday's last rows.
-      await wheel(page, -160);
-      const where = () => page.evaluate(() => {
-        const list = document.querySelector('#plan .plan-list');
-        const top = list.getBoundingClientRect().top;
-        const row = [...list.children].find((r) => r.dataset.night && r.getBoundingClientRect().bottom > top + 2);
-        return { row: `${row.dataset.night}#${row.dataset.stop || row.className}`, at: Math.round(row.getBoundingClientRect().top - top), scrollTop: Math.round(list.scrollTop) };
-      });
-      const before = await where();
-      assert.ok(before.scrollTop < mid - 20 || before.scrollTop > mid + 20, `the reader is somewhere the glide was not when the tick came (${JSON.stringify(before)}, the tick at ${mid})`);
+      // The reader goes back up a little, into Saturday's last rows, with a
+      // real wheel: measured and sent again until it is there.
+      const end = (await topRow(page)).scrollTop;
+      const want = end - 60;
+      for (let pass = 0; pass < 4; pass++) {
+        const now = (await topRow(page)).scrollTop;
+        if (Math.abs(now - want) <= 15) break;
+        await wheel(page, want - now);
+      }
+      const before = await topRow(page);
+      assert.ok(Math.abs(before.scrollTop - want) <= 15 && before.row !== held.row,
+        `the reader is in Saturday's last rows, not where the glide was held: ${JSON.stringify({ before, want, held })}`);
       // A friend's pick on Sunday redraws the rows: Ana picks Parcels too.
       const sel = doc.festivals['portola-2026'].selections;
       sel.Parcels = { ...sel.Parcels, Ana: 3 };
       await page.evaluate(() => { document.querySelector('#plan .plan-list').dataset.old = '1'; document.dispatchEvent(new Event('visibilitychange')); });
       await until(() => page.evaluate(() => !document.querySelector('#plan .plan-list').dataset.old), 'the friend\'s pick redrew the rows');
       await settled(page);
-      const after = await where();
-      assert.ok(after.row === before.row && Math.abs(after.at - before.at) <= 1, `the repaint kept the reader where they were: ${JSON.stringify(before)} → ${JSON.stringify(after)} (the tick came at ${mid})`);
+      const after = await topRow(page);
+      assert.ok(after.row === before.row && Math.abs(after.at - before.at) <= 1,
+        `the repaint kept the reader where they were: ${JSON.stringify(before)} → ${JSON.stringify(after)} (the glide was held at ${JSON.stringify(held)})`);
       assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); if (own) await own.close(); }
   });
