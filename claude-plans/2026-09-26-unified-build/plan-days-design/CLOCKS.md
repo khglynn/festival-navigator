@@ -43,3 +43,64 @@ at 5:05). ACL's weekends would do the same to anything left on the machine's clo
 4. A unit test that fails when a new test could boot on the machine's clock.
 
 ## Log
+
+1. **The unit suite pins by default (8a32429).** `npm test` is now `node --import
+   ./tests/helpers/night-clock.mjs --test tests/*.test.mjs`. node --test hands
+   `--import` to every file's own process: a probe printed the import running once in
+   each child, and still once when NODE_OPTIONS carried it too. So the plain and Tokyo
+   CI steps take the default through the script, and local runs agree with CI. The
+   night step keeps `NIGHT_CLOCK` and drops its NODE_OPTIONS. `NIGHT_CLOCK=machine` is
+   the named way out. shiftDate moved to `tests/helpers/test-clock.mjs`, self-contained,
+   so Node and a page share one implementation.
+   a. At 10:52-10:54 AM, inside the window: `npm test` 1262, 0 fail; with CI's night pin,
+      0 fail; TZ=Asia/Tokyo, 0 fail; `NIGHT_CLOCK=machine`, the same 62 reds.
+   b. Why a script and not a CI env default: the script is the one place both a laptop
+      and CI start the suite, so one line covers both. An env default in CI alone would
+      leave local runs on the machine's clock, which is exactly where this was found.
+   c. What it doesn't reach: a file run on its own (`node --test tests/x.test.mjs`), and
+      a child process a test spawns (the validator, in data-guards and
+      portola-events). Neither is on the clock's path: the validator reads no clock.
+      tests/README.md says how to run one file pinned.
+2. **The Tab test and heads-contract's phone (c00ac12).** The verified patch, except
+   that the Tab test uses the shared shiftDate. Red at 10:55 AM, green at 10:56:
+   tap-shelf 31/31 and heads-contract 7/7.
+3. **A harness default, with its evidence.** `tests/helpers/browser.mjs` pinByDefault
+   wraps every browser launchBrowser and launchWebkit return. Its newContext adds
+   shiftDate(TEST_CLOCK) as each context's first init script, and browser.newPage goes
+   through newContext (Playwright's client). `tests/browser/clock-harness.test.mjs`
+   proves it composes, in both engines, on a bare page:
+   a. the default moves with time, and frames and timers run;
+   b. Playwright's fixed clock before load, a re-pin after load, and a fixed time set
+      on a page already on the default all win;
+   c. an installed clock, paused and run, lands exactly;
+   d. a test's own shiftDate on top lands on its moment;
+   e. a navigation and a second page keep the default;
+   f. `onMachineClock` is the machine's clock and wants a reason.
+   Red on the old harness (with only the way-out stub staged): 4 of 8, in both
+   engines ("the default: 2026-09-27T17:59:59Z, not 2026-09-19T16:00:00Z"; "booted on
+   the default: …"). shell-contract launched its own Chromium and booted the wall
+   unpinned in 8 places; it now takes the harness's browser, 11/11. gallery.html's
+   main ctx carries `now: null`, so its wall paths fall back to `new Date()` (wall.js,
+   `ctx.now || new Date()`). The default reaches them without touching the gallery.
+4. **The one real-clock smoke, the tests' README, and the guard (d3afadb).**
+   `tests/browser/machine-clock-smoke.test.mjs` boots each scheduled festival in the
+   catalog on a phone, on the machine's clock, in both engines. It asserts only that
+   there is no page error, the wall has cards, and exactly one lit day tab is a day on
+   the wall. The same boot runs with Date pinned at 13 kinds of hour and passes at
+   each. What it saw is the proof that these rules don't depend on the hour: Portola's
+   lit tab went Saturday, Thursday, Friday, Sunday; its blocks went from four to one;
+   ACL went from 249 cards to 31 on its last night, with Late nights lit between the
+   weekends. `tests/README.md` says nothing else runs on the machine's clock, and why.
+   `tests/test-clocks.test.mjs` fails on any of these: the script loses its pin; a CI
+   step runs `node --test` bare; a browser test or helper launches its own browser; a
+   harness launch skips pinByDefault; a file other than the smoke calls onMachineClock
+   (clock-harness may, and boots no app); the README stops naming the smoke. Red first
+   on main (shell-contract's own launch; no allowed files), and with two scratch files
+   on the branch (a direct launch that boots the app, and a stray onMachineClock), both
+   named; green with the scratch trashed.
+5. **CI shows the same order.** b3281e3 (docs only, so main's tests; run 36338475568):
+   checks red with 1262 tests, 62 fail, and browser red, 4 fail (the Tab test in both
+   engines, heads' two). 8a32429 (the unit pin; run 36338726461): checks green, browser
+   the same 4. c00ac12 (the browser pins; run 36338900333): both green. The unit
+   suite's three runs each had 1266 tests, 0 fail; the browser job had 378, 0 fail, 3
+   skipped.
