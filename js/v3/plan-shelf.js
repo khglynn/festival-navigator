@@ -34,7 +34,7 @@
 // pagehide, boot, a crew switch and any other screen. Back does what it does
 // from the wall: it leaves it.
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { planList, planHead, planText, stopKey, PLAN_NAME } from './plan-rows.js';
+import { planList, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
 
 const ID = 'plan';
@@ -67,6 +67,8 @@ let corner = null;   // the laptop head line's parts: { line, k, c, head, open, 
 let ctxRef = null;
 let data = null;     // the last paint's answer (see paintPlanShelf)
 let sig = '';        // what that answer drew, to skip repaints that change nothing
+let drawn = null;    // the answer the rows on screen were drawn from (draw): the Share's words
+let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
 // A few pixels the window stands off its place, apart from p (the Share build,
@@ -226,7 +228,8 @@ function railBottom() {
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
 //   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
-//     fest, day, linkOf, opens }   (the Share's: planText, and what its link opens on)
+//     fest, day, linkOf, opens,   (the Share's: planText, and what its link opens on)
+//     repaint }                   (app.js paintPlan at this minute: the Share's first step)
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -243,7 +246,7 @@ export function paintPlanShelf(host, ctx, answer) {
   // link says what it opens on). Not part of the rows' signature: a List
   // switch changes the words and nothing else.
   if (footOpens.textContent !== (answer.opens || '')) footOpens.textContent = answer.opens || '';
-  if (!arriving && next === sig) return;
+  if (!arriving && next === sig && !forced) return;
   // A hand on the window: a repaint would put the window back where the
   // last settle left it, out from under the finger, and the release would
   // then decide from there. The rows wait for the hand (flushHeld).
@@ -259,15 +262,16 @@ export function paintPlanShelf(host, ctx, answer) {
 }
 
 // Everything the rows show, as one string: a minute that changes nothing
-// (the usual tick) draws nothing.
+// (the usual tick) draws nothing. The route's part is plan-rows.js's own
+// (rowsKey), from the rules planList draws by.
 function signature(a) {
-  const rows = a.route ? a.route.items.map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}:${i.tier || ''}`).join(',') : '';
-  const over = a.nowMin == null || !a.route ? '' : a.route.items.filter((i) => i.to <= a.nowMin).length;
-  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
+  const rows = rowsKey(a.route, { plan: a.plan, peek: a.peek, nowMin: a.nowMin });
+  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
 }
 
 function draw() {
   const a = data;
+  drawn = a;
   const ctx = ctxRef;
   headEl.textContent = '';
   const head = planHead({ weekday: a.weekday, sub: a.sub });
@@ -325,6 +329,12 @@ function taggedRow() {
 // drew no faces) — and slide into view as it opens.
 function measure() {
   const desk = isDesk();
+  // The layout crossed between the phone's and the laptop's: the state goes
+  // with it wherever the ruler is read (below). A laptop narrowed while the
+  // page scrolled was measured by the scroll's frame, which settled nothing,
+  // and the refit after it found no new numbers — data-side="open" stayed
+  // on a phone (Sol, round three, 2026-09-26; three WebKit failures on CI).
+  const flipped = !!geo && geo.desk !== desk;
   const T = desk ? railBottom() : 0;
   el.style.top = desk ? `${T}px` : '';
   // Boxes, not offsets: offsetHeight rounds, and a row 61.1px tall measured as
@@ -350,6 +360,7 @@ function measure() {
   el.dataset.peekH = desk ? '0' : String(geo.peekH);
   const root = document.documentElement.style;
   if (desk) root.setProperty('--plan-corner-h', `${geo.cardH + GAP}px`); else root.removeProperty('--plan-corner-h');
+  if (flipped && mode !== 'gone') settleState();
 }
 
 // p → the window. Opacity rides the same number: the head and every row but
@@ -445,7 +456,7 @@ function leave({ instant = false } = {}) {
     cancelLeave();
     const f = document.activeElement;
     if (f && el.contains(f)) f.blur();
-    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = ''; held = false;
+    el.hidden = true; mode = 'gone'; sig = ''; data = null; drawn = null; grown = null; earlierOpen = false; nightId = ''; held = false;
     frame.dataset.state = 'gone'; delete el.dataset.side;
     document.documentElement.style.removeProperty('--plan-corner-h');
     measureFoot();
@@ -751,11 +762,25 @@ function motions() {
 // The day the rows show, as words, to the share sheet — and only there:
 // nothing else leaves the phone. A dismissed sheet is a choice; a sheet that
 // fails, or a browser with none, copies instead and says so on the button.
+// One source (Sol, round three on the Share's release head, 2026-09-26): the
+// tap first paints the plan at this minute through the app's own paint (the
+// peek, its rows and the dock's NOW tab, on one date), drawn even when the
+// signature says nothing changed, and the words come from the answer those
+// rows were drawn from. Three rounds had found the words and the rows
+// disagreeing — the words worked out at the tap's minute, the rows at the
+// last paint's — and rules shared between two workings never hold across a
+// clock both read.
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
-  const text = planText(data.route, {
-    ctx: ctxRef, plan: data.plan, peek: data.peek, nowMin: data.nowMin, highlight: data.highlight || [],
-    fest: data.fest || '', day: data.day || '', today: !!data.peek.today, link: data.linkOf ? data.linkOf() : '',
+  if (data.repaint) {
+    forced = true;
+    try { data.repaint(); } finally { forced = false; }
+  }
+  const a = drawn;
+  if (mode !== 'open' || leaving || !a) return; // this minute took the plan away
+  const text = planText(a.route, {
+    ctx: ctxRef, plan: a.plan, peek: a.peek, nowMin: a.nowMin, highlight: a.highlight || [],
+    fest: a.fest || '', day: a.day || '', today: !!a.peek.today, link: a.linkOf ? a.linkOf() : '',
   });
   // A new build waits while the sheet is up or the copy is on its way
   // (index.html quiet): a reload would take the plan, and the words, from
@@ -911,8 +936,13 @@ function reaim() {
   if (mode !== 'open' || isDesk()) unpin();
   measure();
   // The observers' first answer (and any that changes nothing) leaves the
-  // motion alone: only new numbers re-aim it.
-  if (g0 && ['desk', 'T', 'H', 'peekH', 'cardH', 'shift'].every((k) => Math.abs((g0[k] || 0) - (geo[k] || 0)) < 0.5 && g0.desk === geo.desk)) return;
+  // motion alone: only new numbers re-aim it. The state is checked against
+  // the page, not the last numbers: numbers another reading already took
+  // (the scroll's frame) must still leave the panel's side as the layout is.
+  if (g0 && ['desk', 'T', 'H', 'peekH', 'cardH', 'shift'].every((k) => Math.abs((g0[k] || 0) - (geo[k] || 0)) < 0.5 && g0.desk === geo.desk)) {
+    if ((el.dataset.side === 'open') !== (geo.desk && mode === 'open')) settleState();
+    return;
+  }
   const grew = g0 && !geo.desk && !g0.desk ? geo.H - g0.H : 0;
   const rest = mode === 'open' ? 1 : 0;
   apply(caughtAt(seen + grew, rest));

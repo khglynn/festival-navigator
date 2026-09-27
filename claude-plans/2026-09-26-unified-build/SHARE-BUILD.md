@@ -226,3 +226,52 @@ PR and merges; this branch is never stamped here.
        with acceptance tests up front): a stop that ends with its place, a live or-line
        that outlives its stop, the fork check measured on the capped interval, and the
        peek's stale ten minutes.
+15. **Sol's third release round** (on the coordinator's release head dccf078). It
+    confirmed that the cap came out cleanly and that the sweep checks against rows drawn
+    on their own. It found two blockers.
+    1. The open plan's repaint signature left out the or-line. At Saturday 6:00 PM, Tove
+       Lo's NOW row should switch its or-line from Groove Armada to DJ Shadow, and
+       nothing else changes. The signature stayed the same, so an open plan kept
+       Groove Armada, while the Share, on the new minute, named DJ Shadow.
+    2. The WebKit resize failure was a real path. The page's scroll frame measured a
+       narrowed window without settling the plan's state, and reaim's "no new numbers"
+       return never cleared `data-side="open"`.
+
+    That made three rounds of the Share and the open plan disagreeing. The rule is to
+    cut the mechanism: the Share no longer works anything out beside the plan.
+    a. **What changed.**
+       1. The Share is single-source. A tap first repaints the plan at that minute
+          through the app's own paint (the answer carries `repaint`, which is app.js
+          `paintPlan`, so the peek and the dock's NOW tab repaint on the same date). The
+          repaint draws even when the signature says nothing changed. The words then
+          come from `drawn`, the answer the rows on screen were drawn from, which draw()
+          records. A minute that takes the plan away sends nothing.
+       2. The signature's route part is plan-rows.js `rowsKey`, built from the same
+          rules planList draws by: each item's times, count and tier, whether it is
+          over, and the or-line its row shows. An open plan now moves on at 6:00 PM by
+          itself.
+       3. Every measure that crosses between the phone's layout and the laptop's
+          settles the state. reaim's "nothing changed" return also checks the side
+          attribute against the layout, not just the last numbers. With (3) in place no
+          public path reaches that check, so it is a guard only.
+    b. **Tests.** Each fails first on the release head, and each fails again with only
+       its own fix taken out (checked one fix at a time).
+       1. "A plan left open across Saturday 6:00 PM" (plan-share, both engines). It
+          starts at 5:59:30 and moves the clock to 6:00:30. It fires the minute's tick
+          with the page busy, so the tick alone runs and not the wall's repaint of the
+          past (which redraws everything). The or-line must move to DJ Shadow. Without
+          the or-line in rowsKey it stays on Groove Armada.
+       2. "Share at Saturday 6:00 PM, before the minute's tick" (plan-share, both
+          engines). The tap must draw DJ Shadow's or-line and share no Groove Armada,
+          and every line shared must be a row on screen. Without the forced repaint the
+          plan still shows 5:59.
+       3. "1280: narrowed to a phone with a scroll in the same moment" (plan-drag,
+          both engines). An animation in the plan that never ends holds every refit, so
+          the scroll frame's measure is the only one that runs, with no retries.
+          `data-side` must be gone at once, then the plan must stand open on the dock.
+          It fails without the flip settle, and it also fails without the scroll (that
+          measure is the one under test).
+    c. **Not reproduced as a test:** the refit going through reaim while an arrival or
+       slide is still showing, the "stuck for good" half of the CI failure. Holding that
+       motion needs the module's own animation handle. After (a3) the scroll frame
+       settles first, so that path now finds the attribute already right.

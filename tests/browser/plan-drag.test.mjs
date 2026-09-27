@@ -807,6 +807,45 @@ const hitPlan = (page, x, y) => page.evaluate(([xx, yy]) => {
 for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
   const skip = get() ? false : (name === 'WebKit' ? 'WebKit not installed' : NO_BROWSER);
 
+  // Sol, round three on the Share's release head (2026-09-26): the page's
+  // scroll frame measured a window narrowed from a laptop without settling
+  // the plan's state, so data-side="open" (the laptop's panel) stayed on a
+  // phone whenever the refit after it did not settle either. On CI that was
+  // reaim's "nothing changed" return (three WebKit failures of the widen
+  // test). Held here without retries: an animation in the plan that never
+  // ends keeps every refit waiting (refitPlanShelf), so the scroll frame's
+  // measure is the only one that runs.
+  test(`${name} 1280: narrowed to a phone with a scroll in the same moment — the panel's side goes with the laptop, whatever the refit is waiting for`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { desk: true });
+    try {
+      const row = await page.locator('#plan .plan-row.tagged').boundingBox();
+      await page.mouse.click(row.x + row.width * 0.4, row.y + row.height / 2);
+      await settled(page);
+      assert.equal(await page.evaluate(() => document.getElementById('plan').dataset.side), 'open', 'the laptop\'s panel');
+      await page.evaluate(() => {
+        const r = document.querySelector('#plan .plan-list > .plan-row:not(.tagged)');
+        window.__held = r.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 600000 });
+      });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.evaluate(() => new Promise((done) => {
+        window.dispatchEvent(new Event('scroll'));
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)));
+      }));
+      const side = await page.evaluate(() => document.getElementById('plan').dataset.side || null);
+      await page.evaluate(() => window.__held.cancel());
+      await settled(page);
+      assert.equal(side, null, 'no panel side on a phone, even before the refit');
+      const after = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        return { state: el.dataset.state, side: el.dataset.side || null, bottom: el.getBoundingClientRect().bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top };
+      });
+      assert.equal(after.state, 'open');
+      assert.equal(after.side, null);
+      assert.ok(Math.abs(after.bottom - after.dockTop) <= 0.5, `the open plan stands on the dock: ${JSON.stringify(after)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   test(`${name} 1280: the corner card is 20px in from both edges; a click grows it into the panel under the rail, the wall usable beside it; Escape puts it back`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { desk: true });
     try {

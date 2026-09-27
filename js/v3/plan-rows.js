@@ -234,6 +234,20 @@ function orLineOf(stop, { plan, peek, nowMin }) {
   const now = !!(peek && peek.tag === 'now' && peek.stop) && stopKey(peek.stop) === stopKey(stop);
   return forkFor(stop, plan.bar, now ? nowMin : null);
 }
+// What those two rules give each item of the route at this minute, as one
+// string (plan-shelf.js's signature): a minute that folds a stop or moves a
+// row's or-line on draws the rows again. Saturday 6:00 PM moves the NOW row's
+// or-line from Groove Armada's set to DJ Shadow's and changes nothing else,
+// and an open plan kept Groove Armada until the next pick (Sol, round three,
+// 2026-09-26).
+export function rowsKey(route, { plan, peek = null, nowMin = null } = {}) {
+  if (!route) return '';
+  return route.items.map((i) => {
+    const f = i.kind === 'stop' ? orLineOf(i, { plan, peek, nowMin }) : null;
+    return [i.kind, `${i.from}-${i.to}`, i.count || '', i.tier || '', overAt(i, nowMin) ? 'over' : '',
+      f ? `${f.place.id}@${f.from}:${f.count}` : ''].join(':');
+  }).join(',');
+}
 
 // ---- the whole day ---------------------------------------------------------------
 // `route` is plan.night(id); `peek` is peekOf's answer for this night (or

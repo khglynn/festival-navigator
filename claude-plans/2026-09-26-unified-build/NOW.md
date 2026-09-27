@@ -23,15 +23,19 @@
 - **Share for Our picks** (`live/share`, the sibling session; log
   `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
   link that opens that night's plan), the welcome card's ✕, "Share the crew
-  link" in the Show menu, the two touch-timing catches from v101. Sol's two
-  release rounds are fixed at e93c876 (log items 13–14): the Share reads the
-  rows the open plan shows, "now" is who is there now, `&plan=<date>` opens
-  only on its night; the model cap came out and is banked for the design
-  round (the peek's stale ten minutes after a set stay, as in production).
-  Ships as v103 (`release/share`) after the
-  coordinator's Sol re-run; `live/v103` ships as v104 on Monday (after Portola). Kevin approved every default on the design page
-  (Despacio as a drop-in room, the plan across the days, the menus over it);
-  it builds on `live/plan-days-design` after v104, aimed at ACL.
+  link" in the Show menu, the two touch-timing catches from v101. Sol's three
+  release rounds are fixed at 2d8b7c8 (log items 13–15). The Share is
+  single-source: a tap repaints the plan at that minute and the words come
+  from the rows on screen. An open plan moves its or-line on by itself, and a
+  laptop/phone flip settles the plan (the WebKit resize failure, now a
+  deterministic test). The model cap came out and is banked for the design
+  round. CI on 2d8b7c8: browser green on one attempt, checks red only on the
+  SW stamp (left for the release). Ships as v103 (`release/share`) after the
+  coordinator's Sol re-run (a fourth Share/plan disagreement ships it without
+  the picks lines); `live/v103` ships as v104 on Monday, after Portola. Kevin
+  approved every default on the design page (Despacio as a drop-in room, the
+  plan across the days, the menus over it); it builds on
+  `live/plan-days-design` after v104, aimed at ACL.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
   night and type, `gen.py`, prices from the festival file); a Google My Map
   in Kevin's personal account, link-shared, built from them. The in-app
