@@ -23,7 +23,7 @@ paintFree(dom.window); // the sweep draws the plan thousands of times and reads 
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const P = await import('../js/v3/plan.js');
-const { planText, planPicks, planDays } = await import('../js/v3/plan-rows.js');
+const { planText, planPicks, planDays, stopKey } = await import('../js/v3/plan-rows.js');
 const { passesPeople } = await import('../js/v3/filters.js');
 const state = await import('../js/state.js');
 const NINE = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/plan-crew-nine.json'), 'utf8'));
@@ -327,4 +327,46 @@ test('a night whose only pick is a drop-in: its line is the night, with no "scat
     assert.deepEqual(drawn.map((r) => [...r.classList].filter((c) => c !== 'plan-row' && c !== 'first' && c !== 'last').join(' ')), ['dropin'],
       `${people.join() || 'the crew'}: the drop-in line alone — ${drawn.map((r) => r.textContent).join(' / ')}`);
   }
+});
+
+// Every row the open plan draws names its night (`data-night`), grown cards
+// included: the shelf's head, its Share and the reader's place all read the
+// night of the row at the list's top (plan-shelf.js nightAtTop, takePlace),
+// and a row without one would be skipped, naming the next day too early.
+// (Sol's recheck on daf9c3b called grown cards unnamed; night() names every
+// row dayRows returns, grownEl's included. This holds it.) Every stop grown,
+// Earlier shut and open, the crew and a highlight whose days are empty, on
+// Portola and across ACL's bare Mon · Tue.
+test('every direct child of the open plan’s list names its night — grown cards, heads, the Earlier line, empty lines and a bare run included', () => {
+  const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  const ACL_CREW = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/plan-crew-acl.json'), 'utf8'));
+  const allGrown = (pl) => new Set(pl.nights.flatMap((n) => pl.night(n.id).items.filter((i) => i.kind === 'stop').map(stopKey)));
+  const cases = [
+    ['Portola, Sat 9:40 PM', FEST, NINE, [], '2026-09-26T21:40:00-07:00'],
+    ['Portola, Sun 5 PM', FEST, NINE, [], '2026-09-27T17:00:00-07:00'],
+    ['Portola, Sat 9:40 PM, Gus + Hal', FEST, NINE, ['Gus', 'Hal'], '2026-09-26T21:40:00-07:00'],
+    ['ACL, Tue Sep 29 6 PM', ACL, ACL_CREW, [], '2026-09-29T18:00:00-05:00'],
+    ['ACL, Sat Oct 10 4 PM', ACL, ACL_CREW, [], '2026-10-10T16:00:00-05:00'],
+  ];
+  let grownSeen = 0;
+  let emptySeen = 0;
+  let runSeen = 0;
+  for (const [what, fest, crew, people, iso] of cases) {
+    const pl = P.planOf(fest, { picks: crew.picks, members: crew.members, people });
+    const date = new Date(iso);
+    const now = P.planAt(pl, fest, date);
+    const from = now ? now.night.id : pl.nights.find((n) => n.iso >= iso.slice(0, 10)).id;
+    for (const earlierOpen of [false, true]) {
+      const list = planDays(pl, { ctx: { picks: crew.picks }, from, nowMin: now ? now.minutes : null, grown: allGrown(pl), earlierOpen,
+        dayOf: (id) => ({ weekday: pl.night(id).wd, date: pl.night(id).iso }), nightLabelOf: (id) => pl.night(id).wd, emptyWords: () => 'nothing' });
+      const kids = [...list.children];
+      grownSeen += kids.filter((k) => k.classList.contains('plan-grow')).length;
+      emptySeen += kids.filter((k) => k.classList.contains('empty')).length;
+      runSeen += kids.filter((k) => k.dataset.nights).length;
+      const unnamed = kids.filter((k) => !k.dataset.night).map((k) => k.className);
+      assert.ok(kids.length > 3, `${what}${earlierOpen ? ', Earlier open' : ''}: rows drawn (${kids.length})`);
+      assert.deepEqual(unnamed, [], `${what}${earlierOpen ? ', Earlier open' : ''}: every row names its night`);
+    }
+  }
+  assert.ok(grownSeen > 20 && emptySeen > 0 && runSeen > 0, `grown cards, empty lines and a bare run's rows were drawn and checked: ${JSON.stringify({ grownSeen, emptySeen, runSeen })}`);
 });
