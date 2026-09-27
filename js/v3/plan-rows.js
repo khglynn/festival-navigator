@@ -436,12 +436,11 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, l
   // one line of small capitals, and "Thu · Fri · Sat · 4 stops" was cut at
   // a phone's width (the lead's look at the walk, 2026-09-27). Two stay as
   // the wall writes them ("Thu · Fri"), no longer than a range.
-  const labelOf = (id) => nightLabelOf(id);
   const running = before.length === 3 && before.every((id, i) => i === 0
     || isoAfter((plan.night(before[i - 1]) || {}).iso) === ((plan.night(id) || {}).iso || '-'));
   const pastWords = before.length > 3
     ? [`${(dayOf(before[0]) || {}).date || nightLabelOf(before[0])} – ${(dayOf(before[before.length - 1]) || {}).date || nightLabelOf(before[before.length - 1])}`]
-    : running ? [`${labelOf(before[0])} – ${labelOf(before[2])}`] : before.map(labelOf);
+    : running ? [`${nightLabelOf(before[0])} – ${nightLabelOf(before[2])}`] : before.map((id) => nightLabelOf(id));
   if (hasPast) rows.push(tag([earlierRow(overToday.length, earlierOpen, onEarlier, pastWords)], before[0] || ids[at])[0]);
   const dayHead = (id, { quietPast = false } = {}) => {
     const d = dayOf(id) || {};
