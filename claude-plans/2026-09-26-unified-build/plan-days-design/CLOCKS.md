@@ -104,3 +104,23 @@ at 5:05). ACL's weekends would do the same to anything left on the machine's clo
    the same 4. c00ac12 (the browser pins; run 36338900333): both green. The unit
    suite's three runs each had 1266 tests, 0 fail; the browser job had 378, 0 fail, 3
    skipped.
+6. **The gate at d3afadb, and what stays open.** Local, 11:20-11:40 AM PDT on Portola
+   Sunday (inside the window), from a snapshot of the head: `npm test` 1269 tests, 0
+   fail, the same with CI's night pin and in TZ=Asia/Tokyo; every browser suite on its
+   own at 0, 28 suites, 397 tests, 0 fail (plan-drag's one WebKit skip), the smoke 3/3.
+   CI: d3afadb (run 36340294106) and c32c0f1 (run 36340387999) green, three unit runs
+   of 1269 with 0 fail and a browser job of 389, 0 fail, 3 skipped. (Local runs count 8
+   more browser tests than CI on every head, main's included: 378 + 11 on CI here.)
+   a. 40f8a0b's run (36340230837) went red on three tests this branch doesn't touch:
+      people-menu's "Zed" unit test once in the first `npm test` step (a settle(10)
+      timing; the same code passed the other two steps and 12 local runs), now-jump's
+      "WebKit 320: Ross highlighted" (it also failed on probe/composer-main), and the
+      composer flake ("Pier by 6:4", which fix/composer-focus fixes). d3afadb, the next
+      head, ran all three green.
+   b. The v104 merge: live/plan-days-design also edits launchBrowser in
+      `tests/helpers/browser.mjs` (its scrollbars option). The two will conflict on the
+      launch lines. Keep both: plan-days' options, each launch wrapped in pinByDefault.
+      The guard in `tests/test-clocks.test.mjs` fails if a launch loses the wrap.
+   c. Not pinned, on purpose: a file run on its own with bare `node --test` (the README
+      gives the pinned command) and a child process a test spawns (only the validator,
+      which reads no clock).
