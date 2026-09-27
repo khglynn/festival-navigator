@@ -39,12 +39,14 @@
   round fixed (`plan-days-design/SOL-R1.md`), a real-input walk green on
   both engines (`plan-days-design/WALK-1.md`) and Sol's recheck
   (`plan-days-design/SOL-R2.md`; its close-and-repaint revival fixed in
-  3f5a337). The composer flake is a real bug on main, caught by a CI probe:
-  notes.js `dialogize()` focuses the sheet a frame late and can take the
-  keyboard from a composer already typing; its guard is on its own branch,
-  `fix/composer-focus`, riding v104. Next: the builder's handback, CI three greens, Sol's final check;
-  merge v104 Monday and re-gate; SHA to the coordinator for ACL Late nights
-  (Tue Sep 29).
+  3f5a337); Sol's final check on af238e9 (`plan-days-design/SOL-R3.md`)
+  found nothing blocking, and its two findings are queued. Two main fixes
+  ride v104 on their own branches: `fix/composer-focus` (the composer
+  flake) and `fix/test-clocks` (in build; the suites read the machine's
+  clock and go red from 10 AM Sunday until 5 AM Monday on every branch).
+  Next: Sol's two findings, merge v104 Monday, then CI three greens and the
+  walk on the final head; SHA to the coordinator for ACL Late nights (Tue
+  Sep 29).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
   `gen.py`, prices); a Google My Map in his personal account, link-shared.
   The in-app version is a Pen card (the 2027 reference tab).
