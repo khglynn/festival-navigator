@@ -14,7 +14,16 @@ dies, this file and the branch are the handoff.*
 - [x] 2. the List filters by highlight — see "Step 2" below
 - [x] 3. the crew playlist's top songs: paced, backed off, counted, said — see "Step 3" below
 - [x] frames 390 / 320 / 1280, Portola and ACL, looked at (`v103-shots/`, git-ignored;
-      rendered by `v103-rig.mjs`, `v103-film.mjs`, `v103-spotify-walk.mjs`)
+      rendered by `v103-rig.mjs`, `v103-film.mjs`, `v103-spotify-walk.mjs`; all
+      re-rendered on the final code after main's ticket-price data merged; the
+      rows each frame shows are in `v103-shots/rig-report.txt`; contact sheets
+      `sheet-now-docks`, `sheet-now-rails`, `sheet-list-*`, `sheet-spotify`,
+      films `filmsheet-390-in/out`, `filmsheet-1280-in/out`, `filmsheet-thin-on/off`)
+- [x] local `npm run test:browser` at 0c256a6: 349 of 351 (1 skipped) — the one
+      red `meter-contract` "a real click is a small event" under a load average
+      of 20–32 from other sessions; that file alone: 27 of 27. The run before
+      (464ed69): 349 of 351, its one red the plan-drag flick (a known
+      load-sensitive delivery, OUR-PLAN-BUILD.md).
 - [x] gate at 0c256a6: npm test at UTC / Asia/Tokyo / the night clock 1274 of 1277
       each, the one red the SW stamp (with a temporary local `--keep` stamp,
       restored after: 1275 of 1277, 0 fail, at all three); validate-festivals 0
