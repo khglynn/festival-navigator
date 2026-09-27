@@ -24,6 +24,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
 import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { shiftDate } from '../helpers/test-clock.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -496,9 +497,15 @@ for (const [name, get] of ENGINES) {
       await ctx.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
       await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
       await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+      // Saturday 3:15 PM, like every other test here, but not on Playwright's
+      // clock: its fixed clock holds requestAnimationFrame too, and the sheet
+      // takes focus in a frame (notes.js dialogize). So only Date moves
+      // (shiftDate), and frames and timers stay the engine's. On the machine's
+      // clock this test broke at 10 AM PDT on Portola Sunday (2026-09-27):
+      // Saturday was over, folded behind the wall's Earlier line, and Tove Lo's
+      // card left the DOM.
+      await ctx.addInitScript(shiftDate, Date.parse('2026-09-26T15:15:00-07:00'));
       const page = await ctx.newPage();
-      // No fixed clock here: Playwright's fixed clock holds requestAnimationFrame
-      // too, and the sheet takes focus in a frame (notes.js dialogize).
       await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
       await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
       await cardAt(page, 'Tove Lo');

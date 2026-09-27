@@ -98,8 +98,8 @@ data/venues/index.json        the venue registry: each room's usual doors, close
 scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
 scripts/guess-run-times.mjs   a night's set-time guesses (club or concert) from the venue registry, as a reviewable diff
 scripts/brand-assets.mjs      npm run brand — regenerates the icons and every link preview
-tests/                        node --test suites (npm test)
-tests/browser/                the hover contract in a real browser, against gallery.html (npm run test:browser)
+tests/                        node --test suites (npm test); every test runs on a pinned clock (tests/README.md)
+tests/browser/                real-input contracts in Chromium and WebKit (npm run test:browser)
 docs/user-flows.md            what every screen is supposed to do
 docs/add-a-festival.md        how to add a festival
 docs/fest-update-runbook.md   bringing one festival's data up to date without orphaning a pick

@@ -1,7 +1,45 @@
 // The browser the real-input tests drive: Playwright's bundled Chromium, or
 // Chrome (channel) as a fallback. CI sets BROWSER_TEST_REQUIRED, and there a
 // missing browser is a failure; locally it is a skip, with the reason.
+import { TEST_CLOCK, shiftDate } from './test-clock.mjs';
+
 export const REQUIRED = !!process.env.BROWSER_TEST_REQUIRED;
+
+// Every page a browser test opens believes it is TEST_CLOCK, a week before
+// Portola, unless the test names its own moment (2026-09-27). The app is a
+// festival clock: before this, a test that set no clock booted the wall at
+// whatever hour the suite ran, and at 10 AM PDT on Portola Sunday three went
+// red on every branch (Saturday's night had ended, the wall folded Saturday
+// away, and its cards left the DOM); a gallery card rendered with no `now`
+// read the machine's clock the same way. So each context this harness makes
+// starts with shiftDate as its first init script: only Date moves, time keeps
+// running, and frames and timers are the engine's. Every clock a test sets
+// wins over it: page.clock (fixed before load, re-pinned after, installed and
+// run), and a test's own shiftDate (tests/browser/clock-harness.test.mjs
+// holds all of it, in both engines). `browser.newPage()` makes its context
+// through newContext, so it is pinned too.
+const machineContext = new WeakMap(); // browser → its own newContext, unpinned
+export function pinByDefault(browser) {
+  if (!browser) return browser;
+  const newContext = browser.newContext.bind(browser);
+  machineContext.set(browser, newContext);
+  browser.newContext = async (options) => {
+    const ctx = await newContext(options);
+    await ctx.addInitScript(shiftDate, Date.parse(TEST_CLOCK));
+    return ctx;
+  };
+  return browser;
+}
+
+// The one way out: a context on the machine's clock, for a test that is about
+// today on purpose (tests/browser/machine-clock-smoke.test.mjs, and nothing
+// else — tests/test-clocks.test.mjs holds the list). It wants a reason.
+export async function onMachineClock(browser, options, why) {
+  if (typeof why !== 'string' || !why.trim()) throw new Error('onMachineClock: say why this test must run on the machine\u2019s clock');
+  const newContext = machineContext.get(browser);
+  if (!newContext) throw new Error('onMachineClock: pass a browser from launchBrowser or launchWebkit');
+  return newContext(options);
+}
 
 // `scrollbars`: draw scrollbars as the page styles them. Playwright hides
 // every scrollbar in headless Chromium (--hide-scrollbars), a styled one
@@ -10,8 +48,8 @@ export const REQUIRED = !!process.env.BROWSER_TEST_REQUIRED;
 export async function launchBrowser({ scrollbars = false } = {}) {
   const { chromium } = await import('playwright');
   const opts = { headless: true, ...(scrollbars ? { ignoreDefaultArgs: ['--hide-scrollbars'] } : {}) };
-  try { return await chromium.launch(opts); } catch (e) {
-    try { return await chromium.launch({ ...opts, channel: 'chrome' }); } catch {
+  try { return pinByDefault(await chromium.launch(opts)); } catch (e) {
+    try { return pinByDefault(await chromium.launch({ ...opts, channel: 'chrome' })); } catch {
       if (REQUIRED) throw e;
       return null;
     }
@@ -92,7 +130,7 @@ export async function lateStarts(ctx, ms = LATE_MS) {
 export async function launchWebkit() {
   try {
     const { webkit } = await import('playwright');
-    return await webkit.launch({ headless: true });
+    return pinByDefault(await webkit.launch({ headless: true }));
   } catch (e) {
     if (REQUIRED) throw e;
     return null;
