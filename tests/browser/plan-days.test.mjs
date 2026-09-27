@@ -469,8 +469,15 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual([r.wd, r.share, r.shareOff], ['MON', 'Nothing to share Monday', true], 'a day with nothing to send says so and rests');
       // Its mark went the way it came — faded as it narrowed, the pill closing
       // up behind it — not gone in one frame (the P1–P3 review, 2026-09-27).
-      const mark = await page.evaluate(() => {
-        const cs = getComputedStyle(document.querySelector('#plan .plan-share svg'));
+      // Read at the end of its transition, not at a fixed moment: a loaded
+      // runner can still be mid-fade here (CI run 36311950842 read opacity
+      // 0.13 and width 1.7px).
+      const mark = await page.evaluate(async () => {
+        const svg = document.querySelector('#plan .plan-share svg');
+        const cs = getComputedStyle(svg);
+        void cs.opacity; // style is current, so a transition the rest started is listed
+        const ends = svg.getAnimations().map((a) => a.finished.catch(() => {}));
+        await Promise.race([Promise.all(ends), new Promise((r) => setTimeout(r, 3000))]);
         const eased = (prop) => { const i = cs.transitionProperty.split(', ').indexOf(prop); return i >= 0 && parseFloat(cs.transitionDuration.split(', ')[i]) > 0; };
         return { display: cs.display, opacity: cs.opacity, width: cs.width, eased: ['opacity', 'width'].every(eased) };
       });
