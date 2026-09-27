@@ -32,7 +32,8 @@ PR and merges; this branch is never stamped here.
 4. **Share the crew link**, a row in the Show menu above Settings: the share sheet with
    the invite text and the crew link (the rooms and Board/List being shown), or
    **Copy the crew link** and "Copied ✓" where there is none.
-5. **The window's catches** (banked in v101): a touch during the peek's arrival, and a
+5. **The window's catches** (banked in v101; cut from the release again on 2026-09-26,
+   item 19, and banked for the plan-days build): a touch during the peek's arrival, and a
    grab during a redraw's slide, catch the window where it is instead of snapping it to
    the peek or turning a slide into a slightly opened plan; a font that lands during
    the arrival retargets it instead of letting it land on old numbers and drop 23px.
@@ -49,7 +50,7 @@ PR and merges; this branch is never stamped here.
 - [x] S4 `&plan=open` at boot, member and newcomer paths
 - [x] S5 the welcome ✕
 - [x] S6 the Show menu row
-- [x] S7 the lift: arrival and slide catches, the font retarget
+- [x] S7 the lift: arrival and slide catches, the font retarget (cut again, item 19)
 - [x] S8 browser tests for each; jsdom tests; docs (README/CLAUDE where they describe it)
 - [x] Gate: npm test, browser suite at 0 and 700 ms late, a Sonnet walker on the real
       app, Sol, CI both jobs; the SHA to the coordinator
@@ -374,3 +375,36 @@ PR and merges; this branch is never stamped here.
        the full suite had timing failures in three unrelated tests (the font
        arrival's read count, show-links' Tix door, the WebKit composer). Each
        passes when run alone.
+19. **The catches came out of the release** (the coordinator's call, per the round rule).
+    The widen test failed a third time on CI, on the coordinator's release head: run
+    36290138756 on release/share 58d423b (= 3b92fdf + main + stamp), WebKit, "a card
+    grown in the open plan, then the window widened to a laptop and back", with
+    `data-side` 'open' where null was expected. That was two fixes in, red only on Linux
+    WebKit and only on branches carrying the catches, and it never reproduced locally.
+    So the mechanism went, not the test.
+    a. **Cut.** plan-shelf.js's measure, refit, resize and catch paths are main's
+       (v102) again. Out: the `lift`/`lifting` offset (S7, 393d025), `reaim`, the
+       measure flip-settle (item 15), and the layout-flip finish rule (item 18).
+       Against main, plan-shelf.js now differs only by the Share's own hunks: the foot,
+       holdForShare/dropShares, sharePlan's forced repaint and held guard, and the
+       rowsKey signature. `tests/browser/plan-drag.test.mjs` is main's byte for byte,
+       because every branch change in it was a catch or flip test.
+    b. **The one tangle, found and fixed before committing.** A link landing opened the
+       plan during the peek's rise, and the lift had made that one motion. Without it,
+       the open cancels the rise and the peek appears in place for a frame. On the real
+       clock at 390px, the newcomer's first frame was 727px on the cut and 799px (behind
+       the dock) with the lift. Now the link's open waits for the rise to land
+       (`afterArrival`), so it takes two beats: the peek rises, then the plan grows. A
+       rise cut short, such as a hand catching it, opens nothing. Two Chromium tests in
+       plan-share hold the rise to a minute through `Element.animate` and read states,
+       not sampled frames. Red first: on the immediate open the plan is never a peek.
+       The coordinator agreed before the commit.
+    c. **Banked** for the plan-days build, where the window is reworked anyway: the
+       tag `back-pocket/window-catches` (3b92fdf) and a section in its DESIGN.md
+       (3e0357c on `live/plan-days-design`). The section covers what the catches did,
+       the failing runs, what main does without them, and the window model the build
+       owes, with the five tests.
+    d. **Local.** npm test passed 1259 of 1260; the only red is the SW stamp, which the
+       coordinator does. Both plan browser suites passed 76 of 77 (one of main's own
+       skips), both at 0 ms and with animations starting 700 ms late, on a quiet Mac
+       (load average about 5).

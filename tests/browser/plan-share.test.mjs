@@ -34,7 +34,8 @@ const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag
 // says &plan=<night> (true: Saturday's, the night the clock is on).
 // `linkFest`: the festival the link names (this phone keeps the crew on
 // Portola). `mobile`: a phone's coarse pointer (Chromium). `at`: the clock.
-async function open(engine, { share = true, guest = false, plan = false, desk = false, linkFest = FID, mobile = false, at = SAT_940 } = {}) {
+// `before(ctx)`: a test's own init scripts, ahead of the app's.
+async function open(engine, { share = true, guest = false, plan = false, desk = false, linkFest = FID, mobile = false, at = SAT_940, before = null } = {}) {
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
     viewport: desk ? { width: 1280, height: 800 } : { width: 390, height: 844 },
@@ -42,6 +43,7 @@ async function open(engine, { share = true, guest = false, plan = false, desk = 
     permissions: engine === chromium ? ['clipboard-read', 'clipboard-write'] : [],
   });
   await lateStarts(ctx);
+  if (before) await before(ctx);
   const doc = {
     v: 4, meta: { name: 'Nine', inviteFestId: FID }, spotify: {}, affinity: {},
     people: Object.fromEntries(NINE.members.map((n, i) => [n, { colorIndex: i }])),
@@ -502,6 +504,52 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 }
+
+// A member's landing opens the plan after the peek has risen (plan-shelf.js
+// afterArrival), never during the rise: an open then cancelled the arrival,
+// and the peek appeared in its place for a frame before it grew. The peek's
+// arrival is held to a minute here (its animation, the first one #plan
+// plays), so the order is read from states, not from sampled frames, which
+// a starved boot makes worthless. Held, the plan is still the peek; ended,
+// it opens; cut short (a hand caught it), nothing opens.
+async function landHeld(page) {
+  await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
+  await page.waitForFunction(() => !!window.__arrival, null, { timeout: 5000 });
+  await sleep(800);
+  return page.evaluate(() => ({ state: document.getElementById('plan').dataset.state, arriving: window.__arrival.playState }));
+}
+const holdArrival = (ctx) => ctx.addInitScript(() => {
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function (keys, opts) {
+    const first = this.id === 'plan' && !window.__arrival;
+    const a = animate.call(this, keys, first ? { ...opts, duration: 60000 } : opts);
+    if (first) window.__arrival = a;
+    return a;
+  };
+});
+test('Chromium: a member\'s plan link lets the peek rise first, then opens the plan', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors } = await open(chromium, { plan: true, before: holdArrival });
+  try {
+    const held = await landHeld(page);
+    assert.deepEqual(held, { state: 'peek', arriving: 'running' }, 'mid-rise, the plan waits: the arrival plays on');
+    await page.evaluate(() => window.__arrival.finish());
+    await page.waitForSelector('#plan[data-state="open"]:not([hidden])', { timeout: 5000 });
+    await settled(page);
+    const g = await page.evaluate(() => ({ top: document.getElementById('plan').getBoundingClientRect().top, dock: document.getElementById('dock').getBoundingClientRect().top }));
+    assert.ok(g.top < g.dock - 200, `and once it has landed, the plan grows open: ${JSON.stringify(g)}`);
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
+test('Chromium: a plan link whose peek was caught mid-rise opens nothing', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors } = await open(chromium, { plan: true, before: holdArrival });
+  try {
+    assert.equal((await landHeld(page)).state, 'peek');
+    await page.evaluate(() => window.__arrival.cancel()); // what a hand on the rising peek does (caughtAt)
+    await sleep(800);
+    assert.equal(await planState(page), 'peek', 'the person took over: the link opens nothing');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
 
 // Copying needs the clipboard, which Playwright grants only in Chromium.
 test('Chromium, no share sheet: Copy our picks copies the same words, and the button says so', { skip: chromium ? false : NO_BROWSER }, async () => {

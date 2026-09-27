@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -1383,7 +1383,8 @@ function paintPlan(date = ctx.now || new Date()) {
 }
 
 // `&plan=<date>` (the plan's Share link, crew.js planFromHash): the first
-// paint with this crew's plan on screen opens it — a member's straight away,
+// paint with this crew's plan on screen opens it — a member's as soon as the
+// peek has risen (plan-shelf.js afterArrival: the rise, then the plan grows),
 // a newcomer's once the welcome card has gone and the peek has risen — when
 // the plan is on the link's night. On another (a Saturday text opened on
 // Sunday) the link lands on the wall with its peek: the plan shows one night,
@@ -1409,7 +1410,7 @@ function openPlanForLink(answer) {
   if (planHere()) {
     const night = planOpenFor.night;
     planOpenFor = null;
-    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) openPlan();
+    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (!planIsOpen()) openPlan(); });
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
