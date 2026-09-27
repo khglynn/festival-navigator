@@ -678,7 +678,12 @@ async function pushTracks(playlistId, uris) {
 // Spotify only lets OTHER members' tokens append to a playlist they don't own
 // when it's collaborative (and collab requires public:false). Solo "Just mine"
 // playlists stay plain private.
-export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 3, collaborative = false, onProgress }) {
+// `onCreated({ id, url })` is called the moment Spotify confirms the playlist
+// exists — before any song is added — so the caller records it then (Sol's
+// re-review of v103: an add that failed after the create used to lose the
+// playlist, and a second press made another). An add that fails after the
+// create throws with `.playlist` on the error, for the screen to link.
+export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 3, collaborative = false, onProgress, onCreated }) {
   const { uris, found, misses, topless, unsearched, busy } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
   if (!uris.length) {
     // Nothing came back at all. Spotify being busy (or down) is not the same
@@ -698,12 +703,17 @@ export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 
     if (e && e.name === 'SpotifyUnsure') throw new Error('Spotify didn’t confirm the playlist — check your Spotify before making another.');
     throw e;
   }
-  await pushTracks(playlist.id, uris);
-  return {
-    id: playlist.id,
-    url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`,
-    trackCount: uris.length, misses, found, topless, unsearched,
-  };
+  const made = { id: playlist.id, url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}` };
+  if (onCreated) onCreated(made);
+  try {
+    await pushTracks(playlist.id, uris);
+  } catch (e) {
+    console.warn('spotify: adding to a new playlist', e && e.message);
+    const err = new Error('Spotify made the playlist but didn’t confirm the songs.');
+    err.playlist = made;
+    throw err;
+  }
+  return { ...made, trackCount: uris.length, misses, found, topless, unsearched };
 }
 
 // The artists a playlist made from picks holds, strongest pick first (musts

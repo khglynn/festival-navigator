@@ -1896,17 +1896,41 @@ function openSpotifyDrill(ctx, actions) {
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();
-        const made = await spotify.playlistFromPicks({
-          title, artistNames: names, collaborative: !mineOnly,
-          onProgress: (p) => sayPl(fid, `Finding tracks ${p.i}/${p.of} — ${p.name}`),
-        });
-        if (!mineOnly) {
+        // A crew playlist is recorded the moment Spotify confirms it exists,
+        // with no artist done yet — before any song — so an add that fails
+        // after it leaves a playlist this screen links and Add new picks
+        // finishes, never one a second press would make again (Sol's
+        // re-review of v103). The finished Make records its artists below.
+        const record = (pl, artists) => {
           state.recordSpotifyPlaylist(fid, {
-            id: made.id, url: made.url, mode: 'everyone', by: ctx.meName,
-            at: new Date().toISOString(), artists: made.found,
+            id: pl.id, url: pl.url, mode: 'everyone', by: ctx.meName,
+            at: new Date().toISOString(), artists,
           });
           actions.afterBulk();
+        };
+        let made;
+        try {
+          made = await spotify.playlistFromPicks({
+            title, artistNames: names, collaborative: !mineOnly,
+            onProgress: (p) => sayPl(fid, `Finding tracks ${p.i}/${p.of} — ${p.name}`),
+            onCreated: (pl) => { if (!mineOnly) record(pl, []); },
+          });
+        } catch (e) {
+          if (!e || !e.playlist) throw e;
+          // Made, but the songs are unconfirmed: say so, and link it.
+          const pl = e.playlist;
+          sayPl(fid, () => {
+            const said = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
+              `Spotify made the playlist but didn’t confirm the songs — ${mineOnly ? 'open it to check' : 'Add new picks finishes it'}. `);
+            const link = document.createElement('a');
+            link.href = pl.url; link.target = '_blank'; link.rel = 'noopener';
+            link.textContent = 'Open in Spotify ↗';
+            link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
+            return [said, link];
+          });
+          return;
         }
+        if (!mineOnly) record(made, made.found);
         // Skips are always reported (audit 5.2) — a flat success over 3
         // missing artists is a quiet lie. v103: so are the artists whose top
         // songs Spotify would not give us right now — an Everyone playlist

@@ -41,6 +41,7 @@ let calls = [];
 let waits = [];
 let playlistItems = [];
 let createFails = [];
+let readFails = 0;
 let addFails = [];
 let created = 0;
 const asked = new Map();
@@ -72,6 +73,7 @@ globalThis.fetch = async (url, opts = {}) => {
     return json({ id: 'pl123', external_urls: { spotify: 'https://open.spotify.com/playlist/pl123' } }, 201);
   }
   if (path.startsWith('/playlists/pl123/items')) {
+    if (opts.method !== 'POST' && readFails > 0) { readFails -= 1; return json({}, 503); }
     if (opts.method === 'POST') {
       const f = addFails.shift();
       if (!f || f.did) playlistItems.push(...JSON.parse(opts.body).uris);
@@ -83,7 +85,7 @@ globalThis.fetch = async (url, opts = {}) => {
   return json({ error: 'not in this test' }, 404);
 };
 spotify.setPauseForTests(async (ms) => { waits.push(ms); });
-const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; createFails = []; addFails = []; created = 0; asked.clear(); };
+const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; createFails = []; addFails = []; readFails = 0; created = 0; asked.clear(); };
 localStorage.setItem('fn_spotify_auth_v1', JSON.stringify({ clientId: 'c'.repeat(32), access_token: 'at', refresh_token: 'rt', expires_at: Date.now() + 3600e3 }));
 // The maker's saved tracks for one artist (the scan cache).
 localStorage.setItem('fn_spotify_libmap_v1', JSON.stringify({
@@ -245,4 +247,30 @@ test('the top-up carries the artists with no top songs, saved tracks or not', as
   reset({ Prospa: ['none'] });
   const r2 = await spotify.addArtistsToPlaylist({ playlistId: 'pl123', artistNames: ['Prospa'] });
   assert.deepEqual(r2, { added: 0, misses: 1, found: [], unsearched: [], topless: ['Prospa'] }, 'nothing to add, and it says who');
+});
+
+// Sol's re-review of v103: the created playlist is known the moment Spotify
+// confirms it — before any add — so a later failure never leads to a second.
+test('the created playlist is handed back the moment Spotify confirms it, before any song is added', async () => {
+  reset({ Soulwax: ['ok'] });
+  const seen = [];
+  await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'], onCreated: (pl) => seen.push({ ...pl, adds: adds().length }) });
+  assert.deepEqual(seen, [{ id: 'pl123', url: 'https://open.spotify.com/playlist/pl123', adds: 0 }]);
+});
+
+test('an add that fails after the create (a 5xx, and the read back fails too): the error carries the playlist, and there is one create', async () => {
+  reset({ Soulwax: ['ok'] });
+  addFails = [{ status: 502, did: false }];
+  readFails = 2; // the read back, and its one retry
+  const seen = [];
+  await assert.rejects(
+    spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'], onCreated: (pl) => seen.push(pl.id) }),
+    (e) => {
+      assert.deepEqual(e.playlist, { id: 'pl123', url: 'https://open.spotify.com/playlist/pl123' });
+      assert.match(e.message, /made the playlist but didn’t confirm the songs/);
+      return true;
+    },
+  );
+  assert.deepEqual(seen, ['pl123'], 'it was handed back before the add');
+  assert.equal(created, 1);
 });

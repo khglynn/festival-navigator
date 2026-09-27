@@ -24,6 +24,9 @@ let hold = null; // a search held until the test lets it answer (a slow run)
 let searched = [];
 let items = [];
 const topless = new Set(); // artists Spotify answers for with no top songs
+let createId = 'crewpl';
+let creates = 0;
+let addDown = false; // adds and the read back answer 5xx
 async function network(url, opts = {}) {
   const u = String(url);
   if (u === '/data/festivals/index.json') return json(INDEX);
@@ -38,9 +41,17 @@ async function network(url, opts = {}) {
       if (topless.has(artist)) return json({ tracks: { items: [] } }); // answered: no top songs for them
       return json({ tracks: { items: [0, 1, 2].map((i) => ({ uri: `spotify:track:${artist.replace(/\W/g, '')}${i}`, artists: [{ name: artist }] })) } });
     }
-    if (path === '/me/playlists') return json({ id: 'crewpl', external_urls: { spotify: 'https://open.spotify.com/playlist/crewpl' } }, 201);
-    if (path.startsWith('/playlists/crewpl/items')) {
-      if (opts.method === 'POST') { items.push(...JSON.parse(opts.body).uris); return json({ snapshot_id: 's' }, 201); }
+    if (path === '/me/playlists') {
+      creates += 1;
+      return json({ id: createId, external_urls: { spotify: `https://open.spotify.com/playlist/${createId}` } }, 201);
+    }
+    if (path.startsWith(`/playlists/${createId}/items`)) {
+      if (opts.method === 'POST') {
+        if (addDown) return json({}, 502); // Spotify did NOT add them, and says so badly
+        items.push(...JSON.parse(opts.body).uris);
+        return json({ snapshot_id: 's' }, 201);
+      }
+      if (addDown) return json({}, 503); // …and the read back fails too
       return json({ items: items.map((uri) => ({ track: { uri } })), next: null });
     }
   }
@@ -184,4 +195,34 @@ test('Make a new one (Everyone) with that artist and your saved tracks of theirs
   assert.match(drill().textContent, /1 artist had no top songs on Spotify — Add new picks looks again\./);
   assert.ok(items.includes('spotify:track:kevGalen'), 'your saved Galen track is in');
   assert.ok(!state.spotifyPlaylistFor('ui-fest').artists.includes('Galen'), 'and Galen is still not done');
+});
+
+// Sol's re-review of v103: a playlist Spotify confirmed making is recorded
+// right then, before any song — so when the adds fail (and even the read back
+// does), the screen links it and Add new picks finishes it. Never a second.
+test('Make playlist where the create works but the adds fail: the playlist is recorded and linked, and Add new picks finishes it — one create', async () => {
+  topless.clear();
+  searched = [];
+  items = [];
+  creates = 0;
+  createId = 'crewPlaylist02AB';
+  addDown = true;
+  await open();
+  [...drill().querySelectorAll('button')].find((b) => b.textContent === 'Everyone').click();
+  make().click();
+  await until(() => /didn’t confirm the songs/.test(drill().textContent) && !make().disabled, 'the words');
+  assert.match(drill().textContent, /Spotify made the playlist but didn’t confirm the songs — Add new picks finishes it\./);
+  assert.ok([...drill().querySelectorAll('a')].some((a) => a.href === 'https://open.spotify.com/playlist/crewPlaylist02AB'), 'and it is linked');
+  const rec = state.spotifyPlaylistFor('ui-fest');
+  assert.equal(rec.id, 'crewPlaylist02AB', 'recorded the moment it was made');
+  assert.deepEqual(rec.artists, [], 'with no artist done yet');
+  assert.equal(creates, 1);
+  // Spotify answers again: Add new picks, on the playlist that exists.
+  addDown = false;
+  await open();
+  button('Add new picks').click();
+  await until(() => /Added/.test(drill().textContent), 'the top-up');
+  assert.ok(items.length > 0, 'the songs went into that playlist');
+  assert.equal(creates, 1, 'and never a second create');
+  assert.ok(state.spotifyPlaylistFor('ui-fest').artists.length > 0);
 });

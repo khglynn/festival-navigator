@@ -528,10 +528,19 @@ coordinator's rule for Spotify's ambiguous writes: if a round three finds
 another hole there, cut to "never retry or resume a write, just say what
 happened".
 
-- [ ] S1 BLOCKER — a confirmed create is recorded (id + URL, where a finished
+- [x] S1 BLOCKER — a confirmed create is recorded (id + URL, where a finished
       Make records it) the moment Spotify confirms it, before any add; a later
       add failure leaves a playlist the screen links and tops up (Add new
-      picks), never a second create.
+      picks), never a second create. **Done:** `playlistFromPicks` calls
+      `onCreated({ id, url })` as soon as the create is confirmed; the screen
+      records an Everyone playlist then, with no artist done yet (`artists: []`),
+      and records the finished artists after. An add that fails after the create
+      throws with `.playlist`; the screen says "Spotify made the playlist but
+      didn’t confirm the songs — Add new picks finishes it." and links it (a
+      Just mine one: "— open it to check"). Tests: two fake-Spotify (the
+      hand-back before any add; the error carrying the playlist, one create) and
+      one in the real drill (the adds and their read back failing: recorded,
+      linked; then Add new picks fills it; one create), all red first.
 - [ ] S2 IMPORTANT — each leftover row settles on its own: un-pick A, move to
       B and un-pick it — A leaves while B is held. The page is held by the row
       the person is on (the zoomed or hovered card), so nothing under the
