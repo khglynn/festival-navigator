@@ -27,30 +27,28 @@
   walker 8/8; CI browser green. Held because it moves NOW on phones and
   Portola's last day is Sunday (Kevin agreed, 2026-09-26 evening). Kevin's
   call on NOW at phone width: option a, as built.
-- **Next build: Our picks across days** (`live/plan-days-design`, the
-  sibling session; log `plan-days-design/BUILD.md`; Kevin approved every
-  default on its design page, C6 included): P1–P5 built by an Opus builder
-  and through an independent review (`plan-days-design/REVIEW-P1P3.md`,
-  11 findings fixed) — Despacio as a drop-in room, the plan scrolling on
-  through later days, both menus over it with a highlight filtering the
-  route (one NOW kept under a highlight, Kevin's call), a short changeover
-  standing as its own stop so no stop outlives its act, ACL goldens. Since:
-  the CI glide fix, the short-plan default, the morning after, Sol's first
-  round fixed (`plan-days-design/SOL-R1.md`), a real-input walk green on
-  both engines (`plan-days-design/WALK-1.md`) and Sol's recheck
-  (`plan-days-design/SOL-R2.md`; its close-and-repaint revival fixed in
-  3f5a337); Sol's final check on af238e9 (`plan-days-design/SOL-R3.md`)
-  found nothing blocking, and its two findings are queued. Two main fixes
-  ride v104 on their own branches: `fix/composer-focus` (the composer
-  flake) and `fix/test-clocks` (in build; the suites read the machine's
-  clock and go red from 10 AM Sunday until 5 AM Monday on every branch).
-  **One release Monday** (the coordinator's call, 2026-09-27 noon): today
-  plan-days takes Sol's two findings, then merges `live/v103` and both fix
-  branches into one combined head, gated today (three unit clocks, every
-  browser suite, a walk over both builds' surfaces, Sol on the merge, CI
-  three greens). The coordinator cuts `release/v104` from that SHA Monday
-  morning; it ships Monday, not tonight, so nothing moves on friends'
-  phones while Portola's afters run.
+- **Our picks across days ships today as v105** (`live/plan-days-design`,
+  the sibling session; log `plan-days-design/BUILD.md`; Kevin approved every
+  default on its design page, C6 included): Despacio as a drop-in room, the
+  plan scrolling on through later days, both menus over it with a highlight
+  filtering the route (one NOW kept under a highlight, Kevin's call), a
+  short changeover standing as its own stop so no stop outlives its act, ACL
+  goldens. Reviewed in `plan-days-design/REVIEW-P1P3.md`, three Sol rounds
+  (`plan-days-design/SOL-R3.md` the last on the build alone) and a walk
+  (`plan-days-design/WALK-1.md`). **The v105 head** (2026-09-27, moved up
+  to today once v104 went out at 12:18 PM PT): the build plus Sol's two last
+  findings, `live/v103`, both main fixes (the composer's focus, the suites'
+  pinned clock) and main at v104, merged; one NOW while a hand holds the
+  plan (ccd23ba). Gate: unit on three clocks, the plan and NOW browser
+  suites locally, Sol on the merge (`plan-days-design/SOL-R4.md`, nothing
+  blocks), a real-input walk over Despacio and both builds' surfaces
+  (`plan-days-design/WALK-2.md`, 11 of 12; the fail, 320px names cut with
+  "…", predates the build), CI to two greens. The SHA goes to the
+  coordinator, who stamps festival-nav-v105 and releases before Despacio's
+  Sunday set (3:30 PM PT). Follow-ups after it: a past check deferred until
+  a hold clears, the 320px names, Despacio leaving the plan once its window
+  ends (Kevin's call), the day rail's ResizeObserver loop (TAP-BUILD
+  follow-up 6).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
   `gen.py`, prices); a Google My Map in his personal account, link-shared.
   The in-app version is a Pen card (the 2027 reference tab).
