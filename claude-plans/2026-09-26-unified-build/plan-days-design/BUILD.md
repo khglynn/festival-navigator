@@ -320,3 +320,39 @@ crew link, no database writes (previews and `vercel dev` use production's).
    unit test.
    (4) Under a highlight, the Share breaks a tie in count by MOST, as the crew's does.
    MOST is the group's own now; the old path skipped it because MOST was the crew's.
+5. **P4 (in progress, builder, from db99c3d):** where a stop ends. The rig
+   (`stop-ends.mjs`) matches P4-PREP.md on db99c3d: the nine meet one carry (Zara
+   Larsson, Sunday 8:05–8:15), the ACL nine none, and forks never outlive their stop.
+   **Everything that reads a stop's end, listed again on db99c3d before the fix**
+   (P4-PREP.md's eight, plus six the plan-days rounds added or it didn't name):
+   a. `atOn`'s `current` (`s.from <= m < s.to`): the peek's NOW, and its count from
+      the stop's `timeline`.
+   b. `planAt`: last night is still being lived while any stop has `i.to > m`.
+   c. `forkFor`: a fork still to come (`f.to > nowMin`), and "a real second door"
+      overlaps 60% of the stop's own span, so a shorter stop changes that ratio.
+   d. `tillOf`: a room's till is its stop's end (a set's is its act's).
+   e. `routeOf` itself: the peak, the tier, the timeline and the forks come from the
+      run's slices, and a folded blip's slices count in all four.
+   f. The Earlier fold and `.past` (plan-rows `overAt`), planDays' `overToday`, and
+      the landing night's fold (`skip: i.to <= clock`).
+   g. `rowsKey`, the shelf's repaint signature (`from-to` and `over` per item).
+   h. The Share: `endOf` (the least of the stop's end, its act's end and its place's
+      end), `tillText`, `whoAt`/`crowdAt` from the timeline and a fork's crowds, and a
+      line's `live` (`from <= nowMin`).
+   i. The shelf's `nightRows` signature (plan-shelf.js).
+   j. app.js `dayOf`'s `bare`: today with no stop left (`i.to > nowMin`, P3's
+      "Nothing left today").
+   k. The one-NOW rule: app.js `paintNowTabs` asks `planShowsNow`, which is the peek's
+      tag.
+   l. `stopRow`: the `live` class and "till" on the NOW row.
+   m. `scatteredRow`: "Scattered till" a stretch's end (a stretch between stops ends
+      where the next stop begins).
+   n. `stopKey` (`night|where|from`) reads the start only, so a stop that ends earlier
+      keeps its key and its FLIP.
+   **Acceptance tests, first** (`tests/plan-stop-ends.test.mjs`, every five minutes of
+   every festival day, 5 AM to 5 AM, from the first night to the morning after the
+   last). Crews: the nine, the made-up ACL nine (plan-text's seed 7, one in five), the
+   ACL crew of eight the browser suites use (`plan-crew-acl.json`, the same crew as
+   `crew-acl.mjs`), and six seeded nines the rig found carrying a stop (Portola 7919,
+   15838, 31676; ACL 55433, 79190, 95028). Test 5 is a browser suite,
+   `tests/browser/plan-stop-ends.test.mjs`.
