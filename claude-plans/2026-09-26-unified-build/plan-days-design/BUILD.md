@@ -221,3 +221,88 @@ crew link, no database writes (previews and `vercel dev` use production's).
    motion.js curve. A designed curve would need a scroll driven from script.
    (7) When a repaint lands mid-glide, the rows' travel and the glide run together.
    The test checks that this is correct, not how it feels, so a walker should look.
+   **Settled by the coordinator (2026-09-27):** (1) keep the later-night glide; (4) keep
+   the Share for a past night, naming it (Kevin gets it as an FYI with a one-word
+   override).
+4. **P3 (done at 60107d2, builder):** menus while open (C1–C7). The prototype already
+   behaved the C way (P1 kept its code and rewrote the two unit tests). P3 removed the
+   second highlight path, pinned the menus in real browsers, and fixed the one gap the
+   tests found.
+   a. **7a61db3** a highlight has one path, the plan itself (rule 10). peekOf's
+      `people`, `hasAny`, and planPicks/planText/whoAt's `highlight` were read only by
+      tests, and are gone. `stretchFor` asks `passesPeople` per person, the List's
+      question. The model's peek test and the Share's highlight tests build the plan
+      as app.js does, so the goldens are the group's own route. Cy alone sends "Picks
+      for Sat Portola…": Dog Blood now, Soulwax (the pick his day gives up, as its
+      or-line), Regency for Parcels ~10:15, Public Works ~10:30. Ben, Eli and Gus reach
+      DJ Shadow at 6:10 and Prospa at 9:45, their route's times (the crew's route got
+      there at 6:30 and 10:15).
+   b. **69712f2** today with every stop behind it says "Nothing left today", and its
+      Share rests. The emptied-plan test found this: with Gus and Hal highlighted,
+      today showed no rows under the head, and its Share offered to send a head with no
+      lines.
+   c. **60107d2** the menus in plan-days, five cases in Chromium and WebKit, with real
+      taps. The Show menu opens over the open plan with no history entry, and hiding
+      Afters takes The Great Northern out of Saturday while the menu is up. The people
+      menu opens over it without Our picks: Gus, then Gus + Cy + Hal, re-plan it live
+      ("just you", "you, Cy + Hal", "2 of 3"); the highlighted Share starts "Our picks
+      for Sat Portola", names no one, and the foot reads "Opens on everyone’s picks".
+      With the plan closed the row is there and opens it. On the laptop the corner says
+      "JUST YOU". Gus + Hal empty the plan: it stays open, the Share rests, closing lets
+      the shelf go, and Everyone brings back the peek and the menu's row. A jsdom twin
+      of (b) is in plan-shelf. Where a menu overlaps the plan, what a finger reaches at
+      the overlap's middle is the menu.
+   **Red first.** On main (250bc45): the Show-menu test `the plan stays open under the
+   menu` (`'peek'`: main closes the plan), the people-menu and laptop tests (`'peek'`
+   for `'open'`), and the model's peek test `the count is theirs` (`['now','Pier
+   Stage','9 PM',8]`, main's peek filter over the crew's route). The closed-plan row
+   test passes on main, which already offered it; it is a guard. On the P2 head
+   (dc31d42), the four menu tests and the rewritten unit tests pass: the prototype
+   behaved this way, and the removed path was dead. The emptied-plan tests fail there,
+   in both engines and in jsdom, with `today says why` (`[]` for `['Nothing left
+   today']`).
+   **Gate on 60107d2:** a snapshot of HEAD: `npm test` 1279 tests, 1276
+   pass, 1 fail (the SW stamp), 1 skipped, 1 todo. plan-share 39/39, plan-drag 38/39
+   (the WebKit keyboard skip), plan-days 26/26, people-menu 24/24 and show-menu-stacking
+   2/2, each at 0 and at 700. **now-jump fails: 58 tests, 42 pass, 16 fail at 0**
+   (13 Chromium, 3 WebKit, every case with someone highlighted). I stopped its 700 run
+   because the cause is the same one, below.
+   **Found at the gate: a product question the design doesn't settle (the stop).**
+   now-jump's highlighted cases have failed since P1 (599138d), not since P3. They pass
+   on main (250bc45); on 599138d, "390: Ross highlighted — NOW lands on his live pick"
+   and "390: Nhu highlighted…" both time out. The P1 and P2 gates ran only the plan
+   suites, so this went unseen until now. The mechanism, probed on now-jump's own crew
+   at Sat 10:30 PM: Ross, Nhu, Kat and Dee never gather the crew's bar of 3, so on main
+   there is no peek, highlighted or not, and the dock's NOW tab is always there. Under
+   rule 10, one person highlighted is their own day at bar 1. Ross's live pick becomes
+   the peek's NOW (`Now: Milli Meng, Public Works`; Nhu Soulwax, Kat Prospa, Dee at
+   7 PM DJ Shadow), and ONE NOW (app.js paintNowTabs) then hides the NOW tab the tests
+   tap: `element is not visible`, 30 s. So whenever a highlighted person has a live
+   pick, the plan now answers Kevin's 2026-09-24 question, "where is Ross likely right
+   now", in the peek. The wall's answer he asked for that day (the now line and Ross's
+   highlighted card seen together, cycling through several live picks) is no longer
+   reachable, because its door has stepped aside. The ways out, for Kevin:
+   (a) ONE NOW holds under a highlight, as built: the peek's NOW is the answer. Rewrite
+   now-jump's highlighted cases to where the plan isn't saying NOW. The wall's
+   now-line landing under a highlight is then mostly unreachable.
+   (b) Under a highlight, the NOW tab stays beside the peek: two doors while someone is
+   highlighted, one to the wall's live cards and one to their route. now-jump passes as
+   it is; ONE NOW gets one exception.
+   (c) Something else, such as the peek's NOW row landing the wall on that card.
+   My lean is (b). It keeps a feature Kevin asked for three days ago, it costs one
+   condition in paintNowTabs, and the peek still says where they are. (a) is the more
+   consistent reading of his 2026-09-26 "the filters should filter the now too" (the tab
+   stepped aside whenever a highlighted peek said NOW). I haven't changed anything:
+   either way changes what a person sees.
+   **Doubts, and what the design didn't settle.**
+   (1) "Nothing left today" is my wording for today with every stop behind it. The
+   design's edge cases word only a person with no picks ("Nothing Gus picked"). It's a
+   one-word override for Kevin.
+   (2) On the laptop the people menu drops from the rail clear of the panel; only the
+   Show menu overlaps it. The test requires an overlap only where the design draws one
+   (the phone's menus, the laptop's Show menu).
+   (3) The Share's sweep (every five minutes, two festivals, nine highlights) now builds
+   a plan per highlight. Under load it went from 56 s to 69 s, and it is the slowest
+   unit test.
+   (4) Under a highlight, the Share breaks a tie in count by MOST, as the crew's does.
+   MOST is the group's own now; the old path skipped it because MOST was the crew's.
