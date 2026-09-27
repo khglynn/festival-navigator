@@ -853,7 +853,10 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // before it measures, so an open phone plan widened to a laptop while a row
   // was moving stayed the phone's — no panel side, the phone's pin — until
   // that motion ended; a motion that never ended kept it so. A layout
-  // crossing 720px now ends the plan's motion and measures at once.
+  // crossing 720px now ends the plan's motion and measures at once. "At
+  // once" is read as within two seconds, long before the held motion's ten
+  // minutes: three frames were too few on CI's Linux WebKit (run
+  // 36289126119), which the page's resize handling answers a little later.
   test(`${name}: widened to a laptop while a row is moving — the plan is the panel at once, and narrowed back it is the phone's at once`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get());
     try {
@@ -864,18 +867,21 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const r = document.querySelector('#plan .plan-list > .plan-row:not(.tagged)');
         window.__held = r.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 600000 });
       });
-      const frames = () => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)))));
       const side = () => page.evaluate(() => document.getElementById('plan').dataset.side || null);
+      const sideBecomes = async (want) => {
+        const end = Date.now() + 2000;
+        let now = await side();
+        while (now !== want && Date.now() < end) { await sleep(50); now = await side(); }
+        return now;
+      };
       await hold();
       await page.setViewportSize({ width: 1280, height: 800 });
-      await frames();
-      assert.equal(await side(), 'open', 'the laptop\'s panel, before any motion ends');
+      assert.equal(await sideBecomes('open'), 'open', 'the laptop\'s panel, before any motion ends');
       await page.evaluate(() => window.__held.cancel());
       await settled(page);
       await hold();
       await page.setViewportSize({ width: 390, height: 844 });
-      await frames();
-      assert.equal(await side(), null, 'the phone\'s plan, before any motion ends');
+      assert.equal(await sideBecomes(null), null, 'the phone\'s plan, before any motion ends');
       await page.evaluate(() => window.__held.cancel());
       await settled(page);
       const after = await page.evaluate(() => {
