@@ -11,6 +11,9 @@
 // 2. The Late nights render with times: all 66 entries over their 10 dates,
 //    each card on its date with its time drawn and whole, the 31 guesses
 //    wearing the tilde — on the Board and in the List.
+// 3. The morning after: a plan left open from the last night's end past 5 AM
+//    draws that night as past, its Share sends it whole, and a close lets the
+//    shelf go.
 // The model's goldens for the days list are tests/plan-acl.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -275,6 +278,58 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       }
       if (process.env.PLAN_ACL_PRINT) console.log(JSON.stringify(got, null, 2));
       else assert.deepEqual(got, SHARE_GOLDEN);
+      assert.deepEqual(errors(), []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// ---- 3. the morning after ---------------------------------------------------------------
+// Sol's important on 0f076a6: past 5 AM on the day after the festival, a plan
+// still open fell back to the last night with no clock, and Sunday came back
+// whole and undimmed with its Share on, as if still to come. It stays open on
+// Sunday as a night before today — its rows dimmed under its head, as an
+// opened Earlier draws them — its Share names it and sends it whole, and a
+// close lets the shelf go (there is no peek to close to).
+const SUN_OCT11_9PM = new Date('2026-10-11T21:00:00-05:00');   // The xx, the festival's last set
+const SUN_OCT11_1130PM = new Date('2026-10-11T23:30:00-05:00'); // nothing left today
+const MON_OCT12_501AM = new Date('2026-10-12T05:01:00-05:00');  // the festival's night is behind the phone
+async function tick(page, at) {
+  await page.clock.setFixedTime(at);
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await sleep(60);
+  await settled(page);
+}
+for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
+  const skip = engine ? false : NO_BROWSER;
+  test(`${name}: the morning after, a plan left open draws the last night as past, sends it whole, and a close lets the shelf go`, { skip }, async () => {
+    const { ctx, page, errors } = await open(engine, { at: SUN_OCT11_9PM });
+    try {
+      await page.waitForSelector('#plan:not([hidden])', { timeout: 15000 });
+      await settled(page);
+      const grab = async () => {
+        const box = await page.locator('#plan .plan-grab').boundingBox();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await settled(page);
+      };
+      await grab();
+      assert.equal(await planState(page), 'open');
+      await tick(page, SUN_OCT11_1130PM);
+      assert.equal(await planState(page), 'open', 'open past the last stop');
+      assert.equal((await state(page)).off, true, 'at 11:30 PM nothing is left to send today');
+      await tick(page, MON_OCT12_501AM);
+      assert.equal(await planState(page), 'open', 'open across the rollover');
+      const rows = await page.evaluate((n) => [...document.querySelectorAll(`#plan .plan-list > [data-night="${n}"]`)]
+        .map((r) => ({ past: r.classList.contains('past'), head: r.classList.contains('plan-day'), dim: Number(getComputedStyle(r).opacity) < 0.6 })), '2026-10-11');
+      assert.ok(rows.length > 2 && rows[0].head, `Sunday under its own head: ${JSON.stringify(rows)}`);
+      assert.ok(rows.every((r) => r.past && r.dim), `every Sunday line is drawn past, dimmed: ${JSON.stringify(rows)}`);
+      const s = await state(page);
+      assert.deepEqual([s.wd, s.share, s.off], ['SUN', 'Share Sun Oct 11’s picks', false], 'the head and the Share name Sunday by its date');
+      const text = await share(page);
+      assert.ok(text.endsWith('&plan=2026-10-11'), `the link opens on Sunday:\n${text}`);
+      assert.doesNotMatch(text, /now till|@ now/, 'Sunday reads whole, not from now');
+      assert.match(text, /The xx/, text);
+      await grab();
+      assert.equal(await planState(page), 'none', 'a close lets the shelf go');
       assert.deepEqual(errors(), []);
     } finally { await ctx.close(); }
   });

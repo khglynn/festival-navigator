@@ -298,7 +298,7 @@ function signature(a) {
   const rows = a.plan && a.plan.nights
     ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id), a.route && n.id === a.route.id ? a.nowMin : null)}`).join(';')
     : nightRows(a.route, a.nowMin);
-  return [a.gen, a.route && a.route.id, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.plan && a.plan.group || []).join(',')].join('|');
+  return [a.gen, a.route && a.route.id, !!a.past, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.plan && a.plan.group || []).join(',')].join('|');
 }
 
 // The night the view is reading: the day of the first row whose bottom is
@@ -370,11 +370,11 @@ function paintHead(id) {
 // (Kevin's to overrule; the plan-days build log, 2026-09-27): the phone's
 // shelf is laid out at its cap and the list fills the window (v3.css) — the
 // laptop's panel is full height anyway — so a plan that fits can still bring
-// its later day to the top, where the head and the Share name it. Before it, a plan that fitted
-// had nowhere to scroll, and its later day could never be shared from the
-// plan. A plan whose last day is today stays content-sized and has no room:
-// there it would only be a gap under its last row, growing the shelf, and a
-// jump in the window's motion.
+// its later day to the top, where the head and the Share name it. Before it,
+// a plan that fitted had nowhere to scroll, and its later day could never be
+// shared from the plan. A plan whose last day is today stays content-sized
+// and has no room: there it would only be a gap under its last row, growing
+// the shelf, and a jump in the window's motion.
 function fitTail() {
   const tail = listEl ? listEl.querySelector(':scope > .plan-tail') : null;
   if (!tail) return;
@@ -484,7 +484,7 @@ function draw() {
   // approved frame); a tapped row's too. Each sits under its row, so the
   // peek's window (the row alone) never includes one.
   const list = planDays(a.plan, {
-    ctx, peek: a.peek, from: a.route ? a.route.id : null, nowMin: a.nowMin, grown: grownNow(),
+    ctx, peek: a.peek, from: a.route ? a.route.id : null, nowMin: a.nowMin, landedPast: !!a.past, grown: grownNow(),
     earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
     dayOf: (id) => (a.dayOf ? a.dayOf(id) : {}), emptyWords: a.emptyWords || (() => ''),
   });

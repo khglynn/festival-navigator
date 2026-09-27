@@ -298,6 +298,15 @@ const GOLDEN = {
     "» Earlier · Sep 29 – Oct 10 · 2 stops",
     "(Nothing left today)",
   ],
+  monAfter: [
+    "HEAD SUN OUR PICKS Oct 11 · 8 picking",
+    "» Earlier · Sep 29 – Oct 10",
+    "# SUN Oct 11 (past)",
+    "SOME Fcukers Tito's also Sep 29, Oct 10 6:30 PM 4 picked (past)",
+    "  … Scattered till 8:30 PM 7:30 PM (past)",
+    "SOME The xx T-Mobile 8:30 PM 4 picked (past)",
+    "    or Twenty One Pilots · American Express 3 picked (past)",
+  ],
 };
 const PRINT = !!process.env.PLAN_ACL_PRINT;
 const same = (got, want, what) => { if (PRINT) console.log(`--- ${what}\n${got.join('\n')}`); else assert.deepEqual(got, want, what); };
@@ -337,4 +346,26 @@ test('Sun Oct 11, the last night: open at 9 PM, and still open after its last st
   toggle(); // nothing to close down to: the shelf goes (plan-shelf settleTo → leave)
   await settle(400);
   assert.equal(shown(), false, 'closed after the last stop, the shelf goes');
+});
+
+// Past 5 AM the festival's last night is behind the phone (Sol's important on
+// 0f076a6: the plan left open came back as a whole, undimmed Sunday with its
+// Share on, as if it were still to come). It stays open on that night, drawn
+// as a night before today — dimmed under its head, the way an opened Earlier
+// draws one — and its Share names it by its date and sends it whole, as any
+// past night's does. Closing lets the shelf go: there is no peek to close to.
+test('Mon Oct 12, 5:01 AM, the morning after: a plan left open since the last night draws that night as past, and closing lets it go', async () => {
+  await openAt('2026-10-11T21:00:00-05:00');
+  await tick('2026-10-11T23:30:00-05:00');
+  same(days(), GOLDEN.sunLate, 'Sun Oct 11 11:30 PM');
+  const btn = () => plan().querySelector('.plan-share');
+  assert.equal(btn().disabled, true, 'at 11:30 PM nothing is left to send today');
+  await tick('2026-10-12T05:01:00-05:00');
+  assert.ok(shown() && plan().dataset.state === 'open', 'the open plan stays open across the rollover');
+  same(days(), GOLDEN.monAfter, 'Mon Oct 12 5:01 AM');
+  assert.equal(btn().disabled, false, 'a past night has picks to send');
+  assert.match(btn().textContent, /^(Share|Copy) Sun Oct 11’s picks$/, 'the Share names the night by its date, not "today"');
+  toggle();
+  await settle(400);
+  assert.equal(shown(), false, 'closed the morning after, the shelf goes');
 });

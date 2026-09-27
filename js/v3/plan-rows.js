@@ -409,12 +409,14 @@ function markEnds(rows) {
 //   `plan`: plan.js planOf's; `peek`: peekOf's answer (its stop is tagged
 //   where it is drawn); `from`: the night id the list lands on (the
 //   peek's); `nowMin`: the clock on that night (null when it is not tonight);
+//   `landedPast`: that night is behind the phone (the morning after the
+//   festival's last night) and is drawn past, under its head;
 //   `dayOf(id)` → { weekday, sub } for a night's head; `emptyWords(route)` →
 //   the line a night with no stop shows (`why`: plan.js night().why, or
 //   'over' for tonight with every stop behind it).
 // Every row carries `data-night`, which is how the shelf knows which day is
 // at the top of the view (its head and its Share follow it).
-export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, grown = new Set(), earlierOpen = false,
+export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, landedPast = false, grown = new Set(), earlierOpen = false,
   onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', dayOf = () => ({}), emptyWords = () => '' } = {}) {
   const list = mk('div', 'plan-list days');
   if (!plan || !plan.nights || !plan.nights.length) return list;
@@ -507,7 +509,11 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
     }
   };
   if (earlierOpen) nightsOf(before, { past: true });
-  night(ids[at], { head: earlierOpen && before.length > 0, clock: nowMin, fold: !earlierOpen && overToday.length > 0 });
+  // The landing night is behind the phone (`landedPast`: the morning after
+  // the festival's last night, app.js planAnswer): it reads as a past night
+  // does once Earlier is open — whole, dimmed, under its head.
+  if (landedPast) night(ids[at], { head: true, past: true });
+  else night(ids[at], { head: earlierOpen && before.length > 0, clock: nowMin, fold: !earlierOpen && overToday.length > 0 });
   nightsOf(ids.slice(at + 1));
   markEnds(rows);
   rows.forEach((r) => list.appendChild(r));

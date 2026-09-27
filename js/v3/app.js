@@ -1334,7 +1334,15 @@ function planAnswer(date) {
     // closing it lets it go. Closed, no peek is no shelf, as before.
     if (!planIsOpen() || !plan.nights.length) return null;
     const on = (at && at.night) || plan.night((plan.nights.find((n) => n.iso && n.iso >= tonight) || plan.nights[plan.nights.length - 1]).id);
-    peek = { night: on, stop: null, tag: null, count: 0, today: !!at && at.night.id === on.id };
+    // Past 5 AM after the festival's last night, a plan left open stays on
+    // that night as a night BEFORE today (Sol's important on 0f076a6: it came
+    // back whole and undimmed, its Share on, as if still to come): drawn past
+    // under its head, as an opened Earlier draws one, and its Share names it
+    // and sends it whole, as a past night's does. Not closed by the clock —
+    // a tick never takes an open plan from under its reader (the menu rule
+    // above) — and a close lets it go (no peek to close to).
+    const past = !at && !!on.iso && on.iso < tonight;
+    peek = { night: on, stop: null, tag: null, count: 0, today: !!at && at.night.id === on.id, past };
   }
   const entry = plan.nights.find((n) => n.id === peek.night.id) || {};
   // "also Thu" on Portola, "also Oct 9" where two nights share a weekday
@@ -1374,7 +1382,7 @@ function planAnswer(date) {
     return plan.group ? 'Never together — no stop' : 'Scattered all day';
   };
   return {
-    plan, peek, route: peek.night, gen: planGen, nowMin,
+    plan, peek, route: peek.night, gen: planGen, nowMin, past: !!peek.past,
     weekday: String(entry.wd || '').toUpperCase(),
     sub: dayOf(landing).sub,
     dayWord: peek.today ? '' : (entry.wd || ''),
