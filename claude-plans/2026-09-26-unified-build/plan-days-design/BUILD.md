@@ -71,3 +71,7 @@ crew link, no database writes (previews and `vercel dev` use production's).
    guard, `holdForShare`). The signature is per night (`rowsKey`, plus the drop-in
    lines). The per-day Share sends the day at the top, with a link that opens on that
    night (`linkOf(id)`). npm test shows the prototype's same four expected reds.
+2. **P1 (in progress, builder, from 31d06f2):** the prototype becomes the product.
+   Baseline on 31d06f2: `npm test` 1262 tests, 4 fail (the three the prototype turned
+   red, plus the SW stamp); `plan-share` 39 tests, 4 fail (the button's words: the
+   prototype says "Share today's picks" where the suite says "Share our picks").
