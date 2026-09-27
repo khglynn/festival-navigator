@@ -398,3 +398,30 @@ the ledger's design, not this bug).
   history now).
 - **Not stamped, no PR** (the brief). `renderDayNav` → `paintPlan` order is
   unchanged; `paintPlan`, `openShowMenu` and the menus are untouched.
+
+## Sol's review of bfcf621 (2026-09-26 ~5:15 PM PT) — the round, as it runs
+
+Review: `~/.codex-runs/cx-20260926-171201-83805-a34ebf/last-message.md`. The
+coordinator's order: the Spotify items and the test helper first; `app.js`,
+`wall.js` and CSS only once the v104 walker (walking bfcf621 in this worktree,
+its files `V104-WALK.md`, `v104-walk.mjs`, `v103-shots/walk-*` — not ours to
+touch) says it is finished. Each fix gets a failing test first.
+
+- [ ] R1 BLOCKER — a Spotify WRITE is never repeated blind. The shared path
+      retried a playlist create or add after a 5xx, which Spotify may have
+      done anyway (a second playlist, doubled tracks). Reads keep their one
+      retry; a 429 on a write still waits and retries (a 429 is a refusal —
+      nothing was done); a 5xx on a write is ambiguous: an add re-reads the
+      playlist and adds only what is missing, a create is not repeated and
+      the words say so.
+- [ ] R2 BLOCKER — an artist whose search answered with NO top songs is not
+      "done": it stays off the crew ledger even when the maker's saved tracks
+      went in, the top-up carries the count, and "already has everyone's
+      picks" is never said while one is missing.
+- [ ] R5 NIT — `nowInView` fails with the row's geometry instead of swallowing
+      its timeout.
+- [ ] R3 BLOCKER (Sol) / kept as designed (coordinator) — unpick in a filtered
+      List dims in place (call 2d), but "the next repaint" must be real and
+      bounded; a pick change from elsewhere repaints the filtered List. UI test.
+- [ ] R4 IMPORTANT — the dayless EVERYTHING ELSE group renders after the
+      filter ran; it must pass the same predicate. Fixture test.
