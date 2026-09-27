@@ -179,21 +179,37 @@ const restedOn = async (page, day, door = 'dock') => {
     last = cur;
   }
 };
-const highlight = async (page, name) => {
-  const chip = page.locator('#person-chips .person-chip', { hasText: name }).first();
-  if (await chip.isVisible()) {
-    await chip.click();
+const highlight = async (page, ...names) => {
+  const chip = (name) => page.locator('#person-chips .person-chip', { hasText: name }).first();
+  if (await chip(names[0]).isVisible()) {
+    for (const name of names) await chip(name).click();
   } else {
     // A phone has no people row (the people menu, 2026-09-26): the avatar —
     // or, with someone already highlighted, the pill's faces — opens
     // Highlight; a row toggles them; the avatar again puts it away.
     const door = (await page.locator('#dock-you').isVisible()) ? '#dock-you' : '#dock-you-wrap .hl-faces';
     await page.locator(door).click();
-    await page.locator(`#dock-you-wrap .hl-pop [data-person="${name}"]`).click();
-    await page.locator('#dock-you').click();
+    for (const name of names) await page.locator(`#dock-you-wrap .hl-pop [data-person="${name}"]`).click();
+    // Put it away: the avatar, or (opened from the pill) Escape.
+    if (await page.locator('#dock-you').isVisible()) await page.locator('#dock-you').click();
+    else await page.keyboard.press('Escape');
   }
   await sleep(400);
 };
+// ONE NOW under a highlight (Kevin, 2026-09-27, the plan-days build: "k ya
+// that works"). A highlight is an input to Our plan (plan.js rule 10): one
+// person highlighted is their own day at a bar of one, so a live pick of
+// theirs is the peek's NOW, and the NOW tab steps aside for it (app.js
+// paintNowTabs; the last tests in this file pin that). So the wall's NOW
+// under a highlight is tested where the plan says nothing now: the person
+// with the live pick is highlighted beside someone with nothing on at that
+// minute. Two highlighted need both at a stop (plan.js GROUP_FLOOR), these
+// two never pick the same act (outside Despacio, a drop-in, never a stop),
+// so there is no stop, no peek, and the tab lands on the live pick exactly
+// as it did for one person: the highlight lets both people's cards through
+// (filters.js passesPeople), and the quiet one has none on.
+const QUIET_1030 = 'Dee'; // at 10:30 PM: DJ Shadow and Despacio are over by 9:45
+const QUIET_7PM = 'Nhu'; // at 7 PM: Soulwax, Prospa and Galen all start after 9
 
 for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''], [1280, 800, false, browser, ''], [390, 844, true, webkit, 'WebKit ']]) {
   const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
@@ -231,10 +247,10 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
     } finally { await ctx.close(); }
   });
 
-  test(`${name}${width}: Ross highlighted — NOW lands on his live pick in SAT AFTERS`, { skip }, async () => {
+  test(`${name}${width}: Ross highlighted (with Dee, nothing on) — NOW lands on his live pick in SAT AFTERS`, { skip }, async () => {
     const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
-      await highlight(page, 'Ross');
+      await highlight(page, 'Ross', QUIET_1030);
       await tapNow(page, door);
       const v = await view(page, 'Milli Meng', 'Afters');
       assert.ok(v.card, 'his card is on the wall, undimmed');
@@ -261,10 +277,10 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
     } finally { await ctx.close(); }
   });
 
-  test(`${name}${width}: Nhu highlighted — her live pick on the grid and the now line are in view together`, { skip }, async () => {
+  test(`${name}${width}: Nhu highlighted (with Dee, nothing on) — her live pick on the grid and the now line are in view together`, { skip }, async () => {
     const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
-      await highlight(page, 'Nhu');
+      await highlight(page, 'Nhu', QUIET_1030);
       await tapNow(page, door);
       const v = await view(page, 'Soulwax', 'cell');
       assert.ok(v.card && v.card.cell, 'Soulwax, on the grid');
@@ -310,10 +326,10 @@ for (const [width, height] of [[390, 844], [430, 932]]) {
   });
 }
 
-test('390: Kat highlighted — NOW scrolls to her pick in the third column, and the line crosses it there', { skip }, async () => {
+test('390: Kat highlighted (with Dee, nothing on) — NOW scrolls to her pick in the third column, and the line crosses it there', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
-    await highlight(page, 'Kat');
+    await highlight(page, 'Kat', QUIET_1030);
     await tapNow(page, door);
     const v = await view(page, 'Prospa', 'cell');
     assert.ok(v.card && v.card.cell, 'Prospa, on the grid');
@@ -362,7 +378,7 @@ for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here�
 test('390: the card is replaced mid-glide — the fresh one pulses, and no scrollend listener is left behind', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
-    await highlight(page, 'Ross');
+    await highlight(page, 'Ross', QUIET_1030);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(150);
     const cdp = await ctx.newCDPSession(page);
@@ -530,10 +546,10 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
   });
 }
 
-test('390, Nhu highlighted: the stops are her live picks only — Soulwax, then Prospa beside it, then Galen, then back', { skip }, async () => {
+test('390, Nhu highlighted (with Dee, nothing on): the stops are her live picks only — Soulwax, then Prospa beside it, then Galen, then back', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
-    await highlight(page, 'Nhu');
+    await highlight(page, 'Nhu', QUIET_1030);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     const taps = await cycle(page, door);
@@ -554,10 +570,10 @@ test('390, Nhu highlighted: the stops are her live picks only — Soulwax, then 
 // over was never slid into view — taps 2 and 3 stayed put and pulsed the one
 // already showing. Sat 7:00 PM, Dee: DJ Shadow (Crane Stage) and Despacio
 // (the last column), both on.
-test('390, Dee highlighted at 7 PM: two live picks three columns apart are two stops — each tap slides the grid to the next', { skip }, async () => {
+test('390, Dee highlighted at 7 PM (with Nhu, nothing on): two live picks three columns apart are two stops — each tap slides the grid to the next', { skip }, async () => {
   const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
   try {
-    await highlight(page, 'Dee');
+    await highlight(page, 'Dee', QUIET_7PM);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     const taps = await cycle(page, door);
@@ -668,7 +684,7 @@ test('320x568, the festival’s room only: a tap at 3 PM, the clock to 7 PM, a t
 test('390: Ross drops the pick NOW is gliding to — the dimmed card does not pulse', { skip }, async () => {
   const { ctx, page, doc, door } = await openApp();
   try {
-    await highlight(page, 'Ross');
+    await highlight(page, 'Ross', QUIET_1030);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(150);
     await page.evaluate(() => { window.__pulses = []; });
@@ -700,10 +716,10 @@ test('390: Ross drops the pick NOW is gliding to — the dimmed card does not pu
 // it, and the detached node read as "unchanged" forever. The cycle names the
 // grid by its day now. Dee at 7 PM: Despacio (the must, the last column) and
 // DJ Shadow (Crane Stage), three columns apart.
-test('390, Dee at 7 PM: a repaint keeps the cycle; after one, a sideways hand scroll makes the next tap fresh', { skip }, async () => {
+test('390, Dee at 7 PM (with Nhu, nothing on): a repaint keeps the cycle; after one, a sideways hand scroll makes the next tap fresh', { skip }, async () => {
   const { ctx, page, doc, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
   try {
-    await highlight(page, 'Dee');
+    await highlight(page, 'Dee', QUIET_7PM);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     const grid = () => page.evaluate(() => { const s = document.querySelector('#wall-root .now-line').closest('.times-scroll'); s.dataset.probe = s.dataset.probe || String(Math.random()); return s.dataset.probe; });
@@ -803,7 +819,7 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
   const { ctx, page, door } = await openApp();
   try {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await highlight(page, 'Ross');
+    await highlight(page, 'Ross', QUIET_1030);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(100);
     await page.locator(`#${door}-now`).click();
@@ -1092,10 +1108,10 @@ const watchRows = (page) => page.evaluate(() => {
 });
 for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
   const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
-  test(`${name}320: Ross highlighted — NOW slides SAT AFTERS just enough that his right-hand card is whole inside its row`, { skip }, async () => {
+  test(`${name}320: Ross highlighted (with Dee, nothing on) — NOW slides SAT AFTERS just enough that his right-hand card is whole inside its row`, { skip }, async () => {
     const { ctx, page, door } = await openApp({ width: 320, height: 568, engine });
     try {
-      await highlight(page, 'Ross');
+      await highlight(page, 'Ross', QUIET_1030);
       await page.evaluate(() => window.scrollTo(0, 0));
       await sleep(200);
       const rest = await rowView(page);
@@ -1132,7 +1148,7 @@ test('320, Reduce Motion: NOW brings the right-hand afters card in at once', { s
   const { ctx, page, door } = await openApp({ width: 320, height: 568 });
   try {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await highlight(page, 'Ross');
+    await highlight(page, 'Ross', QUIET_1030);
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     await watchRows(page);
@@ -1143,3 +1159,43 @@ test('320, Reduce Motion: NOW brings the right-hand afters card in at once', { s
     assert.ok(Math.abs(v.row.scrollLeft - v.row.max) <= 1 && v.card.right <= v.row.right + 0.5, `already whole, one frame after the tap: ${JSON.stringify(v)}`);
   } finally { await ctx.close(); }
 });
+
+// ONE NOW under a highlight (Kevin, 2026-09-27): Ross alone, at 10:30 PM,
+// is his own day (plan.js rule 10, a bar of one), so his live pick is the
+// plan's NOW — the peek on a phone, the corner card on a laptop names it —
+// and the NOW tab steps aside: two doors to one moment is one too many. With
+// Dee highlighted beside him (nothing on), the plan says nothing now and the
+// tab is back, landing on the same card (the cases above). Everyone again:
+// the crew never gathers its bar of three, no plan, and the tab stays.
+for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''], [1280, 800, false, browser, ''], [390, 844, true, webkit, 'WebKit ']]) {
+  const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
+  test(`${name}${width}: Ross alone highlighted — his live pick is the plan's NOW, the plan names it, and the NOW tab steps aside; with Dee beside him the tab is back`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width, height, touch, engine });
+    const doors = () => page.evaluate((d) => {
+      const tab = document.getElementById(`${d}-now`);
+      const plan = document.getElementById('plan');
+      const row = plan && !plan.hidden ? plan.querySelector('.plan-row[data-tag="now"]') : null;
+      const seen = (el) => !!el && !el.hidden && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+      return { tab: seen(tab), now: seen(row) ? row.getAttribute('aria-label') : null, text: seen(row) ? row.textContent : '' };
+    }, door);
+    const until = async (ok, what) => {
+      let v = await doors();
+      for (let t = 0; t < 60 && !ok(v); t++) { await sleep(100); v = await doors(); }
+      assert.ok(ok(v), `${what}: ${JSON.stringify(v)}`);
+      return v;
+    };
+    try {
+      await restedOn(page, 'Saturday', door);
+      await until((v) => v.tab && !v.now, 'nobody highlighted: no plan (the crew never gathers three), and NOW is there');
+      await highlight(page, 'Ross');
+      const v = await until((v) => !!v.now, 'Ross alone: the plan says NOW');
+      // A room's row is its venue, the acts under it (plan-rows.js stopRow).
+      assert.match(v.now, /^Now: Public Works, till /, 'the plan names his live pick’s room');
+      assert.match(v.text, /Milli Meng/, 'and his act in it');
+      assert.equal(v.tab, false, 'and the NOW tab steps aside for it');
+      await highlight(page, QUIET_1030);
+      await until((v) => v.tab && !v.now, 'Ross + Dee: nothing of theirs together now, so no NOW in the plan, and the tab is back');
+    } finally { await ctx.close(); }
+  });
+}
+
