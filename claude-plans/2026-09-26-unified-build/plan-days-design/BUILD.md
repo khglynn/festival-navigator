@@ -606,6 +606,7 @@ crew link, no database writes (previews and `vercel dev` use production's).
       36319088534) bears it out: Linux WebKit's probe saw 2 places in 540 ms, its link
       test passed on the intent (`[508]` went to a diagnostic) and the carry-on
       skipped with its reason; Linux Chromium saw 22 places and ran both whole.
+      The probe did not last: it flipped on a later run, and k replaces it.
    b. **B, the bare run's Share mark (b66da93).** Read at the end of its transition
       (the mark's own animations finished, 3 s real-time cap), not at a fixed moment.
       Proved by holding the transition open at 1.5 s: the old read failed, the new one
@@ -701,6 +702,49 @@ crew link, no database writes (previews and `vercel dev` use production's).
       motions held near their end): [1,1,1, … ×37]`. Both engines, green at 0 and 700.
       The morning-after case now reads brightness (opacity × any opacity filter) at
       rest, not a computed opacity mid-fade.
+   j. **The place's width guard, found reading my own diff back (2679514).** Sol 1's
+      guard told a reflow from a reader's scroll by the list's clientWidth, which also
+      moves with the list's own scrollbar where one takes room (Windows, a Mac with a
+      mouse). A repaint mid-glide measured the new list before it was the open,
+      scrolling list, 15px wider than it became, and the settle after it only re-aims
+      a glide. So every scroll after that read as a reflow and was never taken, and
+      the next settle or repaint put the list back where the glide had been when the
+      tick came. The guard now reads offsetWidth, the list's box, which only a real
+      layout change moves. Playwright hides every scrollbar in headless Chromium, a
+      styled one included, so `launchBrowser({ scrollbars: true })` gives them back
+      and the test styles a 15px one.
+      **Red first**, on a racing glide: `Chromium laptop, a scrollbar that takes room:
+      the repaint kept the reader where they were: {"row":"…|Public Works|1375",
+      "at":-32,"scrollTop":276} → {"row":"…|Crane Stage|1335","at":0,"scrollTop":30}
+      (the tick came at 30)`. WebKit passed on that version (a refit landed after its
+      glide). On the held glide (k) it is red on both engines at 0 and 700: `Sunday's
+      head is still at the top once everything has settled: {"row":"2026-09-26#…|Crane
+      Stage|1335","at":0,"scrollTop":30}`. The landing snapped back to where the glide
+      was held.
+      A second suspicion did not hold: that a repaint waiting for a hand on the open
+      window left the list unscrollable. Its test passed on the old code (the refit
+      after the draw restores it), so the test was dropped and nothing changed.
+   k. **No runtime probe for the glide (98548e4; the coordinator's call after CI run
+      36323629568).** A's probe flipped. On 2679514 it counted 3 places on CI's Linux
+      WebKit (1 and 2 on the runs before), read that as a glide, and ran three glide
+      tests there. The list itself still landed in one step, and all three failed:
+      `[508]`, `the repaint came mid-glide (at 448, Sunday at 448)`, and j's test
+      with `the tick at 433`. That third red was the same dependence, not a problem of
+      its own: the list had landed before the tick came. Now:
+      - Every engine is held to the app's part: one smooth scrollTo to the night's
+        head, once the window has landed.
+      - "Through the rows between" and a repaint racing the engine's own glide are
+        Chromium's (`ANIMATES`), with the reason in the test. The frames are the
+        engine's job once the ask is right.
+      - The held glide (open's `holdGlide`, in the scrollTo recorder) stops the first
+        smooth ask 40% of the way and lands every later ask at once, so a repaint
+        comes mid-glide on any engine, every time. The carry-on runs on it on both
+        engines, with a friend's pick as the repaint. (The minute that ends Dog Blood
+        takes away the grown card the list is held in, and the place passes to the
+        next row by design; the racing test takes that path.) j's test runs on it too.
+      Seen on the way, not changed: a pull's answer is drawn twice, some 50 ms apart,
+      on both engines. WebKit's second draw can land before the glide's landing event
+      and re-ask the same spot (a no-op, allowed by the test).
    **Gate on eca35e2** (A to Sol 3; 9052fb7 after it changes only the past's dim and
    its two tests): `npm test` 1293 tests, 1290 pass, 1 fail (the SW stamp, left for the
    lead), 1 skipped, 1 todo. Every browser suite at 0, one at a time, and the plan
