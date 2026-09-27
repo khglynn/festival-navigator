@@ -518,3 +518,23 @@ stamped, by the brief); validate-festivals 0 errors. CI 36284277397:
 **browser green** (Linux Chromium + WebKit), checks red on the stamp only.
 Earlier heads this round: 421c141 (Spotify) browser green; 83b486c browser red
 once on the NOW helper race fixed at d6cd473 (read above).
+
+## Sol's re-review of 02536c3 (2026-09-26 ~6:15 PM PT) — round two
+
+Review: `~/.codex-runs/cx-20260926-181122-2124-7467fb/last-message.md`. Cleared:
+the 429 write retry, the paginated readback, re-searching no-song artists,
+EVERYTHING ELSE, `nowInView`, the span line. Three left, each red-first. The
+coordinator's rule for Spotify's ambiguous writes: if a round three finds
+another hole there, cut to "never retry or resume a write, just say what
+happened".
+
+- [ ] S1 BLOCKER — a confirmed create is recorded (id + URL, where a finished
+      Make records it) the moment Spotify confirms it, before any add; a later
+      add failure leaves a playlist the screen links and tops up (Add new
+      picks), never a second create.
+- [ ] S2 IMPORTANT — each leftover row settles on its own: un-pick A, move to
+      B and un-pick it — A leaves while B is held. The page is held by the row
+      the person is on (the zoomed or hovered card), so nothing under the
+      pointer moves when a row above it leaves.
+- [ ] S3 NIT — the leftover check sleeps while the tab is hidden and wakes on
+      visible.
