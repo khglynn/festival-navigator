@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
+import { paintFree } from './helpers/paint-free.mjs';
 
 // plan-rows.js draws rows too, so it reads a document and storage at import.
 const dom = new JSDOM('<!doctype html><html><body></body></html>');
@@ -18,6 +19,7 @@ globalThis.CSS = dom.window.CSS;
 const store = new Map();
 globalThis.localStorage = globalThis.localStorage || { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k), clear: () => store.clear() };
 dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+paintFree(dom.window); // the sweep draws the plan thousands of times and reads words, never paint
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const P = await import('../js/v3/plan.js');
