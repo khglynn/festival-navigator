@@ -2,8 +2,12 @@
 
 Branch `live/plan-days-design`, cut from the Share build's head (fc86005). Brief: `BRIEF.md`
 beside this. Frames: `node frames.mjs` here (43 frames, each with a checked report line),
-review page: `review.html`. Status: **round complete, waiting on Kevin's calls** (the
-questions at the end). Nothing here ships; the build comes after his answers.
+review page: `review.html`. Status: **Kevin's calls are in** (2026-09-26, about 5:35 PM
+PT, relayed by the coordinator: "All the recommendations in that artifact seem good"), so
+every default at the end stands, C6 included. The build runs on this branch after v104
+lands on main (merge main, never rebase), gated like every release, and aims at ACL (Late
+nights from Tue Sep 29), not Portola. It also takes the model work banked from the Share
+release (the section before the questions).
 
 ## The three decisions in one breath
 
@@ -248,10 +252,12 @@ line; Sunday likewise.
 read in app.js; `planOf`'s `dropIn: 'shape' | 'light' | 'today'` and `groupBar`;
 `lightTouch()` and `backRow` (the rejected lighter touch); `thinnedWordsLocal`.
 
-**FYI for the build, not this round's:** the Share's times can read earlier than the
+**FYI for the build, not this round's:** the Share's times could read earlier than the
 row's (Mochakk "5:35pm" in the text, 6 PM on the row; Fatboy Slim 7:55 vs 8:30) because
-`planPicks` takes a place's first time as ours, forks included. Both are true (the set's
-start vs when the bodies arrive); worth one look when the Share is next touched.
+`planPicks` took a place's first time as ours, every fork included. Since the Share's
+second Sol round, it reads only the rows the open plan shows (`overAt`, `orLineOf` in
+plan-rows.js), so an or-line the rows don't draw no longer sets a time. The per-day Share
+(B1) should keep that rule: build it on the same two functions.
 
 **Tests** (`npm test`: 1257, 4 fail, all expected): the highlight-dims test (rule 10
 replaces the dim), the people menu's Our picks row with the plan open (the row now waits
@@ -282,6 +288,43 @@ are real taps. `shots/` is git-ignored (the repo's image allowlist); re-run to r
 - **D, the Share's words:** D1-share-sat-390, D2-share-sun-390, D3-share-three-390,
   D4-share-gus-390 (each report carries the text it handed the sheet, link redacted),
   D5-acl-bare-day-390.
+
+## Banked from the Share release: where a stop ends (Sol's two rounds, 2026-09-26)
+
+The Share's release took a model fix out again, and it belongs here, where routeOf is
+being reworked anyway. Full history: the Share build log (`SHARE-BUILD.md` on
+`live/share`, items 13 and 14).
+
+- **The problem.** routeOf folds a blip (a crowd shift under 15 minutes) into the stop
+  before it, and that carries the stop past its own set. With the nine on Sunday, the
+  Warehouse's ten-minute Tiësto blip keeps the Pier Stage stop running to 8:15, while Zara
+  Larsson ends at 8:05. So from 8:05 to 8:15 the peek and the open plan say "NOW · Zara
+  Larsson · till 8:05 PM". That has been live since v101, for at most ten minutes after a
+  set. The Share already works around it: it reads each act's own end.
+- **The fix that was tried, and why it came out.** Ending a stop and a fork where their
+  place does (`min(run end, place end)`) fixed the peek, but created two new holes. First,
+  a live or-line could outlive its stop: Zara's stop folded into Earlier at 8:05 and took
+  the Tiësto or-line (still on until 8:15) with it. Second, the fork's 15-minute check ran
+  on the uncapped interval, so an 8:00–8:12 fork survived. After two rounds on one
+  mechanism, it was cut from the release.
+- **What the build decides.** When the route's place ends before its run does, where do
+  those minutes go? The options: a changeover (the capped version), the blip standing as
+  a short stop of its own, or the stop staying unfolded while its shown or-line is still
+  on. A drop-in room (A) removes the biggest source of these blips, so settle A first and
+  then measure how often this still happens.
+- **Everything that reads a stop's end** (list it again before changing it): atOn's NOW
+  (the peek), planAt's "last night is still going", forkFor's overlap, the NOW row's till
+  (a room's till is its stop's end), the Earlier fold (`overAt`), the Share's "still to
+  come" (`endOf`), the shelf's repaint key, and the one-NOW rule (the dock's NOW tab steps
+  aside only while the peek says NOW).
+- **Acceptance tests, written first.** At every five minutes of every Portola night and
+  every ACL night, for the nine and for a made-up ACL nine:
+  1. Nothing reads NOW for an act that is over, in the peek or in any row.
+  2. A live or-line is on screen for as long as it plays.
+  3. Every line the Share sends is a row the open plan shows (the Share release's sweep
+     in `tests/plan-text.test.mjs` already asserts this; keep it).
+  4. No fork shorter than 15 minutes survives, measured on the interval that is kept.
+  5. The dock's NOW tab and the peek's NOW never show together.
 
 ## Questions only Kevin can answer (each with my default)
 
@@ -318,3 +361,8 @@ are real taps. `shots/` is git-ignored (the repo's image allowlist); re-run to r
 Published for Kevin on 2026-09-26 as https://claude.ai/artifact/PZPqA9buY6JZSSsVqrZUmy
 (login kevin.hq@tecovas.com), with a note that the Share release now carries the plan
 link's day and filters a highlighted Share to the highlighted people's picks.
+
+**Kevin's call, 2026-09-26, about 5:35 PM PT** (relayed by the coordinator): "All the
+recommendations in that artifact seem good." A1–A6, B1–B4 and C1–C6 are settled at their
+defaults. For C3/C6 that means two together for two to four highlighted people, and the
+crew's own bar (`barFor`, at least three together) from five up.
