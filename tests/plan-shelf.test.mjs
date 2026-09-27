@@ -306,48 +306,58 @@ test('a click with no hand behind it opens the peek (a screen reader’s activat
 });
 
 // Kevin, 2026-09-26, on the one-NOW call: "the filters should filter the now
-// too". A highlight dims the plan's rows the way it dims the wall's cards, the
-// peek names only the highlighted people's stops, and there is still one NOW.
-test('a highlight filters the plan and its NOW: the peek names only their stops, the rest dim, and the dock’s NOW is back only when the peek is not NOW', async () => {
+// too" — and the plan-days design settled how (DESIGN.md C2, rule 10): a
+// highlight FILTERS the plan. The route is made for just those people (their
+// bodies still seated with the whole crew), nothing dims, the head says whose
+// plan it is, the rows say who when some of them are there and not all, and
+// there is still one NOW. This phone is Gus.
+test('a highlight filters the plan: their route, nothing dim, the head says whose, and one NOW', async () => {
   await repaint();
   const you = $('dock-you');
   const person = (name) => $('dock-you-wrap').querySelector(`.hl-pop [data-person="${name}"]`);
-  const dogBlood = () => plan().querySelector('.plan-row[data-stop^="Pier Stage|"]:not(.or)[aria-label*="Dog Blood"]');
+  const sub = () => plan().querySelector('.plan-head .room-head .sub').textContent;
+  const labels = () => [...plan().querySelectorAll('.plan-row[data-stop]')].map((r) => r.getAttribute('aria-label'));
   you.click();
-  person('Gus').click(); // Gus is at none of the stops until the Great Northern
+  person('Gus').click(); // his own day: bar 1, no count (it would always be 1)
   await settle(40);
-  assert.equal(tagged().querySelector('.plan-tag').textContent, 'NEXT');
-  assert.match(tagged().getAttribute('aria-label'), /^Next: The Great Northern, ~1:30 AM, 4 picked$/);
-  assert.equal($('dock-now').hidden, false, 'the peek is not saying NOW, so the dock’s NOW is the way to what is on for Gus');
-  assert.ok(dogBlood().classList.contains('dim'), 'a stop Gus is not in steps back, as its card does');
-  assert.ok(!tagged().classList.contains('dim'));
-  assert.ok($('wall-root').querySelector('.card[data-artist="Dog Blood"]').classList.contains('dim'), 'the same rule as the wall');
+  assert.equal(tagged().getAttribute('aria-label'), 'Next: Prospa, Warehouse, 9:45 PM', 'Gus is at no set at 9:40 — his next one is Prospa');
+  assert.equal($('dock-now').hidden, false, 'the peek is not saying NOW, so the dock’s NOW is the way to what is on');
+  assert.equal(sub(), 'Sep 26 · just you');
+  assert.ok(!labels().some((l) => /Dog Blood/.test(l)), 'Dog Blood is the crew’s, not his: no row, not a dimmed one');
+  assert.equal(plan().querySelectorAll('.dim').length, 0, 'nothing dims');
   person('Gus').click();
-  person('Ana').click(); // Ana is at Dog Blood
+  for (const name of ['Ana', 'Cy', 'Hal']) person(name).click(); // three: two is together
   await settle(40);
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked', 'the count stays the crew’s');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 3 of 3');
   assert.equal($('dock-now').hidden, true, 'one NOW, a highlight or not');
-  assert.ok(!dogBlood().classList.contains('dim'));
-  person('').click(); // everyone
+  assert.equal(sub(), 'Sep 26 · Ana, Cy + Hal');
+  const soulwax = plan().querySelector('.plan-row[data-stop][aria-label*="Soulwax"]');
+  assert.equal(soulwax.querySelector('.with').textContent, 'Ana + Hal', 'two of the three there: the place line says which two');
+  assert.match(soulwax.getAttribute('aria-label'), /2 of 3/);
+  assert.equal(plan().querySelectorAll('.dim').length, 0);
+  person('').click(); // everyone: the crew's plan again
   await settle(40);
-  assert.equal(plan().querySelectorAll('.plan-row.dim').length, 0, 'no highlight, nothing dim');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked', 'the crew’s count');
+  assert.equal(sub(), 'Sep 26 · 9 picking');
   you.click();
 });
 
 // The people menu is the other way in (the people-shelf design: "Our picks ›",
-// first below the line). Opening a menu closes an open plan to its peek, so
-// the row always has somewhere to go; with no plan on screen it is not offered.
-test('the people menu’s Our picks row: above Pick as someone else, it gives way to the plan; Enter takes the focus along; no plan, no row', async () => {
+// first below the line). A menu opens OVER an open plan and re-plans it as it
+// changes (DESIGN.md C1, settled 2026-09-26), so the row is offered only while
+// the plan is closed — open, it would be a door to where you already are. With
+// no plan on screen it is not offered either.
+test('the people menu’s Our picks row: above Pick as someone else while the plan is closed; the menu opens over an open plan without it; no plan, no row', async () => {
   await repaint();
   const you = $('dock-you');
   const menu = () => $('dock-you-wrap').querySelector('.hl-pop');
+  const acts = () => [...menu().querySelectorAll('[data-act]')].map((b) => b.dataset.act);
   const row = () => menu().querySelector('[data-act="plan"]');
   const grab = plan().querySelector('.plan-grab');
   const len = history.length;
   you.click();
   assert.equal(you.getAttribute('aria-expanded'), 'true', 'the menu is open');
-  assert.deepEqual([...menu().querySelectorAll('[data-act]')].map((b) => b.dataset.act), ['plan', 'pick-as', 'invite'],
-    'first below the line, above Pick as someone else');
+  assert.deepEqual(acts(), ['plan', 'pick-as', 'invite'], 'first below the line, above Pick as someone else');
   assert.equal(row().querySelector('.nm').textContent, 'Our picks');
   assert.ok(row().classList.contains('plan'), 'the design’s tonal row');
   row().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 })); // a hand's tap
@@ -355,8 +365,16 @@ test('the people menu’s Our picks row: above Pick as someone else, it gives wa
   assert.equal(plan().dataset.state, 'open', 'and the plan rose');
   assert.notEqual(document.activeElement, grab, 'a hand’s tap leaves the focus alone');
   you.click();
-  assert.equal(plan().dataset.state, 'peek', 'a menu opening closes the open plan to its peek');
-  assert.ok(row(), 'which is still a plan to open');
+  assert.equal(you.getAttribute('aria-expanded'), 'true');
+  assert.equal(plan().dataset.state, 'open', 'the menu opens over the open plan and leaves it open');
+  assert.equal(row(), null, 'no Our picks row while the plan is open');
+  assert.deepEqual(acts(), ['pick-as', 'invite']);
+  you.click();
+  assert.equal(plan().dataset.state, 'open', 'closing the menu leaves the plan where it was');
+  grab.click();
+  assert.equal(plan().dataset.state, 'peek');
+  you.click();
+  assert.ok(row(), 'the plan closed, the row is back');
   row().focus();
   row().click(); // no pointer behind it: Enter, Space, a screen reader
   assert.equal(plan().dataset.state, 'open');

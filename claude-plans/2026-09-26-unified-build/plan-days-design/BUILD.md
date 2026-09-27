@@ -126,3 +126,17 @@ crew link, no database writes (previews and `vercel dev` use production's).
       Sun 5 AM (plan-text); red on main, `'Pier 80 (loyalty invite) for Despacio @
       5pm'`. `docs/add-a-festival.md` documents `dropIn`; the validator's comments
       lose their DESIGN voice.
+   f. The three red unit tests (plan-shelf), rewritten to the settled rules. The
+      highlight test: Gus (this phone) gets his own day, "Next: Prospa, Warehouse,
+      9:45 PM" with no count, the head "Sep 26 · just you", no Dog Blood row and no
+      `.dim`; Ana + Cy + Hal read "Now: Dog Blood … 3 of 3", the Soulwax row says
+      "Ana + Hal", one NOW; everyone is the crew's "8 picked" and "9 picking". The
+      people-menu test: the row leads while the plan is closed; the menu opens over
+      the open plan, leaves it open and has no row; closing the plan brings the row
+      back; no history entry. The welcome test was a cascade (the old highlight test
+      failed before clearing its highlight, which the tab keeps per festival) and
+      passes unchanged. Red on main: the highlight test (`'Next: The Great Northern,
+      ~1:30 AM, 4 picked'` — the crew's route through a peek filter) and the menu
+      test ("the menu opens over the open plan and leaves it open"). The prototype
+      passes both new tests: it already behaved this way, and the old tests were the
+      stale half.
