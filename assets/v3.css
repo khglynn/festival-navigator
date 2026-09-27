@@ -2022,14 +2022,20 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 /* The floor makes the Earlier line taller than its words: centre all three. */
 .plan-row.earlier { align-items: center; }
 .plan-row.earlier .plan-node { align-self: center; margin-top: 0; }
-.plan-row.earlier .plan-what .nm { text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; font-weight: 700; }
+.plan-row.earlier .plan-what .nm { text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; font-weight: 700;
+                                    white-space: normal; overflow: visible; text-overflow: clip; }
 /* It has no time and no count: its words run across both of their columns,
  * clear of the chevron that sits at the end of the count's (a cut line read
  * "THU · FRI · SAT · 4 S…" at 390px, the walk, 2026-09-27; the time's column
- * alone left ACL's "SEP 29 – OCT 9 · 2 STOPS" 2px short at 320). */
+ * alone left ACL's "SEP 29 – OCT 9 · 2 STOPS" 2px short at 320). And it wraps
+ * rather than cut: three nights that are not consecutive keep their labels,
+ * and ACL's longest, "SEP 29 · OCT 1 · OCT 2 · 12 STOPS" on its first Saturday,
+ * wants 260px where a 320px phone gives it 246 (Sol's final check, SOL-R3.md).
+ * A label never splits across the lines, and the node and the chevron centre
+ * on however many lines it takes (align-items above). */
 .plan-row.earlier .plan-what { grid-column: 2 / 5; grid-row: 1; padding-right: 22px; }
 .plan-row.earlier .chev { grid-column: 4; grid-row: 1; }
-.plan-row.earlier .plan-what .nm b { color: var(--text-secondary); font-weight: 700; }
+.plan-row.earlier .plan-what .nm b { color: var(--text-secondary); font-weight: 700; white-space: nowrap; }
 .plan-row.scattered .plan-what .nm { font-style: italic; }
 .plan-who { display: flex; margin-top: 5px; }
 .plan-who .avatar { width: 15px; height: 15px; font-size: 7.5px; box-shadow: 0 0 0 1.5px var(--plan-bg, var(--dock)); }

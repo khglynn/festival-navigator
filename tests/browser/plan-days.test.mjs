@@ -26,6 +26,21 @@ const CREWS = {
   'portola-2026': { ...fixture('plan-crew-nine.json'), me: 'Gus', tz: 'America/Los_Angeles' },
   'acl-2026': { ...fixture('plan-crew-acl.json'), tz: 'America/Chicago' },
 };
+// The longest Earlier line ACL's data can make: its first Saturday is the one
+// night with three behind that are not consecutive (Sep 29, Oct 1, Oct 2, each
+// a date because its weekday comes twice), and a crew that picked every act
+// that night, on the grid and at the late shows, has 13 stops. At 1:50 AM the
+// last is on and 12 are over: "Earlier · Sep 29 · Oct 1 · Oct 2 · 12 stops".
+// (From 2 AM nothing is left and the plan lands on Sunday: a span.)
+const ACL_ALL_SAT = (() => {
+  const base = CREWS['acl-2026'];
+  const acl = JSON.parse(readFileSync(path.join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  const inW1 = (name) => { const a = acl.artists.find((x) => x.name === name) || {}; return !a.weekends || String(a.weekends).includes('W1'); };
+  const names = [...acl.days.Saturday.artists.map((a) => a.name).filter(inW1),
+    ...acl.artists.filter((a) => a.day === 'Late nights' && a.date === '2026-10-03').map((a) => a.name)];
+  const all = Object.fromEntries(base.members.map((m) => [m, 4]));
+  return { ...base, picks: { ...base.picks, ...Object.fromEntries(names.map((n) => [n, all])) } };
+})();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
@@ -40,17 +55,19 @@ const ACL_W1_SUN = new Date('2026-10-04T19:00:00-05:00');  // ACL W1 Sunday: Mon
 const ACL_W2_SAT = new Date('2026-10-10T16:00:00-05:00');  // ACL W2 Saturday: nine nights behind, a short Sunday ahead
 const ACL_W2_SAT_9PM = new Date('2026-10-10T21:00:00-05:00');
 const SUN_9PM = new Date('2026-09-27T21:00:00-07:00');      // Portola Sunday: three nights behind and four stops over
+const ACL_W1_SAT_150AM = new Date('2026-10-04T01:50:00-05:00'); // still ACL's first Saturday: ACL_ALL_SAT's last stop on, 12 over
 const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag (plan-shelf.js quietUntil, 400)
 
-// `fest`: which festival and made-up crew. `plan`: the link's &plan=<night>.
+// `fest`: which festival and made-up crew (`crew`: another made-up crew for
+// it). `plan`: the link's &plan=<night>.
 // `desk`: a laptop (else a phone `width` wide). `reduced`: Reduce Motion. `at`: the clock. `wait: false`
 // hands the page back as soon as it has loaded, before the plan settles.
 // `bars`: a scrollbar that takes room, as Windows and a Mac with a mouse draw
 // one (Chromium needs a browser launched with its scrollbars on). `holdGlide`:
 // the glide held part of the way (the held glide, below). The crew's doc
 // comes back too: a friend's pick is a change to it, then a pull.
-async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false, holdGlide = false, width = 390 } = {}) {
-  const crew = CREWS[fest];
+async function open(engine, { fest = 'portola-2026', crew: made = null, at = SAT_940, plan = null, desk = false, reduced = false, wait = true, bars = false, holdGlide = false, width = 390 } = {}) {
+  const crew = made || CREWS[fest];
   const crewToken = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
     viewport: desk ? { width: 1280, height: 800 } : { width, height: 844 },
@@ -616,36 +633,57 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  // The Earlier line is one line of small capitals, and its words are never
-  // cut: on Portola Sunday at 390px it read "EARLIER · THU · FRI · SAT · 4 S…"
-  // (the lead's look at the walk's frames, 2026-09-27). A run of three nights
-  // or more on consecutive dates is one range, "Thu – Sat", the way a bare run
-  // is "Oct 5 – 6"; past three nights the date span stands. Measured, never
+  // The Earlier line is small capitals, and its words are never cut: on
+  // Portola Sunday at 390px it read "EARLIER · THU · FRI · SAT · 4 S…" (the
+  // lead's look at the walk's frames, 2026-09-27). A run of three nights or
+  // more on consecutive dates is one range, "Thu – Sat", the way a bare run is
+  // "Oct 5 – 6"; past three nights the date span stands. Three that are not
+  // consecutive keep their labels, and that line wraps rather than cut (Sol's
+  // final check, SOL-R3.md): ACL's longest, ACL_ALL_SAT's, is two lines at a
+  // phone's width, a label never split across them, and the node and the
+  // chevron sit at the middle of however many lines it takes. Measured, never
   // compared as a string: the words' own box holds all of them.
   for (const width of [320, 390]) {
-    test(`${name} ${width}: the Earlier line's words are never cut — Portola Sunday with stops folded, ACL's second Saturday`, { skip }, async () => {
-      for (const [fest, at] of [['portola-2026', SUN_9PM], ['acl-2026', ACL_W2_SAT_9PM]]) {
-        const { ctx, page, errors } = await open(get(), { fest, at, width });
+    test(`${name} ${width}: the Earlier line's words are never cut — Portola Sunday with stops folded, ACL's second Saturday, ACL's longest`, { skip }, async () => {
+      for (const [fest, at, crew] of [['portola-2026', SUN_9PM], ['acl-2026', ACL_W2_SAT_9PM], ['acl-2026', ACL_W1_SAT_150AM, ACL_ALL_SAT]]) {
+        const { ctx, page, errors } = await open(get(), { fest, at, width, crew });
         try {
           await openPlan(page);
           const line = await page.evaluate(() => {
             const nm = document.querySelector('#plan .plan-row.earlier .plan-what .nm');
-            return nm && { text: nm.textContent, scroll: nm.scrollWidth, client: nm.clientWidth };
+            return nm && { text: nm.textContent, scroll: nm.scrollWidth, client: nm.clientWidth,
+              lines: Math.round(nm.getBoundingClientRect().height / parseFloat(getComputedStyle(nm).lineHeight)),
+              items: [...nm.querySelectorAll('b')].map((b) => b.getClientRects().length) };
           });
           assert.ok(line && /\d+ stops?$/.test(line.text), `${fest}: an Earlier line with stops folded: ${JSON.stringify(line)}`);
           assert.ok(line.scroll <= line.client, `${fest}: the Earlier line's words fit their box: ${JSON.stringify(line)}`);
           // Portola's three nights behind run on consecutive dates: one range.
           if (fest === 'portola-2026') assert.match(line.text, /^Earlier · Thu – Sat · \d+ stops$/);
-          // The chevron sits clear of the words, at the row's end.
+          if (crew) {
+            assert.equal(line.text, 'Earlier · Sep 29 · Oct 1 · Oct 2 · 12 stops');
+            // No label or count is split between two lines ("SEP" / "29").
+            assert.deepEqual(line.items, line.items.map(() => 1), `every label on one line: ${JSON.stringify(line)}`);
+          }
+          // The chevron sits clear of the words, at the row's end, and the node
+          // and the chevron at the middle of the words, however many lines.
           const clear = await page.evaluate(() => {
             const row = document.querySelector('#plan .plan-row.earlier');
             const nm = row.querySelector('.plan-what .nm').getBoundingClientRect();
             const words = document.createRange();
             words.selectNodeContents(row.querySelector('.plan-what .nm'));
+            const w = words.getBoundingClientRect();
             const chev = row.querySelector('.chev').getBoundingClientRect();
-            return { wordsEnd: Math.round(words.getBoundingClientRect().right), boxEnd: Math.round(nm.right), chev: Math.round(chev.left), rowEnd: Math.round(row.getBoundingClientRect().right) };
+            const node = row.querySelector('.plan-node').getBoundingClientRect();
+            const mid = (r) => Math.round((r.top + r.height / 2) * 10) / 10;
+            return { wordsEnd: Math.round(w.right), boxEnd: Math.round(nm.right), chev: Math.round(chev.left), rowEnd: Math.round(row.getBoundingClientRect().right),
+              words: mid(w), node: mid(node), chevMid: mid(chev), row: mid(row.getBoundingClientRect()), tall: Math.round(w.height) };
           });
           assert.ok(clear.wordsEnd < clear.chev - 4 && clear.chev > clear.rowEnd - 24, `${fest}: the chevron is at the row's end, clear of the words: ${JSON.stringify(clear)}`);
+          // (The chevron's own nudge, translateY(-2px) inside its 45° turn, lifts
+          // its box about 1.4px: an optical centre, allowed for.)
+          for (const [k, off] of [['node', 1.5], ['row', 1.5], ['chevMid', 2.5]]) assert.ok(Math.abs(clear[k] - clear.words) <= off, `${fest}: the ${k} is at the words' middle: ${JSON.stringify(clear)}`);
+          if (crew && width === 320) assert.equal(line.lines, 2, `ACL's longest takes two lines at 320: ${JSON.stringify({ line, clear })}`);
+          else assert.equal(line.lines, 1, `${fest}: one line where it fits: ${JSON.stringify({ line, clear })}`);
           assert.deepEqual(errors, []);
         } finally { await ctx.close(); }
       }
