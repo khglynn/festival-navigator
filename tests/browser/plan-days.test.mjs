@@ -64,6 +64,29 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
       const moving = plan.getAnimations().some((a) => a.playState === 'running' && a.effect.getComputedTiming().endTime !== Infinity);
       window.__glide.push({ top: list.scrollTop, moving });
     }, true);
+    // DIAGNOSTIC (CI's Linux WebKit glide reds, 2026-09-27): every scrollTo
+    // the app asks of the list, and the list's scrollTop sampled on every
+    // animation frame for a second after a smooth one — whether scroll events
+    // fire or not.
+    window.__glideCalls = [];
+    window.__glideFrames = [];
+    const scrollTo = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function (...args) {
+      if (this.matches && this.matches('#plan .plan-list')) {
+        const o = typeof args[0] === 'object' ? args[0] : { top: args[1] };
+        window.__glideCalls.push({ top: o.top, behavior: o.behavior || 'auto', from: this.scrollTop, t: Math.round(performance.now()) });
+        if (o.behavior === 'smooth') {
+          const t0 = performance.now();
+          const step = () => {
+            const list = document.querySelector('#plan .plan-list');
+            window.__glideFrames.push({ top: list ? Math.round(list.scrollTop) : null, t: Math.round(performance.now() - t0) });
+            if (performance.now() - t0 < 1000 && window.__glideFrames.length < 400) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      }
+      return scrollTo.apply(this, args);
+    };
     const animate = Element.prototype.animate;
     Element.prototype.animate = function recorded(frames, opts) {
       // The phone's head, and the laptop panel's head line (`corner`).
@@ -105,6 +128,46 @@ async function open(engine, { fest = 'portola-2026', at = SAT_940, plan = null, 
   return { ctx, page, errors, crewToken };
 }
 const settled = async (page) => { await motionDone(page, { within: '#plan' }); await sleep(QUIET_MS); };
+// DIAGNOSTIC: does this engine animate an element's smooth scroll? A scratch
+// scroller asked for 2000px smoothly, its scrollTop sampled on each frame,
+// and the scroll events counted.
+const smoothProbe = (page) => page.evaluate(() => new Promise((done) => {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:0;top:0;width:60px;height:120px;overflow-y:auto;opacity:0;pointer-events:none';
+  const inner = document.createElement('div');
+  inner.style.height = '4000px';
+  box.appendChild(inner);
+  document.body.appendChild(box);
+  let events = 0;
+  box.addEventListener('scroll', () => { events += 1; });
+  box.scrollTo({ top: 2000, behavior: 'smooth' });
+  const tops = [Math.round(box.scrollTop)];
+  const t0 = performance.now();
+  const step = () => {
+    tops.push(Math.round(box.scrollTop));
+    if (box.scrollTop < 2000 && performance.now() - t0 < 1500) requestAnimationFrame(step);
+    else { box.remove(); done({ tops, events, ms: Math.round(performance.now() - t0) }); }
+  };
+  requestAnimationFrame(step);
+}));
+// DIAGNOSTIC: the list's scrollTop read from Node in real time, as fast as
+// evaluate returns, until `done` — no page timer, no rAF (the fake clock
+// runs both late).
+async function sampleList(page, done, ms = 8000) {
+  const out = [];
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    const top = await page.evaluate(() => { const l = document.querySelector('#plan .plan-list'); return l ? Math.round(l.scrollTop) : null; }).catch(() => null);
+    if (!out.length || out[out.length - 1][1] !== top) out.push([Date.now() - t0, top]);
+    if (await done()) break;
+  }
+  return out;
+}
+const glideDiag = async (page, what, sampled = null) => {
+  const d = await page.evaluate(() => ({ calls: window.__glideCalls, frames: window.__glideFrames, events: window.__glide.map((g) => g.top) }));
+  const probe = await smoothProbe(page);
+  console.log(`DIAG ${what}: ${JSON.stringify({ calls: d.calls, events: d.events, sampled: sampled && sampled.map(([t, v]) => `${t}:${v}`).join(' '), rafFrames: d.frames.length, probe })}`);
+};
 // Poll from Node, in real time, until `ok` (a timer inside the page runs on
 // the fake clock: the harness traps).
 async function until(ok, what, ms = 8000) {
@@ -282,8 +345,14 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // its words were about. A link for a night already over still lands on the
   // wall with its peek (plan-share's "a plan link for another night").
   test(`${name}: a link for a later night opens the plan on that night, and the peek stays tonight's`, { skip }, async () => {
-    const { ctx, page, errors } = await open(get(), { plan: '2026-09-27' });
+    const { ctx, page, errors } = await open(get(), { plan: '2026-09-27', wait: false });
     try {
+      const sunTop = () => page.evaluate(() => {
+        const list = document.querySelector('#plan .plan-list');
+        const row = list && [...list.children].find((r) => r.dataset.night === '2026-09-27');
+        return row ? row.getBoundingClientRect().top - list.getBoundingClientRect().top : 99;
+      }).catch(() => 99);
+      const sampled = await sampleList(page, async () => Math.abs(await sunTop()) <= 2, 12000);
       await page.waitForSelector('#plan[data-state="open"]', { timeout: 8000 });
       // It opens on tonight, then glides to Sunday once it has landed.
       await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the list glides to Sunday');
@@ -294,6 +363,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // The window grew from tonight's row, and only then did the list move:
       // through the rows between, not in one jump, the head turning over
       // once, upward, as Sunday reached the top.
+      await glideDiag(page, `${name} link`, sampled);
       const glide = (await page.evaluate(() => window.__glide)).filter((g) => g.top > 0);
       assert.ok(glide.length > 0 && glide.every((g) => !g.moving), `the list moved only once the window had landed: ${JSON.stringify(glide.slice(0, 4))}`);
       assert.ok(new Set(glide.map((g) => g.top)).size >= 3, `it glided, through the rows between: ${JSON.stringify(glide.map((g) => g.top))}`);
@@ -336,6 +406,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await until(async () => Math.abs(await nightTop(page, '2026-09-27')) <= 2, 'the glide reaches Sunday after the repaint');
       await settled(page);
       const end = await page.evaluate(() => document.querySelector('#plan .plan-list').scrollTop);
+      await glideDiag(page, `${name} carry-on (redrawn at ${redrawn.top})`);
       assert.ok(redrawn.top < end - 20, `the repaint came mid-glide (at ${redrawn.top}, Sunday at ${end})`);
       assert.equal((await read(page)).wd, 'SUN');
       assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
@@ -662,6 +733,39 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(line, 'OUR PICKS · SAT · JUST YOU', 'the corner says whose too');
       assert.equal(await page.evaluate(() => history.length), len, 'no history entry');
       assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// DIAGNOSTIC (2026-09-27): the smooth-scroll probe on a clock-free page.
+for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
+  test(`DIAG ${name}: an element's smooth scroll, sampled on a page with no fake clock`, { skip: get() ? false : NO_BROWSER }, async () => {
+    const ctx = await get().newContext({ viewport: { width: 390, height: 844 } });
+    try {
+      const page = await ctx.newPage();
+      await page.goto(`${server.origin}/gallery.html`);
+      await page.evaluate(() => { window.__glide = []; window.__glideCalls = []; window.__glideFrames = []; });
+      const probe = await smoothProbe(page);
+      // And from Node, as fast as evaluate returns.
+      const node = await page.evaluate(() => {
+        const box = document.createElement('div');
+        box.id = 'probe2';
+        box.style.cssText = 'position:fixed;left:0;top:0;width:60px;height:120px;overflow-y:auto';
+        const inner = document.createElement('div');
+        inner.style.height = '4000px';
+        box.appendChild(inner);
+        document.body.appendChild(box);
+        box.scrollTo({ top: 2000, behavior: 'smooth' });
+        return Math.round(box.scrollTop);
+      });
+      const seen = [node];
+      const t0 = Date.now();
+      while (Date.now() - t0 < 1500) {
+        const v = await page.evaluate(() => Math.round(document.getElementById('probe2').scrollTop));
+        if (seen[seen.length - 1] !== v) seen.push(v);
+        if (v >= 2000) break;
+      }
+      console.log(`DIAG ${name} clock-free: ${JSON.stringify({ probe, node: seen, ua: await page.evaluate(() => navigator.userAgent) })}`);
     } finally { await ctx.close(); }
   });
 }
