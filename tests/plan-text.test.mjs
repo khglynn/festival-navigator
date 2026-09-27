@@ -267,3 +267,27 @@ test('a night that is not tonight has no "now", and the text stands without a li
   assert.doesNotMatch(text, /now|Full rundown/);
   assert.match(text, /Pier Stage for Gelli Haha @ 2:40pm/, 'the whole night, from its first stop');
 });
+
+// Rule 9 (DESIGN.md A4, settled 2026-09-26): a drop-in room is not a place to
+// meet at a time, so the Share leaves it out. The Despacio crew (the nine plus
+// Despacio picked by seven) sends the nine's words exactly, at every minute a
+// friend might share on Friday and Saturday.
+test('a drop-in room never goes into the Share: the Despacio crew sends the nine\'s words', () => {
+  const picks = { ...NINE.picks, Despacio: { Ana: 1, Ben: 1, Cy: 2, Dot: 1, Fay: 4, Gus: 4, Ivy: 1 } };
+  const despacio = P.planOf(FEST, { picks, members: NINE.members });
+  const textAt = (pl, cx, date) => {
+    const peek = P.peekOf(pl, FEST, date);
+    if (!peek) return null;
+    const now = P.planAt(pl, FEST, date);
+    const nowMin = peek.today && now && now.night.id === peek.night.id ? now.minutes : null;
+    return planText(peek.night, { ctx: cx, plan: pl, peek, nowMin, fest: FEST.name, day: peek.night.wd, today: peek.today, link: linkFor(peek.night.iso) });
+  };
+  let n = 0;
+  for (let t = Date.parse('2026-09-25T12:00:00-07:00'); t < Date.parse('2026-09-27T05:00:00-07:00'); t += 15 * 60000) {
+    const d = new Date(t);
+    const mine = textAt(despacio, { picks }, d);
+    assert.equal(mine, textAt(plan, ctx, d), d.toISOString());
+    if (mine) { n++; assert.doesNotMatch(mine, /Despacio|Pier 80/, d.toISOString()); }
+  }
+  assert.ok(n > 100, `${n} shares compared`);
+});

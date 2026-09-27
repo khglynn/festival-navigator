@@ -186,6 +186,36 @@ multi-line), on a cancelled name that still has a set on a grid day its entry
 names, and on `cancelled` written on a grid set. It does not warn that the act
 has no set on the grid, or that its venue has no map.
 
+### A room people drift through — `dropIn` (2026-09-26)
+
+Some rooms are not a set you go to at a time; they are a place you drop into
+between sets. Portola's Despacio is one stage with one "set" from 2:45 to
+9:45 PM. Our picks cannot tell that from a seven-hour headline set, and on
+2026-09-26 it kept seating the crew there: seven people picked Despacio and
+the crew's Saturday lost six real sets. So the file says it, on the grid set
+or on the section entry:
+
+```json
+{ "name": "Despacio", "stage": "Despacio", "time": "2:45 PM - 9:45 PM", "dropIn": true }
+```
+
+| `dropIn` | What Our picks does |
+|---|---|
+| `true` | Seats a person there only in a minute none of their real picks is on, never lets it hold anyone against a trip, and never makes it a stop, an "or" or the peek. It gets one quiet line a night ("Despacio · drop in till 9:45 PM · 7 picked"), and a stretch between stops where the crew drifts there says so ("Between sets · Despacio"). |
+| `false`, or left off | A set like any other. Write `false` when the validator asks and the answer is no. |
+
+A venue in a section is a drop-in room only when every act in it is. The
+grid does not change: the card is still one tall card. A drop-in never goes
+into the Share. The name is still the pick key, so a festival that bills the
+same room again elsewhere (Portola's Friday "Pier 80 (loyalty invite)" is
+also `"Despacio"`) declares each entry; a pick on one counts at all of them.
+
+The validator errors on a `dropIn` that is not `true` or `false`. On a live
+festival it also asks, once, about any stage whose whole day is one set beside
+stages that run several: answer `true` or `false` and it stops asking. An
+archived file is never asked, and a day where every stage has one set is a
+small show, not a room beside a festival. The rule is plan.js rule 9.
+
 ### Event pages and tickets (2026-09-24; prices 2026-09-26)
 
 A show that is not the festival's own set — an afters night, a Folsom party,

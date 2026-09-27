@@ -115,3 +115,14 @@ crew link, no database writes (previews and `vercel dev` use production's).
       not an input" test (it passed an option planOf never read) is gone. Red on main:
       5 of 5 (planOf returns no `group`, bar 3 for Gus). Red on the prototype: the bar
       and the five (bar `2` vs `3`).
+   e. The validator (data-guards, three tests): a `dropIn` of `"true"`, `1`, `null` or
+      `"yes"` is an error on a grid set and on a section entry, `true`/`false` clean;
+      the one-set nudge fires once on a live festival, is answered by `true` or
+      `false`, is never asked of an archived file or a day of one-set stages; Portola
+      declares exactly its three rooms and is clean, and with the grid's two
+      declarations stripped is asked about exactly Saturday's and Sunday's Despacio.
+      Red on main: 3 of 3 (`"true"` gives no error). The Share leaves a drop-in out
+      (A4): the Despacio crew's words equal the nine's at every 15 minutes Fri noon to
+      Sun 5 AM (plan-text); red on main, `'Pier 80 (loyalty invite) for Despacio @
+      5pm'`. `docs/add-a-festival.md` documents `dropIn`; the validator's comments
+      lose their DESIGN voice.

@@ -497,8 +497,8 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       }
       if (seen) seen.push(parts);
       else artistNames.set(key, [parts]);
-      // DESIGN (plan-days round, 2026-09-26): a room people drift through
-      // (Despacio) is DECLARED; the plan never guesses it (plan.js rule 9).
+      // A room people drift through (Despacio) is DECLARED; the plan never
+      // guesses it (plan.js rule 9, 2026-09-26).
       if (a.dropIn !== undefined && typeof a.dropIn !== 'boolean') err(`artists (${safeKey(a.name)}): dropIn must be true or false`);
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
@@ -581,12 +581,12 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       });
       if (live) {
         const wellFormed = day.artists.filter((a) => isPlain(a) && a.name && a.stage && typeof a.time === 'string' && TIME_RE.test(a.time));
-        // DESIGN (plan-days round): the SHAPE of a drop-in room — a stage whose
-        // whole day is one set — is a question for the data author, never an
-        // answer for the plan (a one-set special stage is not a room anyone
-        // drifts through). Asked once; "dropIn": false says "no, it's a set".
-        // The shape is one set on a stage BESIDE stages that run several (a day
-        // of one-set stages is a small show, not a room beside a festival).
+        // The SHAPE of a drop-in room — a stage whose whole day is one set —
+        // is a question for the data author, never an answer for the plan (a
+        // one-set special stage is not a room anyone drifts through; plan.js
+        // rule 9). Asked once; "dropIn": false says "no, it's a set". The shape
+        // is one set on a stage BESIDE stages that run several (a day of
+        // one-set stages is a small show, not a room beside a festival).
         const perStage = new Map();
         for (const a of wellFormed) perStage.set(a.stage, [...(perStage.get(a.stage) || []), a]);
         const busy = [...perStage.values()].some((sets) => sets.length > 1);
