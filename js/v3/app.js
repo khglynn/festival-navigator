@@ -2271,15 +2271,14 @@ function shareLinkRow() {
   // The menu stays up under the share sheet and goes once the sheet has its
   // answer, sent or dismissed; a sheet the browser refused copies instead and
   // says so in the menu, like a browser with no sheet at all. A new build
-  // waits for either (index.html quiet): the share takes the menu's own busy
-  // mark for its length, so the menu going early cannot drop the guard, and
-  // hands it back to a menu still up.
+  // waits for either (index.html quiet): the share holds its own mark for its
+  // length, so neither the menu going early nor any other owner of the page's
+  // busy mark letting go can drop the guard (Sol, round four on the Share).
   const done = () => { if (openMenu && openMenu.pop.contains(row)) closeShowMenu(); };
   row.addEventListener('click', async () => {
     const link = inviteLink();
     stampInviteFest();
-    const mine = !document.body.dataset.busy || document.body.dataset.busy === 'show-menu';
-    if (mine) document.body.dataset.busy = 'crew-share';
+    document.body.dataset.sharing = 'crew';
     try {
       if (canShare()) {
         try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); done(); return; }
@@ -2287,10 +2286,7 @@ function shareLinkRow() {
       }
       try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
     } finally {
-      if (mine && document.body.dataset.busy === 'crew-share') {
-        if (openMenu) document.body.dataset.busy = 'show-menu';
-        else delete document.body.dataset.busy;
-      }
+      if (document.body.dataset.sharing === 'crew') delete document.body.dataset.sharing;
     }
   });
   return row;

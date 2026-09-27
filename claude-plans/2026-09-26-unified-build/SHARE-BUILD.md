@@ -275,3 +275,54 @@ PR and merges; this branch is never stamped here.
        slide is still showing, the "stuck for good" half of the CI failure. Holding that
        motion needs the module's own animation handle. After (a3) the scroll frame
        settles first, so that path now finds the attribute already right.
+16. **Sol's fourth release round** (on the coordinator's release head cf3019c). Sol
+    agreed the single-source design holds for ordinary taps: the forced draw keeps
+    the list's scroll, and rowsKey redraws only when a row's facts change, not every
+    minute. It found one blocker and two important issues. The coordinator's call was
+    to close them without a fifth round and without cutting the picks lines.
+    a. **Blocker, fixed: a Share tapped under a held paint.** A paint that arrives
+       while a hand is on the window waits for the hand, so the rows don't jump out
+       from under the finger. The Share read `drawn` all the same. Example: hold the
+       grabber across Saturday 6:00 PM and tap Share with a second finger. The sheet
+       got Groove Armada, and the release then drew DJ Shadow. Now sharePlan sends
+       only when the tap's own forced paint drew. `drawn` must be the answer that
+       paint computed, and nothing may be held. Otherwise nothing is sent, and the
+       tap after the hand lets go shares.
+    b. **Important, fixed: the Share's hold on a new build's reload.** The page's busy
+       mark has one owner. Both shares took it only when it was free (the crew link's
+       share also took it from the Show menu). So a share that started while
+       something else held the mark (a laptop's Earlier fold, a hand on the window)
+       held nothing of its own. When that owner let go, a waiting reload could land
+       under the share sheet. Each share now sets its own mark, `data-sharing`
+       (`plan` or `crew`), for as long as its sheet or copy runs. index.html's
+       quiet() reads it beside the busy mark, a one-line change to the gate. The
+       old owner-juggling code in both shares is gone.
+    c. **Important, banked: a rotation during row motion.** refitPlanShelf() waits
+       for running animations before it measures. A phone rotated past the 720px
+       laptop breakpoint while a row animates keeps the phone's `data-side` and
+       geometry until that animation ends. The scroll frame is no fallback in that
+       direction: onScroll bails out while the old geometry is the phone's. The lag
+       is under a second and cosmetic (the CSS changes at once). The fix belongs
+       with the refit's wait rules in the design round: measure the layout flip at
+       once and wait only to re-aim motion.
+    d. **Tests, red first in both engines, then green:**
+       1. "A hand holding the grabber across Saturday 6:00 PM" (plan-share). A real
+          mouse holds and moves the grabber, and the keyboard activates Share (the
+          second input). Nothing may be sent, and the rows must stay on 5:59. After
+          the release the or-line is DJ Shadow, and a Share then sends no Groove
+          Armada.
+       2. "Share our picks / Share the crew link holds a new build's reload for as
+          long as the sheet is up" (plan-share, two tests). Another owner holds the
+          busy mark when the tap comes and lets go while the sheet (a stub that
+          stays up) is open. `data-sharing` must still be set, then cleared when the
+          sheet answers.
+       3. tests/new-build-reload.test.mjs: `data-sharing` alone holds the reload.
+    e. **Outside the Share: a WebKit flake on PR #64** (CI run 36286253730, on
+       cf3019c). "WebKit (iPhone): with the keys up, the shelf's composer…" typed
+       "Pier by 6:45" and read back "Pier by ": keystrokes were lost while typing,
+       before the fake keyboard came up. Nothing in the Share code touches the notes
+       shelf, its textarea or any focus outside `#plan`. The Share's only paths that
+       run without a Share tap are the signature and the layout-flip check, and they
+       write nothing outside the plan. It is the only failure of that test in the
+       last 60 CI runs. It passed on 2d8b7c8's run 36285667551 and passed 5 of 5
+       times locally in WebKit.
