@@ -570,3 +570,13 @@ crew link, no database writes (previews and `vercel dev` use production's).
         turn on the stage.
       - A bare run's head reads "MON · TUE" in the list, but the panel's head and the
         Share say only Monday ("Nothing to share Monday").
+   **Gate on f577682** (the review's fixes and P5; bb99070 after it adds only this log):
+   `npm test` 1292 tests, 1289 pass, 1 fail (the SW stamp, left for the lead), 1
+   skipped, 1 todo. Every browser suite at 0, one at a time, and the plan suites at 700
+   too. At 0 and 700: plan-acl 6/6, plan-days 30/30, plan-drag 38/39 (the WebKit
+   keyboard skip), plan-share 39/39, plan-stop-ends 6/6, plan-tail 14/14. At 0:
+   now-jump 61/61 (61/61 at 700 too, run on 9d68c34's code), people-menu 24, by-time
+   4, error-report 1, fold-intent 4, guest-tap-route 6, heads 7, hover 11, import-flow
+   4, list-view 12, meter 27, shell 11, show-links 6, show-menu-stacking 2, stack-row
+   9, strip-follow 3, tap-shelf 31, touch-ghost 2, zoom-chips-burst 8, zoom-chips 45,
+   zoom-chrome 18, zoom-door-row 8, zoom-notes-chip 1, zoom-still-hand 6. All green.
