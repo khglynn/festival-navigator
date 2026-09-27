@@ -481,8 +481,9 @@ function routeOf(nightId, slices, size, bar) {
       if (top && (!peak || top.people.length > peak.people.length)) peak = { ...top, t: s.t };
       for (const c of s.ranked) {
         if (c.place.id === r.id) continue;
-        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c, alt: !!c.alt };
+        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c, alt: !!c.alt, crowds: [] };
         f.to = s.t + STEP;
+        f.crowds.push({ t: s.t, people: c.people });
         if (c.people.length > f.peak.people.length) f.peak = c;
         forks.set(c.place.id, f);
       }
@@ -493,7 +494,10 @@ function routeOf(nightId, slices, size, bar) {
       from: r.from, to: r.to, count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
       leansOnDoubles: peak.maybe.length * 2 >= peak.people.length, alsoAt: [], timeline,
       forks: [...forks.values()].filter((f) => f.to - f.from >= MIN_STOP)
-        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, alt: f.alt })),
+        // `crowds`: who is at the fork each five minutes, for the Share's "now"
+        // (plan-rows.js crowdAt). Not `timeline`: hasAny and the rows read a
+        // fork's peak crowd, and this adds nothing they read.
+        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, alt: f.alt, crowds: f.crowds })),
     });
   }
   // A short gap is a changeover (walking to the next stage), not scattered;

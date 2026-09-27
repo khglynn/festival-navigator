@@ -34,7 +34,7 @@
 // pagehide, boot, a crew switch and any other screen. Back does what it does
 // from the wall: it leaves it.
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { planDays, planHead, planText, stopKey, PLAN_NAME } from './plan-rows.js';
+import { planDays, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
 
 const ID = 'plan';
@@ -68,17 +68,10 @@ let corner = null;   // the laptop head line's parts: { line, k, c, head, open, 
 let ctxRef = null;
 let data = null;     // the last paint's answer (see paintPlanShelf)
 let sig = '';        // what that answer drew, to skip repaints that change nothing
+let drawn = null;    // the answer the rows on screen were drawn from (draw): the Share's words
+let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
-// A few pixels the window stands off its place, apart from p (the Share build,
-// 2026-09-26). Two kinds of motion move the window: a settle changes p, and an
-// arrival or a redraw's slide moves the window to a place without changing p.
-// A hand or a key that catches the window mid-motion must keep it where it is
-// on screen, so a caught settle becomes progress (and any overshoot past the
-// ends becomes lift), and a caught arrival or slide becomes lift alone — p
-// stays at the peek. The next settle takes the lift home. At rest it is 0.
-let lift = 0;
-let lifting = null;  // the arrival's or the slide's animation, while it moves the window
 let geo = null;      // { H, peekH, shift } measured after every draw
 // Whose cards are grown under their rows: null = the default (the NOW row's
 // alone), else the set of stop keys a person left grown (NOW's included until
@@ -97,6 +90,7 @@ let nightId = '';    // `${fid}|${route id}` of the day the rows are drawn for
 let drag = null;
 let leaving = null;  // { timer } while the shelf drops out of sight
 let arrival = null;  // the arrival's animation, while it plays
+let stint = 0;       // counts arrivals, leaves and drops: an afterArrival from an older one runs nothing
 let quietUntil = 0;  // the click that follows a drag or a peek tap is not a second tap
 let held = false;    // an answer that came in under a hand: drawn when it lets go
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
@@ -106,6 +100,8 @@ export const planIsOpen = () => mode === 'open';
 // Whether there is a plan on screen to open: the peek or the open plan, not
 // one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
+// The night the plan on screen is drawn for (its route's date), or null.
+export const planNight = () => (planHere() && data && data.route ? data.route.iso : null);
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
 export function planShowsNow() {
@@ -141,6 +137,28 @@ const chevron = (up) => glyph(up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.
 export const SHARE_MARK = 'M6 7.2V1.6M3.9 3.7 6 1.6l2.1 2.1M4.2 5.4H3.1v5.1h5.8V5.4H7.8';
 export const COPY_MARK = 'M4.3 4.3h5.2v6.2H4.3zM7.7 4.3V2.5H2.5v6.2h1.8';
 export const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+// A share in progress — its sheet up, or its copy on the way — holds a new
+// build's reload with a mark of its own on the body, data-sharing (index.html
+// quiet() reads it; so does app.js pastMayMove, which keeps the wall and the
+// plan still under the sheet). Its own because the page's busy mark has one
+// owner, and whoever held that when the tap came can let go mid-sheet. One
+// hold per share, so two at once keep the mark until both have answered; the
+// mark names what is sharing ("plan", "crew", "plan crew"). The page going
+// away lets go of every hold (app.js pagehide): a page kept in the
+// back/forward cache with a share that never answered must not come back
+// with every reload held. (Sol, on the Share's release head, 2026-09-26.)
+const shares = new Map();
+const markShares = () => {
+  if (shares.size) document.body.dataset.sharing = [...shares.values()].join(' ');
+  else delete document.body.dataset.sharing;
+};
+export function holdForShare(what) {
+  const hold = {};
+  shares.set(hold, what);
+  markShares();
+  return () => { if (shares.delete(hold)) markShares(); };
+}
+export function dropShares() { shares.clear(); markShares(); }
 
 function build(host) {
   frame = mk('div', 'plan-frame');
@@ -228,7 +246,8 @@ function railBottom() {
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
 //   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
-//     fest, day, linkOf, opens }   (the Share's: planText, and what its link opens on)
+//     fest, day, linkOf, opens,   (the Share's: planText, and what its link opens on)
+//     repaint }                   (app.js paintPlan at this minute: the Share's first step)
 export function paintPlanShelf(host, ctx, answer) {
   ctxRef = ctx;
   if (!answer || !answer.peek) { leave(); return; }
@@ -245,7 +264,7 @@ export function paintPlanShelf(host, ctx, answer) {
   // link says what it opens on). Not part of the rows' signature: a List
   // switch changes the words and nothing else.
   if (footOpens.textContent !== (answer.opens || '')) footOpens.textContent = answer.opens || '';
-  if (!arriving && next === sig) return;
+  if (!arriving && next === sig && !forced) return;
   // A hand on the window: a repaint would put the window back where the
   // last settle left it, out from under the finger, and the release would
   // then decide from there. The rows wait for the hand (flushHeld).
@@ -261,14 +280,18 @@ export function paintPlanShelf(host, ctx, answer) {
 }
 
 // Everything the rows show, as one string: a minute that changes nothing
-// (the usual tick) draws nothing.
+// (the usual tick) draws nothing. The route's part is plan-rows.js's own
+// (rowsKey), from the rules planDays draws by.
 function signature(a) {
   // Every night the open plan holds (the plan-days round): a friend's pick on
-  // Sunday redraws the rows even while the peek is Saturday's.
-  const nightRows = (r) => (r ? [...r.items, ...(r.dropIns || [])].map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}:${i.tier || ''}`).join(',') : '');
-  const rows = a.plan && a.plan.nights ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id))}`).join(';') : nightRows(a.route);
-  const over = a.nowMin == null || !a.route ? '' : a.route.items.filter((i) => i.to <= a.nowMin).length;
-  return [a.gen, a.route && a.route.id, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(','), (a.plan && a.plan.group || []).join(',')].join('|');
+  // Sunday redraws the rows even while the peek is Saturday's. Each night's
+  // part is plan-rows.js's own (rowsKey), read at this minute on the peek's
+  // night and whole on the others, plus the drop-in lines that lead it.
+  const nightRows = (r, nowMin) => (r ? `${rowsKey(r, { plan: a.plan, peek: a.peek, nowMin })}/${(r.dropIns || []).map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}`).join(',')}` : '');
+  const rows = a.plan && a.plan.nights
+    ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id), a.route && n.id === a.route.id ? a.nowMin : null)}`).join(';')
+    : nightRows(a.route, a.nowMin);
+  return [a.gen, a.route && a.route.id, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(','), (a.plan && a.plan.group || []).join(',')].join('|');
 }
 
 // The night the view is reading: the day of the first row whose bottom is
@@ -340,6 +363,7 @@ function onListScroll() {
 
 function draw() {
   const a = data;
+  drawn = a;
   const ctx = ctxRef;
   // The laptop's head line: the corner's words — the peek's night, always.
   corner.c.textContent = `· ${a.weekday} · ${a.who || `${a.plan.us.length} picking`}`.toUpperCase();
@@ -424,10 +448,10 @@ function apply(q) {
   p = Math.max(0, Math.min(1, q));
   const k = 1 - p;
   if (geo.desk) {
-    el.style.transform = `translate(${-SIDE * k}px, ${(geo.H - geo.cardH - GAP) * k + lift}px)`;
+    el.style.transform = `translate(${-SIDE * k}px, ${(geo.H - geo.cardH - GAP) * k}px)`;
     el.style.clipPath = clipAt(p);
   } else {
-    el.style.transform = `translateY(${(geo.H - geo.peekH) * k + lift}px)`;
+    el.style.transform = `translateY(${(geo.H - geo.peekH) * k}px)`;
     el.style.clipPath = '';
   }
   body.style.transform = p === 1 ? 'none' : `translateY(${-geo.shift * k}px)`;
@@ -487,6 +511,7 @@ function settleState() {
 // ---- arriving, leaving, repainting -----------------------------------------------
 // Storyboard 1: the peek grows out of the dock's top edge.
 function arrive() {
+  stint += 1;
   el.hidden = false;
   mode = 'peek';
   unpin();
@@ -497,8 +522,7 @@ function arrive() {
     const a = el.animate([{ transform: below() }, { transform: el.style.transform }],
       { duration: GROW_MS, easing: EASE_ARRIVE });
     arrival = a;
-    lifting = a;
-    a.onfinish = () => { if (arrival === a) arrival = null; if (lifting === a) lifting = null; };
+    a.onfinish = () => { if (arrival === a) arrival = null; };
   }
 }
 
@@ -506,18 +530,17 @@ function arrive() {
 // timer finishes the job if the animation never ends (a backgrounded tab).
 function leave({ instant = false } = {}) {
   if (!el || mode === 'gone') return;
+  stint += 1;
   endDrag();
   const done = () => {
     cancelLeave();
     const f = document.activeElement;
     if (f && el.contains(f)) f.blur();
-    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = ''; held = false;
+    el.hidden = true; mode = 'gone'; sig = ''; data = null; drawn = null; grown = null; earlierOpen = false; nightId = ''; held = false;
     frame.dataset.state = 'gone'; delete el.dataset.side;
     document.documentElement.style.removeProperty('--plan-corner-h');
     measureFoot();
   };
-  lift = 0;
-  lifting = null; // leaving is its own motion: no catch reads it
   if (instant || !geo || !canAnimate(el, ctxRef)) { done(); return; }
   if (leaving) return;
   // Leaving while it is still arriving (the welcome card mounts in the same
@@ -542,7 +565,6 @@ function cancelLeave() {
   clearTimeout(leaving.timer);
   leaving = null;
   arrival = null;
-  lifting = null;
   if (el) el.getAnimations().forEach((x) => { x.onfinish = null; x.cancel(); });
 }
 
@@ -580,11 +602,7 @@ function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
   if (Math.abs(before.top - top) > 0.5) {
-    // The window slides to its new place without its progress changing: a
-    // grab mid-slide takes the slide's offset as lift (caughtAt).
-    const a = el.animate([{ transform: `translateY(${before.top - top}px) ${el.style.transform}` }, { transform: el.style.transform }], { duration, easing });
-    lifting = a;
-    a.onfinish = () => { if (lifting === a) lifting = null; };
+    el.animate([{ transform: `translateY(${before.top - top}px) ${el.style.transform}` }, { transform: el.style.transform }], { duration, easing });
   }
   let arrivals = 0;
   for (const r of listEl.children) {
@@ -621,6 +639,21 @@ export function openPlan({ instant = false, focus = false } = {}) {
   settleTo(1, { instant });
   if (focus) grab.focus({ preventScroll: true });
 }
+// `fn` once the peek has landed: now when nothing is arriving, else when the
+// arrival ends. An open during the arrival cancels it, and the peek appears
+// in its place for a frame before it grows, so the Share's link opens after
+// the rise (two beats). An arrival that never lands (a hand caught it, the
+// plan left) runs nothing: the person took over, or there is nothing to open.
+// Nor does one the page moved on from while it rose — the wall left for
+// another screen (dropPlan), the plan gone, or a new arrival since (`stint`):
+// the rise that ends is not the one `fn` was waiting for (Sol, on the
+// Share's release head, 2026-09-26). The caller checks its own identity too.
+export function afterArrival(fn) {
+  const a = arrival;
+  if (!a) { fn(); return; }
+  const mine = stint;
+  a.finished.then(() => { if (el && stint === mine && mode === 'peek' && !leaving) fn(); }, () => {});
+}
 export function closePlan({ instant = false } = {}) {
   if (!el || mode !== 'open') return;
   settleTo(0, { instant });
@@ -628,6 +661,7 @@ export function closePlan({ instant = false } = {}) {
 // Gone with the page: pagehide, boot, a crew switch, another screen.
 export function dropPlan() {
   if (!el) return;
+  stint += 1;
   endDrag();
   flushHeld();
   if (mode === 'open') settleTo(0, { instant: true });
@@ -646,13 +680,11 @@ function settleTo(target, { instant = false } = {}) {
   if (target === 1 && mode !== 'open') unpin();
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
   apply(caughtAt(seen, p));
-  const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p, lift };
+  const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
-  lift = 0; // a settle ends where its state says, lift and all
-  lifting = null;
   apply(target);
   settleState();
-  if (instant || !canAnimate(el, ctxRef) || (from.p === target && Math.abs(from.lift) < 0.5)) return;
+  if (instant || !canAnimate(el, ctxRef) || from.p === target) return;
   const timing = target === 1 ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_LEAVE };
   el.animate(geo.desk
     ? [{ transform: from.el, clipPath: from.clip }, { transform: el.style.transform, clipPath: el.style.clipPath }]
@@ -785,24 +817,13 @@ function seenTop() {
 // placed at `rest` and read, and p moves by the difference over its reach —
 // the phone's H − peekH, the laptop's drop from the panel to the corner card.
 // `rest`: where the window is when nothing was playing.
-// An arrival or a slide caught (`lifting`) keeps p at `rest` and becomes lift
-// alone; a settle caught becomes progress, and what p cannot hold (the
-// arrival curve's overshoot past an end) becomes lift.
-const showing = (a) => !!a && (a.pending || a.playState === 'running' || a.playState === 'paused');
 function caughtAt(top, rest) {
   if (top == null) return rest;
-  const placed = showing(lifting);
-  lifting = null;
   motions().forEach((a) => a.cancel());
-  lift = 0;
   apply(rest);
-  const off = top - el.getBoundingClientRect().top; // down is positive
   const reach = geo.desk ? geo.H - geo.cardH - GAP : geo.H - geo.peekH;
-  const q = placed || !(reach > 0) ? rest : rest - off / reach;
-  const at = Math.max(0, Math.min(1, q));
-  lift = placed || !(reach > 0) ? off : (at - q) * reach;
-  if (Math.abs(lift) < 0.5) lift = 0;
-  return at;
+  if (!(reach > 0)) return rest;
+  return Math.max(0, Math.min(1, rest - (top - el.getBoundingClientRect().top) / reach));
 }
 
 // The window's own motion (Web Animations) — not what CSS drives: the nodes'
@@ -820,27 +841,47 @@ function motions() {
 // The day the rows show, as words, to the share sheet — and only there:
 // nothing else leaves the phone. A dismissed sheet is a choice; a sheet that
 // fails, or a browser with none, copies instead and says so on the button.
+// One source (Sol, round three on the Share's release head, 2026-09-26): the
+// tap first paints the plan at this minute through the app's own paint (the
+// peek, its rows and the dock's NOW tab, on one date), drawn even when the
+// signature says nothing changed, and the words come from the answer those
+// rows were drawn from. Three rounds had found the words and the rows
+// disagreeing — the words worked out at the tap's minute, the rows at the
+// last paint's — and rules shared between two workings never hold across a
+// clock both read.
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
+  if (data.repaint) {
+    forced = true;
+    try { data.repaint(); } finally { forced = false; }
+  }
+  // Only rows this tap drew. A paint that came in under a hand on the window
+  // waits for the hand (paintPlanShelf), so a Share tapped by a second finger
+  // while the first holds the grabber would read rows on an older minute:
+  // nothing is sent, and the tap after the hand lets go shares (Sol, round
+  // four, 2026-09-26). Nor when this minute took the plan away.
+  const a = drawn;
+  if (mode !== 'open' || leaving || held || !a || a !== data) return;
   // The day at the top of the view, and the button said so (the plan-days
   // round): the peek's night reads from now; any other night reads whole.
-  const id = topNight || (data.route && data.route.id);
-  const landed = !!data.route && id === data.route.id;
-  const route = landed ? data.route : data.plan.night(id);
+  const id = topNight || (a.route && a.route.id);
+  const landed = !!a.route && id === a.route.id;
+  const route = landed ? a.route : a.plan.night(id);
   const text = planText(route, {
-    ctx: ctxRef, plan: data.plan, nowMin: landed ? data.nowMin : null, highlight: data.highlight || [],
-    fest: data.fest || '', day: data.nightLabelOf ? data.nightLabelOf(id) : (data.day || ''), today: landed && !!data.peek.today, link: data.linkOf ? data.linkOf() : '',
+    ctx: ctxRef, plan: a.plan, peek: landed ? a.peek : null, nowMin: landed ? a.nowMin : null, highlight: a.highlight || [],
+    fest: a.fest || '', day: a.nightLabelOf ? a.nightLabelOf(id) : (a.day || ''), today: landed && !!a.peek.today, link: a.linkOf ? a.linkOf(id) : '',
   });
-  if (canShare()) {
-    // A new build waits while the sheet is up (index.html quiet): the words
-    // are handed over already, but a reload would take the plan from under it.
-    const mine = !document.body.dataset.busy;
-    if (mine) document.body.dataset.busy = 'plan-share';
-    try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } finally {
-      if (mine && document.body.dataset.busy === 'plan-share') delete document.body.dataset.busy;
+  // A new build waits while the sheet is up or the copy is on its way: a
+  // reload would take the plan, and the words, from under either.
+  const letGo = holdForShare('plan');
+  try {
+    if (canShare()) {
+      try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
+    try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
+  } finally {
+    letGo();
   }
-  try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
 }
 // "Share today's picks" · "Share Sunday's picks" · "Share Sat Oct 10's picks"
 // (the plan-days round: the button names the day it sends, the day at the top
@@ -949,17 +990,11 @@ function unpin() {
 // tap's pinned height is the phone's: a window that has become the laptop's
 // panel reaches the bottom again, and its state follows the layout (the
 // panel bounds the zoom only while it is one).
-// One motion is re-aimed instead of waited for: the window's own arrival (or
-// a slide), which moves the whole window and nothing inside it, so the ruler
-// reads true through it. Waited for, it landed on the old numbers and the
-// window then dropped in one frame — a font landing mid-arrival on a first
-// visit, 23px (the Share build, banked in v101).
 let refitQueued = false;
 export function refitPlanShelf() {
   if (!el || mode === 'gone' || leaving || drag || refitQueued) return;
-  const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
-  const moving = motions().filter((a) => a.playState === 'running' && !endless(a));
-  if (showing(lifting) && motions().every((a) => a === lifting || endless(a) || !showing(a))) { reaim(); return; }
+  const moving = motions().filter((a) => a.playState === 'running'
+    && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
   if (moving.length) {
     refitQueued = true;
     Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(() => { refitQueued = false; refitPlanShelf(); });
@@ -969,37 +1004,6 @@ export function refitPlanShelf() {
   measure();
   apply(mode === 'open' ? 1 : 0);
   settleState();
-}
-
-// The window's arrival or slide, re-aimed at the window's new place from
-// where it is on screen. On a phone the window stands on the dock, so a box
-// that grew has already moved its top edge up by the growth in this frame,
-// before anything painted it: the catch reads the edge where the last frame
-// put it, and the motion goes on from there for what was left of it.
-function reaim() {
-  const a = lifting;
-  const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
-  const left = t ? Math.max(0, (t.endTime || 0) - (t.localTime || 0)) : GROW_MS;
-  const g0 = geo;
-  const seen = el.getBoundingClientRect().top;
-  const wasArrival = arrival === a;
-  if (mode !== 'open' || isDesk()) unpin();
-  measure();
-  // The observers' first answer (and any that changes nothing) leaves the
-  // motion alone: only new numbers re-aim it.
-  if (g0 && ['desk', 'T', 'H', 'peekH', 'cardH', 'shift'].every((k) => Math.abs((g0[k] || 0) - (geo[k] || 0)) < 0.5 && g0.desk === geo.desk)) return;
-  const grew = g0 && !geo.desk && !g0.desk ? geo.H - g0.H : 0;
-  const rest = mode === 'open' ? 1 : 0;
-  apply(caughtAt(seen + grew, rest));
-  settleState();
-  const from = el.style.transform;
-  lift = 0;
-  apply(rest);
-  if (!canAnimate(el, ctxRef) || from === el.style.transform) return;
-  const b = el.animate([{ transform: from }, { transform: el.style.transform }], { duration: Math.max(left, 150), easing: EASE_ARRIVE });
-  lifting = b;
-  if (wasArrival) arrival = b; // a leave while it plays still goes back the way it came
-  b.onfinish = () => { if (lifting === b) lifting = null; if (arrival === b) arrival = null; };
 }
 
 // The window's numbers come from its boxes, so whatever resizes one refits

@@ -20,6 +20,12 @@ each table; the rules live in RUNBOOK.md.
 
 | Version | What | PR | Rollback target | Shipped | Verified |
 |---|---|---|---|---|---|
+| v102 | the Spotify playlist names: "Portola peeps’ picks" for the crew, "Portola me" for yours | #61 | `festival-navigator-8vfsmrygp` (v101) | 2026-09-26 2:56 PM | smoke PASS (festival-nav-v102 / d64fb64b); Sol clean |
+| v101 | Our picks (was Our plan): the peek above the dock, the day plan, the laptop panel, one NOW, the trip rule, "N picked"; welcome and join-shelf copy ("These are the crew’s picks for Portola.", "Join the crew for Robyn as…") | #60 | `dpl_77nwhMmf2AGzK66bwZpkw98bN9L1` (`3a7e195h0`, v100) | 2026-09-26 2:37 PM | smoke PASS (festival-nav-v101 / 4abcb55e); Neon branch `backup-2026-09-26-pre-v101` taken first; CI found four Linux WebKit reds the sibling's local gate missed (one real: grabbing the plan mid-settle) → fixed |
+| v100 | the laptop wall's left edge: cards, titles and times line up down one left edge; EARLIER centred on laptops | #59 | `festival-navigator-90u8ict5m` (v99) | 2026-09-26 12:17 PM | smoke PASS on rerun (festival-nav-v100 / dced8f29; first run caught one host a few seconds behind) |
+| v99 | the people menu (the avatar opens Highlight, on laptops too) and the Invite sheet, crew link first ("Or add a friend") | #58 | `festival-navigator-qemnwjc9g` (v98) | 2026-09-26 12:05 PM | smoke PASS (festival-nav-v99 / 168c37f6) |
+| v98 | the tap change: a finger opens the card's notes shelf (facts, − and + in its corners, the thread); a mouse click or Enter picks; VoiceOver opens the shelf | #57 | `festival-navigator-r20ngk505` (v97 + #56) | 2026-09-26 11:05 AM | smoke PASS (festival-nav-v98 / 7d8a600f); Kevin tried it on his iPhone from a preview with a demo crew (deleted after) |
+| data | ACL Late nights run times (doors only in print: concerts laid forward from doors, clubs back from close, never later than the show) + Parcels ~10 PM | #56 | `festival-navigator-3loyy3d5z` (v97 + docs #55) | 2026-09-26 8:42 AM | validator + freeze + tests; JSON on 3 hosts |
 | v97 | the List view (Board · List per phone per festival; `&view=list` in links and the address), the past folded behind EARLIER / HIDE EARLIER, the menu bar `dot · FEST '26 · ☰` | #54 | `dpl_GPBW4L7gTmcAwgo778XRHjh32bBT` (`5n64xt1rm`, v96) | 2026-09-26 6:42 AM | smoke PASS (festival-nav-v97 / 07ca84c4, 43 APP_CORE files identical on 3 hosts); walker SHIP 12/12 + the three fixes; 0 PostHog errors after |
 | v96 | NOW as a tab in the day row; the Show menu a popover that stays open across ticks with no history entry; "+ Invite someone"; import picks from the Portola app's exported images (Settings, level 2, never lowering); the wall's address keeps its festival (`/f/<id>#g=…`) so link previews name the fest; a festival switch that finishes after you left Settings does nothing | #53 | `dpl_EDgPZyK9w7RhDm11VP2PL9nt3b9i` (`jpns9fsmj`, v95 + docs #50–#52) | 2026-09-26 5:36 AM | smoke PASS (festival-nav-v96 / 7117a248); `/api/import-schedule` answers GET with 405; `/f/portola-2026` carries the OG tags; 0 PostHog errors after |
 | v95 | ticket doors read Tix / Tix $69 / Tix free / Info, never the seller; a one-time price + sold-out check (27 priced, 13 sold out → Info only, 40 bare Tix; resale sites never used) | #49 | `dpl_Y7BdTNbi4gpNXF5JVMgnXqYRbcTy` (`kgz0o4y3l`, v94) | 2026-09-26 2:12 AM | smoke 2:14 AM PASS (first run: one transient fonts.css fetch error on one host; rerun clean); prod JSON: PERVERT XXL 154, Magnitude 111 |
@@ -62,6 +68,12 @@ each table; the rules live in RUNBOOK.md.
 | 370952c | v97 walk | Sonnet walker, real input | ~50 | SHIP: 12/12 on 0d19e6e, the address / switch / import fixes re-walked on 370952c; harness notes only | — |
 | db9bf2c | the tap change | Sol 6 · high | ~7 | 1 BLOCKER (VoiceOver's double-tap picks instead of opening the shelf), 1 IMPORTANT (the composer has no ride over the iOS keyboard), 1 NIT (the one-time line checks only this fest's picks) → with the builder | the Opus reviewer and the walker had passed it |
 
+| (acl-prep rounds) | ACL Late nights data | Sol 6 · high | 5 rounds | inferred closes labelled as printed; a fallback close scheduling concerts; Yukimatsu → fixed; then cutting fallback closes for concerts shortened NOW rings (the cut did not list what read them) → a window-close rule | the first pass had put headliners at 12:30 AM (venues filed as clubs) |
+| (tap rounds) | v98 tap change | Sol 6 · high | 3 rounds | VoiceOver → an assistive route; press inheritance; multi-pointer → per-pointer presses (the builder rightly kept WebKit's "mouse" label for a finger's click, bugs 324397 / 282988); the iOS keyboard ride; the SE cap | — |
+| (people rounds) | v99 people menu + Invite | Sol 6 · high | 4 rounds | a double add → one add; reopen reset the guard → page-level; two ordering P1s → CUT the mechanism (the add's server answer is never applied locally; `sync.afterServerWrite()` runs an ordered poll); Stay offline posted → local pending only; a removed member's re-add → `heardSince`; focus return by `data-restore`; a fading menu let clicks fall through → `guardFade` | CI flakes → state-based waits |
+| a376deb · eeba75d | v101 Our picks | Sol 6 · high (and the sibling's own rounds) | — | 0 blocking on the release head; the two touch-timing catches (a grab during a redraw slide, a touch during the peek's 240 ms arrival) banked for the Share | CI's Linux WebKit was the real gate this time |
+| 5718fff | v102 Spotify names | Sol 6 · high | — | clean | — |
+
 ### Model comparison so far (Kevin's ask)
 
 One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **Sol 6** was fastest (5.8 min) and found the most (7 real); **Astra 6** (8.5 min) found 5, one unique (an invalid query) and caught the worker-install gap on its first pass, reproducing two findings with probes; **Terra 5.6** (10.9 min) found 7, three unique — including the most important one of the round (a 4xx/5xx the app swallows passing the smoke) — and its own `sw-stamp --help` performed a real bump. Every model missed things another caught. Working read: Sol 6 as the gate is sound; a second model on high-stakes heads (the gesture release, Our plan) is worth its usage. Sol 6 then gated every release that night and caught a real blocker on four of six heads.
@@ -90,6 +102,23 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 15. **Before Portola ends** (~4:40 AM): the List, the tap change, the people menu + Invite sheet (crew link first), and Our plan (a sibling session). The tap change ships alone, only after his iPhone test on a preview, with a rollback prepared: "as long as we bank and are prepped to maybe roll back those parts of the code (tap) let's do it and I'll test it for you when I wake up."
 16. **Import from the Portola app** (~2:55 AM): picks land at level 2 and he adjusts; add-an-event is BANKED (`claude-plans/2026-09-02-add-a-show.md`) until its place on the wall is clear.
 
+
+## Kevin's calls, 2026-09-26 (daytime, chat and review pages)
+
+17. **The tap change, after his iPhone test**: no grabber on sheets that have their own chrome; − and + in the card's bottom corners; no second level bar mid-card (cards get shorter); list-view swipes (ratings left, notes right, phones) are a FUTURE phase.
+18. **Invite copy option A** ("Or add a friend") — picking as someone else is a stopgap, not an end state, and the sheet says so.
+19. **The header**: no rule lines (the horizontal one already goes on phones); on laptops EARLIER sits centred in its line; the avatar in the upper left opens the people menu on laptops too; the names along the top stay but lose their scroll-to-top.
+20. **One left edge on laptops**: remove most special cases — cards, titles and times line up straight down the left.
+21. **Our plan → "Our picks"**, counts "N picked": a friend said "my picks are what I was interested in, not necessarily what I'm planning to go to". Copy that implies people WILL be somewhere comes out everywhere (welcome, join shelf).
+22. **The trip rule stands** (move to another site only for a better pick, never back), and the location filters apply to Our picks.
+23. **Share for Our picks**: a Show-menu row "Share the crew link"; a link can open on Our picks (`&plan=open`) and sharing with the shelf open shares it open; an ✕ on the welcome card; the text share uses line breaks, at most five top picks under the current filters, then "Full rundown:" and the link — plain characters, no en dashes.
+24. **Spotify playlist names**: "Portola peeps’ picks" and "Portola me".
+25. **NOW moves to the far left of the day row**, not pinned over everything and not moving between days — simplify the code to match.
+26. **The List filters, the Board highlights**: highlighting people in the List shows only their picks.
+27. **A map of Folsom and the afters**, grouped by time of day: a Google My Map is fine for now; the in-app map belongs to a future reference tab.
+28. **Later (2027), noted not built**: tabs — Discover (Ray's), Our picks, and a reference tab (grounds map, venue map, everyone's notes); city seasons leave out festival-only artists and can combine cities or "within X hours"; email Ray after ACL.
+29. **Live database access** for the Our picks export: granted in chat (read of the Portola crew doc; the demo crew's single-row delete).
+
 ## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
 
 1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
@@ -104,3 +133,16 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 10. **The address carries the view but not the room checks** (`&show=`) that the invite link carries — make them match if a friend ever shares from the address bar with rooms hidden.
 11. **ACL prep**: Late nights print doors only (65 of 66) and the Zilker headliners print no end — a data job on `data/acl-prep` (guess-run-times + the venue registry + printed ends), before Sep 29.
 12. **The Board's in-room fold** was not built in v97 (only whole past days fold on Board); the gallery has no List section yet; a Late nights date that is over folds as a whole day only on the next held clock.
+13. **An offline add with different casing** ("drew" while "Drew" syncs) blocks the sync; a todo test is written (`tests/offline-add-casing.test.mjs`).
+14. **The join shelf still has a grabber** (TAP-BUILD follow-up 8).
+15. **A ResizeObserver loop** in `wireScrollspy` (console warning only).
+16. **The NOW jump's glide test flakes** on a loaded runner.
+17. **A stale module cache** — "Importing binding name 'roomOf' is not found" at 11:00 AM on one phone (build null): the same class as Sep 25's `js/time.js` SyntaxError; the self-recovery work covers both.
+18. **A `LATE_ANIMATIONS_MS` CI step** (the sibling's offer): run the browser suite once with animations started late, as `tests/helpers/browser.mjs` lateStarts can, so Linux-only timing reds show up locally first.
+19. **A sibling session's gate must include CI** (Linux WebKit is required since v98); v101's local-only gate cost a round.
+20. **The Zilker headliners print no end**: a code rule decides it (run a stage's last endless set to the day's close), not a data guess.
+21. **The validator skips dated rooms** in some checks; **the notes sheet restores by time** for dated shows — both from the ACL rounds.
+22. **Our picks: a tap on a grown card does nothing** — a product call for Kevin.
+23. **Pinned notes on the wall** (a festival or day note as the room head's whisper): offered, no answer.
+24. **Import follow-ons**: a second door in the just-joined welcome; Portola-only. Likely yes ("all those changes seem chill"); confirm before building.
+25. **Read festival data from `origin/main`, never a local checkout**: the map's first pass read a checkout five releases old and found 10 Folsom parties instead of 64.

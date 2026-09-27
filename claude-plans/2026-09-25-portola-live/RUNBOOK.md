@@ -71,6 +71,10 @@ Evidence for every rule is in `research/` beside this file.
    with v96).
 7. Merge yourself (`gh pr merge --merge`) — Kevin's standing rule — unless a
    finding is a product call he hasn't seen or it touches friends' data.
+   Then `git pull --ff-only origin main` in the ROOT checkout: releases ship
+   from worktrees, so nothing else moves it, and every agent reads the root
+   by default (2026-09-26: a map agent read v91's data at v102 — 10 Folsom
+   parties instead of 64). Brief data readers with `origin/main` anyway.
 8. Verify: wait for main's CI, then run `node ops/prod-smoke.mjs` **from
    the release worktree** (it expects that checkout's CACHE_VERSION and
    ASSET_STAMP; elsewhere pass them: `node ops/prod-smoke.mjs

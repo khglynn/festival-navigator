@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, hasAny } from './plan.js';
+import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, hasAny, STEP } from './plan.js';
 
 // What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
 // was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
@@ -326,6 +326,32 @@ function earlierRow(n, open, onToggle, days = []) {
   return r;
 }
 
+// ---- what the rows show ------------------------------------------------------------
+// Two rules the open plan's rows and the Share both read, so the Share never
+// names a line the Full rundown does not draw (Sol, round two on the Share's
+// release head, 2026-09-26). A stop is over once the route has left it (the
+// Earlier fold); a stop's row shows one or-line, forkFor's, and for the NOW
+// row only one still to come.
+const overAt = (stop, nowMin) => nowMin != null && stop.to <= nowMin;
+function orLineOf(stop, { plan, peek, nowMin }) {
+  const now = !!(peek && peek.tag === 'now' && peek.stop) && stopKey(peek.stop) === stopKey(stop);
+  return forkFor(stop, plan.bar, now ? nowMin : null);
+}
+// What those two rules give each item of the route at this minute, as one
+// string (plan-shelf.js's signature): a minute that folds a stop or moves a
+// row's or-line on draws the rows again. Saturday 6:00 PM moves the NOW row's
+// or-line from Groove Armada's set to DJ Shadow's and changes nothing else,
+// and an open plan kept Groove Armada until the next pick (Sol, round three,
+// 2026-09-26).
+export function rowsKey(route, { plan, peek = null, nowMin = null } = {}) {
+  if (!route) return '';
+  return route.items.map((i) => {
+    const f = i.kind === 'stop' ? orLineOf(i, { plan, peek, nowMin }) : null;
+    return [i.kind, `${i.from}-${i.to}`, i.count || '', i.tier || '', overAt(i, nowMin) ? 'over' : '',
+      f ? `${f.place.id}@${f.from}:${f.count}` : ''].join(':');
+  }).join(',');
+}
+
 // ---- the whole day ---------------------------------------------------------------
 // One night's rows: its stops (a grown card under a tapped one), their or
 // lines, the scattered stretches, and rule 9's quiet line merged in at its
@@ -344,7 +370,7 @@ function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set
   const items = [...(route.dropIns || []), ...route.items];
   for (const it of items) {
     if (skip && skip(it)) continue;
-    const past = nowMin != null && it.to <= nowMin;
+    const past = overAt(it, nowMin);
     if (it.kind === 'scattered') { const r = scatteredRow({ ...it, nightId: route.id }, plan, ctx.meName); if (past) r.classList.add('past'); rows.push(r); continue; }
     if (it.kind === 'dropin') { const r = dropInRow(it, { ctx, plan, nowMin }); if (past) r.classList.add('past'); rows.push(r); continue; }
     if (it.kind === 'back') { const r = backRow(it, { plan }); if (past) r.classList.add('past'); rows.push(r); continue; }
@@ -363,7 +389,7 @@ function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set
       if (dim) g.classList.add('dim');
       rows.push(g);
     }
-    const f = forkFor(it, plan.bar, tag === 'now' ? nowMin : null);
+    const f = orLineOf(it, { plan, peek, nowMin });
     if (f) {
       const fr = forkRow(f, it, { ctx, plan });
       if (past) fr.classList.add('past');
@@ -518,77 +544,128 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
 //   Pier Stage for Dog Blood @ now till 10:15pm
 //   Ship Tent for Jamie xx @ 10:30pm
 //
-//   Full rundown: https://fest.kevinhg.com/f/portola-2026#g=…&plan=open
+//   Full rundown: https://fest.kevinhg.com/f/portola-2026#g=…&plan=2026-09-26
 //
 // At most five: "our top picks overall across all locations based on applied
-// filters". The candidates are the day's stops and their or-lines still to
-// come (a fork is a real second door: it clears the bar too), the rooms the
-// Show menu hides already left out (the plan's rule 8), and with a highlight
-// on, only the highlighted people's (hasAny, the rows' own dim). The five with
-// the most of us are kept and read in time order. Times as people type them
+// filters". The candidates are the rows the open plan is showing — its stops
+// the route has not left, and the one or-line each row draws (a fork is a
+// real second door: it clears the bar too) — so the text is a digest of the
+// Full rundown and never names a line it lacks; the rooms the Show menu hides
+// are already left out (the plan's rule 8). A line leaves once what it is for
+// is over, and "now" means who is there now. With a highlight on, only the
+// highlighted people's. The five with the most of us are kept and read in
+// time order. Times as people type them
 // ("5:40pm", "~1:30am") and plain punctuation (Kevin: "those en dashes … we
 // can type simpler"). Artists, places and times only: no one's name leaves
 // the phone, and no count either (his shape has none).
 const typed = (min) => quietClock(min).replace(' ', '').toLowerCase();
 const andList = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
 
-// A stop or a fork as "Location for Title": a set's (or a party's) act; a
-// room's headliners, unless the room is named for the one act in it.
-function placeForTitle(stop, picks) {
+// A stop or a fork as "Location for Title", and the acts it names: a set's
+// (or a party's) act; a room's headliners among `people` (whoever of us is
+// there — with a highlight on, only the highlighted), unless the room is
+// named for the one act in it.
+function placeForTitle(stop, picks, people) {
   const where = whereOf(stop);
   if (kindOf(stop) !== 'room') {
     const act = actsOf(stop)[0];
-    return act && act.name !== where ? `${where} for ${act.name}` : where;
+    return { title: act && act.name !== where ? `${where} for ${act.name}` : where, acts: act ? [act.name] : [] };
   }
-  const acts = headlinersOf({ ...stop, people: stop.people || [] }, picks).map((h) => h.name);
-  return !acts.length || (acts.length === 1 && acts[0] === where) ? where : `${where} for ${andList(acts)}`;
+  const acts = headlinersOf({ ...stop, people }, picks).map((h) => h.name);
+  return { title: !acts.length || (acts.length === 1 && acts[0] === where) ? where : `${where} for ${andList(acts)}`, acts };
 }
 
-// The five (`limit`), in time order: { line, from, count } each.
-export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], limit = 5 } = {}) {
+// When a line stops being true: the route moves on (its `to`), or what it is
+// for is over — a set's or a party's act (tillOf), a room's close — whichever
+// comes first. The route can outrun its act: a blip too short to be a stop
+// folds into the stop before it (plan.js routeOf), so Sunday's Zara Larsson
+// stop runs to 8:15 on a set that ends at 8:05.
+const endOf = (s) => Math.min(...[s.to, tillOf(s), s.place.end].filter((t) => t != null));
+// The "till" a live line says: its act's end, a room's stop end, never past
+// the place's own end.
+const tillText = (s) => { const t = tillOf(s); return t != null && s.place.end != null ? Math.min(t, s.place.end) : t ?? s.place.end ?? null; };
+// Who is at a stop or a fork at the minute `now`: its five-minute slice's
+// crowd (a stop's timeline, a fork's crowds), never who was there earlier.
+const crowdAt = (s, now) => ((s.timeline || s.crowds || []).find((c) => c.t <= now && now < c.t + STEP) || { people: [] }).people;
+
+// Who of us is at a stop or a fork, and how many at once: its crowd — or,
+// with a highlight on, only the highlighted people in it (Sol, on the
+// release head: the Share named the whole crowd's acts and ranked by the
+// whole crew under a highlight). A line on NOW counts the crowd at this
+// minute (round two: at 7:15 Ben had left Robyn for Kettama, and a Ben-only
+// Share still said Robyn "now"); one still to come reads a stop's timeline, a
+// fork's peak crowd, as hasAny does. A person is only ever seated at their
+// own picks (plan.js rule 3), so every act this names is one they picked —
+// the List's question, filters.js passesPeople.
+function whoAt(s, highlight, nowMin) {
+  const theirs = (list) => (list || []).filter((p) => !highlight.length || highlight.includes(p));
+  if (nowMin != null && s.from <= nowMin) { const people = theirs(crowdAt(s, nowMin)); return { people, count: people.length }; }
+  if (!highlight.length) return { people: s.people || [], count: s.count };
+  if (!s.timeline) { const people = theirs(s.people); return { people, count: people.length }; }
+  const all = new Set();
+  let count = 0;
+  for (const x of s.timeline) {
+    const here = theirs(x.people);
+    here.forEach((p) => all.add(p));
+    count = Math.max(count, here.length);
+  }
+  return { people: [...all], count };
+}
+
+// The five (`limit`), in time order: { line, from, count, acts, stop } each
+// (`stop`: the stop or or-line the line reads). `peek` is the one the rows
+// were drawn with — it picks the NOW row's or-line. With a highlight on, a
+// count is how many of THEM, and the most of them win, then the earliest (the
+// crew's MOST is the rest of the crew's say, not theirs).
+export function planPicks(route, { ctx, plan, peek = null, nowMin = null, highlight = [], limit = 5 } = {}) {
   if (!route) return [];
+  const hl = highlight || [];
   // One line a place (a set, a room on its night, a party): a room the route
   // comes back to, or that is another stop's or-line later on, is still the
   // one room, at the first time it is ours, counted at its biggest.
   const byPlace = new Map();
   const add = (s) => {
-    if (nowMin != null && s.to <= nowMin) return;
-    if (!hasAny(s, highlight)) return;
+    if (nowMin != null && endOf(s) <= nowMin) return;
+    const who = whoAt(s, hl, nowMin);
+    if (!who.count) return;
     const key = (s.place && s.place.id) || stopKey(s);
     const had = byPlace.get(key);
-    if (!had) { byPlace.set(key, { stop: s, count: s.count, most: s.tier === 'most' }); return; }
-    if (s.from < had.stop.from) had.stop = s;
-    had.count = Math.max(had.count, s.count);
+    if (!had) { byPlace.set(key, { stop: s, count: who.count, people: new Set(who.people), most: s.tier === 'most' }); return; }
+    if (s.from < had.stop.from) { had.stop = s; if (!hl.length) had.people = new Set(who.people); }
+    if (hl.length) who.people.forEach((p) => had.people.add(p));
+    had.count = Math.max(had.count, who.count);
     had.most = had.most || s.tier === 'most';
   };
   for (const it of route.items) {
-    if (it.kind !== 'stop') continue;
+    if (it.kind !== 'stop' || overAt(it, nowMin)) continue;
     add(it);
-    for (const f of it.forks || []) if (f.count >= plan.bar) add(f);
+    const f = orLineOf(it, { plan, peek, nowMin });
+    if (f) add(f);
   }
   return [...byPlace.values()]
-    .sort((a, b) => b.count - a.count || b.most - a.most || a.stop.from - b.stop.from)
+    .sort((a, b) => b.count - a.count || (hl.length ? 0 : b.most - a.most) || a.stop.from - b.stop.from)
     .slice(0, limit)
     .sort((a, b) => a.stop.from - b.stop.from)
-    .map(({ stop, count }) => {
+    .map(({ stop, count, people }) => {
       const live = nowMin != null && stop.from <= nowMin;
-      const till = live ? tillOf(stop) : null;
+      const till = live ? tillText(stop) : null;
       const when = live ? `now${till != null ? ` till ${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
-      return { line: `${placeForTitle(stop, ctx.picks)} @ ${when}`, from: stop.from, count };
+      const { title, acts } = placeForTitle(stop, ctx.picks, [...people]);
+      return { line: `${title} @ ${when}`, from: stop.from, count, acts, stop };
     });
 }
 
 // `day`: the night as the head names it ("Sat", or "Sat Oct 4" where two
 // nights share a weekday); `today`: the plan is tonight's, so the list runs
 // from now; `link`: the crew link that opens on the plan.
-export function planText(route, { ctx, plan, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
+export function planText(route, { ctx, plan, peek = null, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
   // Under a highlight (rule 10) the lines are those people's, and still no
   // name leaves the phone: "our" is whoever is sharing with whom.
   // A highlight of one shares that one person's day, still unnamed: "Picks".
   const whose = plan && plan.group ? (plan.group.length === 1 ? 'Picks' : 'Our picks') : "Our crew's main picks";
   const head = `${whose} for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
   const parts = [head];
-  const picks = planPicks(route, { ctx, plan, nowMin, highlight });
+  const picks = planPicks(route, { ctx, plan, peek, nowMin, highlight });
   if (picks.length) parts.push(picks.map((x) => x.line).join('\n'));
   if (link) parts.push(`Full rundown: ${link}`);
   return parts.join('\n\n');
