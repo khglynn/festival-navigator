@@ -292,9 +292,9 @@ export function paintPlanShelf(host, ctx, answer) {
 function signature(a) {
   // Every night the open plan holds (the plan-days round): a friend's pick on
   // Sunday redraws the rows even while the peek is Saturday's. Each night's
-  // part is plan-rows.js's own (rowsKey), read at this minute on the peek's
-  // night and whole on the others, plus the drop-in lines that lead it.
-  const nightRows = (r, nowMin) => (r ? `${rowsKey(r, { plan: a.plan, peek: a.peek, nowMin })}/${(r.dropIns || []).map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}`).join(',')}` : '');
+  // part is plan-rows.js's own (rowsKey, the drop-in lines that lead it
+  // included), read at this minute on the peek's night and whole on the others.
+  const nightRows = (r, nowMin) => (r ? rowsKey(r, { plan: a.plan, peek: a.peek, nowMin }) : '');
   const rows = a.plan && a.plan.nights
     ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id), a.route && n.id === a.route.id ? a.nowMin : null)}`).join(';')
     : nightRows(a.route, a.nowMin);
