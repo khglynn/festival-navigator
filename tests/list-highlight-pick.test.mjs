@@ -30,6 +30,7 @@ let SERVER = {
   festivals: { [FID]: { selections: {
     'Felly Fell': { Kevin: 2 }, Robyn: { Kevin: 4 }, 'Dog Blood': { Kevin: 1 }, 'Milli Meng': { Kevin: 2 },
     'Channel Tres': { Kevin: 4 }, // Sunday, for the keyboard
+    'SG Lewis': { Kevin: 4 }, Mochakk: { Kevin: 4 }, // Sunday, two rows one after the other
     Soulwax: { Ross: 3 },
   } } },
 };
@@ -180,4 +181,55 @@ test('a keyboard is on the row it picked: it stays while it has the focus, and l
   assert.ok(card(), 'the keyboard is still on it: it stays');
   $('dock-you').focus(); // the focus moves on
   await until(() => !card(), 'the row to leave once the focus moved on', 2000);
+});
+
+// Sol's re-review of v103: each row settles on its own. Un-pick A, move on to
+// B and un-pick it too: A leaves while B is still held — B is not a reason to
+// keep A. And while the tab is hidden nothing is scanned or reshaped: a row
+// let go while hidden leaves when the page is seen again, in front of you.
+const keyPick = async (artist) => {
+  const card = () => cardIn(room('Sunday', ':fest'), artist);
+  card().focus();
+  card().dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await settle(40);
+  if (level(artist) !== 0) { typedClickKey(card()); await settle(40); }
+  assert.equal(level(artist), 0, `${artist}: Enter picked must → nothing`);
+};
+test('un-pick A, then B: A leaves while B is still held', async () => {
+  await keyPick('SG Lewis');
+  await keyPick('Mochakk'); // the focus is on Mochakk now
+  const sun = () => room('Sunday', ':fest');
+  await until(() => !cardIn(sun(), 'SG Lewis'), 'SG Lewis to leave while Mochakk is held', 2000);
+  assert.ok(cardIn(sun(), 'Mochakk') && cardIn(sun(), 'Mochakk').classList.contains('dim'), 'Mochakk stays, dimmed, while the keyboard is on it');
+});
+
+test('hidden, the watch sleeps: it stops asking while the tab is hidden and wakes when the page is seen again', async () => {
+  // Mochakk is still held (the keyboard is on it), so the watch is awake.
+  // Watch the app's 400 ms timers from here on.
+  const live = new Set();
+  const setWas = globalThis.setInterval;
+  const clearWas = globalThis.clearInterval;
+  globalThis.setInterval = (fn, ms, ...a) => { const h = setWas(fn, ms, ...a); if (ms === 400) live.add(h); return h; };
+  globalThis.clearInterval = (h) => { live.delete(h); return clearWas(h); };
+  try {
+    let vis = 'hidden';
+    Object.defineProperty(window.document, 'visibilityState', { configurable: true, get: () => vis });
+    window.document.dispatchEvent(new window.Event('visibilitychange'));
+    await settle(900); // the old watch's next beat finds the page hidden
+    assert.equal(live.size, 0, 'hidden: no watch running');
+    vis = 'visible';
+    window.document.dispatchEvent(new window.Event('visibilitychange'));
+    await settle(60);
+    assert.equal(live.size, 1, 'seen again: the watch wakes (Mochakk is still held)');
+    // Let Mochakk go: Escape puts its keyboard zoom away, the focus moves on.
+    cardIn(room('Sunday', ':fest'), 'Mochakk').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await settle(40);
+    $('dock-you').focus();
+    await until(() => !cardIn(room('Sunday', ':fest'), 'Mochakk'), 'Mochakk to leave once let go', 3000);
+    await settle(500);
+    assert.equal(live.size, 0, 'and with nothing left to wait for, the watch stops');
+  } finally {
+    globalThis.setInterval = setWas;
+    globalThis.clearInterval = clearWas;
+  }
 });

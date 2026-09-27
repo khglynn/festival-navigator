@@ -583,13 +583,29 @@ function thinItems(root) {
   }
   return items;
 }
-function thinBefore() {
+// `anchor`: the card the person is on (a zoom, a mouse, a keyboard) — the page
+// is held by IT, so a row leaving above it never moves what is under the
+// pointer (Sol's re-review of v103); without one, by the top of what you see.
+function thinBefore({ anchor = null } = {}) {
   const root = $('wall-root');
   const at = new Map();
-  for (const { key, el } of thinItems(root)) at.set(key, el.getBoundingClientRect().top);
-  return { at, place: takeWallPlace(), y: window.scrollY };
+  const items = thinItems(root);
+  for (const { key, el } of items) at.set(key, el.getBoundingClientRect().top);
+  let place = null;
+  if (anchor) {
+    const anchors = wallAnchors(root);
+    const i = anchors.findIndex((a) => a.el === anchor);
+    if (i >= 0) {
+      const el = anchors[i].el;
+      place = { key: anchors[i].key, top: el.getBoundingClientRect().top, after: anchors.slice(i + 1).map((a) => a.key),
+        day: dayKeyOf(el), room: (el.closest('.room') || { dataset: {} }).dataset.room || null,
+        from: el.dataset.nowFrom != null ? Number(el.dataset.nowFrom) : null };
+    }
+  }
+  return { at, place: place || takeWallPlace(), y: window.scrollY };
 }
-function thinFlow(before) {
+// `keep`: rows the person is still on — they stay (dimmed) while the rest go.
+function thinFlow(before, { keep = rowsInHand() } = {}) {
   settleFold();
   settleView();
   settlePast();
@@ -597,7 +613,7 @@ function thinFlow(before) {
   const vh = window.innerHeight || 0;
   const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < vh; };
   const people = ctx.filterPeople || [];
-  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people);
+  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people) || keep.has(card.dataset.artist);
   // What leaves: the rows the new highlight does not keep, and with them the
   // lines that belong to nothing any more — a band's hour whose rows all go,
   // a room's whisper and EARLIER when the room goes quiet.
@@ -863,42 +879,125 @@ function refreshArtistCards(artistName) {
 // let it go: the shelf closed, the zoom gone, the pointer off it, the focus
 // moved on (checked every 400 ms while one waits), or the minute tick; any
 // repaint in between (a friend's change on the poll) keeps it while you are
-// still on it. It leaves the way the filter's own changes do (thinFlow): it
-// fades, the rows close up, and the room's words and its EARLIER count are
-// right again. No leftover, no timer.
+// still on it. Each row settles on its OWN (Sol's re-review): one you are
+// still on is no reason to keep one you have left, and the page is held by
+// the row you are on, so nothing under the pointer moves as another leaves.
+// It leaves the way the filter's own changes do (thinFlow): it fades, the rows
+// close up, and the room's words and its EARLIER count are right again. While
+// the tab is hidden nothing is scanned or reshaped: the watch sleeps, and a
+// row let go meanwhile leaves when the page is seen again. No leftover, no timer.
 const listThinned = () => $('wall-root').dataset.view === 'list' && listFilters(ctx);
 const leftoverRows = () => (listThinned()
   ? [...$('wall-root').querySelectorAll('.card[data-artist]')].filter((c) => !passesPeople(ctx.picks, c.dataset.artist, ctx.filterPeople || []))
   : []);
-// The person is on a row: a zoom is on screen (standing or still shrinking
-// away — the List does not reshape under a grown card, and a leaving one
-// takes a quarter second), a sheet is up over the wall (the finger's shelf),
-// a keyboard is on it (focus, with a key the last input — a closed shelf
-// hands focus back to its card for every hand, and that is not a finger
-// still there), or a mouse rests on it (never a finger's lingering hover).
+const pageHidden = () => document.visibilityState === 'hidden';
+// The whole wall waits while a sheet is up over it (the finger's shelf — the
+// List does not reshape under it) or a zoom is still shrinking away (a
+// quarter second, and its card is no longer marked). Only a slot really
+// moving counts: a slot left behind with nothing running must never hold the
+// wall for good.
+const shrinking = (slot) => typeof slot.getAnimations === 'function'
+  && slot.getAnimations().some((a) => a.playState === 'running');
+const wallHeld = () => !!document.getElementById('artist-sheet')
+  || (!zoomedCard() && [...document.querySelectorAll('#zoom-layer .zoom-slot')].some(shrinking));
+// The person is on THIS row: its zoom stands, a keyboard is on it (focus, with
+// a key the last input — a closed shelf hands focus back to its card for every
+// hand, and that is not a finger still there), or a mouse rests on it (never
+// a finger's lingering hover).
 function inHand(card) {
-  if (zoomedCard() || document.querySelector('#zoom-layer .zoom-slot')) return true;
-  if (document.getElementById('artist-sheet')) return true;
+  if (zoomedCard() === card) return true;
   const a = document.activeElement;
   if (keyHand() && a && (a === card || card.contains(a))) return true;
   try { return !fingerHand() && card.matches(':hover'); } catch { return false; }
 }
 function rowsInHand() {
-  return new Set(leftoverRows().filter(inHand).map((c) => c.dataset.artist));
+  const rows = leftoverRows();
+  return new Set((wallHeld() ? rows : rows.filter(inHand)).map((c) => c.dataset.artist));
+}
+// The card the person is on, if any, anywhere on the wall: the page is held by
+// it. A mouse between rows holds the card nearest it — the one it is on its way
+// to — so a row leaving above never slides the target out from under an
+// approaching pointer (the browser contract caught exactly that).
+let mouseY = null;
+document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') mouseY = e.clientY; }, { passive: true, capture: true });
+function cardInHand() {
+  const z = zoomedCard();
+  if (z && z.isConnected) return z;
+  const root = $('wall-root');
+  if (!fingerHand()) {
+    const hovered = [...root.querySelectorAll('.card[data-artist]:hover')].pop();
+    if (hovered) return hovered;
+  }
+  const a = document.activeElement;
+  if (keyHand() && a && root.contains(a)) return a.closest('.card[data-artist]');
+  if (fingerHand() || mouseY == null) return null;
+  let best = null;
+  let gap = Infinity;
+  for (const c of root.querySelectorAll('.card[data-artist]')) {
+    const r = c.getBoundingClientRect();
+    if (!r.height) continue;
+    const d = mouseY < r.top ? r.top - mouseY : mouseY > r.bottom ? mouseY - r.bottom : 0;
+    if (d < gap) { gap = d; best = c; }
+  }
+  return best;
 }
 let leftoverTimer = 0;
+function stopLeftovers() { clearInterval(leftoverTimer); leftoverTimer = 0; }
 function watchLeftovers() {
-  if (!leftoverRows().length) return;
-  if (!leftoverTimer) leftoverTimer = setInterval(settleLeftovers, 400);
+  if (pageHidden() || leftoverTimer || !leftoverRows().length) return;
+  leftoverTimer = setInterval(settleLeftovers, 400);
 }
 function settleLeftovers() {
+  if (pageHidden()) { stopLeftovers(); return; } // sleeps; the page shown again wakes it (startClock)
   const rows = leftoverRows();
-  if (!rows.length) { clearInterval(leftoverTimer); leftoverTimer = 0; return; }
+  if (!rows.length) { stopLeftovers(); return; }
+  watchLeftovers(); // awake while any wait (a tick or a wake may be what found them)
   if (document.body.dataset.busy || pendingFold || pendingView || pendingPast || pendingThin) return;
-  if (rows.some(inHand)) return;
-  clearInterval(leftoverTimer);
-  leftoverTimer = 0;
-  thinFlow(thinBefore());
+  if (wallHeld()) return;
+  const anchor = cardInHand();
+  let going = rows.filter((c) => !inHand(c));
+  // A row that leaves ABOVE the card the person is on is taken back by
+  // scrolling the page up by its height — unless the page is too near its top
+  // to scroll that far, and then it would pull the held card up under the
+  // pointer. Those wait for the held card to be let go (rows below it never
+  // move it, so they always go).
+  if (anchor && going.length) {
+    const top = anchor.getBoundingClientRect().top;
+    const above = going.filter((c) => c.getBoundingClientRect().top < top);
+    if (above.length && heightLeaving(above, top) > window.scrollY + 0.5) going = going.filter((c) => !above.includes(c));
+  }
+  if (!going.length) return;
+  if (going.length === rows.length) stopLeftovers();
+  const keep = new Set(rows.filter((c) => !going.includes(c)).map((c) => c.dataset.artist));
+  thinFlow(thinBefore({ anchor }), { keep });
+}
+// How much of the page above `top` goes with `cards`: a room they empty goes
+// to its quiet line (all of it below its head), an hour they empty goes whole,
+// and a single row takes its own slot (to the next row's top).
+function heightLeaving(cards, top) {
+  const gone = new Set(cards);
+  const slot = (el) => {
+    const r = el.getBoundingClientRect();
+    const n = el.nextElementSibling;
+    return (n ? n.getBoundingClientRect().top : r.bottom) - r.top;
+  };
+  let h = 0;
+  const rooms = new Set(cards.map((c) => c.closest('.room')).filter(Boolean));
+  for (const room of rooms) {
+    const all = [...room.querySelectorAll('.card[data-artist]')];
+    const head = room.querySelector(':scope > .room-head');
+    if (all.every((c) => gone.has(c)) && head && room.getBoundingClientRect().top < top) {
+      h += room.getBoundingClientRect().bottom - head.getBoundingClientRect().bottom;
+      continue;
+    }
+    for (const band of room.querySelectorAll('.time-band')) {
+      if (band.getBoundingClientRect().top >= top) continue;
+      const inBand = [...band.querySelectorAll('.card[data-artist]')];
+      if (inBand.length && inBand.every((c) => gone.has(c))) { h += slot(band); continue; }
+      for (const c of inBand) if (gone.has(c) && c.getBoundingClientRect().top < top) h += slot(c);
+    }
+  }
+  return h;
 }
 
 // What a press on a card means (the tap change, Kevin 2026-09-26: "a tap on

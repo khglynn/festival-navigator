@@ -541,9 +541,28 @@ happened".
       hand-back before any add; the error carrying the playlist, one create) and
       one in the real drill (the adds and their read back failing: recorded,
       linked; then Add new picks fills it; one create), all red first.
-- [ ] S2 IMPORTANT — each leftover row settles on its own: un-pick A, move to
+- [x] S2 IMPORTANT — each leftover row settles on its own: un-pick A, move to
       B and un-pick it — A leaves while B is held. The page is held by the row
       the person is on (the zoomed or hovered card), so nothing under the
-      pointer moves when a row above it leaves.
-- [ ] S3 NIT — the leftover check sleeps while the tab is hidden and wakes on
-      visible.
+      pointer moves when a row above it leaves. **Done**, with one rule the
+      browser taught: a row leaving ABOVE the card in hand is taken back by
+      scrolling the page up by its height — and where the page is too near its
+      top to scroll that far (a List filtered to yourself is often one screen),
+      it would pull the held card up under the pointer, so that row waits for
+      the held card to be let go; rows below it always go. "In hand" is per row
+      now (its own zoom, a mouse on it, a keyboard's focus); the whole wall
+      waits only while a sheet is up or a zoom is really shrinking away (a
+      slot with a running animation — a stranded one never holds the wall).
+      The card in hand, for holding the page, is the zoomed card, else the
+      hovered one, else a keyboard's, else the card nearest a mouse between
+      rows (the one it is on its way to). Tests: `tests/list-highlight-pick.test.mjs`
+      "un-pick A, then B" (red first); `tests/browser/list-view.test.mjs` §8,
+      real mouse at 1280, both cases — a long filtered List (Tricky leaves
+      while Robyn's zoom stands; Robyn's top sampled every 16 ms never moves)
+      and one at the page's top (Tricky waits; Robyn never moves; both go when
+      the pointer does). The long case failed once of six runs, at a load
+      average of 135 from other sessions (it waited 22 s); five passes since.
+- [x] S3 NIT — the leftover check sleeps while the tab is hidden and wakes on
+      visible. **Done:** the watch stops on a hidden page and restarts when the
+      page is seen (the clock's visibility handler calls it); test watches the
+      app's 400 ms timers across hidden → visible (red first).

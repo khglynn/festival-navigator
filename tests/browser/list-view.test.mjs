@@ -28,7 +28,7 @@ test.after(async () => { if (chromium) await chromium.close(); if (webkit) await
 const FID = 'portola-2026';
 const SAT_415 = new Date('2026-09-26T16:15:00-07:00');
 
-async function open(engine, { width = 390, view = 'list', now = SAT_415 } = {}) {
+async function open(engine, { width = 390, view = 'list', now = SAT_415, selections = null } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // made up, never a real link
   const phone = width < 720;
   const ctx = await engine.newContext({
@@ -38,7 +38,7 @@ async function open(engine, { width = 390, view = 'list', now = SAT_415 } = {}) 
   const doc = {
     v: 4, meta: { name: 'List Crew', inviteFestId: FID }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 }, Ross: { colorIndex: 5 } },
-    festivals: { [FID]: { selections: { Tricky: { Kevin: 2, Maya: 1 }, 'Tove Lo': { Maya: 4, Ross: 2 }, Robyn: { Kevin: 4 } } } },
+    festivals: { [FID]: { selections: selections || { Tricky: { Kevin: 2, Maya: 1 }, 'Tove Lo': { Maya: 4, Ross: 2 }, Robyn: { Kevin: 4 } } } },
   };
   const writes = [];
   await ctx.route('**/api/**', (r) => { if (r.request().method() !== 'GET') writes.push(r.request().url()); return r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }); });
@@ -345,6 +345,77 @@ for (const [name, get, width] of ENGINES) {
       await motionDone(page, { within: '#wall-root' });
       assert.deepEqual(await rows(), ['Tricky'], 'gone once let go');
       assert.deepEqual(writes.filter((u) => u.includes('/api/crew')).length > 0, true, 'the un-pick itself is a real pick, sent');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// 8. Each row settles on its own (Sol's re-review of v103): with a mouse,
+// un-pick Tricky, move down to Robyn and un-pick it too. Where the page has
+// room above to hold by, Tricky leaves while Robyn's zoom still stands and
+// Robyn does not move under the pointer. At the page's top — nothing above to
+// scroll back — Tricky would pull Robyn up under the pointer, so it waits for
+// Robyn to be let go, and they leave together.
+const LONG = { Tricky: { Kevin: 2 }, Robyn: { Kevin: 4 } };
+for (const a of ['Airwolf Paradise', 'Felly Fell', 'Gelli Haha', 'Despacio', 'Oskar Med K', 'Six Sex', 'Groove Armada', 'DJ Shadow', 'Soulwax', 'Dog Blood', 'Milli Meng', 'Channel Tres', 'SG Lewis', 'Mochakk']) LONG[a] = { Kevin: 1 };
+for (const [label, selections, roomAbove] of [['room above to hold by', LONG, true], ['at the page’s top', null, false]]) {
+  test(`Chromium 1280 mouse, ${label}: un-pick A, then B — B never moves under the pointer${roomAbove ? ', and A leaves while B is held' : '; A waits for B, then both go'}`, { skip: chromium ? false : NO_BROWSER }, async () => {
+    const { ctx, page, errors } = await open(chromium, { width: 1280, selections });
+    try {
+      await press(page, false, '#rail-you');
+      await sleep(400);
+      await press(page, false, '#rail-you-wrap .hl-pop [data-person="Kevin"]');
+      await motionDone(page, { within: '#wall-root' });
+      await press(page, false, '#rail-you');
+      await sleep(500);
+      const sel = (a) => `#wall-root .day-block[data-day="Saturday"] .room[data-room=":fest"] .card[data-artist="${a}"]`;
+      const has = (a) => page.evaluate((s) => { const c = document.querySelector(s); return c ? (c.classList.contains('dim') ? 'dim' : 'on') : 'gone'; }, sel(a));
+      await scrollAt(page, sel('Tricky'), 110);
+      const y0 = await page.evaluate(() => scrollY);
+      if (roomAbove) assert.ok(y0 > 150, `the page has room above (${y0})`);
+      else assert.ok(y0 < 60, `the page is near its top (${y0})`);
+      // A mouse steps a pick down with the grown card's − (the zoom's own
+      // control, never a wrap): real clicks on its box until nothing is left.
+      const face = (bb) => ({ x: bb.x + bb.width * 0.25, y: bb.y + bb.height * 0.3 });
+      const onZoomOf = (a) => page.waitForFunction((n) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown')].some((z) => (z.querySelector('.f-name') || {}).textContent === n), a, { timeout: 4000 });
+      const minusAll = async () => {
+        for (let i = 0; i < 4; i++) {
+          const m = await page.locator('#zoom-layer .zoom-slot.shown .f-step.minus').boundingBox();
+          if (!m) break;
+          await page.mouse.click(m.x + m.width / 2, m.y + m.height / 2);
+          await sleep(200);
+        }
+      };
+      // Tricky: 2 → 3 → must → nothing, the pointer resting on it.
+      let b = await page.locator(sel('Tricky')).boundingBox();
+      let at = face(b);
+      await page.mouse.move(at.x, at.y, { steps: 4 });
+      await sleep(500);
+      await minusAll();
+      await sleep(600);
+      assert.equal(await has('Tricky'), 'dim', 'Tricky dimmed, still there under the pointer');
+      // Down to Robyn, watching where it is from the moment the pointer leaves Tricky.
+      b = await page.locator(sel('Robyn')).boundingBox();
+      await page.evaluate((s) => {
+        window.__robyn = [];
+        const iv = setInterval(() => { const c = document.querySelector(s); if (c) window.__robyn.push(Math.round(c.getBoundingClientRect().top)); }, 16);
+        setTimeout(() => clearInterval(iv), 4000);
+      }, sel('Robyn'));
+      // Onto Robyn's lower half: Tricky's grown zoom can reach over the top of
+      // the row just below it, and the pointer has to leave that zoom to be on Robyn.
+      at = { x: b.x + b.width / 2, y: b.y + b.height * 0.85 };
+      await page.mouse.move(at.x, at.y, { steps: 8 });
+      await onZoomOf('Robyn');
+      await minusAll(); // must → nothing
+      await sleep(1200);
+      await motionDone(page, { within: '#wall-root' });
+      assert.equal(await has('Robyn'), 'dim', 'Robyn un-picked, dimmed, held');
+      assert.equal(await has('Tricky'), roomAbove ? 'gone' : 'dim', roomAbove ? 'Tricky gone while Robyn is held' : 'Tricky waits for Robyn');
+      const tops = await page.evaluate(() => window.__robyn);
+      assert.ok(Math.max(...tops) - Math.min(...tops) <= 1, `Robyn never moved under the pointer: ${[...new Set(tops)]}`);
+      // Let go: whatever is left goes.
+      await page.mouse.move(4, 4, { steps: 6 });
+      await page.waitForFunction(([r, t]) => !document.querySelector(r) && !document.querySelector(t), [sel('Robyn'), sel('Tricky')], { timeout: 5000 });
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
