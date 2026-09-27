@@ -22,15 +22,15 @@
   walk → merge main → stamp above main → CI both jobs → merge → smoke.
 - **Share for Our picks** (`live/share`, the sibling session; log
   `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
-  link with `&plan=open`), the welcome card's ✕, "Share the crew link" in the
-  Show menu, and the two touch-timing catches banked from v101. Gated at
-  f7a3d25 and cut as `release/share` (v103). The coordinator's Sol pass found
-  a stale "now" (a stop outlasting its set, live since v101 for up to 10
-  minutes after a set), a plan link that forgets its day, and a highlight's
-  share naming the whole crew's acts; the sibling is fixing them on
-  `live/share`, each with a failing test first. Next for the sibling, Kevin's
-  new set in a design round on `live/plan-days-design`: Despacio crowding the
-  route, the open plan scrolling on to future days, the menus while it is open.
+  link that opens that night's plan), the welcome card's ✕, "Share the crew
+  link" in the Show menu, the two touch-timing catches from v101. Sol's
+  release round is fixed at 1569407 (log item 13): a stop ends with its set
+  (the stale "now", live since v101 for up to 10 minutes), `&plan=<date>`
+  opens only on its night, a highlight's Share names and ranks the
+  highlighted people's picks. Waiting on the coordinator's Sol re-run. Kevin's
+  next set (Despacio crowding the route, the plan scrolling on to future
+  days, the menus while it is open) has a review page out for his calls,
+  from `live/plan-days-design`.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
   night and type, `gen.py`); a private Google My Map is being built from them.
   The in-app version is banked for the reference tab (2027).
