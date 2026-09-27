@@ -2640,7 +2640,9 @@ function alignHighlightMenu(wrap, pop) {
 // the focus back: a card by its row (wall.js rowKey), anything else a Tab
 // reaches by its day, room and kind — the nth of its key — quietly (no fresh
 // keyboard zoom; a standing one is handed over by repaintWall itself), and
-// only when the focus went nowhere. A place that is gone keeps nothing.
+// only when the focus went nowhere. A place that is gone keeps nothing. The
+// keyboard inside a standing zoom (its "+ note", its −) is on the zoom's card:
+// the overlay is rebuilt, so the card takes it, as the notes door hands it back.
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"]), .card[data-artist]';
 function placeKey(el) {
   const card = el.closest('.card[data-artist]');
@@ -2656,7 +2658,9 @@ function placesLike(key) {
   return [...pool].filter((el) => placeKey(el) === key);
 }
 function focusedPlace() {
-  const a = document.activeElement;
+  let a = document.activeElement;
+  const z = zoomedCard();
+  if (a && a.closest && a.closest('#zoom-layer') && z && z.isConnected) a = z;
   if (!a || !a.closest || !$('wall-root').contains(a) || a === $('wall-root')) return null;
   const el = a.closest('.card[data-artist]') || a;
   const key = placeKey(el);

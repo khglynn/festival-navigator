@@ -646,6 +646,27 @@ writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
       Despacio. Frames: `v103-shots/twice-{chromium,webkit}-{1-before,2-held,
       3-left}.png` — the Our picks peek goes from "NOW till 9 PM" to "till 11
       PM" as Horse Meat Disco comes off Kevin's night.
+      **And the same drop from inside a zoom (call 3b):** the keyboard on a
+      standing zoom's own controls (its −, "+ note") when a friend's pick
+      arrives on the poll — the repaint rebuilds the overlay, and the focus
+      fell to `<body>`. Focus inside a standing zoom now counts as the zoom's
+      card, and the card takes it back (as the notes door already hands focus
+      back to the card the zoom stood on). Test, red first: Ross's Tricky,
+      keyboard zoom, focus on its first enabled control, a friend's pick
+      polled in — the zoom stands on, the focus is on Tricky (was `<body>`).
+      Walked in both engines: Tab into Despacio's zoom ("Less for Despacio"),
+      a friend's pick brought by the poll, the wall really repainted (a mark
+      on the old card is gone), the zoom stands and the focus is on the
+      Despacio card — `twice-*-4-repainted.png`. The walk's one page error,
+      `reg.update` of undefined, is the rig: Playwright's service-worker block
+      resolves `register()` with nothing; a real browser resolves a
+      registration.
+      **A flake read, not the system:** one full local browser run failed
+      `people-menu` "Chromium 1280 mouse … the tops on one line (40.6 /
+      38.5)" — green alone three times, green on CI, and 2.1px is the menu's
+      4px arrival slide caught mid-way on a loaded machine (the test read the
+      boxes 350 ms after a press). Its `press` now waits for the menus'
+      animations to rest before any geometry is read; the file is 24/24.
 - [ ] T3 IMPORTANT, pre-existing on main — banked below, not fixed now.
 
 ### T3, banked: the crew playlist's ledger is one array, and arrays don't merge

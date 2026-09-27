@@ -266,3 +266,27 @@ test('one artist in two rooms: holding its Afters row does not hold its Folsom r
   // …and that repaint keeps the keyboard where it went, too (not <body>).
   assert.equal(document.activeElement, daysLine(), 'the keyboard is still on the days line after the row left');
 });
+
+// A repaint while the keyboard is inside a standing zoom (its "+ note", its
+// −): the zoom comes back on the fresh card, and the keyboard with it — on
+// the card the zoom stands on, as the notes door already hands it back. It
+// used to fall to <body>, the next Tab starting at the top of the page.
+test('a friend’s repaint while the keyboard is in a zoom keeps the keyboard on that card', async () => {
+  await highlight('Kevin'); // off
+  await highlight('Ross');
+  const tricky = () => cardIn(room('Saturday', ':fest'), 'Tricky');
+  assert.ok(tricky(), 'Ross’s Tricky is on the List');
+  window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  tricky().focus();
+  await settle(40);
+  const control = () => document.querySelector('#zoom-layer .zoom-slot button:not([disabled])');
+  await until(() => !!control(), 'the keyboard zoom to stand, with its controls');
+  control().focus();
+  assert.ok(document.activeElement.closest('#zoom-layer'), 'the keyboard is inside the zoom');
+  SERVER = deepMerge(SERVER, { festivals: { [FID]: { selections: { Galen: { Ross: 2 } } } } });
+  await sync.pollSync();
+  await until(() => level('Galen', 'Ross') === 2, 'the friend’s change to arrive');
+  await settle(60);
+  assert.ok(document.querySelector('#zoom-layer .zoom-slot'), 'the zoom stands on through the repaint');
+  assert.equal(document.activeElement, tricky(), 'the keyboard is on the card the zoom stands on, not <body>');
+});

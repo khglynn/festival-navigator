@@ -93,6 +93,12 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     if (phone) await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
     else await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
     await sleep(350);
+    // A menu arrives with a 4px slide and a touch of overshoot; on a busy
+    // machine it can still be moving at 350 ms, and a box read then is off
+    // by the slide (a full local run, 2026-09-26: "the tops on one line
+    // (40.6 / 38.5)", green alone three times). Read geometry at rest.
+    await page.waitForFunction(() => [...document.querySelectorAll('.hl-pop, .sort-pop')]
+      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')), null, { timeout: 3000 }).catch(() => {});
   };
   // Outside the menu, far from it: a card on the wall clear of the menu —
   // where a thumb puts a menu away, and where the tap only closes it (the
