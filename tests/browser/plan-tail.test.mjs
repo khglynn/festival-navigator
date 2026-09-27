@@ -153,7 +153,14 @@ async function toSunday(page) {
 async function share(page) {
   const before = await page.evaluate(() => window.__shared.length);
   await tap(page, '#plan .plan-share');
-  await sleep(150);
+  // Until the stub has it, on the real clock (a slow runner is late, not wrong:
+  // Sol's nit on 0f076a6), then a beat to see that one text came, not two.
+  const end = Date.now() + 4000;
+  while ((await page.evaluate(() => window.__shared.length)) <= before) {
+    assert.ok(Date.now() < end, 'the sheet was handed a text');
+    await sleep(25);
+  }
+  await sleep(100);
   const all = await page.evaluate(() => window.__shared);
   assert.equal(all.length, before + 1, 'the sheet was handed one text');
   return all[all.length - 1].text;
