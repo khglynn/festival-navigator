@@ -188,6 +188,47 @@ async function share(page) {
   return all[all.length - 1].text;
 }
 
+// A real tap: a finger on the phone (the harness's phones have touch), the
+// mouse on the laptop. `target`: a selector or a handle.
+async function tap(page, target) {
+  const el = typeof target === 'string' ? page.locator(target).first() : target;
+  const b = await el.boundingBox();
+  assert.ok(b, `${target} is on screen`);
+  const x = b.x + b.width / 2;
+  const y = b.y + b.height / 2;
+  if (await page.evaluate(() => matchMedia('(hover: none)').matches || navigator.maxTouchPoints > 0) && (page.viewportSize() || {}).width < 720) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+  await sleep(60);
+}
+const menuUp = (page, sel) => page.waitForFunction((s) => { const m = document.querySelector(s); return !!m && m.getClientRects().length > 0 && getComputedStyle(m).display !== 'none' && getComputedStyle(m).visibility !== 'hidden'; }, sel, { timeout: 4000 });
+const menuGone = (page, sel) => page.waitForFunction((s) => { const m = document.querySelector(s); return !m || !m.getClientRects().length || getComputedStyle(m).display === 'none'; }, sel, { timeout: 4000 });
+// The menu is ON TOP: a finger at its middle reaches it, and so does one at
+// the middle of wherever it overlaps the open plan (on the laptop the people
+// menu can sit clear of the panel; the Show menu drops over it).
+async function onTop(page, sel, { over = false } = {}) {
+  const hit = await page.evaluate(([s, must]) => {
+    const reach = (x, y) => { const at = document.elementFromPoint(x, y); return at && at.closest(s) ? 'menu' : (at ? at.className || at.tagName : 'nothing'); };
+    const m = document.querySelector(s).getBoundingClientRect();
+    const own = reach((m.left + m.right) / 2, (m.top + m.bottom) / 2);
+    if (own !== 'menu') return `its middle: ${own}`;
+    const p = document.getElementById('plan').getBoundingClientRect();
+    const x0 = Math.max(m.left, p.left); const x1 = Math.min(m.right, p.right);
+    const y0 = Math.max(m.top, p.top); const y1 = Math.min(m.bottom, p.bottom);
+    if (x1 - x0 < 4 || y1 - y0 < 4) return must ? 'clear of the plan' : 'menu';
+    const over = reach((x0 + x1) / 2, (y0 + y1) / 2);
+    return over === 'menu' ? 'menu' : `over the plan: ${over}`;
+  }, [sel, over]);
+  assert.equal(hit, 'menu', `the menu is on top of the open plan (${sel})`);
+}
+// The people menu's Our picks row (people-menu.js), or null.
+const planRow = async (page, wrap) => {
+  const row = page.locator(`${wrap} .hl-pop [data-act="plan"]`);
+  return (await row.count()) ? row.first() : null;
+};
+const tagged = (page) => page.locator('#plan .plan-row.tagged').getAttribute('aria-label');
+const rowsOf = (page, night) => page.evaluate((n) => [...document.querySelectorAll('#plan .plan-row')]
+  .filter((r) => r.dataset.night === n).map((r) => r.textContent), night);
+
 for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
   const skip = get() ? false : NO_BROWSER;
 
@@ -387,4 +428,161 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // ---- the menus while the plan is open (P3; DESIGN.md C1–C7) ----------------------
+  // Both menus open over the open plan and re-plan it live; neither takes a
+  // history entry (a menu never does: v93's four rounds). The people menu's
+  // "Our picks" row is there only while the plan is closed — open, it is
+  // already the thing under the menu.
+
+  test(`${name}: the Show menu opens over the open plan, takes no history entry, and hiding a room re-plans it under the menu`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get());
+    try {
+      await openPlan(page);
+      const len = await page.evaluate(() => history.length);
+      const sat = () => rowsOf(page, '2026-09-26');
+      assert.ok((await sat()).some((t) => t.includes('The Great Northern')), 'Saturday ends at an afters room');
+      await tap(page, '#dock-fest-link');
+      await menuUp(page, '#dock-fest-wrap .sort-pop');
+      assert.equal(await planState(page), 'open', 'the plan stays open under the menu');
+      await onTop(page, '#dock-fest-wrap .sort-pop', { over: true });
+      await tap(page, '#dock-fest-wrap .sort-pop [data-room="Afters"]');
+      await until(async () => !(await sat()).some((t) => t.includes('The Great Northern')), 'hiding Afters takes its rooms out of the plan');
+      assert.ok(await page.locator('#dock-fest-wrap .sort-pop').isVisible(), 'the menu is still up');
+      assert.equal(await planState(page), 'open');
+      await tap(page, '#dock-fest-link');
+      await menuGone(page, '#dock-fest-wrap .sort-pop');
+      await settled(page);
+      assert.equal(await planState(page), 'open', 'and still open once the menu has gone');
+      assert.equal(await page.evaluate(() => history.length), len, 'no history entry, through all of it');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: the people menu opens over the open plan without Our picks; a highlight re-plans it live, the head says whose, and the Share goes out unnamed`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get());
+    try {
+      await openPlan(page);
+      const len = await page.evaluate(() => history.length);
+      await tap(page, '#dock-you');
+      await menuUp(page, '#dock-you-wrap .hl-pop');
+      assert.equal(await planState(page), 'open');
+      await onTop(page, '#dock-you-wrap .hl-pop', { over: true });
+      assert.equal(await planRow(page, '#dock-you-wrap'), null, 'no Our picks row while the plan is open');
+      // This phone is Gus: his own day, live under the menu.
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Gus"]');
+      await until(async () => (await read(page)).sub === 'Sep 26 · just you', 'the head says whose');
+      assert.match(await tagged(page), /^Next: Prospa, Warehouse, 9:45 PM/);
+      assert.equal(await page.locator('#plan .plan-row.dim').count(), 0, 'nothing dims: the plan is theirs');
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Cy"]');
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Hal"]');
+      await until(async () => (await read(page)).sub === 'Sep 26 · you, Cy + Hal', 'three, by name');
+      assert.match(await tagged(page), /^Now: Dog Blood, Pier Stage.*2 of 3/);
+      assert.equal(await planState(page), 'open');
+      await tap(page, '#dock-you');
+      await menuGone(page, '#dock-you-wrap .hl-pop');
+      await settled(page);
+      assert.equal((await read(page)).sub, 'Sep 26 · you, Cy + Hal', 'the head keeps saying whose');
+      // The Share sends what is on screen, with no one's name, and the foot
+      // says the link opens on everyone's picks (a highlight never rides in a link).
+      assert.match(await page.locator('#plan .plan-foot .opens').textContent(), /^Opens on everyone’s picks/);
+      const text = await share(page);
+      assert.match(text, /^Our picks for Sat Portola, now till end of day\n\n/);
+      for (const n of CREWS['portola-2026'].members) assert.doesNotMatch(text.split('Full rundown:')[0], new RegExp(`\\b${n}\\b`), `${n} is not named`);
+      assert.match(text, /&plan=2026-09-26$/);
+      await linesInNight(page, text, '2026-09-26');
+      assert.equal(await page.evaluate(() => history.length), len, 'no history entry');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // DESIGN.md C's edge: a highlight can leave the plan with nothing in it
+  // (Gus and Hal are never together again this weekend). A menu over the
+  // plan must never take it away: it stays open on today, saying why, its
+  // Share resting. Closed, there is no peek, so the shelf goes; Everyone
+  // brings the peek back, and the open menu grows its Our picks row.
+  test(`${name}: a highlight that empties the plan keeps it open under the menu — the day says why and the Share rests; closed, the shelf goes, and Everyone brings it back`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get());
+    try {
+      await openPlan(page);
+      await tap(page, '#dock-you');
+      await menuUp(page, '#dock-you-wrap .hl-pop');
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Gus"]');
+      await tap(page, '#dock-you-wrap .hl-pop [data-person="Hal"]');
+      await until(async () => (await read(page)).sub === 'Sep 26 · you + Hal', 'the head names the two');
+      assert.equal(await planState(page), 'open', 'the plan stays open');
+      // Their two stops today are over (behind Earlier), none is left, and
+      // they never meet on Sunday: each day says so.
+      assert.deepEqual(await rowsOf(page, '2026-09-26'), ['Nothing left today'], 'today says why');
+      assert.ok((await rowsOf(page, '2026-09-27')).includes('Never together — no stop'), 'and Sunday');
+      const r = await read(page);
+      assert.deepEqual([r.share, r.shareOff], ['Nothing to share today', true]);
+      await tap(page, '#dock-you');
+      await menuGone(page, '#dock-you-wrap .hl-pop');
+      await settled(page);
+      assert.equal(await planState(page), 'open', 'and still open once the menu has gone');
+      const box = await page.locator('#plan .plan-grab').boundingBox();
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await until(async () => ['none', 'gone'].includes(await planState(page)), 'closed with no peek, the shelf goes');
+      // With a highlight on, the avatar's slot is the pill: its faces reopen the menu.
+      await tap(page, '#dock-you-wrap .hl-pill .hl-faces');
+      await menuUp(page, '#dock-you-wrap .hl-pop');
+      assert.equal(await planRow(page, '#dock-you-wrap'), null, 'no plan, no row');
+      await tap(page, '#dock-you-wrap .hl-pop [data-person=""]');
+      await until(async () => (await planState(page)) === 'peek', 'Everyone brings the peek back');
+      await until(async () => !!(await planRow(page, '#dock-you-wrap')), 'and the open menu its Our picks row');
+      assert.match(await tagged(page), /^Now: Dog Blood, Pier Stage/);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: with the plan closed the people menu offers Our picks, and it opens the plan`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get());
+    try {
+      assert.equal(await planState(page), 'peek');
+      await tap(page, '#dock-you');
+      await menuUp(page, '#dock-you-wrap .hl-pop');
+      const row = await planRow(page, '#dock-you-wrap');
+      assert.ok(row, 'the row is there while the plan is closed');
+      await tap(page, row);
+      await menuGone(page, '#dock-you-wrap .hl-pop');
+      await settled(page);
+      assert.equal(await planState(page), 'open');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name} laptop: both menus open with the panel open, the Show menu over it, and a highlight's head and corner say whose`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { desk: true });
+    try {
+      const card = await page.locator('#plan .plan-row.tagged').boundingBox();
+      await page.mouse.click(card.x + card.width * 0.4, card.y + card.height / 2);
+      await settled(page);
+      assert.equal(await planState(page), 'open');
+      const len = await page.evaluate(() => history.length);
+      await tap(page, '#rail-fest-link');
+      await menuUp(page, '#rail-fest-wrap .sort-pop');
+      assert.equal(await planState(page), 'open');
+      await onTop(page, '#rail-fest-wrap .sort-pop', { over: true });
+      await page.keyboard.press('Escape');
+      await menuGone(page, '#rail-fest-wrap .sort-pop');
+      await tap(page, '#rail-you');
+      await menuUp(page, '#rail-you-wrap .hl-pop');
+      await onTop(page, '#rail-you-wrap .hl-pop');
+      assert.equal(await planRow(page, '#rail-you-wrap'), null, 'no Our picks row while the panel is open');
+      await tap(page, '#rail-you-wrap .hl-pop [data-person="Gus"]');
+      // The laptop's head is the panel's (the corner card grown), not the phone's.
+      await until(async () => (await page.evaluate(() => document.querySelector('#plan .pc-head .sub').textContent)) === 'Sep 26 · just you', 'the panel head says whose');
+      await page.keyboard.press('Escape');
+      await menuGone(page, '#rail-you-wrap .hl-pop');
+      assert.equal(await planState(page), 'open');
+      const grab = await page.locator('#plan .plan-grab').boundingBox();
+      await page.mouse.click(grab.x + grab.width / 2, grab.y + 20);
+      await settled(page);
+      assert.equal(await planState(page), 'peek');
+      const line = await page.evaluate(() => document.querySelector('#plan .pc-line').textContent.replace(/\s+/g, ' ').trim());
+      assert.equal(line, 'OUR PICKS · SAT · JUST YOU', 'the corner says whose too');
+      assert.equal(await page.evaluate(() => history.length), len, 'no history entry');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
 }
