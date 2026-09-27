@@ -41,7 +41,6 @@ let calls = [];
 let waits = [];
 let playlistItems = [];
 let createFails = [];
-let readFails = 0;
 let addFails = [];
 let created = 0;
 const asked = new Map();
@@ -73,9 +72,8 @@ globalThis.fetch = async (url, opts = {}) => {
     return json({ id: 'pl123', external_urls: { spotify: 'https://open.spotify.com/playlist/pl123' } }, 201);
   }
   if (path.startsWith('/playlists/pl123/items')) {
-    if (opts.method !== 'POST' && readFails > 0) { readFails -= 1; return json({}, 503); }
     if (opts.method === 'POST') {
-      const f = addFails.shift();
+      const f = addFails.shift() || null;
       if (!f || f.did) playlistItems.push(...JSON.parse(opts.body).uris);
       if (f) return json({}, f.status, f.retry != null ? { 'Retry-After': String(f.retry) } : {});
       return json({ snapshot_id: 's' }, 201);
@@ -85,7 +83,7 @@ globalThis.fetch = async (url, opts = {}) => {
   return json({ error: 'not in this test' }, 404);
 };
 spotify.setPauseForTests(async (ms) => { waits.push(ms); });
-const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; createFails = []; addFails = []; readFails = 0; created = 0; asked.clear(); };
+const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; createFails = []; addFails = []; created = 0; asked.clear(); };
 localStorage.setItem('fn_spotify_auth_v1', JSON.stringify({ clientId: 'c'.repeat(32), access_token: 'at', refresh_token: 'rt', expires_at: Date.now() + 3600e3 }));
 // The maker's saved tracks for one artist (the scan cache).
 localStorage.setItem('fn_spotify_libmap_v1', JSON.stringify({
@@ -198,24 +196,32 @@ test('a create Spotify answered with a 5xx is NOT repeated — it may have made 
   assert.equal(adds().length, 0);
 });
 
-test('an add Spotify answered with a 5xx but DID do: the playlist is read back, and nothing is added twice', async () => {
+// Round 3 cut the read-back: a 5xx on an add is never repeated in any form.
+test('an add Spotify answered with a 5xx is never repeated — no second add, no read back — and the run says which artists are confirmed', async () => {
   reset({ Soulwax: ['ok'] });
   addFails = [{ status: 502, did: true }];
-  playlistItems = [];
-  const made = await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] });
-  assert.deepEqual(playlistItems, ['spotify:track:Soulwax0', 'spotify:track:Soulwax1', 'spotify:track:Soulwax2'], 'each track once');
-  assert.equal(adds().length, 1, 'no second add: everything was already there');
-  assert.equal(reads().length, 1, 'one read back to find out');
-  assert.equal(made.trackCount, 3);
+  await assert.rejects(spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] }), (e) => {
+    assert.deepEqual(e.playlist, { id: 'pl123', url: 'https://open.spotify.com/playlist/pl123' });
+    assert.deepEqual(e.confirmed, [], 'the one add was not confirmed');
+    assert.match(e.message, /made the playlist but didn’t confirm every song/);
+    return true;
+  });
+  assert.equal(adds().length, 1, 'one add, never two');
+  assert.equal(reads().length, 0, 'and no read back');
+  assert.equal(created, 1);
 });
 
-test('an add answered with a 5xx that Spotify did NOT do: read back, then only the missing tracks are added', async () => {
-  reset({ Soulwax: ['ok'] });
-  addFails = [{ status: 503, did: false }];
-  await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] });
-  assert.deepEqual(playlistItems, ['spotify:track:Soulwax0', 'spotify:track:Soulwax1', 'spotify:track:Soulwax2']);
-  assert.equal(adds().length, 2, 'the add, then the missing ones');
-  assert.equal(reads().length, 1);
+test('a long playlist whose second batch fails: the artists whose songs all landed in the first hundred are the confirmed ones', async () => {
+  const fifty = Array.from({ length: 50 }, (_, i) => `Artist ${String(i).padStart(2, '0')}`);
+  reset(Object.fromEntries(fifty.map((n) => [n, ['ok']])));
+  // 3 top songs each = 150 tracks: the first add (100) lands, the second fails.
+  addFails = [null, { status: 503, did: false }];
+  await assert.rejects(spotify.playlistFromPicks({ title: 'T', artistNames: fifty, tracksPerArtist: 3 }), (e) => {
+    assert.deepEqual(e.confirmed, fifty.slice(0, 33), 'the first 33 artists (99 songs) are whole in the first batch; the 34th is split');
+    return true;
+  });
+  assert.equal(adds().length, 2);
+  assert.equal(playlistItems.length, 100);
 });
 
 test('a 429 on an add is a refusal (nothing was done): it waits and sends it again, and nothing is doubled', async () => {
@@ -247,30 +253,4 @@ test('the top-up carries the artists with no top songs, saved tracks or not', as
   reset({ Prospa: ['none'] });
   const r2 = await spotify.addArtistsToPlaylist({ playlistId: 'pl123', artistNames: ['Prospa'] });
   assert.deepEqual(r2, { added: 0, misses: 1, found: [], unsearched: [], topless: ['Prospa'] }, 'nothing to add, and it says who');
-});
-
-// Sol's re-review of v103: the created playlist is known the moment Spotify
-// confirms it — before any add — so a later failure never leads to a second.
-test('the created playlist is handed back the moment Spotify confirms it, before any song is added', async () => {
-  reset({ Soulwax: ['ok'] });
-  const seen = [];
-  await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'], onCreated: (pl) => seen.push({ ...pl, adds: adds().length }) });
-  assert.deepEqual(seen, [{ id: 'pl123', url: 'https://open.spotify.com/playlist/pl123', adds: 0 }]);
-});
-
-test('an add that fails after the create (a 5xx, and the read back fails too): the error carries the playlist, and there is one create', async () => {
-  reset({ Soulwax: ['ok'] });
-  addFails = [{ status: 502, did: false }];
-  readFails = 2; // the read back, and its one retry
-  const seen = [];
-  await assert.rejects(
-    spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'], onCreated: (pl) => seen.push(pl.id) }),
-    (e) => {
-      assert.deepEqual(e.playlist, { id: 'pl123', url: 'https://open.spotify.com/playlist/pl123' });
-      assert.match(e.message, /made the playlist but didn’t confirm the songs/);
-      return true;
-    },
-  );
-  assert.deepEqual(seen, ['pl123'], 'it was handed back before the add');
-  assert.equal(created, 1);
 });

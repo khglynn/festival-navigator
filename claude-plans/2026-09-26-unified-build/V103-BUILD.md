@@ -580,7 +580,7 @@ Review: `~/.codex-runs/cx-20260926-184621-58555-af5a91/last-message.md`. The
 hidden-tab watch is clean. This is the third round on Spotify's ambiguous
 writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
 
-- [ ] T1 BLOCKER — no early record, no mid-flight resume, no read-back-and-
+- [x] T1 BLOCKER — no early record, no mid-flight resume, no read-back-and-
       add-the-missing. A 5xx on a write is never repeated (a 429 still waits
       and resends: a refusal). The crew playlist is recorded ONCE, at the end,
       by the finished Make's own path — and the drill is redrawn then, so the
@@ -590,7 +590,21 @@ writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
       made the playlist but didn’t confirm every song — Add new picks finishes
       it". No shared crew record exists mid-run (which also removes the window
       where a friend saw an empty-ledger playlist). Test in the open drill,
-      without reopening it.
+      without reopening it. **Done:** `pushTracks` adds in batches of 100 and
+      stops at the first failure, saying how many songs landed before it; the
+      error from `playlistFromPicks` carries `.playlist` and `.confirmed` (the
+      found artists whose every song landed). The screen records once — after a
+      finished Make with its found artists, after a failure with the confirmed
+      ones — and redraws the drill both times (a finished Make now shows the
+      recorded playlist's Add new picks at once, too). Just mine records
+      nothing and says "— open it to check". Removed: `onCreated`, the
+      read-back in `pushTracks`, their tests. Tests, red first: an add's 5xx is
+      one add, no read back, and says none confirmed; a 150-song Make whose
+      second batch fails confirms exactly the 33 artists whose songs all landed
+      in the first 100; in the real drill, never reopened: no crew record at
+      the create or the add, then Add new picks visible (no Make playlist), the
+      words, the link, the record with no artist, and Add new picks filling the
+      same playlist — one create.
 - [ ] T2 IMPORTANT — rows are kept by their occurrence and room, not the
       artist's name: un-pick Horse Meat Disco while holding its Afters row, and
       its Folsom row still leaves.

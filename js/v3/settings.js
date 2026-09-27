@@ -1896,11 +1896,12 @@ function openSpotifyDrill(ctx, actions) {
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();
-        // A crew playlist is recorded the moment Spotify confirms it exists,
-        // with no artist done yet — before any song — so an add that fails
-        // after it leaves a playlist this screen links and Add new picks
-        // finishes, never one a second press would make again (Sol's
-        // re-review of v103). The finished Make records its artists below.
+        // A crew playlist is recorded ONCE, at the end, and the drill is
+        // redrawn then — so the button in front of you is the recorded
+        // playlist's Add new picks, never a Make that would create a second
+        // (Sol's round 3 on v103: the early record and the mid-run resume were
+        // cut). A failure after a confirmed create records it with the artists
+        // whose songs were confirmed so far; nothing is shared mid-run.
         const record = (pl, artists) => {
           state.recordSpotifyPlaylist(fid, {
             id: pl.id, url: pl.url, mode: 'everyone', by: ctx.meName,
@@ -1913,21 +1914,21 @@ function openSpotifyDrill(ctx, actions) {
           made = await spotify.playlistFromPicks({
             title, artistNames: names, collaborative: !mineOnly,
             onProgress: (p) => sayPl(fid, `Finding tracks ${p.i}/${p.of} — ${p.name}`),
-            onCreated: (pl) => { if (!mineOnly) record(pl, []); },
           });
         } catch (e) {
           if (!e || !e.playlist) throw e;
-          // Made, but the songs are unconfirmed: say so, and link it.
+          // Made, but not every song confirmed: say so, link it, record it.
           const pl = e.playlist;
           sayPl(fid, () => {
             const said = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
-              `Spotify made the playlist but didn’t confirm the songs — ${mineOnly ? 'open it to check' : 'Add new picks finishes it'}. `);
+              `Spotify made the playlist but didn’t confirm every song — ${mineOnly ? 'open it to check' : 'Add new picks finishes it'}. `);
             const link = document.createElement('a');
             link.href = pl.url; link.target = '_blank'; link.rel = 'noopener';
             link.textContent = 'Open in Spotify ↗';
             link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
             return [said, link];
           });
+          if (!mineOnly) { record(pl, e.confirmed || []); rerenderDrill(); }
           return;
         }
         if (!mineOnly) record(made, made.found);
@@ -1950,6 +1951,7 @@ function openSpotifyDrill(ctx, actions) {
           link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
           return [done, link];
         });
+        if (!mineOnly) rerenderDrill(); // the recorded playlist, and its Add new picks
       } catch (e) { sayPl(fid, String(e.message || e)); }
       finally { plBusy(fid, false); }
     });

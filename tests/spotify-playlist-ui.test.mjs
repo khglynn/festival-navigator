@@ -26,7 +26,8 @@ let items = [];
 const topless = new Set(); // artists Spotify answers for with no top songs
 let createId = 'crewpl';
 let creates = 0;
-let addDown = false; // adds and the read back answer 5xx
+let addDown = false; // adds (and reads of the playlist) answer 5xx
+let midRun = null; // whether a crew record of the new playlist exists mid-run
 async function network(url, opts = {}) {
   const u = String(url);
   if (u === '/data/festivals/index.json') return json(INDEX);
@@ -43,15 +44,17 @@ async function network(url, opts = {}) {
     }
     if (path === '/me/playlists') {
       creates += 1;
+      if (midRun) midRun.push((state.spotifyPlaylistFor('ui-fest') || {}).id === createId);
       return json({ id: createId, external_urls: { spotify: `https://open.spotify.com/playlist/${createId}` } }, 201);
     }
     if (path.startsWith(`/playlists/${createId}/items`)) {
       if (opts.method === 'POST') {
+        if (midRun && midRun.length === 1) midRun.push((state.spotifyPlaylistFor('ui-fest') || {}).id === createId);
         if (addDown) return json({}, 502); // Spotify did NOT add them, and says so badly
         items.push(...JSON.parse(opts.body).uris);
         return json({ snapshot_id: 's' }, 201);
       }
-      if (addDown) return json({}, 503); // …and the read back fails too
+      if (addDown) return json({}, 503); // …and so does reading it
       return json({ items: items.map((uri) => ({ track: { uri } })), next: null });
     }
   }
@@ -197,32 +200,37 @@ test('Make a new one (Everyone) with that artist and your saved tracks of theirs
   assert.ok(!state.spotifyPlaylistFor('ui-fest').artists.includes('Galen'), 'and Galen is still not done');
 });
 
-// Sol's re-review of v103: a playlist Spotify confirmed making is recorded
-// right then, before any song — so when the adds fail (and even the read back
-// does), the screen links it and Add new picks finishes it. Never a second.
-test('Make playlist where the create works but the adds fail: the playlist is recorded and linked, and Add new picks finishes it — one create', async () => {
+// Sol's round 3 on v103, the mechanism cut: no crew record exists while a
+// Make runs; it is recorded ONCE, at the end, and the open drill is redrawn
+// then. Spotify makes the playlist but its adds fail: the record carries the
+// artists confirmed so far (none here), the words say so, and the button in
+// front of you — the SAME open drill, never reopened — is Add new picks, which
+// fills that playlist. One create in all.
+test('Make where the create works but the adds fail: recorded once at the end, and the open drill offers Add new picks, which fills it — one create', async () => {
   topless.clear();
   searched = [];
   items = [];
   creates = 0;
   createId = 'crewPlaylist02AB';
   addDown = true;
+  midRun = [];
   await open();
   [...drill().querySelectorAll('button')].find((b) => b.textContent === 'Everyone').click();
   make().click();
-  await until(() => /didn’t confirm the songs/.test(drill().textContent) && !make().disabled, 'the words');
-  assert.match(drill().textContent, /Spotify made the playlist but didn’t confirm the songs — Add new picks finishes it\./);
-  assert.ok([...drill().querySelectorAll('a')].some((a) => a.href === 'https://open.spotify.com/playlist/crewPlaylist02AB'), 'and it is linked');
+  await until(() => /didn’t confirm every song/.test(drill().textContent) && !button('Add new picks')?.disabled, 'the words and the redrawn drill');
+  assert.match(drill().textContent, /Spotify made the playlist but didn’t confirm every song — Add new picks finishes it\./);
+  assert.ok(button('Add new picks'), 'the open drill now offers Add new picks');
+  assert.equal(button('Make playlist'), undefined, 'and never Make playlist');
+  assert.ok([...drill().querySelectorAll('a')].some((a) => a.href === 'https://open.spotify.com/playlist/crewPlaylist02AB'), 'it is linked');
   const rec = state.spotifyPlaylistFor('ui-fest');
-  assert.equal(rec.id, 'crewPlaylist02AB', 'recorded the moment it was made');
-  assert.deepEqual(rec.artists, [], 'with no artist done yet');
-  assert.equal(creates, 1);
-  // Spotify answers again: Add new picks, on the playlist that exists.
+  assert.equal(rec.id, 'crewPlaylist02AB');
+  assert.deepEqual(rec.artists, [], 'no artist confirmed yet');
+  assert.deepEqual(midRun, [false, false], 'no crew record of it while the run was going (at the create, at the add)');
+  // Spotify answers again: the visible Add new picks, in the same drill.
   addDown = false;
-  await open();
   button('Add new picks').click();
   await until(() => /Added/.test(drill().textContent), 'the top-up');
   assert.ok(items.length > 0, 'the songs went into that playlist');
-  assert.equal(creates, 1, 'and never a second create');
+  assert.equal(creates, 1, 'never a second create');
   assert.ok(state.spotifyPlaylistFor('ui-fest').artists.length > 0);
 });
