@@ -751,3 +751,14 @@ test:browser` 357 of 359 (1 skipped): the one red `hover-contract` "a random
 real-input walk" (a close read a beat early) — it runs against
 `gallery.html`, which never loads `js/v3/app.js`, the only file this fix
 touches; alone it went 2 of 3 green under a load average of 8–38.
+
+**CI at this fix, d226f70 — run 36290242363.** Attempt 1: checks red on the
+stamp only; browser red on two WebKit tests, read by name. The first, plan-drag
+"WebKit 1280: the welcome card waits…", timed out waiting for the plan's peek.
+The second, zoom-still-hand "WebKit: a slow hand on its way up to NOW…", found
+no card under the pointer after the glide (`under` null). Both are mouse or
+timing walks on the Board, with nothing focused in a zoom, so the one path
+this fix changes never runs in them. Both were green on this branch's three
+earlier CI runs and three of three locally in WebKit, and zoom-still-hand's
+own notes name it load-sensitive. Attempt 2 (the failed jobs re-run):
+**browser green**; checks red on the stamp only.
