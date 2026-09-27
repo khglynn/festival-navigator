@@ -326,3 +326,51 @@ PR and merges; this branch is never stamped here.
        write nothing outside the plan. It is the only failure of that test in the
        last 60 CI runs. It passed on 2d8b7c8's run 36285667551 and passed 5 of 5
        times locally in WebKit.
+17. **Sol's targeted check** (on the coordinator's release head b695d91, code 6cfa2e8).
+    It found the send condition clean: no path sends stale words, and no tap is
+    swallowed. It found three small holes in 16b's `data-sharing` mark, all fixed
+    before the release.
+    1. Two shares at once: the first to answer deleted the one mark while the
+       second was still up.
+    2. pagehide closed the plan and the menu but left the mark. A page kept in the
+       back/forward cache with a pending share would come back with every new
+       build's reload held.
+    3. pastMayMove read only `data-busy`. So coming back to the tab mid-sheet
+       judged the past again and repainted the wall and the plan under the sheet,
+       which the old busy mark had prevented.
+
+    **Fix:** plan-shelf.js `holdForShare(what)` gives each share its own hold, and
+    the mark names the shares in flight ("plan", "crew", "plan crew"). It clears
+    when the last one answers. `dropShares()` runs on pagehide, and an answer that
+    comes after it holds nothing. pastMayMove reads `data-sharing` beside
+    `data-busy`.
+
+    **Tests,** red first in both engines (plan-share): "two shares at once", "the
+    page put away mid-share", and "back to the tab with a sheet still up". The last
+    one checks element identity: the plan's list and a wall card must be the same
+    nodes after the visibilitychange.
+18. **The widen test failed again on CI** (run 36288154945 on b2206a5, WebKit: "no
+    panel on a phone"). This was after round three's fix had passed two CI runs. So
+    a second path was leaving the laptop's `data-side` on a phone, and it lived in
+    the same wait Sol had flagged in 16c. refitPlanShelf waits for the plan's motion
+    to end before it measures. A plan that crossed 720px while a row moved kept the
+    old layout's state until that motion ended. If a wait was already queued behind
+    a motion that never ended, every later refit returned early, so it kept that
+    state for good. I could not reproduce it locally, even with late animation
+    starts of 700, 1200 and 2000 ms. The cure is the one banked in 16c, so 16c is
+    fixed now, not banked.
+    a. **Fix.** A refit that finds the layout on the other side of 720px from its
+       last measure waits for nothing. It finishes the plan's finite motions where
+       they were going, even past a queued wait, then measures, applies and settles.
+       Endless motions are left alone.
+    b. **Test,** red first in both engines (plan-drag): "widened to a laptop while a
+       row is moving — the plan is the panel at once, and narrowed back it is the
+       phone's at once". A 10-minute row animation runs, there is no scroll, and the
+       side must follow the layout within two seconds in both directions. It first
+       asked for three frames, which CI's Linux WebKit missed (run 36289126119), so
+       it now polls. It fails with the flip rule removed. Round three's scroll test
+       still passes; its comment now says both readings must agree.
+    c. **Local runs on a loaded Mac** (load average 150–180 from other sessions):
+       the full suite had timing failures in three unrelated tests (the font
+       arrival's read count, show-links' Tix door, the WebKit composer). Each
+       passes when run alone.

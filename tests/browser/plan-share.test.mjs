@@ -63,16 +63,17 @@ async function open(engine, { share = true, guest = false, plan = false, desk = 
     localStorage.setItem('fn_errlog_off_v1', '1');
     // The share sheet: a stub that keeps what it was handed and says the
     // person sent it — or no share sheet at all. 'waits' stays up until the
-    // test calls window.__closeSheet().
+    // test calls window.__closeSheet() (one call per sheet, oldest first).
     if (withShare) {
       window.__shared = [];
+      window.__closeSheet = () => window.__sheets.shift()();
       const refuses = withShare === 'refuses';
       const waits = withShare === 'waits';
       Object.defineProperty(Navigator.prototype, 'share', {
         configurable: true,
         value: async (d) => {
           window.__shared.push(d);
-          if (waits) await new Promise((done) => { window.__closeSheet = done; });
+          if (waits) await new Promise((done) => { (window.__sheets = window.__sheets || []).push(done); });
           if (refuses) throw new DOMException('Not allowed', 'NotAllowedError');
         },
       });
@@ -366,6 +367,73 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await page.evaluate(() => window.__closeSheet());
       await until(() => page.evaluate(() => document.body.dataset.sharing === undefined), 'the sheet lets go');
       assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Sol's check on the release head (2026-09-26): three holes in that mark.
+  // Two shares at once — the first to settle took the mark away from the
+  // second; each share holds it now, and it stays until the last settles.
+  test(`${name}: two shares at once — the reload stays held until both sheets have answered`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { share: 'waits' });
+    try {
+      await openPlanByGrabber(page);
+      const share = page.locator('#plan .plan-share');
+      await share.click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'the first sheet is up');
+      await share.click();
+      await until(() => page.evaluate(() => window.__shared.length === 2), 'the second sheet is up');
+      await page.evaluate(() => window.__closeSheet());
+      await sleep(100);
+      assert.equal(await page.evaluate(() => document.body.dataset.sharing), 'plan', 'one sheet still up: still held');
+      await page.evaluate(() => window.__closeSheet());
+      await until(() => page.evaluate(() => document.body.dataset.sharing === undefined), 'both answered');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The page put away with a sheet still up (the back/forward cache keeps
+  // it, promise and all): the mark goes with the page, so the page that
+  // comes back can take a new build.
+  test(`${name}: the page put away mid-share lets go of the reload, and a sheet that answers later changes nothing`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { share: 'waits' });
+    try {
+      await openPlanByGrabber(page);
+      await page.locator('#plan .plan-share').click();
+      await until(() => page.evaluate(() => document.body.dataset.sharing === 'plan'), 'the sheet holds the reload');
+      await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+      assert.equal(await page.evaluate(() => document.body.dataset.sharing), undefined, 'put away: let go');
+      await page.evaluate(() => window.__closeSheet());
+      await sleep(100);
+      assert.equal(await page.evaluate(() => document.body.dataset.sharing), undefined, 'the late answer holds nothing');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Back to the tab with a sheet still up: the past is not judged again under
+  // it (app.js pastMayMove), so the wall and the plan behind the sheet stay
+  // as they are. Held here by element identity: that judging repaints the
+  // wall, which builds the plan again with it.
+  test(`${name}: back to the tab with a sheet still up — the wall and the plan behind it are not repainted`, { skip }, async () => {
+    const { ctx, page, errors } = await open(get(), { share: 'waits' });
+    try {
+      await openPlanByGrabber(page);
+      await page.locator('#plan .plan-share').click();
+      await until(() => page.evaluate(() => window.__shared.length === 1), 'the sheet is up');
+      await page.evaluate(() => {
+        document.querySelector('#plan .plan-list').dataset.seen = '1';
+        document.querySelector('#wall-root .card').dataset.seen = '1';
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await sleep(300);
+      const still = await page.evaluate(() => ({
+        plan: document.querySelector('#plan .plan-list').dataset.seen === '1',
+        wall: document.querySelector('#wall-root .card').dataset.seen === '1',
+      }));
+      assert.deepEqual(still, { plan: true, wall: true });
+      await page.evaluate(() => window.__closeSheet());
+      // The dispatched visibilitychange also reaches index.html's ask for a
+      // new worker (the rig blocks workers: plan-drag's filter).
+      assert.deepEqual(errors.filter((e) => !/reg\.update|reading 'update'/.test(e)), []);
     } finally { await ctx.close(); }
   });
 

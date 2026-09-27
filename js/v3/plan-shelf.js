@@ -142,6 +142,28 @@ const chevron = (up) => glyph(up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.
 export const SHARE_MARK = 'M6 7.2V1.6M3.9 3.7 6 1.6l2.1 2.1M4.2 5.4H3.1v5.1h5.8V5.4H7.8';
 export const COPY_MARK = 'M4.3 4.3h5.2v6.2H4.3zM7.7 4.3V2.5H2.5v6.2h1.8';
 export const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+// A share in progress — its sheet up, or its copy on the way — holds a new
+// build's reload with a mark of its own on the body, data-sharing (index.html
+// quiet() reads it; so does app.js pastMayMove, which keeps the wall and the
+// plan still under the sheet). Its own because the page's busy mark has one
+// owner, and whoever held that when the tap came can let go mid-sheet. One
+// hold per share, so two at once keep the mark until both have answered; the
+// mark names what is sharing ("plan", "crew", "plan crew"). The page going
+// away lets go of every hold (app.js pagehide): a page kept in the
+// back/forward cache with a share that never answered must not come back
+// with every reload held. (Sol, on the Share's release head, 2026-09-26.)
+const shares = new Map();
+const markShares = () => {
+  if (shares.size) document.body.dataset.sharing = [...shares.values()].join(' ');
+  else delete document.body.dataset.sharing;
+};
+export function holdForShare(what) {
+  const hold = {};
+  shares.set(hold, what);
+  markShares();
+  return () => { if (shares.delete(hold)) markShares(); };
+}
+export function dropShares() { shares.clear(); markShares(); }
 
 function build(host) {
   frame = mk('div', 'plan-frame');
@@ -787,19 +809,16 @@ async function sharePlan() {
     ctx: ctxRef, plan: a.plan, peek: a.peek, nowMin: a.nowMin, highlight: a.highlight || [],
     fest: a.fest || '', day: a.day || '', today: !!a.peek.today, link: a.linkOf ? a.linkOf() : '',
   });
-  // A new build waits while the sheet is up or the copy is on its way
-  // (index.html quiet): a reload would take the plan, and the words, from
-  // under either. The share's own mark: the page's busy mark has one owner,
-  // and whoever held it when the tap came (a fold, a hand on the window) can
-  // let go while the sheet is still up (Sol, round four).
-  document.body.dataset.sharing = 'plan';
+  // A new build waits while the sheet is up or the copy is on its way: a
+  // reload would take the plan, and the words, from under either.
+  const letGo = holdForShare('plan');
   try {
     if (canShare()) {
       try { await navigator.share({ title: PLAN_NAME, text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     try { await navigator.clipboard.writeText(text); sayOnShare('Copied ✓'); } catch { sayOnShare('Couldn’t copy'); }
   } finally {
-    if (document.body.dataset.sharing === 'plan') delete document.body.dataset.sharing;
+    letGo();
   }
 }
 const shareLabel = () => `${canShare() ? 'Share' : 'Copy'} ${PLAN_NAME.toLowerCase()}`; // "Share our picks"
@@ -910,10 +929,29 @@ function unpin() {
 // reads true through it. Waited for, it landed on the old numbers and the
 // window then dropped in one frame — a font landing mid-arrival on a first
 // visit, 23px (the Share build, banked in v101).
+// A layout that crosses between the phone's and the laptop's (a rotation, a
+// window dragged across 720px) waits for nothing: no motion in flight is aimed
+// at the new layout, so each one ends where it was going and the window is
+// measured at once — the panel's side and the phone's pin go with the layout
+// now, not when a row's motion ends. Waiting kept an open plan the phone's on
+// a laptop for as long as a row moved, and a motion that never ended kept it
+// so, a wait already queued included (Sol's fourth round; the widen test's
+// WebKit failures on CI, 2026-09-26).
 let refitQueued = false;
+const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
 export function refitPlanShelf() {
-  if (!el || mode === 'gone' || leaving || drag || refitQueued) return;
-  const endless = (a) => !!(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity);
+  if (!el || mode === 'gone' || leaving || drag) return;
+  if (geo && geo.desk !== isDesk()) {
+    for (const a of motions()) if (!endless(a)) a.finish();
+    lifting = null;
+    arrival = null;
+    if (mode !== 'open' || isDesk()) unpin();
+    measure();
+    apply(mode === 'open' ? 1 : 0);
+    settleState();
+    return;
+  }
+  if (refitQueued) return;
   const moving = motions().filter((a) => a.playState === 'running' && !endless(a));
   if (showing(lifting) && motions().every((a) => a === lifting || endless(a) || !showing(a))) { reaim(); return; }
   if (moving.length) {

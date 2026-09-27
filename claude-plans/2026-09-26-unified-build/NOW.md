@@ -24,18 +24,19 @@
   `SHARE-BUILD.md`): the text share (at most five picks, "Full rundown:" and a
   link that opens that night's plan), the welcome card's ✕, "Share the crew
   link" in the Show menu, the two touch-timing catches from v101. Sol's four
-  release rounds are fixed at 6cfa2e8 (log items 13–16). The Share is
-  single-source: a tap repaints the plan at that minute, the words come from
-  the rows on screen, and a tap under a held paint (a hand on the grabber)
-  sends nothing. Each share holds a new build's reload with its own mark
-  (`data-sharing`). An open plan moves its or-line on by itself, and a
-  laptop/phone flip settles the plan. Banked for the design round: the model
-  cap, and a rotation during row motion. CI on 6cfa2e8: browser green on one
-  attempt, checks red only on the SW stamp (left for the release). Next: the
-  coordinator's targeted Sol check, then release. Kevin approved every default
-  on the design page (Despacio as a drop-in room, the plan across the days,
-  the menus over it); it builds on `live/plan-days-design` after v104, aimed
-  at ACL.
+  release rounds and his targeted check are fixed at 3b92fdf (log items
+  13–18). The Share is single-source: a tap repaints the plan at that minute,
+  the words come from the rows on screen, and a tap under a held paint (a hand
+  on the grabber) sends nothing. Each share holds a new build's reload with
+  its own counted mark (`data-sharing`), which pagehide drops, and the wall
+  stays still under the sheet. An open plan moves its or-line on by itself,
+  and a laptop/phone flip refits the plan at once, even mid-motion (the WebKit
+  widen failure's second path). Banked for the design round: the model cap.
+  CI on 3b92fdf: browser green on one attempt, checks red only on the SW
+  stamp. Next: the coordinator reads the diff and releases. Kevin approved
+  every default on the design page (Despacio as a drop-in room, the plan
+  across the days, the menus over it); it builds on `live/plan-days-design`
+  after v104, aimed at ACL.
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs per
   night and type, `gen.py`, prices from the festival file); a Google My Map
   in Kevin's personal account, link-shared, built from them. The in-app
