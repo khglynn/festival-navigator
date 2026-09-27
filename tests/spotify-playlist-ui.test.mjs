@@ -23,6 +23,7 @@ let busy = true; // Spotify answers the first search, then asks for hours
 let hold = null; // a search held until the test lets it answer (a slow run)
 let searched = [];
 let items = [];
+const topless = new Set(); // artists Spotify answers for with no top songs
 async function network(url, opts = {}) {
   const u = String(url);
   if (u === '/data/festivals/index.json') return json(INDEX);
@@ -34,6 +35,7 @@ async function network(url, opts = {}) {
       searched.push(artist);
       if (hold) await hold.promise;
       if (busy && searched.length > 1) return json({}, 429, { 'Retry-After': String(21 * 3600) });
+      if (topless.has(artist)) return json({ tracks: { items: [] } }); // answered: no top songs for them
       return json({ tracks: { items: [0, 1, 2].map((i) => ({ uri: `spotify:track:${artist.replace(/\W/g, '')}${i}`, artists: [{ name: artist }] })) } });
     }
     if (path === '/me/playlists') return json({ id: 'crewpl', external_urls: { spotify: 'https://open.spotify.com/playlist/crewpl' } }, 201);
@@ -143,4 +145,43 @@ test('the drill re-rendered under a running playlist (a friend’s pick on the p
   await until(() => /✓/.test(drill().textContent), 'the closing line');
   assert.match(drill().textContent, /✓ “.*” — \d+ tracks\./);
   assert.equal(make().disabled, false);
+});
+
+// Sol's review of v103: an artist Spotify answered for with NO top songs is
+// not done — not on the ledger, counted in the words, and never "already has
+// everyone's picks" while one is missing. Galen is picked; Spotify has nothing.
+const addPick = (name, by) => {
+  ctx.picks = { ...ctx.picks, [name]: { [by]: 2 } };
+  state.crewDoc.festivals['ui-fest'].selections[name] = { [by]: 2 };
+  if (!FESTIVALS['ui-fest'].artists.some((a) => a.name === name)) FESTIVALS['ui-fest'].artists.push({ name });
+};
+test('Add new picks with an artist Spotify has no top songs for: it says so, keeps it off the ledger, and never says "already has everyone’s picks"', async () => {
+  busy = false;
+  searched = [];
+  topless.add('Galen');
+  addPick('Galen', 'Ross');
+  await open();
+  button('Add new picks').click();
+  await until(() => /top songs/.test(drill().textContent), 'the note');
+  assert.match(drill().textContent, /1 artist had no top songs on Spotify — Add new picks looks again\./);
+  assert.ok(!/already has everyone/.test(drill().textContent));
+  assert.ok(!state.spotifyPlaylistFor('ui-fest').artists.includes('Galen'), 'Galen is not done');
+  // Again, nothing new: the same words, still never "already has everyone's picks".
+  await open();
+  button('Add new picks').click();
+  await until(() => /top songs/.test(drill().textContent) && !button('Add new picks').disabled, 'the second note');
+  assert.ok(!/already has everyone/.test(drill().textContent), 'a second press says it again');
+});
+
+test('Make a new one (Everyone) with that artist and your saved tracks of theirs: the saved tracks go in, the artist stays off the ledger, and it is said', async () => {
+  searched = [];
+  items = [];
+  localStorage.setItem('fn_spotify_libmap_v1', JSON.stringify({ clientId: CID, userId: 'kev', fetchedAt: '2026-09-26T00:00:00Z', artists: { galen: { songs: 1 } }, trackUris: { galen: ['spotify:track:kevGalen'] } }));
+  await open();
+  [...drill().querySelectorAll('button')].find((b) => b.textContent === 'Everyone').click();
+  make().click();
+  await until(() => /✓/.test(drill().textContent), 'the playlist');
+  assert.match(drill().textContent, /1 artist had no top songs on Spotify — Add new picks looks again\./);
+  assert.ok(items.includes('spotify:track:kevGalen'), 'your saved Galen track is in');
+  assert.ok(!state.spotifyPlaylistFor('ui-fest').artists.includes('Galen'), 'and Galen is still not done');
 });

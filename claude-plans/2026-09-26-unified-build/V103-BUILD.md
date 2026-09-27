@@ -407,19 +407,37 @@ coordinator's order: the Spotify items and the test helper first; `app.js`,
 its files `V104-WALK.md`, `v104-walk.mjs`, `v103-shots/walk-*` — not ours to
 touch) says it is finished. Each fix gets a failing test first.
 
-- [ ] R1 BLOCKER — a Spotify WRITE is never repeated blind. The shared path
+- [x] R1 BLOCKER — a Spotify WRITE is never repeated blind. The shared path
       retried a playlist create or add after a 5xx, which Spotify may have
       done anyway (a second playlist, doubled tracks). Reads keep their one
       retry; a 429 on a write still waits and retries (a 429 is a refusal —
       nothing was done); a 5xx on a write is ambiguous: an add re-reads the
       playlist and adds only what is missing, a create is not repeated and
-      the words say so.
-- [ ] R2 BLOCKER — an artist whose search answered with NO top songs is not
+      the words say so. **Done:** `call` throws `SpotifyUnsure` on a write's
+      5xx; `pushTracks` reads the playlist back and adds only what is missing
+      (once — a second unsure answer is said); a create is never repeated
+      ("Spotify didn’t confirm the playlist — check your Spotify before making
+      another."). Five fake-Spotify tests, four red first (the 429-on-a-write
+      one was already right and stays as a guard). While there: a track two
+      picked artists share goes in once.
+- [x] R2 BLOCKER — an artist whose search answered with NO top songs is not
       "done": it stays off the crew ledger even when the maker's saved tracks
       went in, the top-up carries the count, and "already has everyone's
-      picks" is never said while one is missing.
-- [ ] R5 NIT — `nowInView` fails with the row's geometry instead of swallowing
-      its timeout.
+      picks" is never said while one is missing. **Done:** `findTrackUris`
+      returns `topless` (searched, answered, no top songs) apart from
+      `unsearched`; only artists whose top songs came are `found` (the ledger);
+      `toplessNote` says "N artist(s) had no top songs on Spotify — Add new
+      picks looks again." on Make and on the top-up, and "already has
+      everyone's picks" needs nothing added, nothing unsearched, nothing
+      topless. It replaces "had no findable track". Cost, accepted: an artist
+      Spotify never has is searched again on every Add new picks and said
+      again — one search, and honest. Tests: two fake-Spotify, two in the real
+      drill (both cases the coordinator named), red first.
+- [x] R5 NIT — `nowInView` fails with the row's geometry instead of swallowing
+      its timeout. **Done:** it throws "NOW never came whole and still in N ms"
+      with NOW's and the row's boxes and scroll; `tests/browser/now-in-view.test.mjs`
+      (plain pages, red first). The NOW contract and the List suite pass
+      with it (74 of 74).
 - [ ] R3 BLOCKER (Sol) / kept as designed (coordinator) — unpick in a filtered
       List dims in place (call 2d), but "the next repaint" must be real and
       bounded; a pick change from elsewhere repaints the filtered List. UI test.

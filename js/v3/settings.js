@@ -1404,6 +1404,7 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
   const lists = state.crewDoc.spotify?.playlists || {};
   let added = 0;
   const unsearched = [];
+  const topless = [];
   let failed = false;
   for (const [fid, meta] of Object.entries(lists)) {
     if (meta.mode !== 'everyone') continue;
@@ -1415,6 +1416,7 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
     try {
       const r = await spotify.addArtistsToPlaylist({ playlistId: meta.id, artistNames: missing });
       unsearched.push(...(r.unsearched || []));
+      topless.push(...(r.topless || []));
       if (r.found.length) {
         state.recordSpotifyPlaylist(fid, { ...meta, artists: [...(meta.artists || []), ...r.found] });
         actions.afterBulk();
@@ -1429,11 +1431,12 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
     const said = [
       added ? `Added ${added} track${added === 1 ? '' : 's'} to the crew playlist.` : '',
       spotify.unsearchedNote(unsearched, { again: 'try Add new picks again' }),
+      spotify.toplessNote(topless, { again: 'Add new picks looks again' }),
       failed ? 'Couldn’t add to the crew playlist — Add new picks can retry.' : '',
     ].filter(Boolean).join(' ');
     if (said) onNote(said);
   }
-  return { added, unsearched: unsearched.length, failed };
+  return { added, unsearched: unsearched.length, topless: topless.length, failed };
 }
 
 // A body-level pill so the scan stays visible when the person leaves the
@@ -1839,7 +1842,9 @@ function openSpotifyDrill(ctx, actions) {
         sayPl(fid, 'Checking for new picks…');
         try {
           const r = await syncEveryonePlaylists(ctx, actions, (n) => sayPl(fid, n));
-          if (!r.added && !r.unsearched && !r.failed) sayPl(fid, 'Playlist already has everyone’s picks.');
+          // Only when every picked artist is really in: nothing added, and
+          // nobody still waiting on Spotify or without top songs there.
+          if (!r.added && !r.unsearched && !r.topless && !r.failed) sayPl(fid, 'Playlist already has everyone’s picks.');
         } catch (e) { sayPl(fid, String(e.message || e)); }
         finally { plBusy(fid, false); }
       });
@@ -1907,8 +1912,12 @@ function openSpotifyDrill(ctx, actions) {
         // songs Spotify would not give us right now — an Everyone playlist
         // tries them again from Add new picks (they stay off its ledger), a
         // Just mine one by being made again.
+        // Sol's review: an artist Spotify has no top songs for is said too
+        // (it used to read "had no findable track" only when there was
+        // nothing at all, and saved tracks hid it).
         const later = spotify.unsearchedNote(made.unsearched, { again: mineOnly ? 'try again' : 'try Add new picks again' });
-        const line = `✓ “${title}” — ${made.trackCount} tracks.${later ? ` ${later}` : ''}${made.misses ? ` ${made.misses} artist${made.misses === 1 ? '' : 's'} had no findable track.` : ''} `;
+        const none = spotify.toplessNote(made.topless, { again: mineOnly ? '' : 'Add new picks looks again' });
+        const line = `✓ “${title}” — ${made.trackCount} tracks.${later ? ` ${later}` : ''}${none ? ` ${none}` : ''} `;
         sayPl(fid, () => {
           const done = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;', line);
           const link = document.createElement('a');

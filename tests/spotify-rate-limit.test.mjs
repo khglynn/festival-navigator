@@ -40,6 +40,9 @@ let plan = {};
 let calls = [];
 let waits = [];
 let playlistItems = [];
+let createFails = [];
+let addFails = [];
+let created = 0;
 const asked = new Map();
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 const tracksOf = (artist, n = 9) => ({ tracks: { items: Array.from({ length: n }, (_, i) => ({ uri: `spotify:track:${artist.replace(/\W/g, '')}${i}`, artists: [{ name: artist }] })) } });
@@ -55,18 +58,32 @@ globalThis.fetch = async (url, opts = {}) => {
     const step = list[Math.min(n - 1, list.length - 1)];
     if (step === 'net') throw new TypeError('Failed to fetch');
     if (step === 'ok') return json(tracksOf(artist));
+    if (step === 'none') return json({ tracks: { items: [] } }); // answered: Spotify has nothing for them
     if (typeof step === 'object') return json({}, step.status, step.retry != null ? { 'Retry-After': String(step.retry) } : {});
     return json({}, step);
   }
-  if (path === '/me/playlists' && opts.method === 'POST') return json({ id: 'pl123', external_urls: { spotify: 'https://open.spotify.com/playlist/pl123' } }, 201);
+  if (path === '/me/playlists' && opts.method === 'POST') {
+    created += 1;
+    // `createFails` / `addFails`: the next such write's answer — { status, did }
+    // where `did` says whether Spotify performed it anyway (a 502 after the work).
+    const f = createFails.shift();
+    if (f && !f.did) return json({}, f.status);
+    if (f) return json({ error: { status: f.status } }, f.status);
+    return json({ id: 'pl123', external_urls: { spotify: 'https://open.spotify.com/playlist/pl123' } }, 201);
+  }
   if (path.startsWith('/playlists/pl123/items')) {
-    if (opts.method === 'POST') { playlistItems.push(...JSON.parse(opts.body).uris); return json({ snapshot_id: 's' }, 201); }
+    if (opts.method === 'POST') {
+      const f = addFails.shift();
+      if (!f || f.did) playlistItems.push(...JSON.parse(opts.body).uris);
+      if (f) return json({}, f.status, f.retry != null ? { 'Retry-After': String(f.retry) } : {});
+      return json({ snapshot_id: 's' }, 201);
+    }
     return json({ items: playlistItems.map((uri) => ({ track: { uri } })), next: null });
   }
   return json({ error: 'not in this test' }, 404);
 };
 spotify.setPauseForTests(async (ms) => { waits.push(ms); });
-const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; asked.clear(); };
+const reset = (p = {}) => { plan = p; calls = []; waits = []; playlistItems = []; createFails = []; addFails = []; created = 0; asked.clear(); };
 localStorage.setItem('fn_spotify_auth_v1', JSON.stringify({ clientId: 'c'.repeat(32), access_token: 'at', refresh_token: 'rt', expires_at: Date.now() + 3600e3 }));
 // The maker's saved tracks for one artist (the scan cache).
 localStorage.setItem('fn_spotify_libmap_v1', JSON.stringify({
@@ -162,4 +179,70 @@ test('Retry-After reads seconds or a date, and nothing when the browser hides it
   const now = Date.parse('2026-09-26T12:00:00Z');
   assert.equal(spotify.retryAfterMs(res('Sat, 26 Sep 2026 12:00:30 GMT'), now), 30000);
   assert.equal(spotify.retryAfterMs({ headers: { get: () => { throw new Error('no'); } } }), null);
+});
+
+// ---- Sol's review of bfcf621: a write is never repeated blind, and "done" means top songs --------
+const adds = () => calls.filter((c) => c.startsWith('POST /playlists/pl123/items'));
+const reads = () => calls.filter((c) => c.startsWith('GET /playlists/pl123/items'));
+
+test('a create Spotify answered with a 5xx is NOT repeated — it may have made the playlist — and the words say to check', async () => {
+  reset({ Soulwax: ['ok'] });
+  createFails = [{ status: 502, did: true }];
+  await assert.rejects(
+    spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] }),
+    /didn’t confirm the playlist — check your Spotify before making another/,
+  );
+  assert.equal(created, 1, 'one create, never two');
+  assert.equal(adds().length, 0);
+});
+
+test('an add Spotify answered with a 5xx but DID do: the playlist is read back, and nothing is added twice', async () => {
+  reset({ Soulwax: ['ok'] });
+  addFails = [{ status: 502, did: true }];
+  playlistItems = [];
+  const made = await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] });
+  assert.deepEqual(playlistItems, ['spotify:track:Soulwax0', 'spotify:track:Soulwax1', 'spotify:track:Soulwax2'], 'each track once');
+  assert.equal(adds().length, 1, 'no second add: everything was already there');
+  assert.equal(reads().length, 1, 'one read back to find out');
+  assert.equal(made.trackCount, 3);
+});
+
+test('an add answered with a 5xx that Spotify did NOT do: read back, then only the missing tracks are added', async () => {
+  reset({ Soulwax: ['ok'] });
+  addFails = [{ status: 503, did: false }];
+  await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] });
+  assert.deepEqual(playlistItems, ['spotify:track:Soulwax0', 'spotify:track:Soulwax1', 'spotify:track:Soulwax2']);
+  assert.equal(adds().length, 2, 'the add, then the missing ones');
+  assert.equal(reads().length, 1);
+});
+
+test('a 429 on an add is a refusal (nothing was done): it waits and sends it again, and nothing is doubled', async () => {
+  reset({ Soulwax: ['ok'] });
+  addFails = [{ status: 429, did: false, retry: 2 }];
+  await spotify.playlistFromPicks({ title: 'T', artistNames: ['Soulwax'] });
+  assert.deepEqual(bigWaits(), [2000]);
+  assert.equal(playlistItems.length, 3);
+  assert.equal(reads().length, 0, 'no read back needed for a refusal');
+});
+
+test('a search that answered with NO top songs is not "done": your saved tracks go in, but the artist stays off the ledger and is counted', async () => {
+  reset({ Robyn: ['none'], Soulwax: ['ok'] });
+  const made = await spotify.playlistFromPicks({ title: 'T', artistNames: ['Robyn', 'Soulwax'], collaborative: true });
+  assert.deepEqual(made.found, ['Soulwax'], 'only the artist whose top songs came');
+  assert.deepEqual(made.topless, ['Robyn']);
+  assert.deepEqual(made.unsearched, []);
+  assert.ok(playlistItems.includes('spotify:track:mineRobyn1'), 'your saved Robyn tracks are in');
+  assert.equal(spotify.toplessNote(made.topless), '1 artist had no top songs on Spotify.');
+  assert.deepEqual(spotify.playlistMissingArtists(['Robyn', 'Soulwax'], { artists: made.found }), ['Robyn'], 'so Add new picks looks again');
+});
+
+test('the top-up carries the artists with no top songs, saved tracks or not', async () => {
+  reset({ Robyn: ['none'], Prospa: ['none'] });
+  const r = await spotify.addArtistsToPlaylist({ playlistId: 'pl123', artistNames: ['Robyn', 'Prospa'] });
+  assert.deepEqual(r.found, []);
+  assert.deepEqual(r.topless, ['Robyn', 'Prospa']);
+  assert.equal(r.added, 2, 'your two saved Robyn tracks');
+  reset({ Prospa: ['none'] });
+  const r2 = await spotify.addArtistsToPlaylist({ playlistId: 'pl123', artistNames: ['Prospa'] });
+  assert.deepEqual(r2, { added: 0, misses: 1, found: [], unsearched: [], topless: ['Prospa'] }, 'nothing to add, and it says who');
 });
