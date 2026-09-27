@@ -6,8 +6,11 @@ review page: `review.html`. Status: **Kevin's calls are in** (2026-09-26, about 
 PT, relayed by the coordinator: "All the recommendations in that artifact seem good"), so
 every default at the end stands, C6 included. The build runs on this branch after v104
 lands on main (merge main, never rebase), gated like every release, and aims at ACL (Late
-nights from Tue Sep 29), not Portola. It also takes the model work banked from the Share
-release (the section before the questions).
+nights from Tue Sep 29), not Portola. It also takes the two pieces of work banked from
+the Share release (the two sections before the questions): where a stop ends, and the
+window's catches. This branch was cut from fc86005, which still carries the catches;
+merging main takes them out, and the build brings them back as the window model or not
+at all.
 
 ## The three decisions in one breath
 
@@ -325,6 +328,50 @@ being reworked anyway. Full history: the Share build log (`SHARE-BUILD.md` on
      in `tests/plan-text.test.mjs` already asserts this; keep it).
   4. No fork shorter than 15 minutes survives, measured on the interval that is kept.
   5. The dock's NOW tab and the peek's NOW never show together.
+
+## Banked from the Share release: the window's catches (cut 2026-09-26, evening)
+
+The Share release shipped without the window catches it carried from v101, and they
+belong here, where the window is being reworked anyway. The code and tests are kept at
+the tag `back-pocket/window-catches` (3b92fdf on `live/share`). Full history: the Share
+build log (`SHARE-BUILD.md` on `live/share`, items 7, 10f, 15–19).
+
+- **What the catches did.** If a hand landed on the peek while it was rising, or on the
+  window while a redraw slid it to a new place, the window stayed where it was on screen
+  instead of snapping to the peek, and a grab mid-slide stayed a peek instead of showing
+  a sliver of the opened plan. A font that landed mid-rise re-aimed the rise instead of
+  letting it land on old numbers and drop 23px. Later rounds added two layout rules: a
+  laptop narrowed during a scroll settled the panel's side at once, and a layout that
+  crossed 720px refit at once instead of waiting for a row's motion to end.
+- **The mechanism.** A pixel offset (`lift`) held apart from the window's progress `p`,
+  and a re-aim of an arrival already in flight, run from inside the refit.
+- **Why they came out.** v101's widen test ("a card grown in the open plan, then the
+  window widened to a laptop and back", in `tests/browser/plan-drag.test.mjs`) failed on
+  CI's Linux WebKit on branches carrying the catches: runs 36288154945 (b2206a5) and
+  36290138756 (release/share 58d423b), each leaving `data-side="open"` on a phone. Two
+  fixes didn't hold (round three's settle in measure, round four's flip rule), and no
+  local run reproduced it, even with animations starting 700, 1200 or 2000 ms late. Main
+  (v102) passes the same test. The refit's state had come to depend on timing it cannot
+  see, so the mechanism was cut, per the round rule.
+- **What main does without them** (live since v101):
+  1. A hand on the rising peek snaps it to its place.
+  2. A grab mid-slide becomes a little progress, so the head starts to fade in.
+  3. A font landing mid-rise drops the window by the difference when the rise ends.
+  4. An open plan that crosses 720px while a row moves keeps the old layout's side until
+     that motion ends.
+- **What stayed in the release in their place.** The Share's link opens the plan once
+  the peek has risen (`afterArrival` in plan-shelf.js), because an open during the rise
+  cancelled it and the peek appeared in place for a frame.
+- **What the build decides.** Design the window as one model of where it is on screen,
+  which a hand, a key, a refit and a layout flip all read from instead of waiting on
+  each other's motions. This is a class of problem that is the work, so it gets a
+  design with acceptance tests up front, not another patch.
+- **Acceptance tests, written first.** Carry the five from the tag (the catch during the
+  rise and the catch during a slide, each with a mouse and in Chromium with a finger; the
+  font mid-rise; narrowed during a scroll; widened while a row moves), and keep v101's
+  widen test, which is on main.
+  Promote only after the browser job has run green three times in a row on one head,
+  because this failure showed only on CI's Linux WebKit.
 
 ## Questions only Kevin can answer (each with my default)
 
