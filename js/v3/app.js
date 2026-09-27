@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -537,10 +537,10 @@ function togglePast(key) {
 // Judge the past again, now, holding the page by time: a set that ended
 // while the phone was locked folds away, and the set at the top of what you
 // saw — or the nearest one after it — stays where it was on screen. Only
-// when nothing is in progress: a zoom, a sheet, the menu or a fold in flight
-// keep the wall as it is until the next chance.
+// when nothing is in progress: a zoom, a sheet (a share's included), the menu
+// or a fold in flight keep the wall as it is until the next chance.
 function pastMayMove() {
-  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy
+  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy && !document.body.dataset.sharing
     && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast;
 }
 function recomputePast() {
@@ -2271,14 +2271,14 @@ function shareLinkRow() {
   // The menu stays up under the share sheet and goes once the sheet has its
   // answer, sent or dismissed; a sheet the browser refused copies instead and
   // says so in the menu, like a browser with no sheet at all. A new build
-  // waits for either (index.html quiet): the share holds its own mark for its
-  // length, so neither the menu going early nor any other owner of the page's
-  // busy mark letting go can drop the guard (Sol, round four on the Share).
+  // waits for either: the share holds its own mark for its length
+  // (plan-shelf.js holdForShare), so neither the menu going early nor any
+  // other owner of the page's busy mark letting go can drop the guard.
   const done = () => { if (openMenu && openMenu.pop.contains(row)) closeShowMenu(); };
   row.addEventListener('click', async () => {
     const link = inviteLink();
     stampInviteFest();
-    document.body.dataset.sharing = 'crew';
+    const letGo = holdForShare('crew');
     try {
       if (canShare()) {
         try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); done(); return; }
@@ -2286,7 +2286,7 @@ function shareLinkRow() {
       }
       try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
     } finally {
-      if (document.body.dataset.sharing === 'crew') delete document.body.dataset.sharing;
+      letGo();
     }
   });
   return row;
@@ -4913,7 +4913,7 @@ export function init() {
   // always did, and the menu goes with the page — as it does when the page
   // is put away.
   window.addEventListener('popstate', () => closeShowMenu({ instant: true }));
-  window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); });
+  window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); dropShares(); });
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
