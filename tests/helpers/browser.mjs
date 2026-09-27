@@ -98,3 +98,55 @@ export async function launchWebkit() {
     return null;
   }
 }
+
+// NOW is the day row's FIRST item (v103), and on a phone it can rest past the
+// row's left edge — where a person swipes the row to its start before tapping
+// it (tests/browser/now-jump.test.mjs proves that swipe with real touches).
+// For the tests whose subject is what a tap on NOW does, this is that swipe's
+// stand-in: the row to its start, then wait until NOW is whole and the row is
+// still, so the tap that follows lands on NOW and not where it was a frame
+// ago (Linux WebKit's taps missed it, v103's first CI runs). The app can
+// bring the row back to rest after that first scroll — a highlight's pill
+// arriving refits and re-rests the row (CI caught exactly that once this
+// helper stopped hiding its timeout) — so, as a person would swipe again,
+// a row that has come to rest with NOW still cut is taken back to its start.
+// When NOW never comes whole and still it FAILS, with where NOW and the row
+// are — it used to swallow its timeout and let the tap go ahead, which moved
+// the failure somewhere with no clue in it (Sol's review of v103).
+export async function nowInView(page, door = 'dock', { timeout = 8000 } = {}) {
+  await page.evaluate((d) => {
+    const row = document.getElementById(`${d}-days`);
+    const now = document.getElementById(`${d}-now`);
+    if (!row || !now || now.hidden) return;
+    const r = row.getBoundingClientRect();
+    const b = now.getBoundingClientRect();
+    if (b.left < r.left - 0.5 || b.right > r.right + 0.5) row.scrollTo({ left: 0, behavior: 'auto' });
+  }, door);
+  try {
+    await page.waitForFunction((d) => {
+      const row = document.getElementById(`${d}-days`);
+      const now = document.getElementById(`${d}-now`);
+      if (!row || !now || now.hidden) return true;
+      const r = row.getBoundingClientRect();
+      const b = now.getBoundingClientRect();
+      const w = window.__nowStill || (window.__nowStill = { left: NaN, n: 0 });
+      if (row.scrollLeft !== w.left) { w.left = row.scrollLeft; w.n = 0; return false; }
+      w.n += 1;
+      if (w.n < 3) return false;
+      if (b.left >= r.left - 0.5 && b.right <= r.right + 0.5) return true;
+      row.scrollTo({ left: 0, behavior: 'auto' }); // at rest with NOW cut: swipe again
+      w.n = 0;
+      return false;
+    }, door, { timeout, polling: 50 });
+  } catch (e) {
+    const at = await page.evaluate((d) => {
+      const row = document.getElementById(`${d}-days`);
+      const now = document.getElementById(`${d}-now`);
+      const box = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return { left: Math.round(b.left * 10) / 10, right: Math.round(b.right * 10) / 10 }; };
+      return { now: box(now), row: row && { ...box(row), scrollLeft: row.scrollLeft, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth } };
+    }, door).catch(() => null);
+    throw new Error(`nowInView(${door}): NOW never came whole and still in ${timeout} ms — ${JSON.stringify(at)} (${e.message.split('\n')[0]})`);
+  } finally {
+    await page.evaluate(() => { delete window.__nowStill; }).catch(() => {});
+  }
+}

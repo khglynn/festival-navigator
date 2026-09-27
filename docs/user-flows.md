@@ -242,8 +242,10 @@ legible (D3); empty state may hint at the hold but never as the only path.
    plan › while there is a plan (F18), Pick as someone else, + Invite
    someone; a guest's dashed + ends in Join the crew; with a highlight on it
    is the pill — faces and a ✕), day tabs
-   (scrollspy-active), fest name (the show menu, or Settings on a one-room
-   fest — F5.7). Jump to top retired (2026-09-26).
+   (scrollspy-active) led by NOW while something is live (the row's first
+   item whatever the day, scrolling with it; on a narrow phone it can rest
+   past the row's left edge — v103), fest name (the show menu, or Settings
+   on a one-room fest — F5.7). Jump to top retired (2026-09-26).
 2. Desktop: sticky day rail under the toolbar with the same avatar (its menu
    drops down) and tabs; scrollspy highlights the day in view. The people
    row stays at the top of a laptop's wall; a phone has none.

@@ -1367,14 +1367,45 @@ function crewFestNamesLower() {
   return names;
 }
 
+// What a playlist run says goes to whichever card is mounted (v103). A run
+// lasts as long as its searches — paced now, a quarter second apart, so ~50
+// artists is a dozen seconds — and the drill can re-render under it (a
+// friend's pick on the poll, the owner-app config landing), which used to
+// leave its progress and its closing line on a card nobody could see. The
+// scan's rule (tests/spotify-scan-progress.test.mjs): the latest line is kept
+// here, the mounted card (`#spot-pl-status`, for its festival) shows it, and a
+// card mounted mid-run catches up and keeps its buttons down until it ends.
+// A finished run's line stays a minute, for the card that comes back to it.
+let plSaid = null; // { fid, what: string | () => Node[], at }
+let plRunning = null; // the fid a run is making for, or null
+function paintPl(n) {
+  const w = plSaid && plSaid.what;
+  n.replaceChildren(...(typeof w === 'function' ? w() : [document.createTextNode(w || '')]));
+}
+function sayPl(fid, what) {
+  plSaid = { fid, what, at: Date.now() };
+  const n = document.getElementById('spot-pl-status');
+  if (n && n.dataset.fid === (fid || '')) paintPl(n);
+}
+function plBusy(fid, on) {
+  plRunning = on ? fid : null;
+  for (const b of document.querySelectorAll('[data-pl-run]')) b.disabled = !!on && b.dataset.plRun === (fid || '');
+}
+
 // Everyone-mode crew playlists: append tracks for picked artists that aren't
 // in the playlist's ledger yet. Runs quietly after a member connects (their
 // picks may be new to the playlist) and behind the drill's Update button.
 // Collaborative playlists accept other members' tokens; if Spotify refuses
 // anyway, say so and leave the manual retry — never fail the sync over it.
+// v103: an artist whose top songs could not be fetched (Spotify busy or down)
+// is left out of the ledger, so the next run tries it again — and the note
+// says how many, instead of a silent fallback to someone's saved tracks.
 async function syncEveryonePlaylists(ctx, actions, onNote) {
   const lists = state.crewDoc.spotify?.playlists || {};
   let added = 0;
+  const unsearched = [];
+  const topless = [];
+  let failed = false;
   for (const [fid, meta] of Object.entries(lists)) {
     if (meta.mode !== 'everyone') continue;
     const fest = FESTIVALS[fid];
@@ -1384,18 +1415,28 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
     if (!missing.length) continue;
     try {
       const r = await spotify.addArtistsToPlaylist({ playlistId: meta.id, artistNames: missing });
+      unsearched.push(...(r.unsearched || []));
+      topless.push(...(r.topless || []));
       if (r.found.length) {
         state.recordSpotifyPlaylist(fid, { ...meta, artists: [...(meta.artists || []), ...r.found] });
         actions.afterBulk();
-        added += r.added;
       }
+      added += r.added;
     } catch (e) {
       console.warn('playlist sync:', e);
-      if (onNote) onNote('Couldn’t add to the crew playlist — the Update button in the drill can retry.');
+      failed = true;
     }
   }
-  if (added && onNote) onNote(`Added ${added} track${added === 1 ? '' : 's'} to the crew playlist.`);
-  return added;
+  if (onNote) {
+    const said = [
+      added ? `Added ${added} track${added === 1 ? '' : 's'} to the crew playlist.` : '',
+      spotify.unsearchedNote(unsearched, { again: 'try Add new picks again' }),
+      spotify.toplessNote(topless, { again: 'Add new picks looks again' }),
+      failed ? 'Couldn’t add to the crew playlist — Add new picks can retry.' : '',
+    ].filter(Boolean).join(' ');
+    if (said) onNote(said);
+  }
+  return { added, unsearched: unsearched.length, topless: topless.length, failed };
 }
 
 // A body-level pill so the scan stays visible when the person leaves the
@@ -1774,6 +1815,9 @@ function openSpotifyDrill(ctx, actions) {
 
     const plStatus = el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.5; min-height: 15px;');
     const fid = ctx.fid;
+    plStatus.id = 'spot-pl-status';
+    plStatus.dataset.fid = fid || '';
+    if (plSaid && plSaid.fid === fid && (plRunning === fid || Date.now() - plSaid.at < 60e3)) paintPl(plStatus);
     const existing = state.spotifyPlaylistFor(fid);
 
     if (existing && existing.mode === 'everyone') {
@@ -1791,14 +1835,18 @@ function openSpotifyDrill(ctx, actions) {
       pl.appendChild(row);
       const update = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Add new picks');
       update.className = 'btn-ghost';
+      update.dataset.plRun = fid || '';
+      update.disabled = plRunning === fid;
       update.addEventListener('click', async () => {
-        update.disabled = true;
-        plStatus.textContent = 'Checking for new picks…';
+        plBusy(fid, true);
+        sayPl(fid, 'Checking for new picks…');
         try {
-          const added = await syncEveryonePlaylists(ctx, actions, (n) => { plStatus.textContent = n; });
-          if (!added) plStatus.textContent = 'Playlist already has everyone’s picks.';
-        } catch (e) { plStatus.textContent = String(e.message || e); }
-        finally { update.disabled = false; }
+          const r = await syncEveryonePlaylists(ctx, actions, (n) => sayPl(fid, n));
+          // Only when every picked artist is really in: nothing added, and
+          // nobody still waiting on Spotify or without top songs there.
+          if (!r.added && !r.unsearched && !r.topless && !r.failed) sayPl(fid, 'Playlist already has everyone’s picks.');
+        } catch (e) { sayPl(fid, String(e.message || e)); }
+        finally { plBusy(fid, false); }
       });
       pl.appendChild(update);
     }
@@ -1830,45 +1878,82 @@ function openSpotifyDrill(ctx, actions) {
       'Top tracks plus your saved songs for every picked artist, musts first. Made in your account — Everyone playlists are collaborative, so crew-mates who connect add their saves automatically.'));
     const make = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', existing ? 'Make a new one' : 'Make playlist');
     make.className = 'btn-tonal';
+    make.dataset.plRun = fid || '';
+    make.disabled = plRunning === fid;
     make.addEventListener('click', async () => {
       try {
-        make.disabled = true;
+        plBusy(fid, true);
         const names = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null, skip: cancelledNames(state.fest()) });
         if (!names.length) {
           // Picks that are all on cancelled acts are still picks — say so,
           // rather than "you haven't picked anything".
           const onlyOff = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null }).length > 0;
-          plStatus.textContent = onlyOff
+          sayPl(fid, onlyOff
             ? `${mineOnly ? 'Your picks' : 'The picks'} on this fest are all cancelled acts — nothing to play yet.`
             : mineOnly
               ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
-              : 'Nobody has picked artists on this fest yet — tap some cards first.';
+              : 'Nobody has picked artists on this fest yet — tap some cards first.');
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();
-        const made = await spotify.playlistFromPicks({
-          title, artistNames: names, collaborative: !mineOnly,
-          onProgress: (p) => { plStatus.textContent = `Finding tracks ${p.i}/${p.of} — ${p.name}`; },
-        });
-        if (!mineOnly) {
+        // A crew playlist is recorded ONCE, at the end, and the drill is
+        // redrawn then — so the button in front of you is the recorded
+        // playlist's Add new picks, never a Make that would create a second
+        // (Sol's round 3 on v103: the early record and the mid-run resume were
+        // cut). A failure after a confirmed create records it with the artists
+        // whose songs were confirmed so far; nothing is shared mid-run.
+        const record = (pl, artists) => {
           state.recordSpotifyPlaylist(fid, {
-            id: made.id, url: made.url, mode: 'everyone', by: ctx.meName,
-            at: new Date().toISOString(), artists: made.found,
+            id: pl.id, url: pl.url, mode: 'everyone', by: ctx.meName,
+            at: new Date().toISOString(), artists,
           });
           actions.afterBulk();
+        };
+        let made;
+        try {
+          made = await spotify.playlistFromPicks({
+            title, artistNames: names, collaborative: !mineOnly,
+            onProgress: (p) => sayPl(fid, `Finding tracks ${p.i}/${p.of} — ${p.name}`),
+          });
+        } catch (e) {
+          if (!e || !e.playlist) throw e;
+          // Made, but not every song confirmed: say so, link it, record it.
+          const pl = e.playlist;
+          sayPl(fid, () => {
+            const said = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
+              `Spotify made the playlist but didn’t confirm every song — ${mineOnly ? 'open it to check' : 'Add new picks finishes it'}. `);
+            const link = document.createElement('a');
+            link.href = pl.url; link.target = '_blank'; link.rel = 'noopener';
+            link.textContent = 'Open in Spotify ↗';
+            link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
+            return [said, link];
+          });
+          if (!mineOnly) { record(pl, e.confirmed || []); rerenderDrill(); }
+          return;
         }
+        if (!mineOnly) record(made, made.found);
         // Skips are always reported (audit 5.2) — a flat success over 3
-        // missing artists is a quiet lie.
-        plStatus.textContent = '';
-        const done = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
-          `✓ “${title}” — ${made.trackCount} tracks.${made.misses ? ` ${made.misses} artist${made.misses === 1 ? '' : 's'} had no findable track.` : ''} `);
-        const link = document.createElement('a');
-        link.href = made.url; link.target = '_blank'; link.rel = 'noopener';
-        link.textContent = 'Open in Spotify ↗';
-        link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
-        plStatus.replaceChildren(done, link);
-      } catch (e) { plStatus.textContent = String(e.message || e); }
-      finally { make.disabled = false; }
+        // missing artists is a quiet lie. v103: so are the artists whose top
+        // songs Spotify would not give us right now — an Everyone playlist
+        // tries them again from Add new picks (they stay off its ledger), a
+        // Just mine one by being made again.
+        // Sol's review: an artist Spotify has no top songs for is said too
+        // (it used to read "had no findable track" only when there was
+        // nothing at all, and saved tracks hid it).
+        const later = spotify.unsearchedNote(made.unsearched, { again: mineOnly ? 'try again' : 'try Add new picks again' });
+        const none = spotify.toplessNote(made.topless, { again: mineOnly ? '' : 'Add new picks looks again' });
+        const line = `✓ “${title}” — ${made.trackCount} tracks.${later ? ` ${later}` : ''}${none ? ` ${none}` : ''} `;
+        sayPl(fid, () => {
+          const done = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;', line);
+          const link = document.createElement('a');
+          link.href = made.url; link.target = '_blank'; link.rel = 'noopener';
+          link.textContent = 'Open in Spotify ↗';
+          link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
+          return [done, link];
+        });
+        if (!mineOnly) rerenderDrill(); // the recorded playlist, and its Add new picks
+      } catch (e) { sayPl(fid, String(e.message || e)); }
+      finally { plBusy(fid, false); }
     });
     pl.append(make, plStatus);
     col.appendChild(pl);

@@ -93,6 +93,12 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     if (phone) await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
     else await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
     await sleep(350);
+    // A menu arrives with a 4px slide and a touch of overshoot; on a busy
+    // machine it can still be moving at 350 ms, and a box read then is off
+    // by the slide (a full local run, 2026-09-26: "the tops on one line
+    // (40.6 / 38.5)", green alone three times). Read geometry at rest.
+    await page.waitForFunction(() => [...document.querySelectorAll('.hl-pop, .sort-pop')]
+      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')), null, { timeout: 3000 }).catch(() => {});
   };
   // Outside the menu, far from it: a card on the wall clear of the menu —
   // where a thumb puts a menu away, and where the tap only closes it (the
@@ -134,6 +140,14 @@ const menusGone = (page) => page.waitForFunction(() => ![...document.querySelect
 // The dock's row and pill at rest before they are read: a refit moves them,
 // and a day change glides the row (a smooth scroll, which is no animation:
 // the row is at rest when its scroll has held still for four reads).
+// At rest also means the scrollspy has settled (v103): after the day turns
+// under an open page, the wall is drawn whole again and the spy lights the
+// day at the page's OLD height (Thursday) before the place is held, then the
+// day you are in (Saturday) a long frame later — a second on a loaded
+// runner, the banked "FRI flash" of the NOW.md list — and the row glides
+// there. A read in between saw Saturday lit over a row still resting on
+// Thursday (CI, three runs in five). So: still, and the lit day whole; past
+// the timeout the assertions that follow say what is wrong.
 const dockStill = async (page) => {
   await motionDone(page, { within: '#dock' });
   await page.evaluate(() => { window.__rowRest = { left: NaN, same: 0 }; });
@@ -141,8 +155,13 @@ const dockStill = async (page) => {
     const r = document.getElementById('dock-days');
     const w = window.__rowRest;
     if (r.scrollLeft !== w.left) { w.left = r.scrollLeft; w.same = 0; return false; }
-    return ++w.same >= 4;
-  }, null, { timeout: 4000, polling: 50 });
+    if (++w.same < 4) return false;
+    const on = r.querySelector('.day-tab.active');
+    if (!on) return true;
+    const a = on.getBoundingClientRect();
+    const b = r.getBoundingClientRect();
+    return (a.left >= b.left - 2 && a.right <= b.right + 2) || w.same >= 40; // two seconds still: let the assertions speak
+  }, null, { timeout: 4000, polling: 50 }).catch(() => {});
 };
 const menuState = (page, bar) => page.evaluate((b) => {
   const pop = document.querySelector(`#${b}-you-wrap .hl-pop`);
@@ -163,10 +182,12 @@ const menuState = (page, bar) => page.evaluate((b) => {
 // 2026-09-26). What must hold at any glyph width (app.js pillCap):
 //   a. the discs and the +n add up to the people highlighted, faces in the crew's order;
 //   b. the day you are in is whole in the day row;
-//   c. while NOW is live, NOW and the day it follows are whole too — wherever
-//      they fit beside the bare avatar (the pill folds to the avatar's size
-//      before it would take their room; where they do not fit even then, the
-//      pill is not what pushed them out);
+//   c. while NOW is live, the pill leaves the row room for NOW's width and one
+//      gap beside the day you are in (v103: NOW is the row's FIRST item, so
+//      this is the room v93's `SAT · NOW` pair asked for — the disc counts
+//      are what they were), folding to the avatar's size before it would take
+//      it; and wherever NOW and the day you are in fit the row together, the
+//      row rests with both whole (wall.js restingLeft);
 //   d. one to three discs, and a ✕ unless folded.
 const pillRead = (page) => page.evaluate(() => {
   const row = document.getElementById('dock-days');
@@ -174,11 +195,10 @@ const pillRead = (page) => page.evaluate(() => {
   const edges = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.right]; };
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
-  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
-  const now = nowAt >= 0 ? tabs[nowAt] : null;
-  const live = nowAt > 0 ? tabs[nowAt - 1] : null;
+  const now = tabs.find((t) => t.classList.contains('now-tab')) || null;
   const span = (list) => (list.length ? Math.max(...list.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...list.map((t) => t.offsetLeft)) : 0);
   const discs = [...wrap.querySelectorAll('.hl-pill .hl-faces .avatar')];
+  const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
   return {
     slot: wrap.dataset.slot,
     named: discs.filter((a) => a.dataset.name).map((a) => a.dataset.name),
@@ -186,9 +206,12 @@ const pillRead = (page) => page.evaluate(() => {
     discs: discs.length,
     compact: wrap.querySelector('.hl-pill').hasAttribute('data-compact'),
     x: getComputedStyle(wrap.querySelector('.hl-pill .hl-x')).display !== 'none',
-    row: edges(row), active: active && edges(active), now: now && edges(now), live: live && edges(live),
+    row: edges(row), active: active && edges(active), now: now && edges(now),
+    first: !now || row.firstElementChild === now,
     room: row.clientWidth + wrap.getBoundingClientRect().width,
-    focus: span([active, now, live].filter(Boolean)),
+    rowW: row.clientWidth,
+    need: (active ? active.offsetWidth : 0) + (now ? now.offsetWidth + (active ? gap : 0) : 0),
+    together: span([active, now].filter(Boolean)),
     activeW: active ? active.offsetWidth : 0,
     pill: wrap.querySelector('.hl-pill').getBoundingClientRect().width,
   };
@@ -203,15 +226,17 @@ function assertPillPromise(r, people, label) {
   assert.deepEqual(r.named, people.slice(0, r.named.length), `${label}: the faces are the first of the highlighted, in the crew's order`);
   assert.ok(r.discs >= 1 && r.discs <= 3, `${label}: one to three discs (${r.discs})`);
   assert.equal(r.x, !r.compact, `${label}: a ✕ unless folded`);
+  assert.ok(r.first, `${label}: NOW is the row's first item`);
   if (r.activeW <= r.room - BARE) assert.ok(whole(r.active), `${label}: the day you are in is whole (${JSON.stringify(r)})`);
-  if (r.now && r.focus <= r.room - BARE) {
-    assert.ok(whole(r.now) && whole(r.live), `${label}: NOW and its day are whole (${JSON.stringify(r)})`);
+  if (r.now && r.need <= r.room - BARE) {
+    assert.ok(r.pill + r.need <= r.room + 2, `${label}: the pill left NOW's room beside the day's (${JSON.stringify(r)})`);
   }
+  if (r.now && r.together <= r.rowW - 1) assert.ok(whole(r.now) && whole(r.active), `${label}: NOW and the day you are in fit together, so both are whole (${JSON.stringify(r)})`);
 }
 // And it uses the room it has: one disc more would break the promise (the
 // refit's reason to exist; pillWidth is held to the drawn pill below).
 async function assertPillFull(r, people, label) {
-  const need = r.now ? r.focus : r.activeW;
+  const need = r.need;
   if (r.compact) {
     assert.ok(pillWidth(1) + need > r.room, `${label}: folded where one disc and its ✕ would fit (${JSON.stringify(r)})`);
     return;
@@ -551,13 +576,39 @@ for (const wide of [null, '0.7px']) {
       assert.ok(live.now, 'NOW is live');
       assertPillPromise(live, four, label('NOW live'));
       await assertPillFull(live, four, label('NOW live'));
+      // Every move of the dock's day row from here, for a failure message
+      // (v103: CI caught this row resting at its start with the day you are
+      // in off its right edge, three runs in five, never on a Mac).
+      await page.evaluate(() => {
+        const row = document.getElementById('dock-days');
+        const now = document.getElementById('dock-now');
+        const log = window.__rowLog = [];
+        const t0 = performance.now();
+        const at = () => Math.round(performance.now() - t0);
+        const lit = () => (row.querySelector('.day-tab.active') || {}).dataset?.day || '-';
+        const who = () => (new Error().stack.split('\n').slice(3, 6).map((l) => l.trim().replace(/^at /, '').replace(/https?:\/\/[^/]+/g, '').replace(/\(?\/js\/v3\//g, '').replace(/\)$/, '')).join(' < '));
+        const scrollToWas = Element.prototype.scrollTo;
+        Element.prototype.scrollTo = function (...a) {
+          if (this === row) log.push(`${at()} scrollTo ${JSON.stringify(a[0])} from ${Math.round(row.scrollLeft)} lit ${lit()} w ${row.clientWidth} | ${who()}`);
+          return scrollToWas.apply(this, a);
+        };
+        const d = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
+        Object.defineProperty(row, 'scrollLeft', { configurable: true, get() { return d.get.call(this); },
+          set(v) { log.push(`${at()} scrollLeft= ${v} from ${Math.round(d.get.call(this))} lit ${lit()} | ${who()}`); d.set.call(this, v); } });
+        new MutationObserver(() => log.push(`${at()} NOW hidden=${now.hidden} leaving=${!!now.dataset.leaving}`)).observe(now, { attributes: true, attributeFilter: ['hidden', 'data-leaving'] });
+        new MutationObserver(() => log.push(`${at()} tabs rebuilt, lit ${lit()}`)).observe(row, { childList: true });
+        let last = -1;
+        row.addEventListener('scroll', () => { const v = Math.round(row.scrollLeft); if (v !== last) { last = v; log.push(`${at()} at ${v}`); } });
+      });
       await page.clock.setFixedTime(new Date('2026-09-29T12:00:00-07:00')); // Tuesday: nothing live
       await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); // the page shown again: the clock is read
       await page.waitForFunction(() => document.getElementById('dock-now').hidden, null, { timeout: 5000 });
       await sleep(600);
       await dockStill(page);
       const gone = await pillRead(page);
-      assert.equal(gone.now, null, 'NOW has left the row');
+      assert.equal(gone.now, null, 'NOW is hidden (still first in the row)');
+      const lit = gone.active && gone.active[0] >= gone.row[0] - 2 && gone.active[1] <= gone.row[1] + 2;
+      if (!lit) assert.fail(`${label('NOW gone')}: the day you are in is whole (${JSON.stringify(gone)})\n${(await page.evaluate(() => window.__rowLog)).join('\n')}`);
       assertPillPromise(gone, four, label('NOW gone'));
       const size = (r) => (r.compact ? 0 : r.discs); // folded is the smallest
       assert.ok(size(gone) >= size(live), `more room never yields fewer discs (${size(live)} → ${size(gone)})`);
