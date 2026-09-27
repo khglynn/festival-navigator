@@ -398,6 +398,11 @@ function slicesOf(here, us, picks, doubled, bar, { group = null, solo = null } =
       });
       if (!best) continue;
       at.set(person, best);
+      // A drop-in is dropped in on (rule 9): seated there, a person is still
+      // where they were for the trip. Walking to another venue's drop-in once
+      // made the grounds a site "left tonight", and a set there later was
+      // never gone back to (the P1–P3 review, 2026-09-27).
+      if (best.p.dropIn) continue;
       const site = siteOf(best.p);
       if (cur != null && site !== cur) gone.add(cur);
       siteNow.set(person, site);
@@ -607,12 +612,17 @@ export function planOf(fest, { picks = {}, members = [], folded = [], people = [
     }
     // A night with no stop says why (plan-rows.js words it): nothing of ours
     // on a clock here ('no-times'), nothing the counted people picked
-    // ('unpicked'), or picks that never gather the bar ('scattered').
+    // ('unpicked'), or picks that never gather the bar ('scattered') — unless
+    // rule 9's line is there ('dropin'): the drop-in room they will all drift
+    // through IS the night, and "Scattered all day" under a line that says
+    // they are all there was false (the P1–P3 review, 2026-09-27). The open
+    // plan draws no empty line beside it.
     const stops = items.filter((i) => i.kind === 'stop').length;
     let why = null;
     if (!stops) {
       const shownPlaces = n.places.filter((p) => p.shown);
       if (!shownPlaces.length) why = 'no-times';
+      else if (dropIns.length) why = 'dropin';
       else if (!shownPlaces.some((p) => p.acts.some(theirs))) why = 'unpicked';
       else why = 'scattered';
     }

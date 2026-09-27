@@ -875,7 +875,10 @@ test('rule 9 seating: a real pick outranks a drop-in whatever the levels — a m
   assert.deepEqual([k.tag, k.stop.place.place], ['next', 'X'], 'at 3 PM the peek names the next real stop, not the room');
   // Nothing real at all tonight: no stop, no peek — only the line.
   const only = planFor(fest, { Room: lv(4, 'Ana', 'Ben', 'Cy') });
-  assert.deepEqual([rows(only, SATD), lines(only, SATD), only.night(SATD).why], [[], ['W 2 PM–10 PM 3'], 'scattered']);
+  // Its own reason, not 'scattered' (the P1–P3 review's fourth finding,
+  // 2026-09-27): the line says they are all there, so "Scattered all day"
+  // under it was false. plan-rows.js draws no empty line beside it.
+  assert.deepEqual([rows(only, SATD), lines(only, SATD), only.night(SATD).why], [[], ['W 2 PM–10 PM 3'], 'dropin']);
   assert.equal(P.peekOf(only, fest, CT('2026-10-10T15:00:00')), null);
 });
 
@@ -910,6 +913,23 @@ test('rule 9\'s line: the people who picked the room, at the bar or not at all �
   const plan = planFor(fest, { Xa: lv(2, 'Ana', 'Ben', 'Cy', 'Dot'), Room: lv(1, 'Ana', 'Ben', 'Cy', 'Dot') });
   assert.deepEqual([rows(plan, SATD), lines(plan, SATD)], [['most 8 PM–9 PM 4 X (Xa)'], ['W 8 PM–9 PM 4']]);
   assert.deepEqual(stops(plan, SATD)[0].forks, []);
+});
+
+test('rule 9 and the trip: a drop-in at another venue never pulls anyone off the grounds — a set there later still counts', () => {
+  // The P1–P3 review's fifth finding (2026-09-27): seated in the Den's
+  // drop-in from 6 (nothing real is on, and a must on it is worth the trip),
+  // the crew had "left" the grounds for good, and Late at 10 PM there was
+  // never gone back to. A drop-in is dropped in on: it holds no body against
+  // a trip (aheadAt), and seating there moves nobody's site either.
+  const lounge = dropIn({ name: 'Lounge', day: 'Afters', night: 'Sat', venue: 'Den', time: '6:00 PM - 11:00 PM' });
+  const fest = synth({ sat: [set('Early', 'X', '4:00 PM - 5:00 PM'), set('Late', 'Y', '10:00 PM - 11:00 PM')], artists: [lounge] });
+  const three = lv(2, 'Ana', 'Ben', 'Cy');
+  const must = planFor(fest, { Early: three, Late: three, Lounge: lv(4, 'Ana', 'Ben', 'Cy') });
+  const none = planFor(fest, { Early: three, Late: three, Lounge: lv(1, 'Ana', 'Ben', 'Cy') });
+  const sets = (plan) => stops(plan, SATD).map((s) => `${q(s.from)} ${s.acts[0].name}`);
+  assert.deepEqual(sets(none), ['4 PM Early', '10 PM Late'], 'a 1 on the room: both sets');
+  assert.deepEqual(sets(must), ['4 PM Early', '10 PM Late'], 'a must on the room: both sets still — the room pulls nobody away');
+  assert.deepEqual(lines(must, SATD), ['Den 6 PM–11 PM 3'], 'and the room is still its line');
 });
 
 test('rule 9 and the fold: a hidden drop-in has no line; a drop-in never holds a body in its venue either', () => {

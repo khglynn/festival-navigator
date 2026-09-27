@@ -305,3 +305,26 @@ test('a drop-in room never goes into the Share: the Despacio crew sends the nine
   }
   assert.ok(n > 100, `${n} shares compared`);
 });
+
+// The P1–P3 review's fourth finding (2026-09-27): a night whose only pick is a
+// drop-in drew "Scattered all day" (under a highlight, "Never together — no
+// stop") right under the drop-in line that says they will all be there. Its
+// line is the night: plan.js gives it its own reason ('dropin') and the open
+// plan draws no empty line beside it — for the crew, and for a highlight of
+// one, whose bar is 1. A made-up festival with one drop-in room.
+test('a night whose only pick is a drop-in: its line is the night, with no "scattered" line beside it — the crew and a highlight of one', () => {
+  const fest = {
+    id: 'plan-synth', name: 'Synth Fest', status: 'scheduled', timezone: 'America/Chicago', artists: [],
+    dayMeta: { Saturday: { wd: 'Sat', date: 'Oct 10', iso: '2026-10-10' } },
+    days: { Saturday: { stages: ['X', 'W'], artists: [{ name: 'Room', stage: 'W', time: '2:00 PM - 10:00 PM', dropIn: true }, { name: 'Xa', stage: 'X', time: '8:00 PM - 9:00 PM' }] } },
+  };
+  const picks = { Room: { Ana: 4, Ben: 4, Cy: 4 } };
+  for (const people of [[], ['Ana']]) {
+    const pl = P.planOf(fest, { picks, members: NINE.members, people });
+    const route = pl.night('2026-10-10');
+    assert.deepEqual([route.stops, route.dropIns.length, route.why], [0, 1, 'dropin'], `${people.join() || 'the crew'}: no stop, the line, its own reason`);
+    const drawn = nightRows(route, { ctx: { picks }, plan: pl });
+    assert.deepEqual(drawn.map((r) => [...r.classList].filter((c) => c !== 'plan-row' && c !== 'first' && c !== 'last').join(' ')), ['dropin'],
+      `${people.join() || 'the crew'}: the drop-in line alone — ${drawn.map((r) => r.textContent).join(' / ')}`);
+  }
+});

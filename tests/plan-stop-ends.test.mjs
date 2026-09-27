@@ -120,14 +120,13 @@ function* moments(r, pl) {
 
 // The open plan's rows for the peek's night, as the shelf draws them
 // (plan-rows.js planDays, Earlier closed), cached on the shelf's own repaint
-// signature (rowsKey) plus the peek's row and the drop-in lines' open state:
-// the same key draws the same rows.
+// signature (rowsKey, the drop-in lines' clock included) plus the peek's row:
+// the same key draws the same rows (test 6 holds it to that).
 const drawn = new Map(); // rig -> key -> rows
 function rowsOf(pl, r, cx, { peek, nowMin, route }) {
   if (!drawn.has(r)) drawn.set(r, new Map());
   const cache = drawn.get(r);
-  const key = [route.id, peek.tag, peek.stop ? stopKey(peek.stop) : '', peek.count, rowsKey(route, { plan: pl, peek, nowMin }),
-    (route.dropIns || []).map((d) => (nowMin != null && nowMin >= d.from ? 1 : 0)).join('')].join('~');
+  const key = [route.id, peek.tag, peek.stop ? stopKey(peek.stop) : '', peek.count, rowsKey(route, { plan: pl, peek, nowMin })].join('~');
   if (!cache.has(key)) {
     const rows = [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
       .filter((e) => e.dataset.night === route.id)
@@ -293,4 +292,53 @@ test('4. no fork shorter than 15 minutes survives, measured on the interval kept
   }
   assert.deepEqual(problems, []);
   assert.ok(forks > 300, `read ${forks} forks`);
+});
+
+// 6. The repaint key (the P1–P3 review's sixth finding, 2026-09-27). The
+// shelf skips a repaint whose key has not changed (plan-shelf.js signature:
+// per night, plan-rows.js rowsKey, with the peek's row), so two minutes with
+// the same key must draw the same rows. The drop-in line says "drop in till
+// 9:45 PM" once its room is open, and dims once it is over; neither was in
+// the key, so a tick that changed only that left the line stale until
+// something else repainted. Every run of minutes that share a key is drawn at
+// both ends (the clock runs one way, so a state that flips inside the run
+// shows at its ends), over the Despacio crew (the nine, plus Despacio picked
+// by seven: plan-model.test.mjs's rule 9 crew), whose lines lead three of
+// Portola's nights, the other Portola rigs, and the ACL crew. (Not the seeded
+// ACL nines: eleven nights a draw, and ACL declares no drop-in — they would
+// double the suite's time to say what the ACL crew says.)
+test('6. the same repaint key draws the same rows — every run of minutes with one key, drawn at both ends, the drop-in lines included', () => {
+  const DESPACIO = rig('the Despacio crew', PORTOLA, { ...NINE.picks, Despacio: { Ana: 1, Ben: 1, Cy: 2, Dot: 1, Fay: 4, Gus: 4, Ivy: 1 } }, NINE.members);
+  const problems = [];
+  let runs = 0;
+  let lines = 0;
+  for (const r of [DESPACIO, ...RIGS.filter((x) => x.fest === PORTOLA || x.name === 'the ACL crew')]) {
+    const pl = plans.get(r) || P.planOf(r.fest, { picks: r.picks, members: r.members });
+    const cx = { picks: r.picks };
+    const keyOf = ({ peek, nowMin, route }) => [route.id, peek.tag, peek.stop ? stopKey(peek.stop) : '', peek.count, rowsKey(route, { plan: pl, peek, nowMin })].join('~');
+    const draw = ({ peek, nowMin, route }) => [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
+      .filter((e) => e.dataset.night === route.id).map((e) => `${[...e.classList].sort().join('.')} ${e.textContent}`);
+    let run = null;
+    const close = () => {
+      if (!run || run.first === run.last) return;
+      runs++;
+      const a = draw(run.first);
+      const b = draw(run.last);
+      lines += a.filter((x) => /\bdropin\b/.test(x)).length;
+      if (a.join('\n') !== b.join('\n') && problems.length < 8) {
+        const diff = b.filter((x) => !a.includes(x));
+        problems.push(`${r.fest.id}, ${r.name}, ${run.first.iso} ${at(run.first.t)} → ${at(run.last.t)}, one key: ${a.filter((x) => !b.includes(x)).join(' | ')} → ${diff.join(' | ')}`);
+      }
+    };
+    for (const m of moments(r, pl)) {
+      if (m.nowMin == null) continue; // a night that is not tonight is keyed whole: it has no clock to change
+      const key = keyOf(m);
+      if (run && run.key === key && run.last.route.id === m.route.id) run.last = m;
+      else { close(); run = { key, first: m, last: m }; }
+    }
+    close();
+  }
+  assert.deepEqual(problems, []);
+  assert.ok(runs > 300, `${runs} runs of one key drawn at both ends`);
+  assert.ok(lines > 20, `the drop-in lines were among them (${lines})`);
 });

@@ -329,14 +329,19 @@ function orLineOf(stop, { plan, peek, nowMin }) {
 // row's or-line on draws the rows again. Saturday 6:00 PM moves the NOW row's
 // or-line from Groove Armada's set to DJ Shadow's and changes nothing else,
 // and an open plan kept Groove Armada until the next pick (Sol, round three,
-// 2026-09-26).
+// 2026-09-26). Rule 9's quiet lines lead it, with what the clock does to
+// one: open, it says "drop in till 9:45 PM" (dropInRow), and over it dims or
+// folds (dayRows) — a tick that changed only that left the line stale until
+// something else repainted (the P1–P3 review, 2026-09-27).
 export function rowsKey(route, { plan, peek = null, nowMin = null } = {}) {
   if (!route) return '';
-  return route.items.map((i) => {
+  const lines = (route.dropIns || []).map((d) => [d.kind, `${d.from}-${d.to}`, d.count || '',
+    Number.isFinite(nowMin) && nowMin >= d.from ? 'open' : '', overAt(d, nowMin) ? 'over' : ''].join(':'));
+  return [...lines, ...route.items.map((i) => {
     const f = i.kind === 'stop' ? orLineOf(i, { plan, peek, nowMin }) : null;
     return [i.kind, `${i.from}-${i.to}`, i.count || '', i.tier || '', overAt(i, nowMin) ? 'over' : '',
       f ? `${f.place.id}@${f.from}:${f.count}` : ''].join(':');
-  }).join(',');
+  })].join(',');
 }
 
 // ---- the whole day ---------------------------------------------------------------
@@ -453,11 +458,12 @@ export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, g
     const body = dayRows(route, { ctx, plan, peek, nowMin: past ? Infinity : clock, grown, nightLabelOf, dayWord,
       skip: fold ? (i) => i.to <= clock : null });
     if (past) body.forEach((r) => r.classList.add('past'));
-    if (!route.stops) {
+    if (!route.stops && route.why !== 'dropin') {
+      // The empty line says why there is no stop. A night whose drop-in line
+      // is its plan (plan.js 'dropin') has none: the line says where they
+      // will be, and a "scattered" line under it contradicted it.
       const e = emptyRow(route);
       if (past) e.classList.add('past');
-      // The quiet drop-in line (if any) stays; the empty line says why there
-      // is no stop.
       body.push(e);
     } else if (fold && !body.length) {
       // Every stop of today's is over and none is left: an open plan a
