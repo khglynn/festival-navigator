@@ -408,3 +408,25 @@ PR and merges; this branch is never stamped here.
        coordinator does. Both plan browser suites passed 76 of 77 (one of main's own
        skips), both at 0 ms and with animations starting 700 ms late, on a quiet Mac
        (load average about 5).
+20. **Sol's final check** (on the coordinator's release head 7c8b537). He confirmed the
+    cut is complete, the share holds and the pagehide cleanup work, and a cancelled
+    arrival is handled. He found one real hole in `afterArrival`. The link's wish was
+    spent when the rise began, and the open ran when the rise ended, whatever had
+    happened in between. If Settings opened mid-rise, `show()` dropped the plan but
+    left the peek a peek. The rise then ended and opened the plan behind Settings, and
+    it was still open when the reader came back. The same missing check let an older
+    arrival open a plan drawn since.
+    a. **Fix.** The shelf counts its arrivals, leaves and drops (`stint`), and an
+       `afterArrival` runs only if none happened since it was asked. The link's
+       callback also checks that the wall is showing, the plan isn't already open,
+       and the crew, festival and night are still the ones the link named
+       (`planNight()`, the night the plan on screen is drawn for).
+    b. **Test,** red first (Chromium, the held arrival): Settings opened mid-rise,
+       then the rise finished. The plan must still be a peek behind Settings and back
+       on the wall. On 259da5e's code it was open.
+    c. **Considered and left out:** abandoning the link's open on any input during the
+       rise. It reads as "the person took over", but WebKit follows a tap with
+       mouse-type events of its own, and those could spend a newcomer's link right
+       after the welcome card's ✕. That can't be proven either way without an iPhone.
+    d. **Local.** plan-share plus plan-drag passed 77 of 78 (main's WebKit Tab skip),
+       and npm test passed 1259 of 1260, the SW stamp only.

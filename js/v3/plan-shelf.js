@@ -89,6 +89,7 @@ let nightId = '';    // `${fid}|${route id}` of the day the rows are drawn for
 let drag = null;
 let leaving = null;  // { timer } while the shelf drops out of sight
 let arrival = null;  // the arrival's animation, while it plays
+let stint = 0;       // counts arrivals, leaves and drops: an afterArrival from an older one runs nothing
 let quietUntil = 0;  // the click that follows a drag or a peek tap is not a second tap
 let held = false;    // an answer that came in under a hand: drawn when it lets go
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
@@ -98,6 +99,8 @@ export const planIsOpen = () => mode === 'open';
 // Whether there is a plan on screen to open: the peek or the open plan, not
 // one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
+// The night the plan on screen is drawn for (its route's date), or null.
+export const planNight = () => (planHere() && data && data.route ? data.route.iso : null);
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
 export function planShowsNow() {
@@ -438,6 +441,7 @@ function settleState() {
 // ---- arriving, leaving, repainting -----------------------------------------------
 // Storyboard 1: the peek grows out of the dock's top edge.
 function arrive() {
+  stint += 1;
   el.hidden = false;
   mode = 'peek';
   unpin();
@@ -456,6 +460,7 @@ function arrive() {
 // timer finishes the job if the animation never ends (a backgrounded tab).
 function leave({ instant = false } = {}) {
   if (!el || mode === 'gone') return;
+  stint += 1;
   endDrag();
   const done = () => {
     cancelLeave();
@@ -569,10 +574,15 @@ export function openPlan({ instant = false, focus = false } = {}) {
 // in its place for a frame before it grows, so the Share's link opens after
 // the rise (two beats). An arrival that never lands (a hand caught it, the
 // plan left) runs nothing: the person took over, or there is nothing to open.
+// Nor does one the page moved on from while it rose — the wall left for
+// another screen (dropPlan), the plan gone, or a new arrival since (`stint`):
+// the rise that ends is not the one `fn` was waiting for (Sol, on the
+// Share's release head, 2026-09-26). The caller checks its own identity too.
 export function afterArrival(fn) {
   const a = arrival;
   if (!a) { fn(); return; }
-  a.finished.then(() => { if (el && mode === 'peek' && !leaving) fn(); }, () => {});
+  const mine = stint;
+  a.finished.then(() => { if (el && stint === mine && mode === 'peek' && !leaving) fn(); }, () => {});
 }
 export function closePlan({ instant = false } = {}) {
   if (!el || mode !== 'open') return;
@@ -581,6 +591,7 @@ export function closePlan({ instant = false } = {}) {
 // Gone with the page: pagehide, boot, a crew switch, another screen.
 export function dropPlan() {
   if (!el) return;
+  stint += 1;
   endDrag();
   flushHeld();
   if (mode === 'open') settleTo(0, { instant: true });

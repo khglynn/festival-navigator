@@ -76,7 +76,7 @@ import { showJoinShelf, joinShelf } from './join-shelf.js';
 // floor they change (the dock plus the peek).
 import { planOf, planAt, peekOf } from './plan.js';
 import { shortDate } from './events.js';
-import { paintPlanShelf, planIsOpen, planShowsNow, planHere, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
+import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -1408,9 +1408,15 @@ function openPlanForLink(answer) {
   // join's own welcome, or as soon as the shelf is left (planAfterShelf).
   if (joinShelf()) return;
   if (planHere()) {
-    const night = planOpenFor.night;
+    const { token, fest, night } = planOpenFor;
     planOpenFor = null;
-    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (!planIsOpen()) openPlan(); });
+    // The open waits for the peek's rise, and the page can move on meanwhile:
+    // it opens only on the wall, on the crew, festival and night the link
+    // named (Sol, 2026-09-26: Settings opened mid-rise got the plan opened
+    // behind it, there when the reader came back).
+    const still = () => $('screen-app').style.display !== 'none' && !planIsOpen()
+      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === night;
+    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (still()) openPlan(); });
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');

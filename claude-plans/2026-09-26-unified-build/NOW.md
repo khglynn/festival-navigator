@@ -31,10 +31,12 @@
   drops, and the wall stays still under the sheet. **The v101 window catches
   are cut** (item 19): the widen test failed a third time on CI's Linux WebKit
   (run 36290138756), so plan-shelf's measure/refit path is main's again. The
-  link's open waits for the peek to rise (`afterArrival`). The catches and
-  their tests are banked at the tag `back-pocket/window-catches` and in the
-  plan-days DESIGN.md. Next: CI until the browser job is green three times in
-  a row on one head, then the SHA to the coordinator. Kevin approved every
+  link's open waits for the peek to rise (`afterArrival`), and opens only if
+  the wall is still showing that crew, festival and night (Sol's final check,
+  item 20). The catches and their tests are banked at the tag
+  `back-pocket/window-catches` and in the plan-days DESIGN.md. Next: one green
+  browser attempt on this head (259da5e had three), then the SHA to the
+  coordinator. Kevin approved every
   default on the design page (Despacio as a drop-in room, the plan across the
   days, the menus over it); it builds on `live/plan-days-design` after v104,
   aimed at ACL.
