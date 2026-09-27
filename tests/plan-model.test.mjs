@@ -745,12 +745,6 @@ test('a Late night with doors and no set time is no place, and a date of such sh
   assert.equal(card.dataset.nowFrom, undefined, 'and no window');
 });
 
-test('the people filter is not an input: the plan is the whole crew', () => {
-  const a = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
-  const b = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members, filterPeople: ['Ana'] });
-  assert.deepEqual(rows(b, '2026-09-26'), rows(a, '2026-09-26'));
-});
-
 // Kevin, 2026-09-26: "the filters should filter the now too". The highlight
 // never moves the route; it decides which stops the peek may name.
 test('a highlight filters the peek: NOW only for a stop they are in, else their next stop, else nothing', () => {
@@ -934,4 +928,125 @@ test('rule 9: a venue is a drop-in only when every act in it is; a stray grid se
 test('rule 10\'s bar: 1 for one person, 2 for two to four, the crew\'s own barFor from five', () => {
   assert.deepEqual([1, 2, 3, 4, 5, 6, 8, 9, 12, 13, 17].map(P.barForGroup), [1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 5]);
   for (let n = 5; n <= 40; n++) assert.equal(P.barForGroup(n), P.barFor(n), `${n} highlighted`);
+});
+
+// The Despacio crew's Saturday for one, two, three and five highlighted (the
+// design round's frames C6, C13, C7 and C9, on the settled bars). A drift row
+// says where the highlighted drift and how many of them: "··· (Despacio 2)".
+const drow = (it) => (it.kind === 'scattered' && it.dropIn ? `${row(it)} (${it.dropIn.place.place} ${it.dropIn.count})` : row(it));
+const hrows = (plan, id) => plan.night(id).items.map(drow);
+const lit = (people) => P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members, people });
+
+test('rule 10 golden, one person: Gus\'s own day — bar 1, the picks he gives up as "or" lines, Despacio a line and a drift', () => {
+  const gus = lit(['Gus']);
+  assert.deepEqual([gus.bar, gus.group, gus.highlight], [1, ['Gus'], ['Gus']]);
+  assert.deepEqual(hrows(gus, '2026-09-26'), [
+    'most 3:30 PM–4:30 PM 1 Crane Stage (Tricky)',
+    'most 4:45 PM–6 PM 1 Warehouse (Groove Armada)',
+    'most 6:10 PM–7:10 PM 1 Crane Stage (DJ Shadow)',
+    'most 7:15 PM–8:30 PM 1 Warehouse (Kettama)',
+    'most 8:30 PM–9:25 PM 1 Crane Stage (Fatboy Slim)',
+    '··· 9:25 PM–9:45 PM (Despacio 1)',
+    'most 9:45 PM–11 PM 1 Warehouse (Prospa)',
+    'most 11 PM–11:30 PM 1 Audio',
+    '··· 11:30 PM–1:30 AM',
+    'most 1:30 AM–3 AM 1 The Great Northern',
+  ]);
+  assert.deepEqual(lines(gus, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 1'], 'his must on Despacio is a line, never a stop');
+  // The or lines are his give-ups (alt), never the top of the route.
+  const named = (p) => (p.kind === 'room' ? p.place : p.acts[0].name); // a room goes by its venue
+  const ors = stops(gus, '2026-09-26').flatMap((s) => s.forks.map((f) => `${named(s.place)} or ${named(f.place)}${f.alt ? ' (alt)' : ''}`));
+  assert.deepEqual(ors, ['Kettama or Fatboy Slim (alt)', 'Prospa or Audio (alt)']);
+  assert.deepEqual(gus.nights.map((n) => gus.night(n.id).stops), [1, 1, 8, 5]);
+});
+
+test('rule 10 golden, two and three: "two is together" — the sets they share, and a drift where two of them go', () => {
+  const pair = lit(['Ana', 'Cy']);
+  assert.deepEqual([pair.bar, pair.group], [2, ['Ana', 'Cy']]);
+  assert.deepEqual(hrows(pair, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 2 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–5:40 PM (Despacio 2)',
+    'most 5:40 PM–6:30 PM 2 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 2)',
+    'most 7:10 PM–8:10 PM 2 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 2)',
+    'most 9 PM–10:15 PM 2 Pier Stage (Dog Blood)',
+  ]);
+  const three = lit(['Ana', 'Cy', 'Hal']);
+  assert.deepEqual([three.bar, three.group], [2, ['Ana', 'Cy', 'Hal']]);
+  assert.deepEqual(hrows(three, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 2 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–5:40 PM (Despacio 2)',
+    'most 5:40 PM–6:30 PM 3 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 2)',
+    'most 7:10 PM–8:10 PM 3 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 2)',
+    'most 9 PM–10:15 PM 3 Pier Stage (Dog Blood)',
+    'most 10:15 PM–10:55 PM 2 Crane Stage (Soulwax)',
+  ]);
+  // Who is at a stop is always the highlighted, never the crowd around them.
+  assert.deepEqual(stops(three, '2026-09-26').map((s) => s.people.join('+')), ['Ana+Cy', 'Ana+Cy+Hal', 'Ana+Cy+Hal', 'Ana+Cy+Hal', 'Ana+Hal']);
+  assert.deepEqual(lines(three, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 2']);
+});
+
+test('rule 10 golden, five: the crew\'s own bar (3, not 2) — five friends never get a busier plan as a highlight than as a crew', () => {
+  const five = lit(['Ana', 'Ben', 'Cy', 'Dot', 'Eli']);
+  assert.deepEqual([five.bar, five.group.length], [3, 5]);
+  assert.deepEqual(hrows(five, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 3 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–4:45 PM (Despacio 4)',
+    'most 4:45 PM–5:40 PM 3 Warehouse (Groove Armada)',
+    'most 5:40 PM–6:30 PM 3 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 3)',
+    'most 7:10 PM–8:10 PM 4 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 4)',
+    'most 9 PM–10:15 PM 5 Pier Stage (Dog Blood)',
+    '··· 10:15 PM–11:45 PM',
+    'most 11:45 PM–1 AM 4 Public Works',
+    '··· 1 AM–1:30 AM',
+    'most 1:30 AM–3 AM 3 The Great Northern',
+  ]);
+  assert.deepEqual(lines(five, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 4']);
+  assert.ok(stops(five, '2026-09-26').every((s) => s.count >= 3), 'never two of five');
+});
+
+test('rule 10\'s invariants: a stop is theirs and clears their bar, all nine is the crew\'s route, and the empty cases say why', () => {
+  const crew = P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members });
+  const m = NINE.members;
+  for (const people of [[m[0]], [m[6]], [m[8]], [m[0], m[2]], [m[1], m[4], m[6]], m.slice(2, 6), m.slice(0, 5), m.slice(3, 9), m.slice(0, 8)]) {
+    const plan = lit(people);
+    const group = new Set(plan.group);
+    assert.equal(plan.bar, P.barForGroup(people.length), people.join('+'));
+    for (const n of plan.nights) {
+      const r = plan.night(n.id);
+      for (const s of stops(plan, n.id)) {
+        assert.ok(s.people.every((p) => group.has(p)) && s.count >= plan.bar, `${people.join('+')} ${n.id} ${s.place.place}: ${s.people}`);
+        for (const f of s.forks) assert.ok(f.people.every((p) => group.has(p)) && (f.alt || f.count >= plan.bar), `${people.join('+')} ${n.id} or ${f.place.place}`);
+      }
+      for (const d of r.dropIns) assert.ok(d.people.every((p) => group.has(p)) && d.count >= plan.bar);
+      assert.equal(r.why, r.stops ? null : r.why);
+    }
+  }
+  // Everyone highlighted is the crew: the same bar, the same route, the same lines.
+  const all = lit(m);
+  assert.equal(all.bar, crew.bar);
+  for (const n of crew.nights) assert.deepEqual([hrows(all, n.id), lines(all, n.id)], [hrows(crew, n.id), lines(crew, n.id)], n.id);
+  // A highlight of nobody in the crew is no highlight.
+  const stranger = lit(['Stranger']);
+  assert.deepEqual([stranger.group, stranger.highlight, stranger.bar], [null, [], 3]);
+  // A member with no picks: not in the group, still named, and every night
+  // says why it is empty (plan-rows words it "Nothing Zed picked").
+  const zed = P.planOf(PORTOLA, { picks: DESPACIO, members: [...m, 'Zed'], people: ['Zed'] });
+  assert.deepEqual([zed.group, zed.highlight], [[], ['Zed']]);
+  assert.deepEqual(zed.nights.map((n) => [zed.night(n.id).stops, zed.night(n.id).dropIns.length, zed.night(n.id).why]), zed.nights.map(() => [0, 0, 'unpicked']));
+  const gusZed = P.planOf(PORTOLA, { picks: DESPACIO, members: [...m, 'Zed'], people: ['Gus', 'Zed'] });
+  assert.deepEqual([gusZed.group, gusZed.highlight, gusZed.bar], [['Gus'], ['Gus', 'Zed'], 1], 'Zed rides in the words, Gus is the plan');
+  // Two who never meet: no stop, and the night says so ("Never together").
+  const fest = synth({ sat: [set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '8:00 PM - 9:00 PM')] });
+  const apart = P.planOf(fest, { picks: { Xa: lv(2, 'Ana', 'Ben', 'Cy'), Ya: lv(2, 'Dot', 'Eli', 'Fay') }, members: TWELVE, people: ['Ana', 'Dot'] });
+  assert.deepEqual([apart.bar, apart.night(SATD).stops, apart.night(SATD).why], [2, 0, 'scattered']);
+  // The bodies are the whole crew's: Ana is at Xa with Ben and Cy, and a
+  // highlight of Ana and Ben counts the two of them there.
+  const pair = P.planOf(fest, { picks: { Xa: lv(2, 'Ana', 'Ben', 'Cy'), Ya: lv(2, 'Dot', 'Eli', 'Fay') }, members: TWELVE, people: ['Ana', 'Ben'] });
+  assert.deepEqual(rows(pair, SATD), ['most 8 PM–9 PM 2 X (Xa)']);
 });

@@ -104,3 +104,14 @@ crew link, no database writes (previews and `vercel dev` use production's).
       the stray test, `undefined` vs `true`. Mutants (each rule 9 line of plan.js
       removed in turn: aheadAt, the seating key, the ranked filter, the hidden line,
       every→some, the drift caption) are each caught by at least one test.
+   d. Rule 10's goldens (plan-model section 7, on the Despacio crew): Gus alone (bar 1,
+      ten rows, his give-ups as alt "or" lines: Kettama or Fatboy Slim, Prospa or
+      Audio), Ana + Cy and Ana + Cy + Hal (bar 2: the sets they share, drifts
+      "Despacio 2"), and five (bar 3 per C6, twelve rows, no stop of two). The
+      invariants: across nine highlights every stop, fork and line is the group's and
+      clears the bar; all nine highlighted is the crew's route; a stranger is no
+      highlight; a member with no picks is named but not in the group, and every night
+      says `unpicked`; two who never meet say `scattered`. The stale "people filter is
+      not an input" test (it passed an option planOf never read) is gone. Red on main:
+      5 of 5 (planOf returns no `group`, bar 3 for Gus). Red on the prototype: the bar
+      and the five (bar `2` vs `3`).
