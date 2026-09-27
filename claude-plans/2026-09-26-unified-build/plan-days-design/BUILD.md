@@ -289,11 +289,25 @@ crew link, no database writes (previews and `vercel dev` use production's).
    highlighted, one to the wall's live cards and one to their route. now-jump passes as
    it is; ONE NOW gets one exception.
    (c) Something else, such as the peek's NOW row landing the wall on that card.
-   My lean is (b). It keeps a feature Kevin asked for three days ago, it costs one
-   condition in paintNowTabs, and the peek still says where they are. (a) is the more
-   consistent reading of his 2026-09-26 "the filters should filter the now too" (the tab
-   stepped aside whenever a highlighted peek said NOW). I haven't changed anything:
-   either way changes what a person sees.
+   Tried in a scratch tree, not on the branch: (b) is one condition in paintNowTabs
+   (`planShowsNow() && !filterPeople.length`). It makes now-jump 58/58 at 0, but it
+   reverses an assertion that is already on main, plan-shelf's "one NOW, a highlight
+   or not" (`dock-now` hidden while a highlighted peek says NOW). The three plan-shelf
+   tests after that one fail only in cascade, because the highlight is left on. So ONE
+   NOW under a highlight is a standing rule, not the prototype's. Rule 10 only makes it
+   fire whenever a highlighted person has a live pick, where the old peek filter fired
+   only when they were in the crew's stop. My lean is now (a): it is Kevin's rule as it
+   stands, and the peek answers "where is Ross right now" at a glance. Its cost: under
+   a one-person highlight, the NOW tab shows only when their live pick is a drop-in or
+   a hidden room, so now-jump's 16 single-person cases need new setups or retire.
+   Choosing (b) keeps the 2026-09-24 wall answer and takes the one-NOW exception. I
+   haven't changed the branch: either way changes what a person sees.
+   **The other browser suites at 0 on 60107d2** (a sweep of every suite outside the
+   gate list, one at a time): all green: by-time 4, error-report 1, fold-intent 4,
+   guest-tap-route 6, heads 7, hover 11, import-flow 4, list-view 12, meter 27, shell
+   11, show-links 6, stack-row 9, strip-follow 3, tap-shelf 31, touch-ghost 2,
+   zoom-chips-burst 8, zoom-chips 45, zoom-chrome 18, zoom-door-row 8, zoom-notes-chip
+   1, zoom-still-hand 6.
    **Doubts, and what the design didn't settle.**
    (1) "Nothing left today" is my wording for today with every stop behind it. The
    design's edge cases word only a person with no picks ("Nothing Gus picked"). It's a
