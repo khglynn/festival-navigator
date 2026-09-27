@@ -329,18 +329,33 @@ test('a night whose only pick is a drop-in: its line is the night, with no "scat
   }
 });
 
-// Every row the open plan draws names its night (`data-night`), grown cards
-// included: the shelf's head, its Share and the reader's place all read the
-// night of the row at the list's top (plan-shelf.js nightAtTop, takePlace),
-// and a row without one would be skipped, naming the next day too early.
-// (Sol's recheck on daf9c3b called grown cards unnamed; night() names every
-// row dayRows returns, grownEl's included. This holds it.) Every stop grown,
-// Earlier shut and open, the crew and a highlight whose days are empty, on
-// Portola and across ACL's bare Mon · Tue.
-test('every direct child of the open plan’s list names its night — grown cards, heads, the Earlier line, empty lines and a bare run included', () => {
+// Every row the open plan draws names its night (`data-night`), and the RIGHT
+// night, grown cards included: the shelf's head, its Share and the reader's
+// place all read the night of the row at the list's top (plan-shelf.js
+// nightAtTop, takePlace), so a row without one would be skipped, naming the
+// next day too early, and a row carrying its neighbour's would name the wrong
+// day outright. (Sol's recheck on daf9c3b called grown cards unnamed; Sol's
+// final check on af238e9, SOL-R3.md, called the guard presence-only.) The
+// night a row belongs to is read from what the row IS, its data-stop, never
+// from its data-night: a stop's key starts with its night (stopKey), a grown
+// card, an or-line and a drop-in line carry that key after their tag, a head,
+// an empty line and a scattered line name their night, and the Earlier line
+// is the first night behind (the landing night when only today's stops are
+// over). Every stop grown, Earlier shut and open, the crew and a highlight
+// whose days are empty, on Portola and across ACL's bare Mon · Tue; and on
+// both sides of every day boundary, a grown card before a head and the first
+// row after it among them.
+test('every direct child of the open plan’s list names its own night — grown cards, heads, the Earlier line, empty lines and a bare run, on both sides of each day boundary', () => {
   const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
   const ACL_CREW = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/plan-crew-acl.json'), 'utf8'));
   const allGrown = (pl) => new Set(pl.nights.flatMap((n) => pl.night(n.id).items.filter((i) => i.kind === 'stop').map(stopKey)));
+  const nightOfRow = (row, { before, landing }) => {
+    const key = row.dataset.stop || '';
+    if (key === 'earlier') return before[0] || landing;
+    const [tag, ...rest] = key.split('|');
+    if (['day', 'empty', 'scattered', 'grow', 'or', 'dropin'].includes(tag)) return rest[0];
+    return rest.length === 2 ? tag : `(no night in "${key}")`; // a stop: <night>|<where>|<from>
+  };
   const cases = [
     ['Portola, Sat 9:40 PM', FEST, NINE, [], '2026-09-26T21:40:00-07:00'],
     ['Portola, Sun 5 PM', FEST, NINE, [], '2026-09-27T17:00:00-07:00'],
@@ -348,27 +363,49 @@ test('every direct child of the open plan’s list names its night — grown car
     ['ACL, Tue Sep 29 6 PM', ACL, ACL_CREW, [], '2026-09-29T18:00:00-05:00'],
     ['ACL, Sat Oct 10 4 PM', ACL, ACL_CREW, [], '2026-10-10T16:00:00-05:00'],
   ];
-  let grownSeen = 0;
-  let emptySeen = 0;
-  let runSeen = 0;
+  const seen = { grown: 0, empty: 0, run: 0, heads: 0, grownBeforeHead: 0, stopAfterHead: 0 };
   for (const [what, fest, crew, people, iso] of cases) {
     const pl = P.planOf(fest, { picks: crew.picks, members: crew.members, people });
     const date = new Date(iso);
     const now = P.planAt(pl, fest, date);
     const from = now ? now.night.id : pl.nights.find((n) => n.iso >= iso.slice(0, 10)).id;
+    const ids = pl.nights.map((n) => n.id);
+    const where = { before: ids.slice(0, ids.indexOf(from)), landing: from };
     for (const earlierOpen of [false, true]) {
       const list = planDays(pl, { ctx: { picks: crew.picks }, from, nowMin: now ? now.minutes : null, grown: allGrown(pl), earlierOpen,
         dayOf: (id) => ({ weekday: pl.night(id).wd, date: pl.night(id).iso }), nightLabelOf: (id) => pl.night(id).wd, emptyWords: () => 'nothing' });
       const kids = [...list.children];
-      grownSeen += kids.filter((k) => k.classList.contains('plan-grow')).length;
-      emptySeen += kids.filter((k) => k.classList.contains('empty')).length;
-      runSeen += kids.filter((k) => k.dataset.nights).length;
-      const unnamed = kids.filter((k) => !k.dataset.night).map((k) => k.className);
-      assert.ok(kids.length > 3, `${what}${earlierOpen ? ', Earlier open' : ''}: rows drawn (${kids.length})`);
-      assert.deepEqual(unnamed, [], `${what}${earlierOpen ? ', Earlier open' : ''}: every row names its night`);
+      const label = `${what}${earlierOpen ? ', Earlier open' : ''}`;
+      assert.ok(kids.length > 3, `${label}: rows drawn (${kids.length})`);
+      seen.grown += kids.filter((k) => k.classList.contains('plan-grow')).length;
+      seen.empty += kids.filter((k) => k.classList.contains('empty')).length;
+      const wrong = kids.map((k) => ({ row: `${k.className} ${k.dataset.stop || ''}`.trim(), night: k.dataset.night || null, own: nightOfRow(k, where) }))
+        .filter((r) => r.night !== r.own);
+      assert.deepEqual(wrong, [], `${label}: every row names its own night`);
+      // A bare run's rows name the run's first night, and name every night in it.
+      for (const k of kids.filter((r) => r.dataset.nights)) {
+        seen.run++;
+        assert.equal(k.dataset.nights.split(' ')[0], k.dataset.night, `${label}: a run's row is named for its first night`);
+      }
+      // Each day boundary, both sides: the head and the first row after it are
+      // the new night's; the row before it is its own night's, never the head's.
+      kids.forEach((k, i) => {
+        if (!k.classList.contains('plan-day')) return;
+        seen.heads++;
+        const id = k.dataset.stop.split('|')[1];
+        const next = kids[i + 1];
+        const prev = kids[i - 1];
+        assert.ok(next && next.dataset.night === id && nightOfRow(next, where) === id, `${label}: the first row after ${id}'s head is ${id}'s: ${next && next.className} ${next && next.dataset.stop}`);
+        if (next.classList.contains('plan-row') && !next.classList.contains('empty')) seen.stopAfterHead++;
+        if (prev && !prev.classList.contains('earlier')) {
+          assert.ok(prev.dataset.night !== id && prev.dataset.night === nightOfRow(prev, where), `${label}: the row before ${id}'s head is its own night's (${prev.dataset.night}): ${prev.className} ${prev.dataset.stop}`);
+          if (prev.classList.contains('plan-grow')) seen.grownBeforeHead++;
+        }
+      });
     }
   }
-  assert.ok(grownSeen > 20 && emptySeen > 0 && runSeen > 0, `grown cards, empty lines and a bare run's rows were drawn and checked: ${JSON.stringify({ grownSeen, emptySeen, runSeen })}`);
+  assert.ok(seen.grown > 20 && seen.empty > 0 && seen.run > 0 && seen.heads > 10 && seen.grownBeforeHead > 3 && seen.stopAfterHead > 3,
+    `grown cards, empty lines, a bare run's rows and both sides of the day boundaries were drawn and checked: ${JSON.stringify(seen)}`);
 });
 
 // The Earlier line names up to three nights behind by their labels, and three
