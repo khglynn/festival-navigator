@@ -843,6 +843,8 @@ let lastInput = 'pointer';
 // route; what each CLICK means is judged per click, below (clickHand).
 let lastPointerType = 'mouse';
 export const fingerHand = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
+// Whether the last input was a key (app.js: a focused row a keyboard is on).
+export const keyHand = () => lastInput === 'keyboard';
 // The hand behind each CLICK (the tap change, 2026-09-26; its reviews by Sol 6).
 // A FINGER (or a pen) opens the card's shelf; a MOUSE picks; a KEY's click on
 // a native button or link is the keyboard's; a click with no pointer and no

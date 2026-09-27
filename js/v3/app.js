@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey, listFilters, rowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded, loadView, saveView, viewIsSet, LIST, BOARD } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -19,7 +19,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, focusQuietly } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, keyHand, focusQuietly } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
@@ -372,6 +372,7 @@ let pendingFold = null; // { finish }
 function settleFold() { if (pendingFold) pendingFold.finish(); }
 function toggleFoldFlow(key) {
   settleFold();
+  settleThin();
   // The setting lands NOW — memory, storage and ctx; only the room's leaving
   // is deferred.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
@@ -475,6 +476,7 @@ function togglePast(key) {
   settleFold();
   settleView();
   settlePast();
+  settleThin();
   const root = $('wall-root');
   const lineOf = () => root.querySelector(`.past-line[data-past="${CSS.escape(key)}"]`);
   const line = lineOf();
@@ -541,13 +543,132 @@ function togglePast(key) {
 // or a fold in flight keep the wall as it is until the next chance.
 function pastMayMove() {
   return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy && !document.body.dataset.sharing
-    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast;
+    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast && !pendingThin;
 }
 function recomputePast() {
   ctx.pastAt = new Date();
   const place = takeWallPlace();
   repaintWall();
   keepWallPlace(place, { byTime: true });
+}
+
+// ---- the List's highlight: a filter that moves (v103, 2026-09-26) ------------------------
+// Kevin: "when in list view — let's have highlight actually filter — only show
+// that person(s) picks." wall.js thinByPeople decides what stays; this is how
+// the change looks (the motion law): the rows the highlight takes away leave
+// quick and plain; then the wall is drawn again with the page held where you
+// were standing, the rows that stayed glide from where they were to where they
+// are (a FLIP of what is on screen — transforms only), and the rows a wider
+// highlight brings back arrive with the beat. What was off screen, before or
+// after, just is where it is. Low Power and Reduce Motion: instant, the place
+// still held. The highlight itself landed already (filters.js, this tab only).
+let pendingThin = null; // { finish } while the rows a highlight took are fading
+function settleThin() { if (pendingThin) pendingThin.finish(); }
+// Everything that moves when rows come and go, by a key that survives the
+// rebuild: the wall's own anchors (heads and cards — wallAnchors), and the
+// lines between them (a band's hour, a room's EARLIER, a day's whisper).
+function thinItems(root) {
+  const where = (el) => {
+    const room = el.closest('.room');
+    return `${(el.closest('.day-block') || { dataset: {} }).dataset.day || ''}|${room ? room.dataset.room : ''}|${room && room.dataset.iso ? room.dataset.iso : ''}`;
+  };
+  const items = wallAnchors(root);
+  for (const el of root.querySelectorAll('.band-head, .past-line, .day-whisper, .list-head')) {
+    let key;
+    if (el.classList.contains('band-head')) key = `band|${where(el)}|${(el.closest('.time-band') || { dataset: {} }).dataset.band || ''}`;
+    else if (el.classList.contains('past-line')) key = `past|${el.dataset.past}`;
+    else if (el.classList.contains('day-whisper')) key = `whisper|${where(el)}`;
+    else key = `list|${el.textContent}`;
+    items.push({ key, el });
+  }
+  return items;
+}
+// `anchor`: the card the person is on (a zoom, a mouse, a keyboard) — the page
+// is held by IT, so a row leaving above it never moves what is under the
+// pointer (Sol's re-review of v103); without one, by the top of what you see.
+function thinBefore({ anchor = null } = {}) {
+  const root = $('wall-root');
+  const at = new Map();
+  const items = thinItems(root);
+  for (const { key, el } of items) at.set(key, el.getBoundingClientRect().top);
+  let place = null;
+  if (anchor) {
+    const anchors = wallAnchors(root);
+    const i = anchors.findIndex((a) => a.el === anchor);
+    if (i >= 0) {
+      const el = anchors[i].el;
+      place = { key: anchors[i].key, top: el.getBoundingClientRect().top, after: anchors.slice(i + 1).map((a) => a.key),
+        day: dayKeyOf(el), room: (el.closest('.room') || { dataset: {} }).dataset.room || null,
+        from: el.dataset.nowFrom != null ? Number(el.dataset.nowFrom) : null };
+    }
+  }
+  return { at, place: place || takeWallPlace(), y: window.scrollY };
+}
+// `keep`: rows the person is still on (row keys) — they stay, dimmed, while
+// the rest go.
+function thinFlow(before, { keep = rowsInHand() } = {}) {
+  settleFold();
+  settleView();
+  settlePast();
+  const root = $('wall-root');
+  const vh = window.innerHeight || 0;
+  const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < vh; };
+  const people = ctx.filterPeople || [];
+  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people) || keep.has(rowKey(card));
+  // What leaves: the rows the new highlight does not keep, and with them the
+  // lines that belong to nothing any more — a band's hour whose rows all go,
+  // a room's whisper and EARLIER when the room goes quiet.
+  const going = new Set([...root.querySelectorAll('.card[data-artist]')].filter((c) => !stays(c)));
+  const allGo = (host) => { const cards = [...host.querySelectorAll('.card[data-artist]')]; return cards.length > 0 && cards.every((c) => going.has(c)); };
+  for (const band of root.querySelectorAll('.time-band')) if (allGo(band)) band.querySelectorAll('.band-head').forEach((h) => going.add(h));
+  for (const room of root.querySelectorAll('.room')) if (allGo(room)) room.querySelectorAll('.day-whisper, .past-line').forEach((l) => going.add(l));
+  const leaving = [...going].filter((el) => onScreen(el) && canAnimate(el, ctx));
+  let done = false;
+  const flow = {};
+  const anims = [];
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingThin === flow) pendingThin = null;
+    if (document.body.dataset.busy === 'thin') delete document.body.dataset.busy;
+    for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
+    // A hand scroll during the fade wins: the place is read again, there.
+    const place = Math.abs(window.scrollY - before.y) >= 1 ? takeWallPlace() : before.place;
+    repaintWall();
+    keepWallPlace(place);
+    if (!canAnimate(root, ctx)) return;
+    const arriving = [];
+    const moves = [];
+    for (const { key, el } of thinItems(root)) {
+      if (!onScreen(el)) continue;
+      const was = before.at.get(key);
+      // Off screen before (or not there at all): it arrives where it is.
+      if (was == null || was > vh || was < -el.getBoundingClientRect().height) { arriving.push(el); continue; }
+      const dy = was - el.getBoundingClientRect().top;
+      if (Math.abs(dy) >= 1) moves.push([el, dy]);
+    }
+    // Rows closing up after others left are the way out, crisp; rows making
+    // room for ones coming back are the way in, with its touch of overshoot.
+    const easing = arriving.length ? EASE_ARRIVE : EASE_SURFACE;
+    for (const [el, dy] of moves) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing });
+    arriving.forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: STAGGER_MS + Math.min(i, 12) * PAST_STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+  };
+  flow.finish = finish;
+  if (!leaving.length) { finish(); return; }
+  pendingThin = flow;
+  // Busy while it fades (index.html quiet()): a new build's reload must not
+  // land in the middle of it.
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'thin';
+  let pending = leaving.length;
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
+  for (const el of leaving) {
+    const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = settle;
+    a.oncancel = settle;
+    anims.push(a);
+  }
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the filter
 }
 
 // Land on picks just made elsewhere (the schedule import, Phase 1 — Sol's
@@ -610,6 +731,7 @@ let viewPlace = null; // { place, y }
 function switchView(next) {
   settleFold();
   settleView();
+  settleThin();
   if (ctx.view === next || !listOffered(state.fest())) return;
   const root = $('wall-root');
   let place = viewPlace && Math.abs(window.scrollY - viewPlace.y) < 1 ? viewPlace.place : takeWallPlace();
@@ -747,6 +869,138 @@ function refreshArtistCards(artistName) {
   // A pick changes Our plan's counts, and this path never repaints the wall
   // (so never reaches renderDayNav): the peek is painted here.
   paintPlan();
+  // In a List filtered by a highlight, a row that stopped being theirs has
+  // just dimmed where it is (refreshCard): it leaves once you leave it.
+  watchLeftovers();
+}
+
+// ---- a row that stops belonging (Sol's review of v103; call 2d) -------------------
+// Filtered to yourself, you un-pick a row: it DIMS where it is — nothing jumps
+// under your finger — and it LEAVES at the first natural moment once you have
+// let it go: the shelf closed, the zoom gone, the pointer off it, the focus
+// moved on (checked every 400 ms while one waits), or the minute tick; any
+// repaint in between (a friend's change on the poll) keeps it while you are
+// still on it. Each row settles on its OWN (Sol's re-review): one you are
+// still on is no reason to keep one you have left, and the page is held by
+// the row you are on, so nothing under the pointer moves as another leaves.
+// It leaves the way the filter's own changes do (thinFlow): it fades, the rows
+// close up, and the room's words and its EARLIER count are right again. While
+// the tab is hidden nothing is scanned or reshaped: the watch sleeps, and a
+// row let go meanwhile leaves when the page is seen again. No leftover, no timer.
+const listThinned = () => $('wall-root').dataset.view === 'list' && listFilters(ctx);
+const leftoverRows = () => (listThinned()
+  ? [...$('wall-root').querySelectorAll('.card[data-artist]')].filter((c) => !passesPeople(ctx.picks, c.dataset.artist, ctx.filterPeople || []))
+  : []);
+const pageHidden = () => document.visibilityState === 'hidden';
+// The whole wall waits while a sheet is up over it (the finger's shelf — the
+// List does not reshape under it) or a zoom is still shrinking away (a
+// quarter second, and its card is no longer marked). Only a slot really
+// moving counts: a slot left behind with nothing running must never hold the
+// wall for good.
+const shrinking = (slot) => typeof slot.getAnimations === 'function'
+  && slot.getAnimations().some((a) => a.playState === 'running');
+const wallHeld = () => !!document.getElementById('artist-sheet')
+  || (!zoomedCard() && [...document.querySelectorAll('#zoom-layer .zoom-slot')].some(shrinking));
+// The person is on THIS row: its zoom stands, a keyboard is on it (focus, with
+// a key the last input — a closed shelf hands focus back to its card for every
+// hand, and that is not a finger still there), or a mouse rests on it (never
+// a finger's lingering hover).
+function inHand(card) {
+  if (zoomedCard() === card) return true;
+  const a = document.activeElement;
+  if (keyHand() && a && (a === card || card.contains(a))) return true;
+  try { return !fingerHand() && card.matches(':hover'); } catch { return false; }
+}
+// Row keys (wall.js rowKey — occurrence and room, never the name: one set in
+// two rooms is two rows, and holding one never holds the other).
+function rowsInHand() {
+  const rows = leftoverRows();
+  return new Set((wallHeld() ? rows : rows.filter(inHand)).map(rowKey));
+}
+// The card the person is on, if any, anywhere on the wall: the page is held by
+// it. A mouse between rows holds the card nearest it — the one it is on its way
+// to — so a row leaving above never slides the target out from under an
+// approaching pointer (the browser contract caught exactly that).
+let mouseY = null;
+document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') mouseY = e.clientY; }, { passive: true, capture: true });
+function cardInHand() {
+  const z = zoomedCard();
+  if (z && z.isConnected) return z;
+  const root = $('wall-root');
+  if (!fingerHand()) {
+    const hovered = [...root.querySelectorAll('.card[data-artist]:hover')].pop();
+    if (hovered) return hovered;
+  }
+  const a = document.activeElement;
+  if (keyHand() && a && root.contains(a)) return a.closest('.card[data-artist]');
+  if (fingerHand() || mouseY == null) return null;
+  let best = null;
+  let gap = Infinity;
+  for (const c of root.querySelectorAll('.card[data-artist]')) {
+    const r = c.getBoundingClientRect();
+    if (!r.height) continue;
+    const d = mouseY < r.top ? r.top - mouseY : mouseY > r.bottom ? mouseY - r.bottom : 0;
+    if (d < gap) { gap = d; best = c; }
+  }
+  return best;
+}
+let leftoverTimer = 0;
+function stopLeftovers() { clearInterval(leftoverTimer); leftoverTimer = 0; }
+function watchLeftovers() {
+  if (pageHidden() || leftoverTimer || !leftoverRows().length) return;
+  leftoverTimer = setInterval(settleLeftovers, 400);
+}
+function settleLeftovers() {
+  if (pageHidden()) { stopLeftovers(); return; } // sleeps; the page shown again wakes it (startClock)
+  const rows = leftoverRows();
+  if (!rows.length) { stopLeftovers(); return; }
+  watchLeftovers(); // awake while any wait (a tick or a wake may be what found them)
+  if (document.body.dataset.busy || pendingFold || pendingView || pendingPast || pendingThin) return;
+  if (wallHeld()) return;
+  const anchor = cardInHand();
+  let going = rows.filter((c) => !inHand(c));
+  // A row that leaves ABOVE the card the person is on is taken back by
+  // scrolling the page up by its height — unless the page is too near its top
+  // to scroll that far, and then it would pull the held card up under the
+  // pointer. Those wait for the held card to be let go (rows below it never
+  // move it, so they always go).
+  if (anchor && going.length) {
+    const top = anchor.getBoundingClientRect().top;
+    const above = going.filter((c) => c.getBoundingClientRect().top < top);
+    if (above.length && heightLeaving(above, top) > window.scrollY + 0.5) going = going.filter((c) => !above.includes(c));
+  }
+  if (!going.length) return;
+  if (going.length === rows.length) stopLeftovers();
+  const keep = new Set(rows.filter((c) => !going.includes(c)).map(rowKey));
+  thinFlow(thinBefore({ anchor }), { keep });
+}
+// How much of the page above `top` goes with `cards`: a room they empty goes
+// to its quiet line (all of it below its head), an hour they empty goes whole,
+// and a single row takes its own slot (to the next row's top).
+function heightLeaving(cards, top) {
+  const gone = new Set(cards);
+  const slot = (el) => {
+    const r = el.getBoundingClientRect();
+    const n = el.nextElementSibling;
+    return (n ? n.getBoundingClientRect().top : r.bottom) - r.top;
+  };
+  let h = 0;
+  const rooms = new Set(cards.map((c) => c.closest('.room')).filter(Boolean));
+  for (const room of rooms) {
+    const all = [...room.querySelectorAll('.card[data-artist]')];
+    const head = room.querySelector(':scope > .room-head');
+    if (all.every((c) => gone.has(c)) && head && room.getBoundingClientRect().top < top) {
+      h += room.getBoundingClientRect().bottom - head.getBoundingClientRect().bottom;
+      continue;
+    }
+    for (const band of room.querySelectorAll('.time-band')) {
+      if (band.getBoundingClientRect().top >= top) continue;
+      const inBand = [...band.querySelectorAll('.card[data-artist]')];
+      if (inBand.length && inBand.every((c) => gone.has(c))) { h += slot(band); continue; }
+      for (const c of inBand) if (gone.has(c) && c.getBoundingClientRect().top < top) h += slot(c);
+    }
+  }
+  return h;
 }
 
 // What a press on a card means (the tap change, Kevin 2026-09-26: "a tap on
@@ -1186,12 +1440,19 @@ function renderPersonChips() {
 // repaint's cut. The rule is the one wall.js renders with (`passesPeople`,
 // cardFor's `.dim`), so a later repaint draws exactly this; a standing zoom
 // takes the repaint path, which knows how to keep it.
+//
+// In the List a highlight is a FILTER (v103): the rows it takes away leave and
+// the rest close up (thinFlow), for the same `passesPeople` rule.
 function setPeopleFilter(names) {
+  settleThin();
+  const list = $('wall-root').dataset.view === 'list';
+  const before = list ? thinBefore() : null; // where the List stands, read before anything changes
   savePeopleFilter(ctx.fid, names);
   refreshCtx();
   renderPersonChips();
   if (zoomedCard()) { repaintWall(); return; }
-  dimInPlace();
+  if (list) thinFlow(before);
+  else dimInPlace();
   paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
@@ -1241,6 +1502,7 @@ function tickClock(date = new Date()) {
   if (document.body.dataset.busy === 'plan-drag' && !planDragging()) delete document.body.dataset.busy;
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
+  settleLeftovers(); // a row that stopped belonging, once nobody is on it
   paintPlan(date); // the same minute decides the peek, and then whether NOW is there at all
 }
 
@@ -1254,17 +1516,17 @@ function tickClock(date = new Date()) {
 // a stack (wall.js nowLanding decides what, and whether). It is not a day, so
 // the scrollspy never lights it.
 //
-// WHERE (v93, Kevin, 2026-09-25 — D1): NOW is a tab in the day row itself,
-// right after the day that is live, `SAT · NOW`, in the dock and the rail
-// alike. v90 pinned it before the days, and the pin cost the days their room:
-// at 390 THU scrolled off, and at 320 NOW shrank to a ringed dot beside day
-// slivers, "RI | SAT | S" ("making it a dot is a bit too clever"). In the row
-// it takes no room from anything, and the row's resting rule (wall.js
-// restingLeft) keeps the pair in view: 390 shows FRI SAT NOW SUN, 320 SAT NOW,
-// and the fest name never gives way. The day it follows is the day of what a
-// tap would land on. Nothing live, it waits hidden where index.html put it,
-// just outside the row, and a rebuilt row (every repaint) gets it back in
-// place without a flicker.
+// WHERE (v103, Kevin, 2026-09-26: "move the now to the far left in the day bar
+// — just not pinned over everything — don't have it move between days"): NOW
+// is the day row's FIRST item, in the dock and the rail alike, in one place
+// whatever the day, and it scrolls with the days. v90 pinned it before the
+// row and the pin cost the days their room (at 320 it shrank to a ringed dot);
+// v93 put it after the live day (`SAT · NOW`), which moved it every day. In
+// the row it takes no room from anything, the fest name never gives way, and
+// the row's resting rule (wall.js restingLeft) keeps the day you are in whole
+// first and NOW whole second — so where both fit, the row rests at its start.
+// index.html puts NOW in the row for good; a rebuild (every repaint) replaces
+// only the day tabs after it, so NOW never leaves the row and never flickers.
 const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // ONE NOW (Our plan, 2026-09-26): once the plan carries a NOW row where a
 // person can see it — the phone's peek, the laptop's corner card or panel —
@@ -1277,12 +1539,8 @@ const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // only for a stop the highlighted people are in (plan.js peekOf), and where
 // it does not, the tab comes back as "what is on for Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
-  const landing = nowLanding($('wall-root'), ctx, date);
-  const at = landing && (landing.card || landing.line);
-  const block = at ? at.closest(DAY_ANCHOR) : null;
-  const day = landing ? (block ? block.dataset.day : '') : null;
-  const planSaysNow = planShowsNow();
-  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), planSaysNow ? null : day);
+  const live = !!nowLanding($('wall-root'), ctx, date) && !planShowsNow();
+  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), live);
 }
 // ---- Our plan (2026-09-26 — Kevin's call #5) ----------------------------------
 // Where most of us will be, as a route of stops, from everyone's picks
@@ -1423,30 +1681,11 @@ function openPlanForLink(answer) {
   if (!answer && !waiting) planOpenFor = null;
 }
 
-// The day tab NOW follows: the live day's, else none (the row's start).
-const liveTabIn = (row, day) => [...row.children].find((t) => t.classList.contains('day-tab') && t.dataset.day === day) || null;
-const inPlace = (tab, row, after) => tab.parentElement === row && (after ? tab.previousElementSibling === after : !tab.previousElementSibling);
-function placeNowTab(tab, row, after) {
-  if (after) after.after(tab);
-  else row.prepend(tab);
-}
-// NOW's parking place: just before the row, hidden (renderDayNav rebuilds the
-// row from nothing, and must not take NOW with it). A leave cut short by the
-// rebuild finishes at once — its motion belonged to tabs that are gone.
-function parkNowTab(tab, row) {
-  if (!tab || !row || tab.parentElement !== row) return;
-  if (tab.dataset.leaving) {
-    delete tab.dataset.leaving;
-    tab.hidden = true;
-    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
-  }
-  row.before(tab);
-}
 // Everything in a row that NOW changes slides from where it was to where it
 // lands (a FLIP: transform only, the layout and the row's new resting scroll
 // are already done). Tab by tab, never the row: the row that fits is centred
 // by its margins and the row that scrolls re-rests, so each tab moves its own
-// distance — the pair gliding to the middle, the days after NOW making room.
+// distance — the days after NOW making room for it, or closing up after it.
 const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
 const EDGES = ['overflowing', 'more-left', 'more-right'];
 // `edges`: the row's edge fades before the change, held through the slide
@@ -1465,45 +1704,33 @@ function slideTabs(row, before, edges, { out = false } = {}) {
   if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => Promise.resolve(a && a.finished).catch(() => {}))));
 }
 const edgesOf = (row) => EDGES.filter((k) => row.classList.contains(k));
-// `day`: the live day's key (NOW belongs after its tab), '' (live, but on no
-// day the row lists: the row's start), or null (nothing live).
-function showNowTab(tab, row, day) {
+// `live`: whether NOW is there at all — something live on this wall, and Our
+// plan not already saying NOW (paintNowTabs). NOW never moves (v103): it is
+// the row's first item, so it only ever arrives or leaves, and the days after
+// it make room or close up.
+function showNowTab(tab, row, live) {
   if (!tab || !row) return;
   const shown = !tab.hidden && !tab.dataset.leaving;
-  if (day != null) {
-    const after = liveTabIn(row, day);
-    if (shown && inPlace(tab, row, after)) return;
-    if (shown && tab.parentElement !== row) {
-      // Parked by a rebuild: the tabs beside it are new, so nothing slides.
-      placeNowTab(tab, row, after);
-      restDayRow(row);
-      return;
-    }
-    // Arriving (or coming back while leaving), or moving to another day.
-    const arriving = !shown;
-    if (arriving) {
-      delete tab.dataset.leaving;
-      if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
-    }
+  if (live) {
+    if (shown) return;
+    // Arriving, or coming back while leaving (a leave cut short).
+    delete tab.dataset.leaving;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     const before = tabLefts(row);
     const edges = edgesOf(row);
-    if (arriving) before.delete(tab); // it arrives by its own motion, below
-    placeNowTab(tab, row, after);
+    before.delete(tab); // it arrives by its own motion, below
     tab.hidden = false;
     restDayRow(row);
     slideTabs(row, before, edges);
-    if (arriving && canAnimate(tab, ctx)) {
-      // It fades in from 6px left, in its own place, a beat after the tabs
-      // start to move — the day it follows slides out of that place on the
-      // way to the middle (filmed at a tenth of the speed: a NOW that rode
-      // with its day started out on top of SUN).
+    if (canAnimate(tab, ctx)) {
+      // It fades in from 6px left, in its own place at the row's start, a
+      // beat after the days start to slide over and make room for it.
       tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
         { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
     }
     return;
   }
   if (!shown) return;
-  if (tab.parentElement !== row) { tab.hidden = true; return; } // parked: nothing to leave from
   tab.dataset.leaving = '1';
   const gone = () => {
     if (!tab.dataset.leaving) return; // it came back while leaving
@@ -1512,7 +1739,6 @@ function showNowTab(tab, row, day) {
     const edges = edgesOf(row);
     before.delete(tab);
     tab.hidden = true;
-    row.before(tab);
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     restDayRow(row);
     slideTabs(row, before, edges, { out: true });
@@ -1623,6 +1849,7 @@ function jumpToNow() {
   settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
   settleView();
   settlePast();
+  settleThin();
   // A NOW tap long after the past was judged (Phase 1): judge it first, so
   // NOW lands on the wall as it is now, not with an hour of ended sets above.
   if (ctx.pastAt && !ctx.now && Date.now() - ctx.pastAt.getTime() > 5 * 60 * 1000 && pastMayMove()) recomputePast();
@@ -1951,13 +2178,11 @@ function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
   // Every repaint comes through here (a friend's pick on the poll, a
-  // highlight), so the rebuilt rows start where the old ones rested, and NOW
-  // is lifted out before the old tabs go — back in its place below, with
-  // nothing on screen having moved.
-  const focused = NOW_DOORS.map(([tab]) => document.activeElement === $(tab)); // a keyboard on NOW keeps it
-  const rested = NOW_DOORS.map(([tab, row]) => { parkNowTab($(tab), $(row)); return $(row).scrollLeft; });
-  dock.textContent = '';
-  rail.textContent = '';
+  // highlight), so the rebuilt rows start where the old ones rested. Only the
+  // day tabs are rebuilt: NOW is the row's first item for good (v103), so it
+  // never leaves the row, and a keyboard on it keeps its place.
+  const rested = NOW_DOORS.map(([, row]) => $(row).scrollLeft);
+  for (const row of [dock, rail]) for (const t of [...row.children]) if (!t.classList.contains('now-tab')) t.remove();
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
   // days it answered and nothing else.
@@ -1967,6 +2192,7 @@ function renderDayNav() {
       settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
       settleView();
       settlePast();
+      settleThin();
       let target = document.querySelector(anchorFor(at));
       // A day that is over sits behind the days line (Phase 1): its tab stays
       // in the row (it is navigation), and a tap opens the line and lands.
@@ -1989,12 +2215,6 @@ function renderDayNav() {
   // something live (a repaint, a search, a hidden room can all change that).
   // Our plan's peek paints first, so the one-NOW rule reads this pass's peek.
   paintPlan();
-  // Moving NOW out and back in drops focus; someone walking NOW's stops on a
-  // keyboard must not lose their place to the 25 s poll's repaint.
-  NOW_DOORS.forEach(([tab], i) => {
-    const t = $(tab);
-    if (focused[i] && !t.hidden && document.activeElement !== t) t.focus({ preventScroll: true });
-  });
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -2459,25 +2679,30 @@ function paintSlots({ sources = null, instant = false } = {}) {
 }
 
 // How many discs the pill may hold (design §2: "up to three"): as many as
-// leave the day row its promise (wall.js restingLeft, rules 1-2) — the day
-// you are in whole, and while something is live NOW whole beside the day it
-// follows. At 320 with NOW live a third disc pushes NOW out on a Mac
-// (92px of row for SAT · NOW's 101); Linux and Android draw wider and fit
-// one. Where not even one disc and its ✕ leave that room, the pill folds to
-// the avatar's own size (one disc in the ring, no ✕ — Everyone in the menu
-// clears), so a highlight never costs the row more than the avatar did. The
-// rule only ever gives fewer discs for less room —
-// promising NOW only where it fits made a narrower dock show MORE discs than
-// a wider one (ACL: two at 320, one at 360), so NOW's room is always asked
-// for while it is live. The laptop's rail has room.
+// leave the day row its promise (wall.js restingLeft, rules 1-2) — room for
+// the day you are in whole, and while something is live room for NOW whole
+// too. Since v103 NOW is the row's first item, not the day's neighbour, so
+// its room is asked for as its own width and one gap beside the day's —
+// whether or not the row happens to rest with the two together (at 390 on a
+// Portola Saturday it cannot: THU and FRI sit between). That keeps the ask
+// the same size as v93's `SAT · NOW` pair, so the pill holds as many discs as
+// it did, and it keeps the rule's one property: fewer discs only ever for
+// less room — promising NOW only where it fits made a narrower dock show MORE
+// discs than a wider one (ACL: two at 320, one at 360), so NOW's room is
+// always asked for while it is live. Where not even one disc and its ✕ leave
+// that room, the pill folds to the avatar's own size (one disc in the ring,
+// no ✕ — Everyone in the menu clears), so a highlight never costs the row
+// more than the avatar did. The laptop's rail has room.
 function pillCap(wrap, row, n) {
   if (!n || !row || !wrap.closest('.dock') || wrap.offsetParent === null) return PILL_FACES;
   const room = row.clientWidth + wrap.getBoundingClientRect().width; // the row and the slot share this width
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
-  const nowAt = tabs.findIndex((t) => t.classList.contains('now-tab'));
-  const focus = [active, nowAt >= 0 ? tabs[nowAt] : null, nowAt > 0 ? tabs[nowAt - 1] : null].filter(Boolean);
-  const need = focus.length ? Math.max(...focus.map((t) => t.offsetLeft + t.offsetWidth)) - Math.min(...focus.map((t) => t.offsetLeft)) : 0;
+  // A NOW on its way out still takes its room until it is gone — the pill
+  // refits the moment it is (the watch on NOW's `hidden`, below in wire-up).
+  const now = tabs.find((t) => t.classList.contains('now-tab')) || null;
+  const gap = parseFloat(window.getComputedStyle(row).columnGap) || 0;
+  const need = (active ? active.offsetWidth : 0) + (now ? now.offsetWidth + (active ? gap : 0) : 0);
   for (let k = PILL_FACES; k >= 1; k -= 1) if (pillWidth(Math.min(k, n)) + need <= room) return k;
   return 0;
 }
@@ -2524,7 +2749,81 @@ function alignHighlightMenu(wrap, pop) {
   }
 }
 
+// A keyboard keeps its place through a repaint. Every node on the wall is a
+// new one, and a focused node taken out drops the focus to <body>: the next
+// Tab starts at the top of the page, and a keyboard zoom handed to the fresh
+// card stands on with nothing focused in it (v103's walk: a row leaving under
+// a keyboard-held row, in both engines — and then the row itself leaving
+// while the keyboard stood on the room head after it). The same place takes
+// the focus back: a card by its row (wall.js rowKey), anything else a Tab
+// reaches by its day, room and kind — the nth of its key — quietly (no fresh
+// keyboard zoom; a standing one is handed over by repaintWall itself), and
+// only when the focus went nowhere. A place that is gone keeps nothing.
+// The keyboard inside a standing zoom (its −, "+ note", +, a Tix link) goes
+// back to the SAME control in the rebuilt zoom — found by its kind (tag and
+// class: `f-step minus`, `f-chip notes`) and its place among its kind, never
+// its words, which change with the level ("More" becomes "Must"). Only when
+// that control is gone, or can no longer take the focus (a − with nowhere to
+// go is disabled), does the card the zoom stands on take it — Sol, on
+// 5af0f3e: a keyboard or VoiceOver user is never moved off the control they
+// were on by a friend's poll.
+const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"]), .card[data-artist]';
+function placeKey(el) {
+  const card = el.closest('.card[data-artist]');
+  if (card) return `card|${rowKey(card)}`;
+  const room = el.closest('.room');
+  const day = el.closest('.day-block');
+  return [day ? day.dataset.day : '', room ? room.dataset.room : '', room && room.dataset.iso ? room.dataset.iso : '',
+    el.tagName, el.classList[0] || '', el.dataset.past || ''].join('|'); // never its words: a count in them is what changes
+}
+function placesLike(key) {
+  const root = $('wall-root');
+  const pool = key.startsWith('card|') ? root.querySelectorAll('.card[data-artist]') : root.querySelectorAll(TABBABLE);
+  return [...pool].filter((el) => placeKey(el) === key);
+}
+const zoomControlKey = (el) => `${el.tagName}|${el.className}`;
+const zoomControls = (key) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown ' + TABBABLE)]
+  .filter((el) => zoomControlKey(el) === key);
+function focusedPlace() {
+  let a = document.activeElement;
+  let control = null;
+  const z = zoomedCard();
+  if (a && a.closest && a.closest('#zoom-layer') && z && z.isConnected) {
+    const own = a.closest(TABBABLE);
+    if (own) {
+      const key = zoomControlKey(own);
+      control = { key, n: Math.max(0, zoomControls(key).indexOf(own)) };
+    }
+    a = z;
+  }
+  if (!a || !a.closest || !$('wall-root').contains(a) || a === $('wall-root')) return null;
+  const el = a.closest('.card[data-artist]') || a;
+  const key = placeKey(el);
+  return { key, n: Math.max(0, placesLike(key).indexOf(el)), control };
+}
+function refocusPlace(was) {
+  if (!was) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && a.isConnected) return; // it went somewhere real
+  const same = placesLike(was.key);
+  const el = same[was.n] || same[0];
+  if (!el) return;
+  if (was.control && zoomedCard() === el) {
+    const ctl = zoomControls(was.control.key)[was.control.n];
+    if (ctl && !ctl.disabled) {
+      focusQuietly(ctl);
+      if (document.activeElement === ctl) return;
+    }
+  }
+  focusQuietly(el);
+}
+
 function repaintWall() {
+  // Rows the person is still on stay through the repaint in a filtered List
+  // (a friend's pick arriving on the poll must not pull the row you just
+  // un-picked out from under you) — read before the zoom is let go.
+  const hold = rowsInHand();
+  const focused = focusedPlace();
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
   // must not eat the card you are resting on); a card that is gone — a
@@ -2536,11 +2835,14 @@ function repaintWall() {
   const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
-  renderWall($('wall-root'), ctx);
+  ctx.holdRows = hold;
+  try { renderWall($('wall-root'), ctx); } finally { ctx.holdRows = null; }
+  if (hold.size) watchLeftovers(); // what was held leaves once it is let go
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
+  refocusPlace(focused);
   renderDayNav();
   paintShowMenus();
   positionNowMarks($('wall-root'), ctx.now || new Date());
@@ -4882,11 +5184,16 @@ export function init() {
   // under it: NOW arrives or leaves on the minute tick, a repaint rebuilds
   // the tabs, a phone turns. Each refits a pill that is up (Codex's review of
   // a1612a0: NOW arriving after a three-disc pill could not be whole at 320).
+  // NOW's coming and going is its `hidden` since v103 (it never leaves the
+  // row), so that is watched as well as the row's children — without it a
+  // pill kept the room NOW had asked for after NOW had gone, and the other way
+  // round (the CI red of v103's first head).
   const refitPill = () => { if ((ctx.filterPeople || []).length) paintSlots(); };
   const Watch = typeof window !== 'undefined' ? window.MutationObserver : undefined;
   if (typeof Watch === 'function') {
     const rows = new Watch(refitPill);
     for (const [, , rowId] of YOU_SLOTS) if ($(rowId)) rows.observe($(rowId), { childList: true });
+    for (const [id] of NOW_DOORS) if ($(id)) rows.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
   }
   let refitTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(refitTimer); refitTimer = setTimeout(refitPill, 160); });

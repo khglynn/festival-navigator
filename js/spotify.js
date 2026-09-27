@@ -169,27 +169,117 @@ async function accessToken() {
   return t.access_token;
 }
 
-// Spotify Web API with 429 handling (burst until told to back off).
-async function api(path) {
-  for (let attempt = 0; attempt < 5; attempt++) {
+// ---- one way to ask Spotify (v103, 2026-09-26) -------------------------------
+// Kevin: "the playlist for everyone only has my likes for artists, not top
+// songs for all artists folks have tagged." The crew playlist fires a search
+// per artist (~50 at Portola) back to back, and a dev-mode app's rate limit
+// (a rolling 30 s window) answers a burst with 429s. The old loop waited on
+// `Retry-After` — a header a browser can only read cross-origin when Spotify
+// lists it in Access-Control-Expose-Headers — so it fell back to 3 s, gave up
+// after five tries, and the playlist's catch quietly kept only your own saved
+// tracks. And a real Retry-After can be HOURS in dev mode (Spotify's forum
+// reports ~21 h), which the old loop would have slept through.
+//
+// Every call now goes through `call`:
+//   · 429 → wait `Retry-After` when it can be read, else back off 1-2-4-8 s;
+//     never sit through one wait past WAIT_CAP_MS, nor more than four — past
+//     either, throw SpotifyBusy (the caller stops asking and says so);
+//   · a 5xx on a READ → one retry after a second (a dropped connection is
+//     not retried: offline, it only delays the person's own "Try again");
+//   · a 5xx on a WRITE (a playlist made, tracks added) is never repeated,
+//     in any form: Spotify may have done it and failed to say so, and a second
+//     try makes a second playlist or doubles the songs (Sol's review of v103).
+//     It throws SpotifyUnsure; the run stops there and says what it could
+//     confirm, and the next Add new picks dedupes against the live playlist.
+//     (Round two read the playlist back and resumed mid-run; round three cut
+//     that mechanism — three rounds of holes in one place, V103-BUILD.md.)
+//     A 429 on a write still waits and sends it again: a refusal, nothing was done;
+//   · anything else not ok → the plain-words error, as before.
+// The waits go through `pause`, which a test can swap for a clock of its own.
+const WAIT_CAP_MS = 20000;
+const BACKOFF_MS = [1000, 2000, 4000, 8000];
+const RETRY_MS = 1000;
+let pause = (ms) => new Promise((r) => setTimeout(r, ms));
+export function setPauseForTests(fn) { pause = fn || ((ms) => new Promise((r) => setTimeout(r, ms))); }
+
+// Spotify said "slow down" for longer than we will wait: the caller stops
+// asking for the rest of this run and tells the person to try again later.
+export class SpotifyBusy extends Error {
+  constructor(waitMs) {
+    super('Spotify asked us to slow down — try again in a few minutes.');
+    this.name = 'SpotifyBusy';
+    this.waitMs = waitMs;
+  }
+}
+
+// A write Spotify answered with a 5xx: it may or may not have happened.
+export class SpotifyUnsure extends Error {
+  constructor(path, status) {
+    super('Spotify didn’t confirm that — check your Spotify before trying again.');
+    this.name = 'SpotifyUnsure';
+    this.path = path;
+    this.status = status;
+  }
+}
+
+// Seconds, or an HTTP date — whichever Spotify sent, when the browser lets us
+// read it at all. Null when it cannot be read.
+export function retryAfterMs(res, now = Date.now()) {
+  let v = null;
+  try { v = res.headers && typeof res.headers.get === 'function' ? res.headers.get('Retry-After') : null; } catch { v = null; }
+  if (v == null || String(v).trim() === '') return null;
+  const secs = Number(v);
+  if (Number.isFinite(secs)) return Math.max(0, secs * 1000);
+  const at = Date.parse(v);
+  return Number.isFinite(at) ? Math.max(0, at - now) : null;
+}
+
+async function call(path, { method = 'GET', body = null } = {}) {
+  let limited = 0;
+  let retried = false;
+  for (;;) {
+    // The token is read each time round (a long wait can outlive it), and
+    // before the fetch: an expired session is its own answer ("connect
+    // again"), never a blip to try twice.
+    const token = await accessToken();
+    // A dropped connection (a field's one bar, or a 429 whose answer came back
+    // without CORS headers, which a browser reports the same way) rejects
+    // here with the browser's TypeError, untouched: it is one attempt, not a
+    // retry — offline, a second try only delays the "Try again" a person can
+    // press (tests/spotify-scan-progress.test.mjs), and the drill already
+    // words a TypeError as "check your signal". A playlist run counts it and
+    // stops after a few in a row.
     const res = await fetch(`https://api.spotify.com/v1${path}`, {
-      headers: { Authorization: `Bearer ${await accessToken()}` },
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      ...(body ? { body: JSON.stringify(body) } : {}),
     });
     if (res.status === 429) {
-      const wait = (parseInt(res.headers.get('Retry-After') || '2', 10) + 1) * 1000;
-      await new Promise((r) => setTimeout(r, wait));
+      const wait = retryAfterMs(res) ?? BACKOFF_MS[Math.min(limited, BACKOFF_MS.length - 1)];
+      if (limited >= BACKOFF_MS.length || wait > WAIT_CAP_MS) {
+        console.warn('spotify:', `429 on ${path}, asked to wait ${Math.round(wait / 1000)} s — stopping`);
+        throw new SpotifyBusy(wait);
+      }
+      limited += 1;
+      await pause(wait);
       continue;
     }
+    if (res.status >= 500 && method !== 'GET') {
+      console.warn('spotify:', `${res.status} on ${method} ${path} — not repeated blind`);
+      throw new SpotifyUnsure(path, res.status);
+    }
+    if (res.status >= 500 && !retried) { retried = true; await pause(RETRY_MS); continue; }
     if (!res.ok) {
       throw spotifyError(
         'Spotify isn’t responding right now — try again in a minute.',
         `API ${res.status} on ${path}`,
       );
     }
+    if (res.status === 204) return {};
     return await res.json();
   }
-  throw new Error('Spotify rate limit would not clear.');
 }
+const api = (path) => call(path);
 
 // ---- library scan -> affinity ------------------------------------------------
 // Scans liked songs + followed artists into a device-cached full-library map,
@@ -476,32 +566,79 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
 // actually saved (from the scan cache), deduped. "Always top 3 + any likes"
 // — Kevin's spec, 2026-07-13. Liked tracks lead so the playlist opens with
 // the songs you know.
+//
+// v103: searches are PACED (one at a time, SEARCH_GAP_MS apart — a burst is
+// what drew the 429s), and what could not be searched is COUNTED and handed
+// back, never swallowed: `unsearched` names every artist whose top songs could
+// not be fetched (Spotify busy past our wait, or down). Their saved tracks
+// still go in, but they are left out of `found` — the crew playlist's ledger —
+// so the next "Add new picks" tries their top songs again (the live
+// playlist's own tracks dedupe what is already there). Once Spotify says
+// "busy" past our wait — or fails three searches in a row — the run stops
+// asking: every artist after it is unsearched, and the person is told how many.
+const SEARCH_GAP_MS = 250;
+const SEARCH_LIMIT_MAX = 10; // Spotify's dev-mode max for /search (February 2026 migration guide)
 async function findTrackUris(artistNames, tracksPerArtist, onProgress) {
   const uris = [];
   const found = [];
-  let misses = 0;
+  const unsearched = [];
+  const topless = [];
+  const byArtist = new Map(); // name → the songs it brought (to say which landed)
+  let busy = null;
+  let down = 0; // failures in a row that were not "busy" (Spotify down, no connection)
+  let last = 0;
+  const limit = Math.max(1, Math.min(SEARCH_LIMIT_MAX, tracksPerArtist * 3));
   for (let i = 0; i < artistNames.length; i++) {
     const name = artistNames[i];
     if (onProgress) onProgress({ i: i + 1, of: artistNames.length, name });
     const liked = likedUrisOf(name);
-    try {
-      const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=track&limit=${tracksPerArtist * 3}`);
-      const wanted = name.toLowerCase();
-      const hits = (search.tracks?.items || [])
-        .filter((t) => (t.artists || []).some((a) => a.name.toLowerCase() === wanted));
-      const top = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist).map((t) => t.uri);
-      const mine = new Set(liked);
-      const combined = [...liked, ...top.filter((u) => !mine.has(u))];
-      if (!combined.length) { misses++; continue; }
-      uris.push(...combined);
-      found.push(name);
-    } catch (e) {
-      // Search down but we still have the person's own saves — use them.
-      if (liked.length) { uris.push(...liked); found.push(name); }
-      else misses++;
+    let top = null; // null: not searched (busy, down); []: searched, nothing
+    if (!busy && down < 3) {
+      if (last) await pause(Math.max(0, SEARCH_GAP_MS - (Date.now() - last)));
+      try {
+        const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=track&limit=${limit}`);
+        const wanted = name.toLowerCase();
+        const hits = (search.tracks?.items || [])
+          .filter((t) => (t.artists || []).some((a) => a.name.toLowerCase() === wanted));
+        top = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist).map((t) => t.uri);
+        down = 0;
+      } catch (e) {
+        if (e && e.name === 'SpotifyBusy') busy = e;
+        else down += 1; // three in a row and the run stops asking
+        console.warn('spotify: search', name, e && e.message);
+      }
+      last = Date.now();
     }
+    const mine = new Set(liked);
+    const combined = [...liked, ...(top || []).filter((u) => !mine.has(u))];
+    uris.push(...combined);
+    byArtist.set(name, combined);
+    if (top === null) { unsearched.push(name); continue; }
+    // Searched, and Spotify has no top songs for them (a local DJ, a name
+    // it spells differently): your saved tracks still go in, but the artist
+    // is not done — it stays off the ledger, so Add new picks looks again,
+    // and it is counted, never folded into "already has everyone's picks"
+    // (Sol's review of v103: saved tracks used to mark it complete).
+    if (!top.length) { topless.push(name); continue; }
+    found.push(name);
   }
-  return { uris, found, misses };
+  // A track two picked artists share (a collab) goes in once.
+  return { uris: [...new Set(uris)], found, misses: topless.length, topless, unsearched, busy: !!busy, byArtist };
+}
+
+// The sentence a person reads about the artists whose top songs did not
+// come (v103: said, never a silent fallback). `again` is what to press.
+export function unsearchedNote(unsearched, { again = '' } = {}) {
+  const n = (unsearched || []).length;
+  if (!n) return '';
+  return `${n} artist${n === 1 ? '' : 's'} had no songs found — ${again ? `${again} later` : 'try again later'}.`;
+}
+// …and about the artists Spotify answered for with no top songs at all.
+// `again`: what looks again (Add new picks, for a crew playlist).
+export function toplessNote(topless, { again = '' } = {}) {
+  const n = (topless || []).length;
+  if (!n) return '';
+  return `${n} artist${n === 1 ? '' : 's'} had no top songs on Spotify${again ? ` — ${again}` : ''}.`;
 }
 
 // Every track URI already in the playlist — the append-side dedupe. Reads
@@ -517,14 +654,19 @@ async function playlistTrackUris(playlistId) {
   return have;
 }
 
+// Adds in batches of a hundred, in order. Any failure stops it — a 5xx is
+// never repeated (it may have landed) — and the error says how many songs
+// were confirmed before it (`confirmed`), for the caller to say which artists
+// are in.
 async function pushTracks(playlistId, uris) {
   for (let i = 0; i < uris.length; i += 100) {
-    const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/items`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uris: uris.slice(i, i + 100) }),
-    });
-    if (!addRes.ok) throw new Error('Adding tracks failed: ' + addRes.status);
+    try {
+      await call(`/playlists/${playlistId}/items`, { method: 'POST', body: { uris: uris.slice(i, i + 100) } });
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      err.confirmed = i;
+      throw err;
+    }
   }
 }
 
@@ -532,25 +674,43 @@ async function pushTracks(playlistId, uris) {
 // Spotify only lets OTHER members' tokens append to a playlist they don't own
 // when it's collaborative (and collab requires public:false). Solo "Just mine"
 // playlists stay plain private.
+// An add that fails after the create throws with `.playlist` ({ id, url })
+// and `.confirmed` (the found artists whose every song landed before the
+// failure) on the error: the caller records the playlist then, once, with
+// those — never mid-run — and the next Add new picks finishes it (Sol's
+// round 3 on v103).
 export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 3, collaborative = false, onProgress }) {
-  const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
-  if (!uris.length) throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
-  const createRes = await fetch('https://api.spotify.com/v1/me/playlists', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: title, public: false, collaborative: !!collaborative,
-      description: 'Made with Festival Navigator',
-    }),
-  });
-  if (!createRes.ok) throw new Error('Playlist creation failed: ' + createRes.status);
-  const playlist = await createRes.json();
-  await pushTracks(playlist.id, uris);
-  return {
-    id: playlist.id,
-    url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`,
-    trackCount: uris.length, misses, found,
-  };
+  const { uris, found, misses, topless, unsearched, busy, byArtist } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
+  if (!uris.length) {
+    // Nothing came back at all. Spotify being busy (or down) is not the same
+    // as a lineup it does not know — say which, and make no empty playlist.
+    if (unsearched.length) throw new Error(busy ? 'Spotify asked us to slow down — try again in a few minutes.' : 'Spotify isn’t responding right now — try again in a minute.');
+    throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
+  }
+  // A create is never repeated: after an unsure answer the playlist may be
+  // in their Spotify already, and a second press is theirs to make.
+  let playlist;
+  try {
+    playlist = await call('/me/playlists', {
+      method: 'POST',
+      body: { name: title, public: false, collaborative: !!collaborative, description: 'Made with Festival Navigator' },
+    });
+  } catch (e) {
+    if (e && e.name === 'SpotifyUnsure') throw new Error('Spotify didn’t confirm the playlist — check your Spotify before making another.');
+    throw e;
+  }
+  const made = { id: playlist.id, url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}` };
+  try {
+    await pushTracks(playlist.id, uris);
+  } catch (e) {
+    console.warn('spotify: adding to a new playlist', e && e.message);
+    const landed = new Set(uris.slice(0, (e && e.confirmed) || 0));
+    const err = new Error('Spotify made the playlist but didn’t confirm every song.');
+    err.playlist = made;
+    err.confirmed = found.filter((a) => (byArtist.get(a) || []).every((u) => landed.has(u)));
+    throw err;
+  }
+  return { ...made, trackCount: uris.length, misses, found, topless, unsearched };
 }
 
 // The artists a playlist made from picks holds, strongest pick first (musts
@@ -571,14 +731,16 @@ export function playlistArtistsFromPicks(picks, { me = null, skip = new Set() } 
 // computed against the crew doc's recorded artist list (not Spotify's items —
 // cheaper, and resilient to manual playlist edits).
 export async function addArtistsToPlaylist({ playlistId, artistNames, tracksPerArtist = 3, onProgress }) {
-  if (!artistNames.length) return { added: 0, misses: 0, found: [] };
-  const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
+  if (!artistNames.length) return { added: 0, misses: 0, found: [], unsearched: [], topless: [] };
+  const { uris, found, misses, topless, unsearched } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
+  if (!uris.length) return { added: 0, misses, found, unsearched, topless };
   // Track-level dedupe against the LIVE playlist — the ledger dedupes
-  // artists, but two members can both like the same song.
+  // artists, but two members can both like the same song (and an artist
+  // tried again after a busy run already has its saved tracks in).
   const have = await playlistTrackUris(playlistId);
   const fresh = uris.filter((u) => !have.has(u));
   if (fresh.length) await pushTracks(playlistId, fresh);
-  return { added: fresh.length, misses, found };
+  return { added: fresh.length, misses, found, unsearched, topless };
 }
 
 // Pure diff helper (unit-tested): which currently-picked artists are missing

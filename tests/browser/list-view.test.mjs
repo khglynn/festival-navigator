@@ -16,7 +16,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER, nowInView } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +28,7 @@ test.after(async () => { if (chromium) await chromium.close(); if (webkit) await
 const FID = 'portola-2026';
 const SAT_415 = new Date('2026-09-26T16:15:00-07:00');
 
-async function open(engine, { width = 390, view = 'list', now = SAT_415 } = {}) {
+async function open(engine, { width = 390, view = 'list', now = SAT_415, selections = null } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // made up, never a real link
   const phone = width < 720;
   const ctx = await engine.newContext({
@@ -38,7 +38,7 @@ async function open(engine, { width = 390, view = 'list', now = SAT_415 } = {}) 
   const doc = {
     v: 4, meta: { name: 'List Crew', inviteFestId: FID }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 }, Ross: { colorIndex: 5 } },
-    festivals: { [FID]: { selections: { Tricky: { Kevin: 2, Maya: 1 }, 'Tove Lo': { Maya: 4, Ross: 2 }, Robyn: { Kevin: 4 } } } },
+    festivals: { [FID]: { selections: selections || { Tricky: { Kevin: 2, Maya: 1 }, 'Tove Lo': { Maya: 4, Ross: 2 }, Robyn: { Kevin: 4 } } } },
   };
   const writes = [];
   await ctx.route('**/api/**', (r) => { if (r.request().method() !== 'GET') writes.push(r.request().url()); return r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }); });
@@ -215,6 +215,10 @@ for (const [name, get, width] of ENGINES) {
       await sleep(500);
       const now = width < 720 ? '#dock-now' : '#rail-now';
       assert.equal(await page.locator(now).isVisible(), true, 'NOW is in the day row while sets are on');
+      // A phone's row can rest with NOW past its left edge (v103): the row to
+      // its start first, as a finger's swipe would, so the tap lands on NOW
+      // and not on the avatar beside the row.
+      await nowInView(page, width < 720 ? 'dock' : 'rail');
       await press(page, phone, now);
       await sleep(1600);
       const seen = await page.evaluate(() => {
@@ -224,6 +228,194 @@ for (const [name, get, width] of ENGINES) {
         return [...document.querySelectorAll('#wall-root .card.row.now')].filter((c) => { const r = c.getBoundingClientRect(); return r.top >= band - 2 && r.bottom <= bottom + 2; }).map((c) => c.dataset.artist);
       });
       assert.ok(seen.length > 0, `a row wearing the ring is on screen after NOW (${seen})`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// 6. In the List a highlight FILTERS (v103 — Kevin, 2026-09-26: "our grid can
+// highlight. our list can filter."): with Maya highlighted through the people
+// menu (real taps / clicks, the menu staying up), only her rows are in the
+// List; a room she picked nothing in is one quiet line whose words are never
+// cut; the change moves (the rows that go fade, the rest slide — transforms
+// and opacity only); Everyone brings every row back; nothing is written.
+for (const [name, get, width] of ENGINES) {
+  const skip = get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER);
+  const bar = width < 720 ? 'dock' : 'rail';
+  test(`${name}: a highlight filters the List — her rows only, a quiet line where she picked nothing, and Everyone brings it back`, { skip }, async () => {
+    const { ctx, page, errors, writes, phone } = await open(get(), { width });
+    try {
+      await scrollAt(page, '.day-block[data-day="Saturday"] .room[data-room=":fest"]', 120);
+      await page.evaluate(() => {
+        window.__anims = [];
+        const was = Element.prototype.animate;
+        Element.prototype.animate = function (kf, opts) {
+          if (this.closest && this.closest('#wall-root')) window.__anims.push(JSON.stringify(kf));
+          return was.call(this, kf, opts);
+        };
+      });
+      const everyone = await page.evaluate(() => document.querySelectorAll('#wall-root .card[data-artist]').length);
+      await press(page, phone, `#${bar}-you`);
+      await sleep(400);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person="Maya"]`);
+      await motionDone(page, { within: '#wall-root' });
+      await sleep(300);
+      const r = await page.evaluate((b) => {
+        const cards = [...document.querySelectorAll('#wall-root .card[data-artist]')].map((c) => c.dataset.artist);
+        const quiet = [...document.querySelectorAll('#wall-root .room.quiet')].map((q) => {
+          const h = q.querySelector('.room-head').getBoundingClientRect();
+          const w = q.querySelector('.quiet-words');
+          const wr = w.getBoundingClientRect();
+          return { room: q.dataset.room, day: q.closest('.day-block').dataset.day, kids: q.children.length, words: w.textContent, whole: w.scrollWidth <= w.clientWidth + 0.5 && wr.right <= h.right + 0.5 };
+        });
+        const menu = document.querySelector(`#${b}-you-wrap .hl-pop`);
+        return { cards, quiet, menuOpen: !!menu && getComputedStyle(menu).display !== 'none' };
+      }, bar);
+      assert.ok(r.cards.length > 0 && r.cards.every((a) => ['Tricky', 'Tove Lo'].includes(a)), `only Maya's rows: ${r.cards}`);
+      assert.ok(r.menuOpen, 'the menu stays up while you choose');
+      const folsom = r.quiet.find((q) => q.day === 'Saturday' && q.room === 'Folsom');
+      assert.ok(folsom, `SAT FOLSOM is a quiet line: ${JSON.stringify(r.quiet)}`);
+      assert.equal(folsom.kids, 1, 'one line: the head and nothing under it');
+      assert.equal(folsom.words, 'nothing Maya picked');
+      for (const q of r.quiet) assert.ok(q.whole, `the words are never cut: ${JSON.stringify(q)}`);
+      const anims = await page.evaluate(() => window.__anims.splice(0));
+      assert.ok(anims.length > 0, 'the change moves');
+      assert.ok(anims.every((kf) => !/"(top|left|height|width|margin)/.test(kf)), `transforms and opacity only: ${anims.slice(0, 4)}`);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person=""]`);
+      await motionDone(page, { within: '#wall-root' });
+      await sleep(300);
+      const back = await page.evaluate(() => ({ n: document.querySelectorAll('#wall-root .card[data-artist]').length, quiet: document.querySelectorAll('#wall-root .room.quiet').length }));
+      assert.deepEqual(back, { n: everyone, quiet: 0 }, 'Everyone brings every row back');
+      assert.deepEqual(writes.filter((u) => u.includes('/api/crew')), [], 'nothing written to the crew');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// 7. A pick that stops belonging, filtered to yourself (Sol's review of v103;
+// call 2d): un-pick a row and it DIMS where it is, stays while you are on it —
+// the mouse resting there, the finger's shelf up — and leaves once you let it
+// go, the rows closing up and the room's count right. Real input only.
+for (const [name, get, width] of ENGINES) {
+  const skip = get() ? false : (name.startsWith('WebKit') ? 'WebKit not installed' : NO_BROWSER);
+  const bar = width < 720 ? 'dock' : 'rail';
+  test(`${name}: filtered to yourself, an un-picked row dims where it is, stays while you are on it, and leaves when you let it go`, { skip }, async () => {
+    const { ctx, page, errors, writes, phone } = await open(get(), { width });
+    try {
+      await scrollAt(page, '.day-block[data-day="Saturday"] .room[data-room=":fest"]', 120);
+      await press(page, phone, `#${bar}-you`);
+      await sleep(400);
+      await press(page, phone, `#${bar}-you-wrap .hl-pop [data-person="Kevin"]`);
+      await motionDone(page, { within: '#wall-root' });
+      await press(page, phone, `#${bar}-you`); // the menu away
+      await sleep(500);
+      const robyn = '#wall-root .room[data-room=":fest"] .card[data-artist="Robyn"]';
+      const rows = () => page.evaluate(() => [...document.querySelectorAll('#wall-root .room[data-room=":fest"] .card[data-artist]')].map((c) => `${c.dataset.artist}${c.classList.contains('dim') ? ':dim' : ''}`));
+      assert.deepEqual(await rows(), ['Tricky', 'Robyn'], 'yours: Tricky and Robyn');
+      await page.locator(robyn).scrollIntoViewIfNeeded();
+      const b = await page.locator(robyn).boundingBox();
+      if (phone) {
+        // A finger opens the shelf; − steps Robyn from must to nothing.
+        await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+        await page.waitForSelector('#artist-sheet .f-step.minus', { timeout: 5000 });
+        await sleep(400);
+        for (let i = 0; i < 4; i++) {
+          const m = await page.locator('#artist-sheet .f-step.minus').boundingBox();
+          await page.touchscreen.tap(m.x + m.width / 2, m.y + m.height / 2);
+          await sleep(250);
+        }
+      } else {
+        // A mouse click cycles: must → nothing. The pointer stays on the row.
+        await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 });
+        await sleep(300);
+        await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+      }
+      await sleep(1200);
+      assert.deepEqual(await rows(), ['Tricky', 'Robyn:dim'], 'dimmed where it is, and still there while you are on it');
+      // Let it go.
+      if (phone) {
+        // The finger closes the shelf the way a finger does: its ✕.
+        const x = await page.locator('#artist-sheet .sheet-close').boundingBox();
+        await page.touchscreen.tap(x.x + x.width / 2, x.y + x.height / 2);
+        await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 5000 });
+      } else {
+        await page.mouse.move(4, 4, { steps: 6 });
+      }
+      await page.waitForFunction(() => !document.querySelector('#wall-root .room[data-room=":fest"] .card[data-artist="Robyn"]'), null, { timeout: 5000 });
+      await motionDone(page, { within: '#wall-root' });
+      assert.deepEqual(await rows(), ['Tricky'], 'gone once let go');
+      assert.deepEqual(writes.filter((u) => u.includes('/api/crew')).length > 0, true, 'the un-pick itself is a real pick, sent');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// 8. Each row settles on its own (Sol's re-review of v103): with a mouse,
+// un-pick Tricky, move down to Robyn and un-pick it too. Where the page has
+// room above to hold by, Tricky leaves while Robyn's zoom still stands and
+// Robyn does not move under the pointer. At the page's top — nothing above to
+// scroll back — Tricky would pull Robyn up under the pointer, so it waits for
+// Robyn to be let go, and they leave together.
+const LONG = { Tricky: { Kevin: 2 }, Robyn: { Kevin: 4 } };
+for (const a of ['Airwolf Paradise', 'Felly Fell', 'Gelli Haha', 'Despacio', 'Oskar Med K', 'Six Sex', 'Groove Armada', 'DJ Shadow', 'Soulwax', 'Dog Blood', 'Milli Meng', 'Channel Tres', 'SG Lewis', 'Mochakk']) LONG[a] = { Kevin: 1 };
+for (const [label, selections, roomAbove] of [['room above to hold by', LONG, true], ['at the page’s top', null, false]]) {
+  test(`Chromium 1280 mouse, ${label}: un-pick A, then B — B never moves under the pointer${roomAbove ? ', and A leaves while B is held' : '; A waits for B, then both go'}`, { skip: chromium ? false : NO_BROWSER }, async () => {
+    const { ctx, page, errors } = await open(chromium, { width: 1280, selections });
+    try {
+      await press(page, false, '#rail-you');
+      await sleep(400);
+      await press(page, false, '#rail-you-wrap .hl-pop [data-person="Kevin"]');
+      await motionDone(page, { within: '#wall-root' });
+      await press(page, false, '#rail-you');
+      await sleep(500);
+      const sel = (a) => `#wall-root .day-block[data-day="Saturday"] .room[data-room=":fest"] .card[data-artist="${a}"]`;
+      const has = (a) => page.evaluate((s) => { const c = document.querySelector(s); return c ? (c.classList.contains('dim') ? 'dim' : 'on') : 'gone'; }, sel(a));
+      await scrollAt(page, sel('Tricky'), 110);
+      const y0 = await page.evaluate(() => scrollY);
+      if (roomAbove) assert.ok(y0 > 150, `the page has room above (${y0})`);
+      else assert.ok(y0 < 60, `the page is near its top (${y0})`);
+      // A mouse steps a pick down with the grown card's − (the zoom's own
+      // control, never a wrap): real clicks on its box until nothing is left.
+      const face = (bb) => ({ x: bb.x + bb.width * 0.25, y: bb.y + bb.height * 0.3 });
+      const onZoomOf = (a) => page.waitForFunction((n) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown')].some((z) => (z.querySelector('.f-name') || {}).textContent === n), a, { timeout: 4000 });
+      const minusAll = async () => {
+        for (let i = 0; i < 4; i++) {
+          const m = await page.locator('#zoom-layer .zoom-slot.shown .f-step.minus').boundingBox();
+          if (!m) break;
+          await page.mouse.click(m.x + m.width / 2, m.y + m.height / 2);
+          await sleep(200);
+        }
+      };
+      // Tricky: 2 → 3 → must → nothing, the pointer resting on it.
+      let b = await page.locator(sel('Tricky')).boundingBox();
+      let at = face(b);
+      await page.mouse.move(at.x, at.y, { steps: 4 });
+      await sleep(500);
+      await minusAll();
+      await sleep(600);
+      assert.equal(await has('Tricky'), 'dim', 'Tricky dimmed, still there under the pointer');
+      // Down to Robyn, watching where it is from the moment the pointer leaves Tricky.
+      b = await page.locator(sel('Robyn')).boundingBox();
+      await page.evaluate((s) => {
+        window.__robyn = [];
+        const iv = setInterval(() => { const c = document.querySelector(s); if (c) window.__robyn.push(Math.round(c.getBoundingClientRect().top)); }, 16);
+        setTimeout(() => clearInterval(iv), 4000);
+      }, sel('Robyn'));
+      // Onto Robyn's lower half: Tricky's grown zoom can reach over the top of
+      // the row just below it, and the pointer has to leave that zoom to be on Robyn.
+      at = { x: b.x + b.width / 2, y: b.y + b.height * 0.85 };
+      await page.mouse.move(at.x, at.y, { steps: 8 });
+      await onZoomOf('Robyn');
+      await minusAll(); // must → nothing
+      await sleep(1200);
+      await motionDone(page, { within: '#wall-root' });
+      assert.equal(await has('Robyn'), 'dim', 'Robyn un-picked, dimmed, held');
+      assert.equal(await has('Tricky'), roomAbove ? 'gone' : 'dim', roomAbove ? 'Tricky gone while Robyn is held' : 'Tricky waits for Robyn');
+      const tops = await page.evaluate(() => window.__robyn);
+      assert.ok(Math.max(...tops) - Math.min(...tops) <= 1, `Robyn never moved under the pointer: ${[...new Set(tops)]}`);
+      // Let go: whatever is left goes.
+      await page.mouse.move(4, 4, { steps: 6 });
+      await page.waitForFunction(([r, t]) => !document.querySelector(r) && !document.querySelector(t), [sel('Robyn'), sel('Tricky')], { timeout: 5000 });
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

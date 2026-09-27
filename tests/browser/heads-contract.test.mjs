@@ -29,8 +29,13 @@ const skip = browser ? false : NO_BROWSER;
 
 // A phone (hasTouch puts the page on a COARSE pointer, where the 44px floor
 // lives) opened on `fid` for a made-up crew. `fest` replaces the file the app
-// fetches, for the edge cases no shipped fest has yet.
-async function openPhone(fid, { fest = null, now = null, folded = null } = {}) {
+// fetches, for the edge cases no shipped fest has yet. The clock is always
+// the test's: a week before Portola unless the test names one. On the
+// machine's clock these tests broke at 10 AM on Portola Sunday (2026-09-27),
+// when the wall folded Saturday behind its Earlier line and Saturday's heads
+// left the DOM.
+const WEEK_BEFORE = new Date('2026-09-19T09:00:00-07:00');
+async function openPhone(fid, { fest = null, now = WEEK_BEFORE, folded = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const TOKEN = 'headscontract_0123456789'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f, fold]) => {
@@ -49,7 +54,7 @@ async function openPhone(fid, { fest = null, now = null, folded = null } = {}) {
   if (fest) await ctx.route(`**/data/festivals/${fid}.json`, (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => { throw e; });
-  if (now) await page.clock.setFixedTime(now);
+  await page.clock.setFixedTime(now);
   await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 15000 });
   await page.waitForFunction(() => document.querySelector('#wall-root') && document.querySelector('#wall-root').children.length > 0, null, { timeout: 15000 });

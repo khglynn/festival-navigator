@@ -1,10 +1,15 @@
 // Wall filters — pure state + helpers. One filter, "tap the thing that is
 // already on screen" (design canvas 2026-08-27, option A):
 //   people  — tap a member chip: the wall highlights what they picked (tap
-//             more chips to combine). It DIMS everything else, everywhere —
-//             on the clock and in a stack alike. It never hides a card
+//             more chips to combine). On the Board it DIMS everything else,
+//             on the clock and in a stack alike, and never hides a card
 //             (Kevin, 2026-09-17: "highlighting picks shouldn't work as a
-//             filter"); a dimmed card still takes a tap.
+//             filter"); a dimmed card still takes a tap. In the List it
+//             FILTERS (Kevin, 2026-09-26: "our grid can highlight. our list
+//             can filter." — wall.js thinByPeople, v103).
+//             `passesPeople` below is the ONE predicate for "did the
+//             highlighted people pick this": the Board's dim, the List's
+//             filter and Our picks' route ask it and nothing else.
 // Per-festival, per-tab, dies with the tab (sessionStorage): a filter that
 // survived a reload would read as "where did everyone's picks go?" — and the
 // chips make the state visible anyway.
@@ -46,7 +51,8 @@ export function togglePerson(names, name) {
 
 // A card passes the people filter when ANY selected person has a live pick
 // on it (level > 0 — a tombstoned 0 is "unpicked", not "picked at 0").
-// No selected people = no filter = everything passes.
+// No selected people = no filter = everything passes. The one predicate (see
+// the header): every surface that asks "is this one of theirs" calls this.
 export function passesPeople(picks, artist, people) {
   if (!people || !people.length) return true;
   const by = (picks || {})[artist] || {};

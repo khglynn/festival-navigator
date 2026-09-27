@@ -377,6 +377,13 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
 - **Where.** A `NOW` button before the day tabs, in the dock and in the rail,
   in `--brand` (the now line's violet, never `--fest`) with a breathing dot.
   It is not a day: no `data-day`, never `.active`, outside the tab rows.
+  *(Since v93 a tab IN the row after the live day, `SAT · NOW`; since v103,
+  2026-09-26, the row's FIRST item in one place whatever the day, scrolling
+  with the days, never pinned — Kevin: "move the now to the far left in the
+  day bar — just not pinned over everything — don't have it move between
+  days". Where the row cannot hold NOW and the day you are in together (a
+  phone on a Portola Saturday or Sunday) NOW rests past the row's left edge,
+  a swipe away. `claude-plans/2026-09-26-unified-build/V103-BUILD.md`.)*
 - **When.** Only while something is live on the wall you are looking at: a
   now line on a grid, or a NOW mark on a stack (afters and Late nights
   included). The minute ticker that moves the line brings it and takes it

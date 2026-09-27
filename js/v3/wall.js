@@ -1026,7 +1026,7 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
   const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`)
-    || root.querySelector(`.day-block .room[data-iso="${todayIso}"]`);
+    || root.querySelector(`.day-block .room[data-iso="${todayIso}"], .day-block .room[data-isos~="${todayIso}"]`);
   if (!day) return null;
   // The block's scroll-margin-top is the sticky chrome's height (app.js
   // measures it into --jump-offset); land below it like a day-tab jump does —
@@ -1850,19 +1850,18 @@ function foldPast(root, ctx, { days, weekends }) {
   const date = ctx.pastAt || ctx.now || new Date();
   const open = ctx.pastOpen || new Set();
   const blocks = [...root.querySelectorAll(':scope > .day-block')];
+  // Every room judged up front, on the WHOLE wall: a night is over or not
+  // whatever a highlight leaves of it, and a card's own over-ness is read
+  // while every card of its night is still there to judge by (v103).
   const judged = new Map(); // room → roomPast
+  for (const room of root.querySelectorAll(':scope > .day-block > .room')) judged.set(room, roomPast(room, date));
   const dayOver = (block) => {
     const rooms = [...block.querySelectorAll(':scope > .room')];
-    if (!rooms.length) return false;
-    return rooms.every((room) => {
-      const p = roomPast(room, date);
-      judged.set(room, p);
-      return !!p && p.all;
-    });
+    return rooms.length > 0 && rooms.every((room) => { const p = judged.get(room); return !!p && p.all; });
   };
   const over = blocks.filter(dayOver);
-  if (over.length === blocks.length) return; // over from end to end: a record, read whole
-  if (over.length) {
+  const record = over.length === blocks.length; // over from end to end: a record, read whole
+  if (over.length && !record) {
     const daysOpen = open.has('days');
     const twoWeekends = (weekends || [null]).length > 1;
     const tabs = new Map(days.map((d) => [d.key, twoWeekends && d.num ? `${d.short} ${d.num}` : d.short]));
@@ -1872,13 +1871,16 @@ function foldPast(root, ctx, { days, weekends }) {
     else over.forEach((b) => b.classList.add('past-day')); // what the fold's motion moves (app.js togglePast)
   }
   if (ctx.view !== 'list') return;
+  thinByPeople(root, ctx);
+  if (record) return;
   for (const block of blocks) {
     if (over.includes(block)) continue; // an opened day that is over is shown whole
     for (const room of block.querySelectorAll(':scope > .room')) {
-      const p = judged.has(room) ? judged.get(room) : roomPast(room, date);
+      const p = judged.get(room);
       const list = room.querySelector(':scope > .time-list[data-iso]');
       if (!p || !list) continue;
-      const past = p.cards.filter((c) => p.overs.get(c));
+      // What the highlight left (a thinned card is out of the DOM).
+      const past = p.cards.filter((c) => c.isConnected && p.overs.get(c));
       if (!past.length) continue;
       const key = `${list.dataset.iso}|${room.dataset.room}`;
       const isOpen = open.has(key);
@@ -1889,6 +1891,115 @@ function foldPast(root, ctx, { days, weekends }) {
       for (const band of list.querySelectorAll(':scope > .time-band')) if (!band.querySelector('.card')) band.remove();
     }
   }
+}
+
+// ---- the List's highlight is a filter (v103, 2026-09-26) ----------------------------
+// Kevin: "when in list view — let's have highlight actually filter — only show
+// that person(s) picks. our grid can highlight. our list can filter." The
+// Board still dims (cardFor's `.dim`); in the List every row none of the
+// highlighted people picked leaves the DOM, a band it empties goes with it,
+// and a room it empties becomes ONE quiet line — its own head, quiet, saying
+// so ("SAT AFTERS · nothing Ross picked"): not an empty head, and still the
+// door to that night's notes. A list that is not a room (EVERYTHING ELSE)
+// simply goes when it empties. The highlight is the viewer's alone (filters.js,
+// this tab's memory) — nothing here is ever written anywhere. Whether a row
+// stays is filters.js `passesPeople`, the ONE "did the highlighted people pick
+// this" predicate: the Board's dim, this filter, and Our picks' route (next)
+// all ask it, so they can never disagree.
+// Runs inside foldPast, after the days are judged and before each room folds
+// its past, so "EARLIER · 2 SETS" counts Ross's two.
+export function listFilters(ctx) {
+  return ctx.view === 'list' && !ctx.query && (ctx.filterPeople || []).length > 0;
+}
+// A row, as the person sees it: this occurrence, in this room, on this day —
+// never the artist's name alone (one set can show in two rooms: Horse Meat
+// Disco's Friday under Afters AND Folsom). A fresh render gives the same row
+// the same key.
+export function rowKey(card) {
+  const room = card.closest('.room');
+  const day = card.closest('.day-block');
+  return [day ? day.dataset.day : '', room ? room.dataset.room : '', room && room.dataset.iso ? room.dataset.iso : '',
+    card.dataset.artist, card.dataset.occ || ''].join('|');
+}
+// Whether a row stays in a filtered List: the highlighted people picked it —
+// or it is a row the person is still ON (`ctx.holdRows`, the shell's row keys:
+// you un-picked it and have not left it yet, so it stays, dimmed, until you
+// do — call 2d, and Sol's reviews of v103). Every group the List draws asks this.
+export function listKeeps(ctx, card) {
+  return passesPeople(ctx.picks, card.dataset.artist, ctx.filterPeople || []) || !!(ctx.holdRows && ctx.holdRows.has(rowKey(card)));
+}
+export function thinnedWords(people, meName = null) {
+  const who = people.map((p) => (p === meName ? 'you' : p));
+  if (!who.length) return '';
+  if (who.length === 1) return `nothing ${who[0]} picked`;
+  if (who.length === 2) return `nothing ${who[0]} or ${who[1]} picked`;
+  return 'nothing they picked';
+}
+function thinByPeople(root, ctx) {
+  if (!listFilters(ctx)) return;
+  const people = ctx.filterPeople;
+  for (const card of [...root.querySelectorAll('.card[data-artist]')]) {
+    if (!listKeeps(ctx, card)) card.remove();
+  }
+  for (const band of [...root.querySelectorAll('.time-band')]) if (!band.querySelector('.card')) band.remove();
+  for (const grid of [...root.querySelectorAll('.wall-grid')]) {
+    if (grid.querySelector('.card')) continue;
+    const head = grid.previousElementSibling;
+    if (head && head.classList.contains('list-head') && !grid.closest('.room')) head.remove();
+    grid.remove();
+  }
+  const words = thinnedWords(people, ctx.meName || null);
+  for (const room of root.querySelectorAll('.room')) {
+    if (room.querySelector('.card')) continue;
+    const head = room.querySelector(':scope > .room-head');
+    if (!head) continue;
+    for (const kid of [...room.children]) if (kid !== head) kid.remove();
+    room.classList.add('quiet');
+    // The words are what this line is for, so they never give way: the date
+    // the head leads with stays in its sub (which ellipsizes first — ACL's
+    // "SAT ACL MUSIC FESTIVAL  OCT 3 · WEEKEND 1" fills a phone), the room's
+    // own place goes (there is nothing there to find), and the words sit in
+    // their own span after it (v3.css `.quiet-words`).
+    const sub = head.querySelector('.sub');
+    if (sub) sub.textContent = head.dataset.when || '';
+    const said = mk('span', 'quiet-words', words);
+    if (sub) sub.after(said);
+    else head.insertBefore(said, head.querySelector('.line'));
+  }
+  // A run of empty DATES is one line (the coordinator's call on 2f, after the
+  // v104 walk met ten "nothing Ross picked" lines in a row on ACL's Late
+  // nights): consecutive quiet rooms of one dated section become a single
+  // quiet line naming the span — "LATE NIGHTS  SEP 29 – OCT 8 · NOTHING ROSS
+  // PICKED". A single empty date keeps its own line and its door. The span's
+  // line opens nothing (a span is not one date's thread — the all-notes sheet
+  // still lists any notes there), and it keeps every date it stands for
+  // (`data-isos`), so the day-of open still lands on it (scrollToNowLine).
+  for (const block of root.querySelectorAll(':scope > .day-block')) {
+    let run = [];
+    const flush = () => {
+      if (run.length > 1) collapseQuietRun(run, words);
+      run = [];
+    };
+    for (const el of [...block.children]) {
+      const empty = el.classList.contains('room') && el.classList.contains('quiet') && !!el.dataset.iso;
+      if (!empty) { flush(); continue; }
+      if (run.length && run[0].dataset.room !== el.dataset.room) flush();
+      run.push(el);
+    }
+    flush();
+  }
+}
+function collapseQuietRun(run, words) {
+  const [first] = run;
+  const isos = run.map((r) => r.dataset.iso);
+  const label = (first.querySelector(':scope > .room-head .label') || {}).textContent || first.dataset.room;
+  const head = roomHead({ label, sub: `${shortDate(isos[0])} – ${shortDate(isos[isos.length - 1])}` });
+  head.insertBefore(mk('span', 'quiet-words', words), head.querySelector('.line'));
+  first.replaceChildren(head);
+  first.dataset.isos = isos.join(' ');
+  for (const r of run.slice(1)) r.remove();
+  // (A day block is never emptied: a composed day holds only rooms, and a
+  // room stays as its quiet line — so every day tab still lands.)
 }
 
 export function positionNowMarks(root, date = new Date()) {
@@ -2415,6 +2526,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
     let when = day.when;
     const head = (label, ownSub, door) => {
       const h = roomHead({ weekday, label, sub: joinSub(when, ownSub), ...(door || {}) });
+      if (when) h.dataset.when = when; // the date it leads with, kept for its quiet form (thinByPeople)
       when = '';
       return h;
     };
@@ -2465,13 +2577,31 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
 
   if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
   else foldPast(root, ctx, { days: plan.days, weekends });
+  // (foldPast thins the List by the highlight between its two passes —
+  // thinByPeople — so the days line is judged on the whole wall and each
+  // room's own fold counts only what the highlight leaves.)
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
     const onAnyGrid = new Set();
     for (const d of plan.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
+    // Drawn after foldPast, so the List's filter is applied here too (Sol's
+    // review of v103: its unpicked names stayed in a filtered List); a list
+    // left with nothing is not drawn at all, head included.
     const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
-    if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+    if (loose.length) {
+      // Drawn whole, then thinned by the same card-level rule as every other
+      // room (a held row is a row, not a name); nothing of theirs left, and
+      // the group goes, head and all.
+      const mark = root.lastElementChild;
+      renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+      if (listFilters(ctx)) {
+        const drawn = [];
+        for (let n = mark ? mark.nextElementSibling : root.firstElementChild; n; n = n.nextElementSibling) drawn.push(n);
+        for (const card of drawn.flatMap((n) => [...n.querySelectorAll('.card[data-artist]')])) if (!listKeeps(ctx, card)) card.remove();
+        if (!drawn.some((n) => n.querySelector('.card'))) for (const n of drawn) n.remove();
+      }
+    }
   }
   festNotesFoot(root, ctx, fest);
   wireTimesScrollSync(root);
@@ -2520,7 +2650,9 @@ function renderExtra(root, ctx, fest, extra) {
       room.dataset.iso = iso; // the day-of open lands here when tonight is one of these dates
       const door = dateDoor(ctx, iso);
       const wd = weekdayOfIso(iso);
-      room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
+      const h = roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) });
+      if (shortDate(iso)) h.dataset.when = shortDate(iso);
+      room.appendChild(h);
       if (door) dayNoteWhisper(room, iso, door.aria, ctx);
       sectionBody(fest, extra.key, ctx)(room, list, ctx, { day: { iso }, fest });
       block.appendChild(room);
@@ -2839,14 +2971,15 @@ export const DAY_ANCHOR = '.day-block[data-day]';
 // 24px below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
 
-// ---- where a day row rests (v93) ----------------------------------------------------
+// ---- where a day row rests (v93; NOW first since v103) --------------------------------
 // A day row that cannot show every tab scrolls (Portola's four days and NOW
 // overflow a phone's dock; ACL's seven overflow everything short of a
 // desktop), and where it comes to rest is one rule for the dock and the rail:
 //   1. the day you are standing in is whole — the scrollspy's promise;
-//   2. while something is live, NOW is whole, and so is the day it follows
-//      (Kevin, 2026-09-25, D1: NOW is a tab in the row, right after the day
-//      that is live — "SAT · NOW" — never pinned, never shrunk to a dot);
+//   2. while something is live, NOW is whole (Kevin, 2026-09-26: NOW is the
+//      row's first item, in one place whatever the day, scrolling with the
+//      days — never pinned, never shrunk to a dot), so the row rests at its
+//      start wherever the day you are in still fits beside it;
 //   3. no tab shows as a sliver: a tab past an edge shows all but a sliver
 //      of itself, or nothing but a hint inside the fade (the "RI | SAT | S"
 //      that v91's dock left at 320, and the "HU" of THU at 430);
@@ -2856,24 +2989,42 @@ const LANDED_WITHIN = 32;
 //   5. and, of what is left, the row sits closest to centring those tabs.
 // Each rule outranks the ones after it, so a narrow row gives up centring
 // before a fade, a fade before a sliver, NOW before the day you are in.
-// That is how 390 comes to show FRI SAT NOW SUN and 320 exactly SAT NOW,
-// with no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
+// With no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
 // so the rule is testable without a layout engine: `items` are the row's
 // visible tabs in order, `x` and `w` in the row's scroll coordinates;
-// `active`, `now`, `live` are indexes into them, or -1.
+// `active` and `now` are indexes into them, or -1.
 const EDGE_HINT = 6; // px: at most this much of a tab may show past an edge, or be cut off at one
 // Layout positions are whole pixels and the scroll range rounds on its own,
 // so a tab that ends exactly at the row's end can read half a pixel past it
 // (NOW after SUN at 320 did, and the row hid it). A pixel of slack is not a
-// pixel anyone sees.
+// pixel anyone sees — at the row's two ENDS, where the rounding is. Inside the
+// row a tab at the edge is cut by whatever the slack forgives plus its own
+// sub-pixel width, which on Linux put ACL's SAT 3 1.3px short at 430 once NOW
+// led the row (CI, v103): no slack there.
 const WHOLE_SLACK = 1;
-export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1, live = -1 }) {
+export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1 }) {
   if (!(max > 0.5) || !items.length) return 0;
-  const focus = [...new Set([active, live, now].filter((i) => i >= 0 && items[i]))];
+  // What the row centres on and keeps clear of the fades: the day you are in,
+  // and NOW with it only where the two fit the row together. NOW is the
+  // row's first item (v103), so on a narrow row it is often far from the day
+  // you are in (390, a Portola Saturday: THU and FRI between them). Centring
+  // on a pair that cannot both show left NOW's violet tail at the left edge
+  // and a sliver of SUN at the right; centring on the day alone rests the row
+  // on whole days, with NOW past the edge where the fade says there is more.
+  const span = (ids) => Math.max(...ids.map((i) => items[i].x + items[i].w)) - Math.min(...ids.map((i) => items[i].x));
+  const end = Math.max(...items.map((it) => it.x + it.w));
+  const focus = active >= 0 && items[active] ? [active] : [];
+  if (now >= 0 && items[now] && now !== active && (!focus.length || span([...focus, now]) <= width)) focus.push(now);
   const lo = focus.length ? Math.min(...focus.map((i) => items[i].x)) : 0;
   const hi = focus.length ? Math.max(...focus.map((i) => items[i].x + items[i].w)) : 0;
   const ideal = focus.length ? Math.max(0, Math.min(max, (lo + hi - width) / 2)) : 0;
-  const whole = (i, L) => i < 0 || !items[i] || (items[i].x >= L - WHOLE_SLACK && items[i].x + items[i].w <= L + width + WHOLE_SLACK);
+  const whole = (i, L) => {
+    if (i < 0 || !items[i]) return true;
+    const it = items[i];
+    const sl = it.x <= WHOLE_SLACK ? WHOLE_SLACK : 0; // the row's start
+    const sr = it.x + it.w >= end - WHOLE_SLACK ? WHOLE_SLACK : 0; // the row's end
+    return it.x >= L - sl && it.x + it.w <= L + width + sr;
+  };
   const cost = (L) => {
     // A fade is drawn only on a side that has more past it (markDayRow).
     const fl = L > 0.5 ? fade : 0;
@@ -2889,7 +3040,7 @@ export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1
       const cut = it.w - seen;
       if (seen > EDGE_HINT && cut > EDGE_HINT) slivers += Math.min(seen, cut);
     }
-    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, whole(live, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
+    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
   };
   const better = (a, b) => {
     for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
@@ -2922,16 +3073,13 @@ const rowMax = (c, items = rowItems(c)) => Math.max(0, items.reduce((e, it) => M
 function dayRowGeometry(c) {
   const kids = rowTabs(c);
   const items = rowItems(c, kids);
-  const now = kids.findIndex((k) => k.classList.contains('now-tab') && !k.dataset.leaving);
-  const live = now > 0 && kids[now - 1].classList.contains('day-tab') ? now - 1 : -1;
   return {
     items,
     width: c.clientWidth,
     max: rowMax(c, items),
     fade: parseFloat(window.getComputedStyle(c).getPropertyValue('--row-fade')) || 0,
     active: kids.findIndex((k) => k.classList.contains('day-tab') && k.classList.contains('active')),
-    now,
-    live: now >= 0 ? live : -1,
+    now: kids.findIndex((k) => k.classList.contains('now-tab') && !k.dataset.leaving),
   };
 }
 
@@ -3021,7 +3169,7 @@ export function wireScrollspy(containers, wallRoot) {
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
   // one place the active day changes, so it is the one place the row glides;
-  // where it comes to rest is restDayRow's rule (NOW's pair included).
+  // where it comes to rest is restDayRow's rule (NOW's promise included).
   let active = null;
   const setActive = (day) => {
     if (day === active) return;

@@ -957,7 +957,10 @@ export function dialogize(sheet, label) {
   sheet.setAttribute('aria-modal', 'true');
   sheet.setAttribute('aria-label', label);
   sheet.tabIndex = -1;
-  requestAnimationFrame(() => sheet.focus());
+  // Only if focus is not already inside: a finger can reach the composer
+  // before this frame runs (a long task after the open), and taking focus
+  // back then drops the keyboard mid-word (tests/dialogize-focus.test.mjs).
+  requestAnimationFrame(() => { if (!sheet.contains(document.activeElement)) sheet.focus(); });
   // Tab walks the sheet's own controls in order and wraps — moved by the
   // sheet itself, never left to the browser: Safari's Tab skips buttons unless
   // "Press Tab to highlight each item" is on, so a trap that waited for focus
