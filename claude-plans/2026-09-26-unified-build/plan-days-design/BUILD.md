@@ -450,3 +450,123 @@ crew link, no database writes (previews and `vercel dev` use production's).
    pass on the P4 head too: they pin the rule as built, for Kevin's (a). A mutation
    with paintNowTabs' `planShowsNow()` switched off fails them (the same mutation as
    P4's test 5). **At 0 on the P4 head's code: 61/61.**
+   **At 700, on 9d68c34's code (the review fixes in): 61/61.**
+7. **The P1–P3 review's fixes (builder, 2026-09-27).** REVIEW-P1P3.md's eleven, in its
+   order. Every red line below is from 934cece's code (the two commits between it and
+   f6196de changed only tests and docs).
+   a. **Items 1–3, the room under the last day (c565776): one mechanism.** fitTail
+      cleared the list's bottom padding, measured and wrote it back on every draw. Now
+      an empty, aria-hidden `.plan-tail` is the list's last child. It is sized from
+      offsets that leave it out (the list is `position: relative`, so it is the rows'
+      offsetParent; the old comment saying otherwise was stale), and only while the rows
+      alone overflow the list's box. Nothing is cleared, so no repaint can shrink the
+      scroll range under a reader. `showGrown`'s floor reads the base padding again, so
+      item 2 needed no change of its own. A plan that fits gets no room, so the phone's
+      content-sized shelf has no gap and no jump (item 3). `tests/browser/plan-tail.test.mjs`
+      is the review's four tests on ACL W2 Saturday, both engines, phone and laptop.
+      **Red first:**
+      - Repaint: `after the repaint Sunday's head is still at the top: 361.83 (scrollTop
+        218)` (422.47/143, 363.05/214, 424.05/138). The test first grows two Saturday
+        cards and asserts that the rows still overflow once the minute folds Arcy
+        Drive. My first version skipped that: the fold left a plan that fits, and it
+        failed on the fix as well (scrollTop 0), so its red was not evidence and I
+        didn't count it.
+      - Share: `Sunday's head is still at the top after the Share: 338.64 (scrollTop
+        159)` (345.99/154, 389.21/84, 403.00/79). The text sent was Sunday's; the list
+        clamped under it after, so the next Share would have sent Saturday.
+      - Lower row: `Lorde, T-Mobile, 8:15 PM, 6 picked: the row stayed under the finger
+        (423.11 → 233.11; the list scrolled 0 → 190)` (425→229, 473→208, 474→204).
+      - Plan that fits: `the window keeps its height as it opens…: 529.05 → [744]`
+        (Chromium), `530.67 → [530.7, 744]` (WebKit).
+      Green: 14/14 at 0 and at 700, on the commit's own code, with plan-days 26,
+      plan-drag 38 (+1 skip), plan-share 39 and plan-stop-ends 6 at 0 there.
+   b. **Items 4–6, the model (f6196de).** A night whose only pick is a drop-in has its
+      own reason (`dropin`) and no empty line under its drop-in line. A drop-in seat no
+      longer moves the site or marks the grounds as left, so a must on a drop-in at
+      another venue can't pull anyone off the grounds. rowsKey carries each drop-in
+      line's clock (open, over), and the shelf's key reads rowsKey alone (44a80e5, no
+      behaviour change). **Red first:** the rule 9 seating test got `'scattered'` for
+      `'dropin'`; the new trip test kept only `['4 PM Early']` (Late at 10 PM lost);
+      plan-text's drop-in-only night gave `[0, 1, 'scattered']`; plan-stop-ends test 6
+      found one key drawing two row sets: `portola-2026, the Despacio crew, 2026-09-26
+      2:40 PM → 3:25 PM, one key: …drop in 2:45 – 9:45 PM7picked → …drop in till 9:45
+      PM7picked`. Green: plan-model 54/54, plan-text 13/13, plan-stop-ends 6/6.
+   c. **Items 7, 8 and 10, motion (9d68c34).** Item 7: the turn now plays on the head a
+      person sees (the panel's head line on a laptop). Item 8: a close from a later day
+      holds that day's rows and head while they fade, and paints today's head once the
+      fade is done. Under it was a bigger bug: the window was measured while the list
+      was still scrolled, so the peek's row came to rest about 510px off the dock (the
+      peek showed the wrong rows). The list now goes back to the top before measuring,
+      and the peek's row comes down to its place. Item 10: the Share's mark fades and
+      narrows on a bare day instead of `display: none`. **Red first:**
+      - Close: `while it closes, the head and the rows are Sunday's: 9 of 9 frames are
+        not, from {top:55, wd:SAT}` (WebKit 8 of 8). With that check off, `the peek's
+        row ends on the dock: 511` (WebKit 508).
+      - Laptop turn: `the panel's head line rose in from below: [{part:wd,
+        where:head…}, {part:sub, where:head…}]` (the turn played on the hidden head).
+      - Share mark: `{display:none, opacity:1, width:13px, eased:false}`.
+      Green: plan-days 30/30 at 0 and at 700.
+   d. **Item 9, the Share's words (b0b5642).** The words are the button's name and no
+      longer a live region. A copy's result is said once, in an sr-only span beside the
+      button. **Red first:** `nothing a screen reader would say again… actual: [ 'Copy
+      today's picks', 'Copy today's picks' ]`. Green: plan-shelf 17/17.
+   e. **Item 11, the sweep's cost:** done earlier, by 628d855 (the Share sweep draws
+      without paint: 288 s to 50 s, main's 58 s).
+   **The question for Kevin: a plan that fits.** DESIGN.md B7 says the list brings the
+   last day to the top "so Sunday can be read and shared from the head like any day".
+   A plan short enough to fit the phone's shelf has nowhere to scroll. As built it gets
+   no room: the head and the Share stay on today while Sunday's rows sit in view above
+   the Share, which is close to what B's first alternative says a Share button must
+   never do. The button does say "Share today's picks", which softens it. The same
+   happens when a repaint makes a plan fit while a reader is on Sunday (the minute
+   folding a stop): the view goes back to today. The choices I see:
+   (1) While a plan has a later day, the open shelf takes its full height, so every day
+       can come to the top. This is what the laptop panel already does. It costs blank
+       space under a short last day. A today-only plan stays content-sized.
+   (2) Each later day in a plan that fits gets a small Share of its own on its head.
+   (3) Leave it as built.
+   I lean (1): it keeps one rule (the head and the Share are the day at the top) and
+   removes the repaint case with it. I haven't built it.
+8. **P5, ACL ready (builder, 2026-09-27).**
+   a. **a2297fb, the days list and Earlier's span** (`tests/plan-acl.test.mjs`, the real
+      shell in jsdom, the ACL crew of eight). There are 147 golden lines at six moments,
+      each read against the model's routes and the data before freezing:
+      - Tue Sep 29 6 PM: every night ahead, with the bare Mon · Tue as one head.
+      - Mon Oct 5 and Tue Oct 6: no peek. A later night's peek is tomorrow's only
+        (Kevin, 2026-09-26), and Thu is not tomorrow.
+      - Wed Oct 7 noon: the plan opens on Thu, "Earlier · Sep 29 – Oct 6".
+      - Sat Oct 10 4 PM: Earlier shut ("Sep 29 – Oct 9") and open (the past under
+        dimmed heads).
+      - Sun Oct 11 9 PM, then 11:30 PM with the plan still open: "Nothing left today".
+        A close then takes the shelf away.
+      There is no behaviour change, so there is no red-first run. As a mutation, night
+      labels always the weekday fail three of the four tests (`also Sun, Sat` for `also
+      Oct 4, Oct 10, Oct 11`).
+   b. **f577682, in a real browser** (`tests/browser/plan-acl.test.mjs`).
+      - The Share per night. From Tue Sep 29 6 PM the list is brought to each of the
+        ten places a day can sit at the top: today, Thu Oct 1 to Sun Oct 4, the Mon ·
+        Tue run once, and Thu Oct 8 to Sun Oct 11. (The commit message says eleven;
+        it is ten.) What the Share says and sends at each is golden. Today's reads
+        from now; the others read whole, each link opening on its night; the bare run
+        rests ("Nothing to share Monday"). Every picks line is a row of that night.
+        Chromium and WebKit send the same texts.
+      - The Late nights, opened Mon Sep 28. All 66 entries sit on their 10 dates
+        (2, 7, 16, 13, 4, 3, 3, 10, 4, 4), and each card's time is drawn, visible and
+        inside its card. The 31 guesses carry the tilde. This holds on the Board and
+        in the List. The List is set as this phone's view, because a link's `&view=`
+        only starts a phone that has never shown the festival; the test asserts 66
+        rows to prove the List was on.
+      There is no behaviour change. As a mutation, dropping the tilde in events.js fails
+      both Late nights views: `2026-09-29 Fcukers: its time is ~8:45 PM, drawn "8:45
+      PM"`. 6/6.
+   c. **Seen on the way, for Kevin's look (not changed):**
+      - **"Also" across ACL's two weekends depends on whether the stage moved.** A
+        festival set's play is `stage|weekday` (plan.js, since the Our plan model), so a
+        repeat on the same stage is one play and a moved one is two. Faouzia (Miller Lite
+        W1, American Express W2) reads "also Oct 9" and counts as a doubled pick. Paris
+        Paloma (Miller Lite both weekends, 3:15 then 5:15) doesn't. Fcukers on Sun Oct 4
+        says "also Sep 29, Oct 10" but not Oct 11 (Tito's both Sundays). Whether ACL's
+        weekend repeats are one play or two is a model call; either way it should not
+        turn on the stage.
+      - A bare run's head reads "MON · TUE" in the list, but the panel's head and the
+        Share say only Monday ("Nothing to share Monday").
