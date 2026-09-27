@@ -605,7 +605,54 @@ writes, so, as agreed, the mechanism is CUT rather than patched a fourth time:
       the create or the add, then Add new picks visible (no Make playlist), the
       words, the link, the record with no artist, and Add new picks filling the
       same playlist — one create.
-- [ ] T2 IMPORTANT — rows are kept by their occurrence and room, not the
+- [x] T2 IMPORTANT — rows are kept by their occurrence and room, not the
       artist's name: un-pick Horse Meat Disco while holding its Afters row, and
-      its Folsom row still leaves.
+      its Folsom row still leaves. **Done:** one key for a row, `rowKey(card)`
+      in wall.js — the day block, the room (and its date), the artist and the
+      occurrence — which a fresh render gives the same row again. The shell's
+      held rows (`rowsInHand`), the thinning's keep set (`thinFlow`), the
+      leftover settle and the render's `ctx.holdRows` all carry row keys now,
+      and `listKeeps(ctx, card)` asks about a CARD, never a name. EVERYTHING
+      ELSE is drawn whole and then thinned by that same card rule (it used to
+      filter entries by name before drawing), its head going with its last
+      row. Test, red first (it timed out on the old code, "still waiting for
+      the Folsom row to leave while the Afters row is held"): Horse Meat Disco
+      picked by Kevin, which Portola shows on Friday under Afters AND Folsom;
+      the keyboard on the Afters row un-picks it; the Folsom row leaves, the
+      Afters row stays dimmed.
 - [ ] T3 IMPORTANT, pre-existing on main — banked below, not fixed now.
+
+### T3, banked: the crew playlist's ledger is one array, and arrays don't merge
+
+What Sol found (pre-existing — main has it at the top-up in
+`js/v3/settings.js`, `syncEveryonePlaylists`): the crew playlist's record
+keeps the artists already added as ONE array, `spotify.playlists[fid].artists`,
+and every top-up writes the whole record back — `{ ...meta, artists: [...old,
+...found] }`. `jsonb_deep_merge` (`db/schema.sql`) merges objects key by key
+but REPLACES arrays, the same reason notes are keyed objects (see CLAUDE.md).
+
+The scenario: Kevin connects Spotify and his quiet top-up starts (it reads the
+ledger `[A, B]`, finds C). Meanwhile Nhu opens the drill and presses Add new
+picks (she read `[A, B]` too, and finds D). Kevin's write lands `[A, B, C]`;
+Nhu's lands `[A, B, D]` and erases C. (Two members pressing Make at the same
+moment is the same race one level up — two playlists, and the record keeps
+whichever landed last. Rarer, and also on main.)
+
+What it costs today, read from the code: C's songs ARE in the playlist, but
+the ledger says C is missing, so every later top-up looks C up again (more
+Spotify calls each run, against the rate limit this release paces) and
+the drill's "Crew playlist · N artists" reads low. It does NOT double songs:
+`addArtistsToPlaylist` checks the live playlist's tracks before adding. T1
+narrowed it back to main's level — there is no mid-run record any more, so the
+only writes are the finished Make and each top-up's end.
+
+The fix, for a follow-up release: key the ledger by artist —
+`artistsBy: { "<lowercased name>": 1 }` — so two top-ups merge into the union
+instead of the last one winning. Read BOTH shapes (the legacy array and the
+keyed object; the union of the two is the ledger), write only the keyed one,
+never migrate. Readers to move with it: `playlistMissingArtists`
+(js/spotify.js), the drill's artist count, and the Make's end record. Test it
+where the merge really runs: `tests/db-merge.test.mjs` (PGlite, the production
+merge SQL) with Sol's scenario — two top-ups from the same `[A, B]`, one adding
+C and one adding D, in either order, and the ledger ends `A, B, C, D`; plus a
+legacy-array crew topped up by the new code keeps its array artists.

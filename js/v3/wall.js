@@ -1911,12 +1911,22 @@ function foldPast(root, ctx, { days, weekends }) {
 export function listFilters(ctx) {
   return ctx.view === 'list' && !ctx.query && (ctx.filterPeople || []).length > 0;
 }
+// A row, as the person sees it: this occurrence, in this room, on this day —
+// never the artist's name alone (one set can show in two rooms: Horse Meat
+// Disco's Friday under Afters AND Folsom). A fresh render gives the same row
+// the same key.
+export function rowKey(card) {
+  const room = card.closest('.room');
+  const day = card.closest('.day-block');
+  return [day ? day.dataset.day : '', room ? room.dataset.room : '', room && room.dataset.iso ? room.dataset.iso : '',
+    card.dataset.artist, card.dataset.occ || ''].join('|');
+}
 // Whether a row stays in a filtered List: the highlighted people picked it —
-// or it is a row the person is still ON (`ctx.holdRows`, the shell's: you
-// un-picked it and have not left it yet, so it stays, dimmed, until you do —
-// call 2d, and Sol's review of v103). Every group the List draws asks this.
-export function listKeeps(ctx, artist) {
-  return passesPeople(ctx.picks, artist, ctx.filterPeople || []) || !!(ctx.holdRows && ctx.holdRows.has(artist));
+// or it is a row the person is still ON (`ctx.holdRows`, the shell's row keys:
+// you un-picked it and have not left it yet, so it stays, dimmed, until you
+// do — call 2d, and Sol's reviews of v103). Every group the List draws asks this.
+export function listKeeps(ctx, card) {
+  return passesPeople(ctx.picks, card.dataset.artist, ctx.filterPeople || []) || !!(ctx.holdRows && ctx.holdRows.has(rowKey(card)));
 }
 export function thinnedWords(people, meName = null) {
   const who = people.map((p) => (p === meName ? 'you' : p));
@@ -1929,7 +1939,7 @@ function thinByPeople(root, ctx) {
   if (!listFilters(ctx)) return;
   const people = ctx.filterPeople;
   for (const card of [...root.querySelectorAll('.card[data-artist]')]) {
-    if (!listKeeps(ctx, card.dataset.artist)) card.remove();
+    if (!listKeeps(ctx, card)) card.remove();
   }
   for (const band of [...root.querySelectorAll('.time-band')]) if (!band.querySelector('.card')) band.remove();
   for (const grid of [...root.querySelectorAll('.wall-grid')]) {
@@ -2578,9 +2588,20 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, wee
     // Drawn after foldPast, so the List's filter is applied here too (Sol's
     // review of v103: its unpicked names stayed in a filtered List); a list
     // left with nothing is not drawn at all, head included.
-    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)))
-      .filter((a) => !listFilters(ctx) || listKeeps(ctx, a.name));
-    if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
+    if (loose.length) {
+      // Drawn whole, then thinned by the same card-level rule as every other
+      // room (a held row is a row, not a name); nothing of theirs left, and
+      // the group goes, head and all.
+      const mark = root.lastElementChild;
+      renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+      if (listFilters(ctx)) {
+        const drawn = [];
+        for (let n = mark ? mark.nextElementSibling : root.firstElementChild; n; n = n.nextElementSibling) drawn.push(n);
+        for (const card of drawn.flatMap((n) => [...n.querySelectorAll('.card[data-artist]')])) if (!listKeeps(ctx, card)) card.remove();
+        if (!drawn.some((n) => n.querySelector('.card'))) for (const n of drawn) n.remove();
+      }
+    }
   }
   festNotesFoot(root, ctx, fest);
   wireTimesScrollSync(root);

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey, listFilters } from './wall.js';
+import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey, listFilters, rowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded, loadView, saveView, viewIsSet, LIST, BOARD } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -604,7 +604,8 @@ function thinBefore({ anchor = null } = {}) {
   }
   return { at, place: place || takeWallPlace(), y: window.scrollY };
 }
-// `keep`: rows the person is still on — they stay (dimmed) while the rest go.
+// `keep`: rows the person is still on (row keys) — they stay, dimmed, while
+// the rest go.
 function thinFlow(before, { keep = rowsInHand() } = {}) {
   settleFold();
   settleView();
@@ -613,7 +614,7 @@ function thinFlow(before, { keep = rowsInHand() } = {}) {
   const vh = window.innerHeight || 0;
   const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < vh; };
   const people = ctx.filterPeople || [];
-  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people) || keep.has(card.dataset.artist);
+  const stays = (card) => passesPeople(ctx.picks, card.dataset.artist, people) || keep.has(rowKey(card));
   // What leaves: the rows the new highlight does not keep, and with them the
   // lines that belong to nothing any more — a band's hour whose rows all go,
   // a room's whisper and EARLIER when the room goes quiet.
@@ -910,9 +911,11 @@ function inHand(card) {
   if (keyHand() && a && (a === card || card.contains(a))) return true;
   try { return !fingerHand() && card.matches(':hover'); } catch { return false; }
 }
+// Row keys (wall.js rowKey — occurrence and room, never the name: one set in
+// two rooms is two rows, and holding one never holds the other).
 function rowsInHand() {
   const rows = leftoverRows();
-  return new Set((wallHeld() ? rows : rows.filter(inHand)).map((c) => c.dataset.artist));
+  return new Set((wallHeld() ? rows : rows.filter(inHand)).map(rowKey));
 }
 // The card the person is on, if any, anywhere on the wall: the page is held by
 // it. A mouse between rows holds the card nearest it — the one it is on its way
@@ -968,7 +971,7 @@ function settleLeftovers() {
   }
   if (!going.length) return;
   if (going.length === rows.length) stopLeftovers();
-  const keep = new Set(rows.filter((c) => !going.includes(c)).map((c) => c.dataset.artist));
+  const keep = new Set(rows.filter((c) => !going.includes(c)).map(rowKey));
   thinFlow(thinBefore({ anchor }), { keep });
 }
 // How much of the page above `top` goes with `cards`: a room they empty goes

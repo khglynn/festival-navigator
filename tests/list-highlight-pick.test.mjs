@@ -31,6 +31,7 @@ let SERVER = {
     'Felly Fell': { Kevin: 2 }, Robyn: { Kevin: 4 }, 'Dog Blood': { Kevin: 1 }, 'Milli Meng': { Kevin: 2 },
     'Channel Tres': { Kevin: 4 }, // Sunday, for the keyboard
     'SG Lewis': { Kevin: 4 }, Mochakk: { Kevin: 4 }, // Sunday, two rows one after the other
+    'Horse Meat Disco': { Kevin: 4 }, // one set, two rooms: Friday's Afters AND Folsom
     Soulwax: { Ross: 3 },
   } } },
 };
@@ -232,4 +233,24 @@ test('hidden, the watch sleeps: it stops asking while the tab is hidden and wake
     globalThis.setInterval = setWas;
     globalThis.clearInterval = clearWas;
   }
+});
+
+// Sol's round 3: rows are kept by their occurrence and room, never by the
+// artist's name. Horse Meat Disco's one Friday set shows in two rooms, Afters
+// and Folsom; un-pick it while the keyboard is on its Afters row, and its
+// Folsom row — which nobody is on — still leaves.
+test('one artist in two rooms: holding its Afters row does not hold its Folsom row', async () => {
+  const daysLine = () => $('wall-root').querySelector(':scope > .past-line[data-past="days"]');
+  if (daysLine().getAttribute('aria-expanded') !== 'true') { daysLine().click(); await settle(60); }
+  const fri = (r) => room('Friday', r);
+  assert.ok(!wall().querySelector('.card[data-artist="Soulwax"]'), 'still filtered to Kevin (this file runs in order)');
+  assert.ok(cardIn(fri('Afters'), 'Horse Meat Disco') && cardIn(fri('Folsom'), 'Horse Meat Disco'), 'both rows, before');
+  const card = () => cardIn(fri('Afters'), 'Horse Meat Disco');
+  card().focus();
+  card().dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await settle(40);
+  if (level('Horse Meat Disco') !== 0) { typedClickKey(card()); await settle(40); }
+  assert.equal(level('Horse Meat Disco'), 0, 'must → nothing');
+  await until(() => !cardIn(fri('Folsom'), 'Horse Meat Disco'), 'the Folsom row to leave while the Afters row is held', 2000);
+  assert.ok(card() && card().classList.contains('dim'), 'the Afters row, with the keyboard on it, stays dimmed');
 });
