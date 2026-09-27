@@ -12,25 +12,18 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
+// The harness's browser, so every boot here is on the harness's clock (a week
+// before Portola) unless a test names its own; this file used to launch its
+// own Chromium and booted the wall at whatever hour the suite ran (2026-09-27).
+import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const REQUIRED = !!process.env.BROWSER_TEST_REQUIRED; // CI: a missing browser is a failure, not a skip
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function launch() {
-  const { chromium } = await import('playwright');
-  try { return await chromium.launch({ headless: true }); } catch (e) {
-    try { return await chromium.launch({ channel: 'chrome', headless: true }); } catch {
-      if (REQUIRED) throw e;
-      return null;
-    }
-  }
-}
-
 const server = await serveStatic(ROOT);
-const browser = await launch();
+const browser = await launchBrowser();
 test.after(async () => { if (browser) await browser.close(); await server.close(); });
-const skip = browser ? false : 'no browser available (npx playwright install chromium, or install Chrome)';
+const skip = browser ? false : NO_BROWSER;
 
 async function phone() {
   // hasTouch, because a phone has one: it is what puts the page on a COARSE
