@@ -309,3 +309,12 @@ are real taps. `shots/` is git-ignored (the repo's image allowlist); re-run to r
 - **C4.** Under a highlight the place line names who; faces are off. *Default: yes.*
 - **C5.** The Share under a highlight sends that group's route, unnamed ("Our picks" /
   "Picks"), and the foot says the link opens on everyone's picks. *Default: yes.*
+- **C6** (a second opinion, from the session building the Share). From five highlighted
+  people up, the bar is the crew's own, `barFor(n)` (at least three together), not
+  `barForGroup`'s two: as drawn, eight highlighted need two while nine need three, so
+  five friends get a busier plan as a highlight than as a crew of their own. *Default:
+  yes*; the design round's version keeps two up to eight.
+
+Published for Kevin on 2026-09-26 as https://claude.ai/artifact/PZPqA9buY6JZSSsVqrZUmy
+(login kevin.hq@tecovas.com), with a note that the Share release now carries the plan
+link's day and filters a highlighted Share to the highlighted people's picks.
