@@ -497,6 +497,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       }
       if (seen) seen.push(parts);
       else artistNames.set(key, [parts]);
+      // A room people drift through (Despacio) is DECLARED; the plan never
+      // guesses it (plan.js rule 9, 2026-09-26).
+      if (a.dropIn !== undefined && typeof a.dropIn !== 'boolean') err(`artists (${safeKey(a.name)}): dropIn must be true or false`);
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
@@ -564,6 +567,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         if (a.weekends !== undefined) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): \`weekends\` is the lineup's tag — a grid set says \`weekend\` (W1|W2|both); untagged, it plays every weekend`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
         else if (!stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
+        if (a.dropIn !== undefined && typeof a.dropIn !== 'boolean') err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): dropIn must be true or false`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
         else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${safeKey(label)}.artists[${i}]: time did not parse`); } }
         if (a.name && typeof a.name === 'string') {
@@ -577,6 +581,18 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       });
       if (live) {
         const wellFormed = day.artists.filter((a) => isPlain(a) && a.name && a.stage && typeof a.time === 'string' && TIME_RE.test(a.time));
+        // The SHAPE of a drop-in room — a stage whose whole day is one set —
+        // is a question for the data author, never an answer for the plan (a
+        // one-set special stage is not a room anyone drifts through; plan.js
+        // rule 9). Asked once; "dropIn": false says "no, it's a set". The shape
+        // is one set on a stage BESIDE stages that run several (a day of
+        // one-set stages is a small show, not a room beside a festival).
+        const perStage = new Map();
+        for (const a of wellFormed) perStage.set(a.stage, [...(perStage.get(a.stage) || []), a]);
+        const busy = [...perStage.values()].some((sets) => sets.length > 1);
+        for (const [stage, sets] of perStage) {
+          if (busy && sets.length === 1 && sets[0].dropIn === undefined) warn(`${safeKey(label)}: ${safeKey(sets[0].name)} is the only set on ${safeKey(stage)} all day — if people drift in and out, mark it "dropIn": true (Our picks then treats it as a room to drop into, not a stop); if it is a set people go to, "dropIn": false`);
+        }
         for (const a of wellFormed) {
           if (!a.time.includes(' - ') || /close$/i.test(a.time)) continue;
           const [s, e] = a.time.split(' - ');

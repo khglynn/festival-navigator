@@ -390,6 +390,7 @@
       "night": "Fri",
       "venue": "Pier 80 (loyalty invite)",
       "time": "5 PM - 11 PM",
+      "dropIn": true,
       "page": {
         "url": "https://www.portolamusicfestival.com/portola-week#despacio-info",
         "at": "Portola"
@@ -3138,7 +3139,8 @@
         {
           "name": "Despacio",
           "stage": "Despacio",
-          "time": "2:45 PM - 9:45 PM"
+          "time": "2:45 PM - 9:45 PM",
+          "dropIn": true
         }
       ]
     },
@@ -3309,7 +3311,8 @@
         {
           "name": "Despacio",
           "stage": "Despacio",
-          "time": "3:30 PM - 10:30 PM"
+          "time": "3:30 PM - 10:30 PM",
+          "dropIn": true
         }
       ]
     }

@@ -11,9 +11,9 @@
 // claude-plans/2026-09-26-unified-build/our-plan/plan-model-log.md.
 //
 // Pure: no DOM, no state, no storage, no network. The caller hands in the
-// festival, the picks (model.picksFor), the active member names and the show
-// menu's fold; the minute ticker only calls planAt / peekOf. The people
-// highlight is never an input to the route — it is read by peekOf and hasAny.
+// festival, the picks (model.picksFor), the active member names, the show
+// menu's fold and the people highlight (rule 10); the minute ticker only calls
+// planAt / peekOf.
 //
 // The rules:
 //   1. US = the members with at least one pick in this festival, counted on
@@ -47,18 +47,51 @@
 //   8. HIDDEN ROOMS ARE HIDDEN, but bodies are placed first: everyone is
 //      seated on the whole festival, and only then does the show menu's fold
 //      decide what is shown (the wall's own rule, read from wallPlanFor).
+//   9. A DROP-IN ROOM (Despacio: one seven-hour set people drift through) is
+//      DECLARED by the festival file (`"dropIn": true` on the grid set or the
+//      section entry; a venue room is one when every act in it is), never
+//      inferred — the validator asks a data author about a stage whose whole
+//      day is one set, and the plan never guesses. In seating it yields to
+//      any real live pick of that person, whatever the levels (it is there
+//      all day, so it only fills a person's real gaps), and it never holds a
+//      body against a trip (rule 3). It is never a stop, never a fork and
+//      never the peek: it is one quiet line per night (route.dropIns, when
+//      its pickers clear the bar), and a scattered stretch it gathers the bar
+//      in says so (item.dropIn: "Between sets · Despacio").
+//  10. A HIGHLIGHT FILTERS (Kevin, 2026-09-26: "filter to, because of how the
+//      picks view works"). Bodies are seated on the whole crew exactly as
+//      without it (rule 8's pattern: one body is in one place whoever is
+//      looking); then only the highlighted people's seats are counted. THE
+//      GROUP = the highlighted people with a pick here; its bar is
+//      barForGroup: two to four are "two is together" (a plan is where people
+//      meet; one of them alone is not a stop, and the rows name who is
+//      where), five and up the crew's own barFor — nine of nine is the crew's
+//      own route. A group of one sees their own route (bar 1), with the picks
+//      they would give up as "or" lines (`alt`). The frames compared bar 1 for
+//      three (the brief's start): every lone choice became a stop and a fork.
+//      Whether a place is one of theirs is filters.js passesPeople — the one
+//      predicate the List and the Board ask too — so they never disagree.
+// Rules 9 and 10 are the plan-days build's (claude-plans/2026-09-26-unified-build/
+// plan-days-design/DESIGN.md, Kevin's calls of 2026-09-26).
 import { wallPlanFor, weekendRoom, computeTimesLayout, applyWeekend, nightMinutes } from './wall.js';
 import { venueGroupsOf, timeBandsOf, sectionLayoutOf, BY_TIME, occOf, weekdayOfIso, parseEventTime } from './events.js';
 import { festivalClock, clockLabel } from './now.js';
 import { computeDayArtists } from '../time.js';
-import { FEST_ROOM } from './filters.js';
+import { FEST_ROOM, passesPeople } from './filters.js';
 
 export const STEP = 5;          // minutes per slice
 export const FLOOR_MIN = 3;     // Kevin: never one or two people
 export const FLOOR_SHARE = 1 / 4;
-export const MIN_STOP = 15;     // a blip shorter than this folds into its neighbour or drops
+export const MIN_STOP = 15;     // a blip shorter than this folds into the stop before it while that stop's place plays on; after, it stands; first, it drops
 export const CHANGEOVER = 20;   // a gap shorter than this is walking between sets, not "scattered"
 export const barFor = (n) => Math.max(FLOOR_MIN, Math.ceil(n * FLOOR_SHARE));
+// Rule 10: a highlighted group's bar. One person is their own day (1); two to
+// four are "two is together" (2: a plan is where people meet, and one of them
+// alone is not a stop); from five the crew's own bar (DESIGN.md C6, settled
+// 2026-09-26: at a floor of two, eight highlighted friends got a busier plan
+// than a crew of eight would, and nine jumped to three).
+export const GROUP_FLOOR = 2;
+export const barForGroup = (n) => (n <= 1 ? 1 : n <= 4 ? GROUP_FLOOR : barFor(n));
 
 // Who is "us": members with a live pick (level > 0) on anything here.
 export function usOf(picks, members) {
@@ -123,6 +156,9 @@ function weekPlaces(fest, whole, shown) {
     const dayData = fest.days[d.dayKey] || {};
     const sets = (dayData.artists || []).filter((a) => !d.weekend || !a.weekend || a.weekend === 'both' || a.weekend === d.weekend);
     const computed = computeDayArtists({ ...dayData, artists: sets });
+    // Rule 9: the grid sets the file declares drop-in rooms.
+    const declared = new Set(sets.filter((a) => a.dropIn === true).map((a) => `${a.stage}|${a.name}|${a.time}`));
+    const dropInSet = (a) => declared.has(`${a.stage}|${a.name}|${a.time}`);
     const roomKey = twoWeekends ? weekendRoom(d.weekend) : FEST_ROOM;
     const isShown = shown.festRoom && shownDays.has(d.key);
     const playOf = (stage) => `${stage}|${d.wd || d.dayKey}`;
@@ -131,7 +167,7 @@ function weekPlaces(fest, whole, shown) {
       const to = a.endMin ?? a.startMin + 60;
       night.places.push({
         id: `${night.id}|set|${a.stage}|${a.name}|${a.time}`, nightId: night.id, kind: 'set', place: a.stage, room: fest.name,
-        start: a.startMin, end: to, approx: false, roomKeys: [roomKey], shown: isShown, dayKey: d.dayKey,
+        start: a.startMin, end: to, approx: false, roomKeys: [roomKey], shown: isShown, dayKey: d.dayKey, dropIn: dropInSet(a),
         acts: [{ name: a.name, from: a.startMin, to, time: a.time || null, approx: false, occ: { day: d.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null }, play: playOf(a.stage), section: null }],
       });
     }
@@ -151,7 +187,7 @@ function weekPlaces(fest, whole, shown) {
           if (!isStray.has(m.e) || m.cancelled || m.nowFrom == null || m.nowTo == null) continue;
           night.places.push({
             id: `${night.id}|set|${m.e.stage}|${m.e.name}|${m.e.time}`, nightId: night.id, kind: 'set', place: g.venue, room: fest.name,
-            start: m.nowFrom, end: m.nowTo, approx: false, roomKeys: [roomKey], shown: isShown, dayKey: d.dayKey,
+            start: m.nowFrom, end: m.nowTo, approx: false, roomKeys: [roomKey], shown: isShown, dayKey: d.dayKey, dropIn: dropInSet(m.e),
             acts: [{ name: m.e.name, from: m.nowFrom, to: m.nowTo, time: m.e.time || null, approx: m.approx, occ: occOf(m.e), play: playOf(m.e.stage || g.venue), section: null }],
           });
         }
@@ -231,7 +267,7 @@ function roomsAndParties(night, shownKeys) {
         for (const key of keysOf.get(k)) r.keys.add(key);
         r.acts.push({
           name: m.e.name, from: m.nowFrom, to: m.nowTo, time: m.e.time || null, approx: m.approx,
-          occ: occOf(m.e), play: `${g.venue}|${night.id}`, section: src.key,
+          occ: occOf(m.e), play: `${g.venue}|${night.id}`, section: src.key, dropIn: m.e.dropIn === true,
         });
       }
     }
@@ -241,7 +277,7 @@ function roomsAndParties(night, shownKeys) {
     night.places.push({
       id: `${night.id}|room|${r.venue}`, nightId: night.id, kind: 'room', place: r.venue, room: roomOf(r.keys),
       start: r.start, end: r.end, approx: r.approx, roomKeys: [...r.keys], shown: isShown(r.keys), dayKey: null,
-      doors: r.doors, close: r.close, acts: r.acts,
+      doors: r.doors, close: r.close, acts: r.acts, dropIn: r.acts.every((a) => a.dropIn),
     });
   }
   // Parties: timeBandsOf on each by-time list, as the wall's time list calls
@@ -263,6 +299,7 @@ function roomsAndParties(night, shownKeys) {
         night.places.push({
           id, nightId: night.id, kind: 'party', place: m.venue, room: roomOf(keys),
           start: m.nowFrom, end: m.nowTo, approx: m.approx, roomKeys: [...keys], shown: isShown(keys), dayKey: null,
+          dropIn: m.e.dropIn === true,
           acts: [{ name: m.e.name, from: m.nowFrom, to: m.nowTo, time: m.e.time || null, approx: m.approx, occ: occOf(m.e), play: `${m.venue}|${night.id}`, section: src.key }],
         });
       }
@@ -273,10 +310,11 @@ function roomsAndParties(night, shownKeys) {
 // ---- who is where ------------------------------------------------------------------
 // For one person, the stretch of a place they would be at, and their picks
 // in it (`acts`: each one's window and level). Null when the place has nothing
-// of theirs. `sure` is false when every act of theirs here also plays elsewhere.
+// of theirs — "theirs" is filters.js passesPeople, the Board's and the List's
+// question. `sure` is false when every act of theirs here also plays elsewhere.
 function stretchFor(place, person, picks, doubled) {
   const lv = (name) => ((picks[name] || {})[person]) || 0;
-  const mine = place.acts.filter((a) => lv(a.name) > 0);
+  const mine = place.acts.filter((a) => passesPeople(picks, a.name, [person]));
   if (!mine.length) return null;
   const sure = mine.some((a) => !doubled.has(a.name));
   const from = Math.min(...mine.map((a) => (a.from ?? place.start)));
@@ -306,7 +344,12 @@ const cmp = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) re
 
 // One night's slices: everyone seated on every place of the night (hidden
 // ones too), then the fold decides what is ranked (rule 8).
-function slicesOf(here, us, picks, doubled, bar) {
+// Rule 9's seating: a drop-in yields to any real live pick, it never holds a
+// body against a trip, and it is never ranked — its seats go to `drops`.
+// `opts`: { group } rule 10's count (only these people's seats are counted;
+// everyone is still seated); { solo } a group of one: the picks that person
+// gives up at each moment ride along as `alt` entries (or lines).
+function slicesOf(here, us, picks, doubled, bar, { group = null, solo = null } = {}) {
   const stretches = here.map((p) => {
     const list = [];
     for (const person of us) {
@@ -319,15 +362,17 @@ function slicesOf(here, us, picks, doubled, bar) {
   const t1 = Math.max(...here.map((p) => p.end));
   const slices = [];
   const was = new Map();
+  const counts = group ? new Set(group) : null;
   // Rule 3's trip: the site each person is at, and the sites they have left
   // tonight. What a person would give up by leaving is the most they want
-  // anything of theirs at their site that is not over yet (levelAt).
+  // anything of theirs at their site that is not over yet (levelAt) — never
+  // a drop-in's (rule 9: it will still be there).
   const siteNow = new Map();
   const left = new Map(us.map((person) => [person, new Set()]));
   const aheadAt = (person, site, t) => {
     let most = 0;
     here.forEach((p, i) => {
-      if (siteOf(p) !== site) return;
+      if (siteOf(p) !== site || p.dropIn) return;
       for (const s of stretches[i]) if (s.person === person) most = Math.max(most, levelAt(s, t));
     });
     return most;
@@ -347,11 +392,17 @@ function slicesOf(here, us, picks, doubled, bar) {
         const level = levelAt(s, t);
         if (gone.has(site)) return; // never back to a site left tonight
         if (cur != null && site !== cur && !worthTheTrip(s, t, ahead)) return;
-        const key = [level, live[i].length, was.get(person) === p.id ? 1 : 0, p.start];
+        // Rule 9: a real pick outranks a drop-in whatever the levels.
+        const key = [p.dropIn ? 0 : 1, level, live[i].length, was.get(person) === p.id ? 1 : 0, p.start];
         if (!best || cmp(key, best.key) > 0) best = { p, key, level, sure: s.sure };
       });
       if (!best) continue;
       at.set(person, best);
+      // A drop-in is dropped in on (rule 9): seated there, a person is still
+      // where they were for the trip. Walking to another venue's drop-in once
+      // made the grounds a site "left tonight", and a set there later was
+      // never gone back to (the P1–P3 review, 2026-09-27).
+      if (best.p.dropIn) continue;
       const site = siteOf(best.p);
       if (cur != null && site !== cur) gone.add(cur);
       siteNow.set(person, site);
@@ -359,20 +410,45 @@ function slicesOf(here, us, picks, doubled, bar) {
     for (const [person, b] of at) was.set(person, b.p.id);
     const count = new Map();
     for (const [person, b] of at) {
+      if (counts && !counts.has(person)) continue; // rule 10: only the group is counted
       if (!count.has(b.p.id)) count.set(b.p.id, { place: b.p, people: [], musts: 0, maybe: [] });
       const c = count.get(b.p.id);
       c.people.push(person);
       if (b.level === 4) c.musts += 1;
       if (!b.sure) c.maybe.push(person);
     }
-    const ranked = [...count.values()].sort((a, b) => b.people.length - a.people.length || b.musts - a.musts || a.place.start - b.place.start);
-    slices.push({ t, ranked: ranked.filter((c) => c.people.length >= bar && c.place.shown) });
+    // A group of one: the live picks they are not at, shown places only —
+    // the or lines of their own day.
+    if (solo && at.has(solo)) {
+      const seat = at.get(solo).p.id;
+      here.forEach((p, i) => {
+        if (p.id === seat || !p.shown || p.dropIn || count.has(p.id)) return;
+        if (live[i].some((x) => x.person === solo)) count.set(p.id, { place: p, people: [solo], musts: 0, maybe: [], alt: true });
+      });
+    }
+    const all = [...count.values()].sort((a, b) => b.people.length - a.people.length || (a.alt ? 1 : 0) - (b.alt ? 1 : 0) || b.musts - a.musts || a.place.start - b.place.start);
+    const ranked = all.filter((c) => c.people.length >= bar && c.place.shown && !c.place.dropIn);
+    // The top of the route is never someone's give-up: a slice whose only
+    // candidates are alts has no stop.
+    while (ranked.length && ranked[0].alt) ranked.shift();
+    const drops = all.filter((c) => c.place.dropIn && c.place.shown);
+    slices.push({ t, ranked, drops });
   }
   return slices;
 }
 
+// Where what a place is FOR ends: a set's (or a party's) act, a room's
+// close. The NOW row's till reads it (tillOf), and a stop never runs past it
+// (routeOf's blip fold).
+const actEnd = (place) => { const a = place.acts[0]; return a && a.to != null ? a.to : place.end; };
+const playsTill = (place) => (place.kind === 'room' ? place.end : actEnd(place));
+// Whether a run's place is still on at minute `to` (a run's place is its
+// first slice's top: blips folded in later only add slices after it).
+const playsThrough = (run, to) => { const end = playsTill(run.slices[0].ranked[0].place); return end == null || end >= to; };
+
 // Slices -> stops, forks and scattered stretches (the prototype's routeOf).
-function routeOf(nightId, slices, us) {
+// `size`: how many the tier is judged against (US, or rule 10's group).
+function routeOf(nightId, slices, size, bar) {
   const runs = [];
   for (const s of slices) {
     const top = s.ranked[0] || null;
@@ -380,13 +456,20 @@ function routeOf(nightId, slices, us) {
     const last = runs[runs.length - 1];
     if (last && last.id === id) { last.to = s.t + STEP; last.slices.push(s); } else runs.push({ id, from: s.t, to: s.t + STEP, slices: [s] });
   }
-  // Fold blips: a stop shorter than MIN_STOP joins the stop before it, else
-  // is nothing (a set's last five minutes while the next one starts).
+  // Fold blips: a stop shorter than MIN_STOP joins the stop before it while
+  // that stop's place still plays through it (a crowd flicker inside one set
+  // or room). Once the place before it is over, the blip stands as a short
+  // stop of its own — it is a real crowd, at the bar, at a shown place — and
+  // never carries the stop before it past its own end (P4, 2026-09-27: the
+  // nine's ten-minute Tiësto blip had kept Zara Larsson's stop, and the
+  // peek's NOW, running ten minutes after her set). With no stop before it,
+  // a blip is nothing (a set's last five minutes while the next one starts).
   for (let i = runs.length - 1; i >= 0; i--) {
     const r = runs[i];
     if (r.id && r.to - r.from < MIN_STOP) {
       const prev = runs[i - 1];
-      if (prev && prev.id) { prev.to = r.to; prev.slices.push(...r.slices); runs.splice(i, 1); } else r.id = null;
+      if (!prev || !prev.id) r.id = null;
+      else if (playsThrough(prev, r.to)) { prev.to = r.to; prev.slices.push(...r.slices); runs.splice(i, 1); }
     }
   }
   for (let i = runs.length - 1; i > 0; i--) {
@@ -394,7 +477,16 @@ function routeOf(nightId, slices, us) {
   }
   const items = [];
   for (const r of runs) {
-    if (!r.id) { items.push({ kind: 'scattered', from: r.from, to: r.to }); continue; }
+    if (!r.id) {
+      // Rule 9: a stretch nobody's set gathers the bar in, but a drop-in room
+      // does, says where we drift (the row's caption, never a stop).
+      const it = { kind: 'scattered', from: r.from, to: r.to };
+      let drop = null;
+      for (const s of r.slices) for (const c of s.drops || []) if (c.people.length >= bar && (!drop || c.people.length > drop.count)) drop = { place: c.place, count: c.people.length, people: c.people };
+      if (drop) it.dropIn = drop;
+      items.push(it);
+      continue;
+    }
     let peak = null;
     const forks = new Map();
     const timeline = [];
@@ -404,7 +496,7 @@ function routeOf(nightId, slices, us) {
       if (top && (!peak || top.people.length > peak.people.length)) peak = { ...top, t: s.t };
       for (const c of s.ranked) {
         if (c.place.id === r.id) continue;
-        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c, crowds: [] };
+        const f = forks.get(c.place.id) || { place: c.place, from: s.t, to: s.t + STEP, peak: c, alt: !!c.alt, crowds: [] };
         f.to = s.t + STEP;
         f.crowds.push({ t: s.t, people: c.people });
         if (c.people.length > f.peak.people.length) f.peak = c;
@@ -413,14 +505,14 @@ function routeOf(nightId, slices, us) {
     }
     const place = peak.place;
     items.push({
-      kind: 'stop', tier: peak.people.length * 2 > us.length ? 'most' : 'some', nightId, place, placeKind: place.kind, acts: place.acts,
+      kind: 'stop', tier: peak.people.length * 2 > size ? 'most' : 'some', nightId, place, placeKind: place.kind, acts: place.acts,
       from: r.from, to: r.to, count: peak.people.length, people: peak.people, musts: peak.musts, maybe: peak.maybe,
       leansOnDoubles: peak.maybe.length * 2 >= peak.people.length, alsoAt: [], timeline,
       forks: [...forks.values()].filter((f) => f.to - f.from >= MIN_STOP)
         // `crowds`: who is at the fork each five minutes, for the Share's "now"
-        // (plan-rows.js crowdAt). Not `timeline`: hasAny and the rows read a
-        // fork's peak crowd, and this adds nothing they read.
-        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, crowds: f.crowds })),
+        // (plan-rows.js crowdAt). Not `timeline`: the rows read a fork's peak
+        // crowd, and this adds nothing they read.
+        .map((f) => ({ place: f.place, placeKind: f.place.kind, from: f.from, to: f.to, count: f.peak.people.length, people: f.peak.people, alt: f.alt, crowds: f.crowds })),
     });
   }
   // A short gap is a changeover (walking to the next stage), not scattered;
@@ -432,13 +524,19 @@ function routeOf(nightId, slices, us) {
 }
 
 // ---- the plan ------------------------------------------------------------------------
-export function planOf(fest, { picks = {}, members = [], folded = [] } = {}) {
+export function planOf(fest, { picks = {}, members = [], folded = [], people = [] } = {}) {
   picks = picks || {};
   folded = Array.isArray(folded) ? folded : [];
   const us = usOf(picks, members);
-  const bar = barFor(us.length);
+  // Rule 10: the highlighted people with a pick here. `highlight` keeps the
+  // names as given (the empty line's words name them even with no picks).
+  const highlight = (people || []).filter((p) => (members || []).includes(p));
+  const group = highlight.length ? usOf(picks, highlight) : null;
+  const bar = group ? barForGroup(group.length) : barFor(us.length);
+  const size = group ? group.length : us.length;
+  const solo = group && group.length === 1 ? group[0] : null;
   const available = us.length >= FLOOR_MIN;
-  const empty = { us, bar, available, folded: [...folded], nights: [], night: () => null, playsAt: new Map(), places: [] };
+  const empty = { us, bar, available, folded: [...folded], nights: [], night: () => null, playsAt: new Map(), places: [], group, highlight };
   const whole = available && fest ? weekOf(fest, []) : null;
   if (!whole) return empty;
   const shown = weekOf(fest, folded) || whole;
@@ -484,11 +582,15 @@ export function planOf(fest, { picks = {}, members = [], folded = [] } = {}) {
     .map((n) => ({ id: n.id, iso: n.iso, wd: n.wd, days: shownDays.get(n.id) || [], extraKeys: shownExtras.get(n.id) || [] }));
   const listed = new Set(nights.map((n) => n.id));
   const memo = new Map();
+  // Who a night's people are: the group under a highlight, else us. "Theirs"
+  // is v103's predicate (filters.js passesPeople), asked per act.
+  const counted = group || us;
+  const theirs = (a) => counted.length > 0 && passesPeople(picks, a.name, counted);
   const night = (id) => {
     if (!listed.has(id)) return null;
     if (memo.has(id)) return memo.get(id);
     const n = byId.get(id);
-    const items = n.places.length ? routeOf(id, slicesOf(n.places, us, picks, doubled, bar), us) : [];
+    const items = n.places.length ? routeOf(id, slicesOf(n.places, us, picks, doubled, bar, { group, solo }), size, bar) : [];
     // "Also": the other plays of the doubled acts THIS crowd picked here — a
     // play the show menu hides is not mentioned (rule 8).
     for (const it of items) {
@@ -499,11 +601,36 @@ export function planOf(fest, { picks = {}, members = [], folded = [] } = {}) {
         for (const o of playsAt.get(a.name)) if (o.play !== a.play && o.shown) it.alsoAt.push({ act: a.name, ...o });
       }
     }
-    const out = { id, iso: n.iso, wd: n.wd, items, stops: items.filter((i) => i.kind === 'stop').length };
+    // Rule 9's quiet line: each shown drop-in room of the night that enough
+    // of us picked — its whole window, and how many picked it (people, not
+    // seats: the count a person can check on the card).
+    const dropIns = [];
+    for (const p of n.places) {
+      if (!p.dropIn || !p.shown) continue;
+      const who = counted.filter((person) => p.acts.some((a) => passesPeople(picks, a.name, [person])));
+      if (who.length >= bar) dropIns.push({ kind: 'dropin', nightId: id, place: p, from: p.start, to: p.end, count: who.length, people: who });
+    }
+    // A night with no stop says why (plan-rows.js words it): nothing of ours
+    // on a clock here ('no-times'), nothing the counted people picked
+    // ('unpicked'), or picks that never gather the bar ('scattered') — unless
+    // rule 9's line is there ('dropin'): the drop-in room they will all drift
+    // through IS the night, and "Scattered all day" under a line that says
+    // they are all there was false (the P1–P3 review, 2026-09-27). The open
+    // plan draws no empty line beside it.
+    const stops = items.filter((i) => i.kind === 'stop').length;
+    let why = null;
+    if (!stops) {
+      const shownPlaces = n.places.filter((p) => p.shown);
+      if (!shownPlaces.length) why = 'no-times';
+      else if (dropIns.length) why = 'dropin';
+      else if (!shownPlaces.some((p) => p.acts.some(theirs))) why = 'unpicked';
+      else why = 'scattered';
+    }
+    const out = { id, iso: n.iso, wd: n.wd, items, stops, dropIns, why };
     memo.set(id, out);
     return out;
   };
-  return { us, bar, available, folded: [...folded], nights, night, playsAt, places };
+  return { us, bar, available, folded: [...folded], nights, night, playsAt, places, group, highlight };
 }
 
 // ---- readers ---------------------------------------------------------------------------
@@ -537,38 +664,27 @@ export function planAt(plan, fest, date) {
   return has(clock.iso) ? atOn(plan, clock.iso, clock.minutes) : null;
 }
 
-// A HIGHLIGHT (the people menu's "just Ross") is a view, like the wall's dim:
-// the route stays the whole crew's (rule 1), and a stop is one of Ross's when
-// he is in its crowd at any moment of it; a fork, in its peak crowd. No
-// highlight: every stop is.
-export function hasAny(stop, people) {
-  if (!people || !people.length) return true;
-  const at = (list) => (list || []).some((p) => people.includes(p));
-  return stop.timeline ? stop.timeline.some((x) => at(x.people)) : at(stop.people);
-}
-
 // What the peek shows: the stop the clock is in (NOW, with the count at this
 // minute), else the next time MOST of us meet, else the next stop (NEXT, with
 // its peak). When tonight has nothing left, the next night that has a stop,
-// `today: false` — whether to show it is the UI's call. With a highlight on,
-// only the highlighted people's stops are candidates: the peek never says NOW
-// for a stop the wall has dimmed (Kevin, 2026-09-26: "the filters should
-// filter the now too").
+// `today: false` — whether to show it is the UI's call. Under a highlight the
+// plan is already theirs (rule 10), so the peek is too: it never says NOW for
+// a stop none of them picked (Kevin, 2026-09-26: "the filters should filter
+// the now too").
 const nextOf = (stops) => stops.find((x) => x.tier === 'most') || stops[0] || null;
-export function peekOf(plan, fest, date, { people = [] } = {}) {
+export function peekOf(plan, fest, date) {
   if (!plan || !plan.nights || !plan.nights.length) return null;
-  const theirs = (s) => !!s && hasAny(s, people);
   const at = planAt(plan, fest, date);
   if (at) {
-    if (theirs(at.current)) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
-    const s = nextOf([at.next, ...at.later].filter(theirs));
+    if (at.current) return { night: at.night, stop: at.current, tag: 'now', count: (at.here || at.current.people).length, today: true };
+    const s = nextOf([at.next, ...at.later].filter(Boolean));
     if (s) return { night: at.night, stop: s, tag: 'next', count: s.count, today: true };
   }
   const after = at ? at.night.iso : festivalClock(date, (fest && fest.timezone) || null).iso;
   for (const n of plan.nights) {
     if (!n.iso || !(n.iso > after)) continue;
     const route = plan.night(n.id);
-    const s = nextOf(route.items.filter((i) => i.kind === 'stop' && theirs(i)));
+    const s = nextOf(route.items.filter((i) => i.kind === 'stop'));
     if (s) return { night: route, stop: s, tag: 'next', count: s.count, today: false };
   }
   return null;
@@ -597,9 +713,7 @@ export function headlinersOf(stop, picks) {
 // on before the set is over — and a room's stop end.
 export function tillOf(stop) {
   if (!stop) return null;
-  if (stop.place.kind === 'room') return stop.to;
-  const a = stop.place.acts[0];
-  return (a && a.to != null) ? a.to : stop.place.end;
+  return stop.place.kind === 'room' ? stop.to : actEnd(stop.place);
 }
 
 // The row's "also …": each other play once — on the same night by its time,
@@ -624,3 +738,13 @@ export function alsoOf(stop, plan) {
 
 // "9 PM", "9:40 PM", "12 AM": the clock with ":00" dropped.
 export const quietClock = (min) => clockLabel(min).replace(':00 ', ' ');
+
+// The ISO date after `iso`, or null when it is not a date: whether a peek's
+// night is tomorrow's (app.js planAnswer), and whether nights run on
+// consecutive dates (plan-rows.js, the Earlier line's range).
+export const isoAfter = (iso) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};

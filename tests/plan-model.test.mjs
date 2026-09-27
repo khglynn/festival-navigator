@@ -35,6 +35,7 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard } = await import('../js/v3/wall.js');
+const { passesPeople } = await import('../js/v3/filters.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
@@ -71,7 +72,10 @@ const stopOf = (plan, id, name) => stops(plan, id).find((s) => s.acts.some((a) =
 // Parcels at 3) — so Soulwax holds the route until 10:55 and Public Works
 // starts there; and on Sunday Eli stays at Public Works through Overmono
 // (both 3) instead of leaving at 1:30 AM for SG Lewis (3), so the Great
-// Northern stop is three of us, not four.
+// Northern stop is three of us, not four. And one with where a stop ends
+// (P4, 2026-09-27): Zara Larsson's stop ends with her set at 8:05, where the
+// Warehouse's ten-minute Tiësto blip used to fold in and carry it to 8:15;
+// the blip stands, a short stop of its own.
 const THU = ['most 9:30 PM–12 AM 5 Regency Ballroom'];
 const FRI = ['some 8 PM–8:45 PM 4 Regency Ballroom', 'some 9 PM–3 AM 4 Public Works'];
 const SAT = [
@@ -91,7 +95,8 @@ const SAT = [
 const SUN_TAIL = [
   'most 5:35 PM–6:35 PM 5 Pier Stage (Mochakk)', // folded: starts 5:35 (bodies placed before hiding)
   'some 6:45 PM–7:05 PM 4 Warehouse (Tiësto)',
-  'some 7:05 PM–8:15 PM 4 Pier Stage (Zara Larsson)',
+  'some 7:05 PM–8:05 PM 4 Pier Stage (Zara Larsson)', // ends with her set (P4): the Tiësto blip no longer carries it
+  'some 8:05 PM–8:15 PM 4 Warehouse (Tiësto)', // ten minutes, after her set: a short stop of its own
   'some 8:20 PM–8:45 PM 3 Warehouse (Overmono)',
   'most 8:45 PM–10 PM 8 Pier Stage (Swedish House Mafia)',
   'some 10 PM–10:45 PM 4 Crane Stage (Parcels)',
@@ -121,7 +126,7 @@ test('golden: Portola + the made-up nine reproduce the approved prototype, stop 
   assert.deepEqual(rows(plan, '2026-09-25'), FRI);
   assert.deepEqual(rows(plan, '2026-09-26'), SAT, 'Sat: twelve stops');
   assert.deepEqual(rows(plan, '2026-09-27'), SUN);
-  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 2, 12, 11]);
+  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 2, 12, 12]);
 });
 
 test('golden, Folsom hidden: only Sunday changes, and Mochakk\'s stop starts 5:35 PM (bodies placed before hiding)', () => {
@@ -131,7 +136,7 @@ test('golden, Folsom hidden: only Sunday changes, and Mochakk\'s stop starts 5:3
   assert.deepEqual(rows(plan, '2026-09-25'), FRI, 'Horse Meat Disco is billed to Afters too, so it stays');
   assert.deepEqual(rows(plan, '2026-09-26'), SAT);
   assert.deepEqual(rows(plan, '2026-09-27'), SUN_FOLDED);
-  assert.equal(plan.night('2026-09-27').stops, 13);
+  assert.equal(plan.night('2026-09-27').stops, 14);
   // Cy, Dot, Fay and Hal are still at the fair (hidden), so Mochakk's crowd
   // before 6 PM is Ana, Ben and Ivy — never the fair's crowd re-seated.
   const mochakk = stopOf(plan, '2026-09-27', 'Mochakk');
@@ -587,14 +592,23 @@ test('the trip: never for the tail of a set long under way — only for one they
   assert.deepEqual(rows(fresh, SATD), ['most 8 PM–9 PM 3 Club', 'most 9 PM–10 PM 3 X (Long)']);
 });
 
-test('route: a stop under 15 minutes folds into the stop before it; a blip with nothing before it is nothing', () => {
-  const fest = synth({
-    sat: [set('Pre', 'Z', '7:50 PM - 8:00 PM'), set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:10 PM - 10:00 PM')],
-  });
+test('route: a stop under 15 minutes folds into the stop before it while that stop\'s set still plays; after the set, it stands; with nothing before it, it is nothing', () => {
   const three = lv(2, 'Ana', 'Ben', 'Cy');
-  const plan = planFor(fest, { Pre: three, Xa: three, Ya: { ...lv(3, 'Ana', 'Ben', 'Cy'), Dot: 3 }, Wa: three });
-  assert.deepEqual(rows(plan, SATD), ['most 8 PM–9:10 PM 3 X (Xa)', 'most 9:10 PM–10 PM 3 W (Wa)']);
-  assert.deepEqual(stops(plan, SATD)[0].forks, [], 'the ten-minute set is too short to be a fork too');
+  const four = { ...lv(3, 'Ana', 'Ben', 'Cy'), Dot: 3 };
+  // Ya's ten minutes come after Xa is over: folding them in would carry Xa's
+  // stop, and the peek's NOW for it, past its own end (P4, 2026-09-27: the
+  // nine's Tiësto blip after Zara Larsson). They stand, a short stop.
+  const after = planFor(synth({
+    sat: [set('Pre', 'Z', '7:50 PM - 8:00 PM'), set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:10 PM - 10:00 PM')],
+  }), { Pre: three, Xa: three, Ya: four, Wa: three });
+  assert.deepEqual(rows(after, SATD), ['most 8 PM–9 PM 3 X (Xa)', 'most 9 PM–9:10 PM 4 Y (Ya)', 'most 9:10 PM–10 PM 3 W (Wa)'], 'Pre\'s ten minutes open the night: nothing');
+  assert.deepEqual(stops(after, SATD)[0].forks, [], 'the ten-minute set is too short to be a fork too');
+  // The same ten minutes while Xa still plays (to 9:30): a flicker inside
+  // its set, folded in.
+  const during = planFor(synth({
+    sat: [set('Xa', 'X', '8:00 PM - 9:30 PM'), set('Ya', 'Y', '9:00 PM - 9:10 PM'), set('Wa', 'W', '9:30 PM - 10:00 PM')],
+  }), { Xa: three, Ya: four, Wa: three });
+  assert.deepEqual(rows(during, SATD), ['most 8 PM–9:30 PM 3 X (Xa)', 'most 9:30 PM–10 PM 3 W (Wa)']);
 });
 
 test('route: a gap under 20 minutes is a changeover, not scattered; a longer one is scattered', () => {
@@ -745,34 +759,40 @@ test('a Late night with doors and no set time is no place, and a date of such sh
   assert.equal(card.dataset.nowFrom, undefined, 'and no window');
 });
 
-test('the people filter is not an input: the plan is the whole crew', () => {
-  const a = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
-  const b = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members, filterPeople: ['Ana'] });
-  assert.deepEqual(rows(b, '2026-09-26'), rows(a, '2026-09-26'));
-});
-
-// Kevin, 2026-09-26: "the filters should filter the now too". The highlight
-// never moves the route; it decides which stops the peek may name.
-test('a highlight filters the peek: NOW only for a stop they are in, else their next stop, else nothing', () => {
-  const plan = P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members });
+// Kevin, 2026-09-26: "the filters should filter the now too". Under rule 10
+// a highlight IS the plan — theirs, counted on them — so the peek is theirs
+// too: NOW only on a stop of theirs, else their next, else none at all.
+test('a highlight is the plan, and so is its peek: NOW only on a stop of theirs, else their next, else none', () => {
   const sat940 = new Date('2026-09-27T04:40:00Z'); // Saturday 9:40 PM PDT, Dog Blood on the Pier Stage
+  const planFor = (people) => P.planOf(PORTOLA, { picks: NINE.picks, members: NINE.members, people });
   const peek = (people) => {
-    const k = P.peekOf(plan, PORTOLA, sat940, { people });
+    const k = P.peekOf(planFor(people), PORTOLA, sat940);
     return k && [k.tag, k.stop.place.place, q(k.stop.from), k.count];
   };
   assert.deepEqual(peek([]), ['now', 'Pier Stage', '9 PM', 8]);
-  assert.deepEqual(peek(['Ana']), ['now', 'Pier Stage', '9 PM', 8], 'the count stays the crew\'s');
-  assert.deepEqual(peek(['Gus', 'Hal']), ['now', 'Pier Stage', '9 PM', 8], 'any one of them is enough');
-  // Gus is at none of the stops from 9 PM until the Great Northern at 1:30 AM
-  // (his Warehouse and Audio crowds are forks, which the peek never names).
-  assert.deepEqual(peek(['Gus']), ['next', 'The Great Northern', '1:30 AM', 4]);
-  assert.equal(P.peekOf(plan, PORTOLA, sat940, { people: ['Nobody'] }), null);
-  // hasAny reads a stop's whole timeline, a fork's peak crowd.
-  const sat = stops(plan, '2026-09-26');
-  assert.deepEqual(sat.map((s) => P.hasAny(s, ['Gus'])), [false, true, true, false, true, false, true, true, false, false, false, true]);
-  const soulwax = sat.find((s) => s.acts[0].name === 'Soulwax');
-  assert.deepEqual(soulwax.forks.map((f) => [f.place.place, P.hasAny(f, ['Gus'])]), [['Warehouse', true]]);
-  assert.ok(sat.every((s) => P.hasAny(s, [])), 'no highlight: every stop');
+  assert.deepEqual(peek(['Ana']), ['now', 'Pier Stage', '9 PM', 1], 'the count is theirs');
+  assert.deepEqual(peek(['Ana', 'Cy', 'Hal']), ['now', 'Pier Stage', '9 PM', 3]);
+  // Gus picked no Dog Blood: his own day's next stop, Prospa at the Warehouse.
+  assert.deepEqual(peek(['Gus']), ['next', 'Warehouse', '9:45 PM', 1]);
+  // Gus and Hal are never together again this weekend (the bar for two is
+  // two): no peek, and no stop on Sunday either.
+  assert.equal(peek(['Gus', 'Hal']), null);
+  assert.equal(planFor(['Gus', 'Hal']).night('2026-09-27').stops, 0);
+  // A stranger is no highlight: the crew's own peek.
+  assert.deepEqual(peek(['Nobody']), peek([]));
+  // Every 15 minutes of Saturday, for each one of us and a few groups: the
+  // peek's stop is one of theirs (passesPeople, the List's question) and
+  // only they are counted in it.
+  const groups = [...NINE.members.map((m) => [m]), ['Ana', 'Cy'], ['Ben', 'Eli', 'Gus'], NINE.members.slice(0, 5)];
+  for (const people of groups) {
+    const plan = planFor(people);
+    for (let t = Date.parse('2026-09-26T19:00:00Z'); t <= Date.parse('2026-09-27T12:00:00Z'); t += 15 * 60000) {
+      const k = P.peekOf(plan, PORTOLA, new Date(t));
+      if (!k) continue;
+      assert.ok(k.stop.acts.some((a) => passesPeople(NINE.picks, a.name, people)), `${people} at ${new Date(t).toISOString()}: ${k.stop.place.place} is none of theirs`);
+      assert.ok(k.stop.people.every((p) => people.includes(p)), `${people}: ${k.stop.people} counted`);
+    }
+  }
 });
 
 // ---- 5. no clock, no plan ----------------------------------------------------------------
@@ -788,4 +808,291 @@ test('no plan where there is no clock: Seismic 9 and a lineup with days have no 
   assert.deepEqual([plan.nights, plan.places], [[], []]);
   assert.equal(P.peekOf(plan, lineup, CT('2026-10-10T20:00:00')), null);
   assert.equal(P.peekOf(P.planOf(null, crew), null, CT('2026-10-10T20:00:00')), null);
+});
+
+// ---- 6. rule 9: a drop-in room yields (the plan-days build, 2026-09-26) ------------------
+// Kevin's crew's Saturday lost six real sets once seven of them picked
+// Despacio, a room open seven hours: every tie went there and it snowballed.
+// The festival file DECLARES a drop-in (`"dropIn": true`, never guessed —
+// DESIGN.md A1); the plan seats a person there only in a minute none of their
+// real picks is on, never lets it hold a body against a trip, never makes it a
+// stop, an "or" or the peek, and gives it one quiet line a night.
+// The Despacio crew is the nine plus Despacio picked by seven (two musts):
+// the design round's crew-despacio.mjs, byte for byte.
+const DESPACIO = { ...NINE.picks, Despacio: { Ana: 1, Ben: 1, Cy: 2, Dot: 1, Fay: 4, Gus: 4, Ivy: 1 } };
+const line = (d) => `${d.place.place} ${q(d.from)}–${q(d.to)} ${d.count}`;
+const lines = (plan, id) => plan.night(id).dropIns.map(line);
+const dropIn = (a) => ({ ...a, dropIn: true });
+
+test('rule 9 golden: the Despacio crew\'s nights are the nine\'s, stop for stop, plus one quiet line each', () => {
+  const plan = P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members });
+  assert.equal(plan.bar, 3);
+  assert.deepEqual(rows(plan, '2026-09-24'), THU);
+  assert.deepEqual(rows(plan, '2026-09-25'), FRI, 'Friday\'s invite is a line, not a MOST stop 5–9:30 PM');
+  assert.deepEqual(rows(plan, '2026-09-26'), SAT, 'Saturday gets its twelve real stops back');
+  assert.deepEqual(rows(plan, '2026-09-27'), SUN);
+  assert.deepEqual(lines(plan, '2026-09-24'), []);
+  assert.deepEqual(lines(plan, '2026-09-25'), ['Pier 80 (loyalty invite) 5 PM–11 PM 7']);
+  assert.deepEqual(lines(plan, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 7']);
+  assert.deepEqual(lines(plan, '2026-09-27'), ['Despacio 3:30 PM–10:30 PM 7']);
+  // The count is who PICKED it (a person can check it on the card), not who
+  // happens to be seated there at some minute.
+  assert.deepEqual(plan.night('2026-09-26').dropIns[0].people, ['Ana', 'Ben', 'Cy', 'Dot', 'Fay', 'Gus', 'Ivy']);
+  // The three rooms the file declares, and only those.
+  const declared = plan.places.filter((p) => p.dropIn).map((p) => `${p.nightId} ${p.kind} ${p.place}`);
+  assert.deepEqual(declared, ['2026-09-25 room Pier 80 (loyalty invite)', '2026-09-26 set Despacio', '2026-09-27 set Despacio']);
+});
+
+test('rule 9: a drop-in is never a stop, an "or" or the peek — every five minutes of the weekend', () => {
+  const plan = P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members });
+  // By the declaration and by name, so the sweep cannot pass on a file that
+  // declares nothing.
+  const room = (p) => p.dropIn || p.place === 'Despacio' || p.place === 'Pier 80 (loyalty invite)';
+  assert.equal(plan.places.filter((p) => p.dropIn).length, 3);
+  for (const n of plan.nights) {
+    for (const s of stops(plan, n.id)) {
+      assert.ok(!room(s.place), `${n.id} ${s.place.place} is a stop`);
+      for (const f of s.forks) assert.ok(!room(f.place), `${n.id} ${f.place.place} is an "or" on ${s.place.place}`);
+    }
+  }
+  let peeks = 0;
+  for (let t = Date.parse('2026-09-24T12:00:00-07:00'); t < Date.parse('2026-09-28T05:00:00-07:00'); t += 5 * 60000) {
+    const k = P.peekOf(plan, PORTOLA, new Date(t));
+    if (!k) continue;
+    peeks++;
+    assert.ok(!room(k.stop.place), `${new Date(t).toISOString()}: the peek says ${k.tag} ${k.stop.place.place}`);
+  }
+  assert.ok(peeks > 900, `the sweep saw the peek (${peeks} minutes)`);
+});
+
+test('rule 9 seating: a real pick outranks a drop-in whatever the levels — a must on the room yields to a 1', () => {
+  const fest = synth({ sat: [dropIn(set('Room', 'W', '2:00 PM - 10:00 PM')), set('Xa', 'X', '8:00 PM - 9:00 PM')] });
+  const plan = planFor(fest, { Room: lv(4, 'Ana', 'Ben', 'Cy'), Xa: lv(1, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(plan, SATD), ['most 8 PM–9 PM 3 X (Xa)'], 'never a stop, before, during or after');
+  assert.deepEqual(stops(plan, SATD)[0].forks, [], 'never an "or" beside the stop');
+  assert.deepEqual(lines(plan, SATD), ['W 2 PM–10 PM 3']);
+  const k = P.peekOf(plan, fest, CT('2026-10-10T15:00:00'));
+  assert.deepEqual([k.tag, k.stop.place.place], ['next', 'X'], 'at 3 PM the peek names the next real stop, not the room');
+  // Nothing real at all tonight: no stop, no peek — only the line.
+  const only = planFor(fest, { Room: lv(4, 'Ana', 'Ben', 'Cy') });
+  // Its own reason, not 'scattered' (the P1–P3 review's fourth finding,
+  // 2026-09-27): the line says they are all there, so "Scattered all day"
+  // under it was false. plan-rows.js draws no empty line beside it.
+  assert.deepEqual([rows(only, SATD), lines(only, SATD), only.night(SATD).why], [[], ['W 2 PM–10 PM 3'], 'dropin']);
+  assert.equal(P.peekOf(only, fest, CT('2026-10-10T15:00:00')), null);
+});
+
+test('rule 9 and the trip: a drop-in never holds a body on the grounds against a room they want', () => {
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '8 PM', close: '1 AM' });
+  const fest = synth({ sat: [set('Early', 'X', '6:00 PM - 7:00 PM'), dropIn(set('Room', 'W', '2:00 PM - 11:00 PM'))], artists: [room('Clubber', '8:00 PM')] });
+  // A must on the drop-in is still on at 8, and would outweigh the Club's 2
+  // if it counted as something to stay for. It does not: they go at 8.
+  const plan = planFor(fest, { Early: lv(2, 'Ana', 'Ben', 'Cy'), Room: lv(4, 'Ana', 'Ben', 'Cy'), Clubber: lv(2, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(plan, SATD), ['most 6 PM–7 PM 3 X (Early)', '··· 7 PM–8 PM', 'most 8 PM–1 AM 3 Club']);
+});
+
+test('rule 9\'s drift: a stretch between stops where the drop-in holds the bar says so; under the bar it says nothing', () => {
+  const fest = synth({ sat: [set('Xa', 'X', '6:00 PM - 7:00 PM'), set('Ya', 'Y', '8:00 PM - 9:00 PM'), dropIn(set('Room', 'W', '2:00 PM - 10:00 PM'))] });
+  const three = lv(2, 'Ana', 'Ben', 'Cy');
+  const drift = planFor(fest, { Xa: three, Ya: three, Room: lv(1, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(drift, SATD), ['most 6 PM–7 PM 3 X (Xa)', '··· 7 PM–8 PM', 'most 8 PM–9 PM 3 Y (Ya)']);
+  const between = drift.night(SATD).items[1];
+  assert.deepEqual([between.dropIn.place.place, between.dropIn.count, between.dropIn.people], ['W', 3, ['Ana', 'Ben', 'Cy']]);
+  // Two of the three picked the room: under the bar (3), so no drift caption
+  // and no line — the stretch is plain scattered.
+  const two = planFor(fest, { Xa: three, Ya: three, Room: lv(1, 'Ana', 'Ben') });
+  assert.deepEqual(rows(two, SATD), rows(drift, SATD));
+  assert.equal(two.night(SATD).items[1].dropIn, undefined);
+  assert.deepEqual(lines(two, SATD), []);
+});
+
+test('rule 9\'s line: the people who picked the room, at the bar or not at all — even when nobody is ever seated there', () => {
+  // The room runs only while their real pick does, so nobody sits in it at
+  // any minute; the line still counts the four who picked it.
+  const fest = synth({ sat: [set('Xa', 'X', '8:00 PM - 9:00 PM'), dropIn(set('Room', 'W', '8:00 PM - 9:00 PM'))] });
+  const plan = planFor(fest, { Xa: lv(2, 'Ana', 'Ben', 'Cy', 'Dot'), Room: lv(1, 'Ana', 'Ben', 'Cy', 'Dot') });
+  assert.deepEqual([rows(plan, SATD), lines(plan, SATD)], [['most 8 PM–9 PM 4 X (Xa)'], ['W 8 PM–9 PM 4']]);
+  assert.deepEqual(stops(plan, SATD)[0].forks, []);
+});
+
+test('rule 9 and the trip: a drop-in at another venue never pulls anyone off the grounds — a set there later still counts', () => {
+  // The P1–P3 review's fifth finding (2026-09-27): seated in the Den's
+  // drop-in from 6 (nothing real is on, and a must on it is worth the trip),
+  // the crew had "left" the grounds for good, and Late at 10 PM there was
+  // never gone back to. A drop-in is dropped in on: it holds no body against
+  // a trip (aheadAt), and seating there moves nobody's site either.
+  const lounge = dropIn({ name: 'Lounge', day: 'Afters', night: 'Sat', venue: 'Den', time: '6:00 PM - 11:00 PM' });
+  const fest = synth({ sat: [set('Early', 'X', '4:00 PM - 5:00 PM'), set('Late', 'Y', '10:00 PM - 11:00 PM')], artists: [lounge] });
+  const three = lv(2, 'Ana', 'Ben', 'Cy');
+  const must = planFor(fest, { Early: three, Late: three, Lounge: lv(4, 'Ana', 'Ben', 'Cy') });
+  const none = planFor(fest, { Early: three, Late: three, Lounge: lv(1, 'Ana', 'Ben', 'Cy') });
+  const sets = (plan) => stops(plan, SATD).map((s) => `${q(s.from)} ${s.acts[0].name}`);
+  assert.deepEqual(sets(none), ['4 PM Early', '10 PM Late'], 'a 1 on the room: both sets');
+  assert.deepEqual(sets(must), ['4 PM Early', '10 PM Late'], 'a must on the room: both sets still — the room pulls nobody away');
+  assert.deepEqual(lines(must, SATD), ['Den 6 PM–11 PM 3'], 'and the room is still its line');
+});
+
+test('rule 9 and the fold: a hidden drop-in has no line; a drop-in never holds a body in its venue either', () => {
+  const lounge = dropIn({ name: 'Lounge', day: 'Afters', night: 'Sat', venue: 'Den', time: '6:00 PM - 11:00 PM' });
+  const fest = synth({ sat: [set('Xa', 'X', '8:00 PM - 9:00 PM')], artists: [lounge] });
+  const picks = { Xa: lv(2, 'Ana', 'Ben', 'Cy'), Lounge: lv(4, 'Ana', 'Ben', 'Cy') };
+  // Seated in the Den from 6 (nothing real is on); Xa at 8 on the grounds is
+  // worth the trip, because a must on a drop-in is nothing to stay for.
+  const open = planFor(fest, picks);
+  assert.deepEqual([rows(open, SATD), lines(open, SATD)], [['most 8 PM–9 PM 3 X (Xa)'], ['Den 6 PM–11 PM 3']]);
+  const hidden = planFor(fest, picks, ['Afters']);
+  assert.deepEqual([rows(hidden, SATD), lines(hidden, SATD)], [['most 8 PM–9 PM 3 X (Xa)'], []]);
+});
+
+test('rule 9: a venue is a drop-in only when every act in it is; a stray grid set can be one', () => {
+  // One declared act beside a real one: the Hall is a room like any other.
+  const hall = [
+    dropIn({ name: 'Lounge', day: 'Afters', night: 'Sat', venue: 'Hall', time: '6:00 PM - 11:00 PM' }),
+    { name: 'Headliner', day: 'Afters', night: 'Sat', venue: 'Hall', time: '9:00 PM - 10:00 PM' },
+  ];
+  const mixed = planFor(synth({ sat: [set('Xa', 'X', '4:00 PM - 5:00 PM')], artists: hall }), { Headliner: lv(3, 'Ana', 'Ben', 'Cy'), Lounge: lv(1, 'Ana', 'Ben', 'Cy') });
+  const place = mixed.places.find((p) => p.place === 'Hall');
+  assert.deepEqual([place.kind, place.dropIn, place.acts.map((a) => a.dropIn)], ['room', false, [true, false]]);
+  assert.deepEqual(lines(mixed, SATD), []);
+  assert.ok(stops(mixed, SATD).some((s) => s.place.place === 'Hall'), 'the Hall is a stop');
+  // A set on a stage that is not a column (the wall stacks it under its own
+  // place) carries its declaration like a grid cell does.
+  const stray = synth({ sat: [set('Main One', 'X', '6:00 PM - 7:00 PM'), set('Main Two', 'X', '8:00 PM - 9:00 PM'), dropIn(set('Garden Hang', 'Garden', '2:00 PM - 10:00 PM'))], stages: ['X'] });
+  const plan = planFor(stray, { 'Main One': lv(2, 'Ana', 'Ben', 'Cy'), 'Main Two': lv(2, 'Ana', 'Ben', 'Cy'), 'Garden Hang': lv(4, 'Ana', 'Ben', 'Cy') });
+  assert.equal(plan.places.find((p) => p.acts[0].name === 'Garden Hang').dropIn, true);
+  assert.deepEqual(rows(plan, SATD), ['most 6 PM–7 PM 3 X (Main One)', '··· 7 PM–8 PM', 'most 8 PM–9 PM 3 X (Main Two)']);
+  assert.deepEqual(lines(plan, SATD), ['Garden 2 PM–10 PM 3']);
+});
+
+// ---- 7. rule 10: a highlight filters (the plan-days build, 2026-09-26) ------------------
+// Kevin: "filter to, because of how the picks view works". The highlighted
+// people's plan: bodies are still seated on the whole crew, then only their
+// seats count. The bar (DESIGN.md C3 and C6, settled 2026-09-26): one person
+// is their own day (1); two to four are "two is together" (2); five and up
+// take the crew's own bar, barFor — so five friends never get a busier plan
+// as a highlight than they would as a crew of their own.
+test('rule 10\'s bar: 1 for one person, 2 for two to four, the crew\'s own barFor from five', () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 8, 9, 12, 13, 17].map(P.barForGroup), [1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 5]);
+  for (let n = 5; n <= 40; n++) assert.equal(P.barForGroup(n), P.barFor(n), `${n} highlighted`);
+});
+
+// The Despacio crew's Saturday for one, two, three and five highlighted (the
+// design round's frames C6, C13, C7 and C9, on the settled bars). A drift row
+// says where the highlighted drift and how many of them: "··· (Despacio 2)".
+const drow = (it) => (it.kind === 'scattered' && it.dropIn ? `${row(it)} (${it.dropIn.place.place} ${it.dropIn.count})` : row(it));
+const hrows = (plan, id) => plan.night(id).items.map(drow);
+const lit = (people) => P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members, people });
+
+test('rule 10 golden, one person: Gus\'s own day — bar 1, the picks he gives up as "or" lines, Despacio a line and a drift', () => {
+  const gus = lit(['Gus']);
+  assert.deepEqual([gus.bar, gus.group, gus.highlight], [1, ['Gus'], ['Gus']]);
+  assert.deepEqual(hrows(gus, '2026-09-26'), [
+    'most 3:30 PM–4:30 PM 1 Crane Stage (Tricky)',
+    'most 4:45 PM–6 PM 1 Warehouse (Groove Armada)',
+    'most 6:10 PM–7:10 PM 1 Crane Stage (DJ Shadow)',
+    'most 7:15 PM–8:30 PM 1 Warehouse (Kettama)',
+    'most 8:30 PM–9:25 PM 1 Crane Stage (Fatboy Slim)',
+    '··· 9:25 PM–9:45 PM (Despacio 1)',
+    'most 9:45 PM–11 PM 1 Warehouse (Prospa)',
+    'most 11 PM–11:30 PM 1 Audio',
+    '··· 11:30 PM–1:30 AM',
+    'most 1:30 AM–3 AM 1 The Great Northern',
+  ]);
+  assert.deepEqual(lines(gus, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 1'], 'his must on Despacio is a line, never a stop');
+  // The or lines are his give-ups (alt), never the top of the route.
+  const named = (p) => (p.kind === 'room' ? p.place : p.acts[0].name); // a room goes by its venue
+  const ors = stops(gus, '2026-09-26').flatMap((s) => s.forks.map((f) => `${named(s.place)} or ${named(f.place)}${f.alt ? ' (alt)' : ''}`));
+  assert.deepEqual(ors, ['Kettama or Fatboy Slim (alt)', 'Prospa or Audio (alt)']);
+  assert.deepEqual(gus.nights.map((n) => gus.night(n.id).stops), [1, 1, 8, 5]);
+});
+
+test('rule 10 golden, two and three: "two is together" — the sets they share, and a drift where two of them go', () => {
+  const pair = lit(['Ana', 'Cy']);
+  assert.deepEqual([pair.bar, pair.group], [2, ['Ana', 'Cy']]);
+  assert.deepEqual(hrows(pair, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 2 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–5:40 PM (Despacio 2)',
+    'most 5:40 PM–6:30 PM 2 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 2)',
+    'most 7:10 PM–8:10 PM 2 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 2)',
+    'most 9 PM–10:15 PM 2 Pier Stage (Dog Blood)',
+  ]);
+  const three = lit(['Ana', 'Cy', 'Hal']);
+  assert.deepEqual([three.bar, three.group], [2, ['Ana', 'Cy', 'Hal']]);
+  assert.deepEqual(hrows(three, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 2 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–5:40 PM (Despacio 2)',
+    'most 5:40 PM–6:30 PM 3 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 2)',
+    'most 7:10 PM–8:10 PM 3 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 2)',
+    'most 9 PM–10:15 PM 3 Pier Stage (Dog Blood)',
+    'most 10:15 PM–10:55 PM 2 Crane Stage (Soulwax)',
+  ]);
+  // Who is at a stop is always the highlighted, never the crowd around them.
+  assert.deepEqual(stops(three, '2026-09-26').map((s) => s.people.join('+')), ['Ana+Cy', 'Ana+Cy+Hal', 'Ana+Cy+Hal', 'Ana+Cy+Hal', 'Ana+Hal']);
+  assert.deepEqual(lines(three, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 2']);
+});
+
+test('rule 10 golden, five: the crew\'s own bar (3, not 2) — five friends never get a busier plan as a highlight than as a crew', () => {
+  const five = lit(['Ana', 'Ben', 'Cy', 'Dot', 'Eli']);
+  assert.deepEqual([five.bar, five.group.length], [3, 5]);
+  assert.deepEqual(hrows(five, '2026-09-26'), [
+    'most 2:40 PM–3:30 PM 3 Pier Stage (Gelli Haha)',
+    '··· 3:30 PM–4:45 PM (Despacio 4)',
+    'most 4:45 PM–5:40 PM 3 Warehouse (Groove Armada)',
+    'most 5:40 PM–6:30 PM 3 Pier Stage (Tove Lo)',
+    '··· 6:30 PM–7:10 PM (Despacio 3)',
+    'most 7:10 PM–8:10 PM 4 Pier Stage (Robyn)',
+    '··· 8:10 PM–9 PM (Despacio 4)',
+    'most 9 PM–10:15 PM 5 Pier Stage (Dog Blood)',
+    '··· 10:15 PM–11:45 PM',
+    'most 11:45 PM–1 AM 4 Public Works',
+    '··· 1 AM–1:30 AM',
+    'most 1:30 AM–3 AM 3 The Great Northern',
+  ]);
+  assert.deepEqual(lines(five, '2026-09-26'), ['Despacio 2:45 PM–9:45 PM 4']);
+  assert.ok(stops(five, '2026-09-26').every((s) => s.count >= 3), 'never two of five');
+});
+
+test('rule 10\'s invariants: a stop is theirs and clears their bar, all nine is the crew\'s route, and the empty cases say why', () => {
+  const crew = P.planOf(PORTOLA, { picks: DESPACIO, members: NINE.members });
+  const m = NINE.members;
+  for (const people of [[m[0]], [m[6]], [m[8]], [m[0], m[2]], [m[1], m[4], m[6]], m.slice(2, 6), m.slice(0, 5), m.slice(3, 9), m.slice(0, 8)]) {
+    const plan = lit(people);
+    const group = new Set(plan.group);
+    assert.equal(plan.bar, P.barForGroup(people.length), people.join('+'));
+    for (const n of plan.nights) {
+      const r = plan.night(n.id);
+      for (const s of stops(plan, n.id)) {
+        assert.ok(s.people.every((p) => group.has(p)) && s.count >= plan.bar, `${people.join('+')} ${n.id} ${s.place.place}: ${s.people}`);
+        for (const f of s.forks) assert.ok(f.people.every((p) => group.has(p)) && (f.alt || f.count >= plan.bar), `${people.join('+')} ${n.id} or ${f.place.place}`);
+      }
+      for (const d of r.dropIns) assert.ok(d.people.every((p) => group.has(p)) && d.count >= plan.bar);
+      assert.equal(r.why, r.stops ? null : r.why);
+    }
+  }
+  // Everyone highlighted is the crew: the same bar, the same route, the same lines.
+  const all = lit(m);
+  assert.equal(all.bar, crew.bar);
+  for (const n of crew.nights) assert.deepEqual([hrows(all, n.id), lines(all, n.id)], [hrows(crew, n.id), lines(crew, n.id)], n.id);
+  // A highlight of nobody in the crew is no highlight.
+  const stranger = lit(['Stranger']);
+  assert.deepEqual([stranger.group, stranger.highlight, stranger.bar], [null, [], 3]);
+  // A member with no picks: not in the group, still named, and every night
+  // says why it is empty (plan-rows words it "Nothing Zed picked").
+  const zed = P.planOf(PORTOLA, { picks: DESPACIO, members: [...m, 'Zed'], people: ['Zed'] });
+  assert.deepEqual([zed.group, zed.highlight], [[], ['Zed']]);
+  assert.deepEqual(zed.nights.map((n) => [zed.night(n.id).stops, zed.night(n.id).dropIns.length, zed.night(n.id).why]), zed.nights.map(() => [0, 0, 'unpicked']));
+  const gusZed = P.planOf(PORTOLA, { picks: DESPACIO, members: [...m, 'Zed'], people: ['Gus', 'Zed'] });
+  assert.deepEqual([gusZed.group, gusZed.highlight, gusZed.bar], [['Gus'], ['Gus', 'Zed'], 1], 'Zed rides in the words, Gus is the plan');
+  // Two who never meet: no stop, and the night says so ("Never together").
+  const fest = synth({ sat: [set('Xa', 'X', '8:00 PM - 9:00 PM'), set('Ya', 'Y', '8:00 PM - 9:00 PM')] });
+  const apart = P.planOf(fest, { picks: { Xa: lv(2, 'Ana', 'Ben', 'Cy'), Ya: lv(2, 'Dot', 'Eli', 'Fay') }, members: TWELVE, people: ['Ana', 'Dot'] });
+  assert.deepEqual([apart.bar, apart.night(SATD).stops, apart.night(SATD).why], [2, 0, 'scattered']);
+  // The bodies are the whole crew's: Ana is at Xa with Ben and Cy, and a
+  // highlight of Ana and Ben counts the two of them there.
+  const pair = P.planOf(fest, { picks: { Xa: lv(2, 'Ana', 'Ben', 'Cy'), Ya: lv(2, 'Dot', 'Eli', 'Fay') }, members: TWELVE, people: ['Ana', 'Ben'] });
+  assert.deepEqual(rows(pair, SATD), ['most 8 PM–9 PM 2 X (Xa)']);
 });

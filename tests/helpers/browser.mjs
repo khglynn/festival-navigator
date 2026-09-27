@@ -41,10 +41,15 @@ export async function onMachineClock(browser, options, why) {
   return newContext(options);
 }
 
-export async function launchBrowser() {
+// `scrollbars`: draw scrollbars as the page styles them. Playwright hides
+// every scrollbar in headless Chromium (--hide-scrollbars), a styled one
+// included, so a case about a scrollbar that takes room (Windows, a Mac with
+// a mouse) asks for them back and styles one (plan-days, 2026-09-27).
+export async function launchBrowser({ scrollbars = false } = {}) {
   const { chromium } = await import('playwright');
-  try { return pinByDefault(await chromium.launch({ headless: true })); } catch (e) {
-    try { return pinByDefault(await chromium.launch({ channel: 'chrome', headless: true })); } catch {
+  const opts = { headless: true, ...(scrollbars ? { ignoreDefaultArgs: ['--hide-scrollbars'] } : {}) };
+  try { return pinByDefault(await chromium.launch(opts)); } catch (e) {
+    try { return pinByDefault(await chromium.launch({ ...opts, channel: 'chrome' })); } catch {
       if (REQUIRED) throw e;
       return null;
     }

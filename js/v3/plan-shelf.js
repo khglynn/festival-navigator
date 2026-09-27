@@ -34,7 +34,7 @@
 // pagehide, boot, a crew switch and any other screen. Back does what it does
 // from the wall: it leaves it.
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { planList, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
+import { planDays, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
 
 const ID = 'plan';
@@ -61,7 +61,9 @@ let headEl = null;
 let listEl = null;
 let footEl = null;   // the open plan's last line: its Share
 let footOpens = null; // what the Share's link opens on, beside it
+let shareBtn = null;  // the Share itself (it rests on a day with nothing to send)
 let shareWords = null;
+let shareSaid = null; // the live region: a copy's result, said once (sayOnShare)
 let shareTimer = 0;
 let corner = null;   // the laptop head line's parts: { line, k, c, head, open, close }
 let ctxRef = null;
@@ -81,7 +83,7 @@ let geo = null;      // { H, peekH, shift } measured after every draw
 let grown = null;
 const grownNow = () => {
   if (grown) return grown;
-  const nowKey = data && data.peek.tag === 'now' ? stopKey(data.peek.stop) : null;
+  const nowKey = data && data.peek.tag === 'now' && data.peek.stop ? stopKey(data.peek.stop) : null;
   return new Set(nowKey ? [nowKey] : []);
 };
 let earlierOpen = false;
@@ -95,7 +97,15 @@ let held = false;    // an answer that came in under a hand: drawn when it lets 
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 
 export const planShelf = () => el;
-export const planIsOpen = () => mode === 'open';
+// Open, and not on its way out. A plan with no row to close to (a highlight
+// emptied it, or the morning after) leaves from open, and `mode` stays open
+// until the leave ends; the app reads this to keep an open plan a highlight
+// emptied (planAnswer's fallback), so it read "open" all through the leave
+// and a tick or a friend's update brought the shelf back as a peek with no
+// row (Sol's recheck on daf9c3b). Every caller agrees: a closing plan is not
+// kept (planAnswer), offered or opened from a link (both ask planHere first),
+// and Escape passes it by — the close it would ask for is under way.
+export const planIsOpen = () => mode === 'open' && !leaving;
 // Whether there is a plan on screen to open: the peek or the open plan, not
 // one on its way out (the people menu's "Our picks" row asks, app.js).
 export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !leaving;
@@ -103,9 +113,15 @@ export const planHere = () => !!el && (mode === 'peek' || mode === 'open') && !l
 export const planNight = () => (planHere() && data && data.route ? data.route.iso : null);
 // Whether the plan is showing a NOW row where a person can see it — the
 // dock's NOW tab steps aside for it (the one-NOW rule, app.js paintNowTabs).
+// Asked of the answer the rows on screen were drawn from (`drawn`), never the
+// last paint's (`data`): under a hand the rows wait (flushHeld), and at a
+// NEXT→NOW minute `data` said NOW while the peek still read NEXT, so the tab
+// stepped aside for a NOW nobody could see — no NOW anywhere, and two the other
+// way round (Sol on the v104 release, 2026-09-27; in the shelf since v103).
+// When the held rows are drawn, the answer's onDrawn repaints the tab.
 export function planShowsNow() {
-  return (mode === 'peek' || mode === 'open') && !leaving && !!data && !!data.peek
-    && data.peek.tag === 'now' && !!el && el.getClientRects().length > 0;
+  return (mode === 'peek' || mode === 'open') && !leaving && !!drawn && !!drawn.peek
+    && drawn.peek.tag === 'now' && !!el && el.getClientRects().length > 0;
 }
 
 function mk(tag, cls) {
@@ -188,12 +204,18 @@ function build(host) {
   footEl = mk('div', 'plan-foot');
   footOpens = spanOf('opens');
   const share = mk('button', 'plan-share btn-tonal');
+  shareBtn = share;
   share.type = 'button';
+  // The words are the button's name (the day it sends, read when a person
+  // reaches it), not a live region: paintHead writes them as the list scrolls
+  // through the days, and a live region there was said again at every draw
+  // (the P1–P3 review, 2026-09-27). A copy's result is said once, beside it.
   shareWords = spanOf('w', shareLabel());
-  shareWords.setAttribute('aria-live', 'polite');
   share.append(glyph(canShare() ? SHARE_MARK : COPY_MARK), shareWords);
   share.addEventListener('click', sharePlan);
-  footEl.append(footOpens, share);
+  shareSaid = spanOf('sr-only');
+  shareSaid.setAttribute('aria-live', 'polite');
+  footEl.append(footOpens, share, shareSaid);
   body.append(headEl, listEl, footEl);
   el.append(grab, body);
   frame.appendChild(el);
@@ -243,7 +265,8 @@ function railBottom() {
 
 // ---- drawing ------------------------------------------------------------------
 // `answer` from app.js paintPlan, or null when there is no plan to show:
-//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, highlight,
+//   { plan, route, peek, nowMin, weekday, sub, dayWord, nightLabelOf, gen, who,
+//     dayOf, emptyWords,          (each night's head and words, planDays)
 //     fest, day, linkOf, opens,   (the Share's: planText, and what its link opens on)
 //     repaint }                   (app.js paintPlan at this minute: the Share's first step)
 export function paintPlanShelf(host, ctx, answer) {
@@ -279,49 +302,237 @@ export function paintPlanShelf(host, ctx, answer) {
 
 // Everything the rows show, as one string: a minute that changes nothing
 // (the usual tick) draws nothing. The route's part is plan-rows.js's own
-// (rowsKey), from the rules planList draws by.
+// (rowsKey), from the rules planDays draws by.
 function signature(a) {
-  const rows = rowsKey(a.route, { plan: a.plan, peek: a.peek, nowMin: a.nowMin });
-  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.highlight || []).join(',')].join('|');
+  // Every night the open plan holds (the plan-days round): a friend's pick on
+  // Sunday redraws the rows even while the peek is Saturday's. Each night's
+  // part is plan-rows.js's own (rowsKey, the drop-in lines that lead it
+  // included), read at this minute on the peek's night and whole on the others.
+  const nightRows = (r, nowMin) => (r ? rowsKey(r, { plan: a.plan, peek: a.peek, nowMin }) : '');
+  const rows = a.plan && a.plan.nights
+    ? a.plan.nights.map((n) => `${n.id}=${nightRows(a.plan.night(n.id), a.route && n.id === a.route.id ? a.nowMin : null)}`).join(';')
+    : nightRows(a.route, a.nowMin);
+  return [a.gen, a.route && a.route.id, !!a.past, a.peek.tag, a.peek.stop ? stopKey(a.peek.stop) : '', a.peek.count, a.dayWord, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen, (a.plan && a.plan.group || []).join(',')].join('|');
 }
 
-function draw() {
+// The night the view is reading: the day of the first row whose bottom is
+// below the list's top edge (the head and the Share both follow it). Before
+// any scroll, and in the peek, it is the night the list lands on. Read in the
+// list's own scroll space (offsets: the list is the rows' offsetParent), not
+// from rects: a repaint's rows travel to their new places (play), and a rect
+// read mid-motion names the night the motion shows, which stays in the head
+// once the scroll has stopped (a tick landing mid-glide, 2026-09-26).
+let topNight = '';
+function nightAtTop() {
+  if (!listEl || !data) return data && data.route ? data.route.id : '';
+  const top = listEl.scrollTop + 2;
+  for (const r of listEl.children) {
+    if (!r.dataset.night) continue;
+    if (r.offsetTop + r.offsetHeight > top) return r.classList.contains('earlier') && earlierOpen ? r.dataset.night : (r.classList.contains('earlier') ? data.route.id : r.dataset.night);
+  }
+  return data.route ? data.route.id : '';
+}
+// The head (and the laptop's panel head) and the Share's words for a night.
+function paintHead(id) {
   const a = data;
-  drawn = a;
-  const ctx = ctxRef;
+  if (!a) return;
+  // Scrolling into another day turns the head over like a page number: the
+  // new day rises in from the side the list is moving toward (a scroll down
+  // brings the later day up from below). Instant under Reduce Motion / Low
+  // power (canAnimate), and never on the first paint.
+  const turn = topNight && topNight !== id && mode === 'open' && canAnimate(el, ctxRef)
+    ? (a.plan.nights.findIndex((n) => n.id === id) > a.plan.nights.findIndex((n) => n.id === topNight) ? 1 : -1) : 0;
+  topNight = id;
+  const d = (a.dayOf && a.dayOf(id)) || { weekday: a.weekday, sub: a.sub };
   headEl.textContent = '';
-  const head = planHead({ weekday: a.weekday, sub: a.sub });
+  const head = planHead({ weekday: d.weekday, sub: d.sub });
   const x = mk('button', 'sheet-close');
   x.type = 'button';
   x.textContent = '✕';
   x.setAttribute('aria-label', CLOSE_WORDS);
   x.addEventListener('click', () => closePlan());
   headEl.append(head, x);
-  // The laptop's head line: the corner's words, and the panel's head (the
-  // same room-head the phone's open plan shows), cross-faded by the window.
-  corner.c.textContent = `· ${a.weekday} · ${a.plan.us.length} picking`.toUpperCase();
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
+  // The turn plays on the head a person sees: the panel's head line on a
+  // laptop (the phone's head is display:none there, and the corner's was
+  // swapped in place — the P1–P3 review, 2026-09-27), the head on a phone.
+  if (turn) {
+    const rise = [{ transform: `translateY(${turn * 10}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }];
+    const shown = isDesk() ? corner.head : head; // the media query v3.css shows one by
+    for (const part of shown.querySelectorAll('.wd, .sub')) part.animate(rise, { duration: 200, easing: 'cubic-bezier(.2, .9, .3, 1.1)' });
+  }
+  const words = shareLabel(d);
+  if (!shareTimer && shareWords.textContent !== words) shareWords.textContent = words;
+  shareBtn.disabled = !!(d && d.bare);
+  shareWords.dataset.night = id;
+}
+// The last day can scroll to the top like every other (the plan-days round):
+// a short Sunday under a tall panel otherwise bottoms out with Saturday still
+// at the top, and the head and the Share would never name it. The room it
+// takes is the list's last box (`.plan-tail`, draw), sized on every draw,
+// settle and refit (a font, a rotation) from where the rows end — the box's
+// own top, so it is never in its own measure — and never by clearing and
+// measuring again: a cleared room shrinks the scroll range under a reader
+// parked on the last day, both engines clamp the scroll, and the head and
+// the Share turned back to Saturday (the P1–P3 review's first finding,
+// 2026-09-27). Offsets, not rects: the list is the rows' offsetParent (as
+// nightAtTop reads it), and a row in motion keeps its offset.
+//
+// While the plan has a later day (`data-later`, draw), or while the rows
+// alone overflow the list's box. A later day is the short-plan default
+// (Kevin's to overrule; the plan-days build log, 2026-09-27): the phone's
+// shelf is laid out at its cap and the list fills the window (v3.css) — the
+// laptop's panel is full height anyway — so a plan that fits can still bring
+// its later day to the top, where the head and the Share name it. Before it,
+// a plan that fitted had nowhere to scroll, and its later day could never be
+// shared from the plan. A plan whose last day is today stays content-sized
+// and has no room: there it would only be a gap under its last row, growing
+// the shelf, and a jump in the window's motion.
+function fitTail() {
+  const tail = listEl ? listEl.querySelector(':scope > .plan-tail') : null;
+  if (!tail) return;
+  const heads = listEl.querySelectorAll(':scope > .plan-day');
+  const last = heads[heads.length - 1];
+  const base = parseFloat(window.getComputedStyle(listEl).paddingBottom) || 0;
+  const box = listEl.clientHeight;
+  const end = tail.offsetTop;
+  const reach = el.hasAttribute('data-later') || end + base > box + 0.5;
+  const room = last && reach ? Math.max(0, Math.ceil(last.offsetTop + box - end - base)) : 0;
+  if (tail.style.height !== `${room}px`) tail.style.height = `${room}px`;
+}
+// Whether the plan holds a day after the one it lands on (planDays draws
+// every night from the landing night on).
+function laterDay(a) {
+  const ids = a && a.plan && a.plan.nights ? a.plan.nights.map((n) => n.id) : [];
+  return Math.max(0, ids.indexOf(a && a.route ? a.route.id : null)) < ids.length - 1;
+}
+function onListScroll() {
+  if (mode !== 'open' || !data) return;
+  if (gliding) {
+    const row = rowOfNight(gliding);
+    if (!row || Math.abs(row.offsetTop - listEl.scrollTop) <= 1) gliding = null;
+  }
+  // A scroll the layout made (a width change reflowed the rows under the same
+  // number, and the engine clamped or anchored it) is not the reader's: the
+  // refit that follows puts the place back from the anchor taken before it.
+  if (listEl.offsetWidth === placeW) takePlace();
+  const id = nightAtTop();
+  if (id && id !== topNight) paintHead(id);
+}
+
+// Where the reader is (Sol's first review of the plan-days build, 0f076a6,
+// 2026-09-27): the row at the list's top — the one nightAtTop names — and how
+// far into it the top edge sits, with the rows after it on the same night.
+// A redraw used to keep the list's scrollTop, a number: a friend's pick that
+// added a Saturday stop slid Sunday down under it, Saturday's rows came to
+// the top, and the head and the Share turned to Saturday; a 720px crossing
+// reflowed the rows under the same number in WebKit (Chromium's own scroll
+// anchoring hid it there). Taken on every scroll the reader (or a glide)
+// makes, and put back after every draw, settle and refit (keepPlace), before
+// the head is painted. Null is the list's top: a new list starts there.
+let place = null;
+// The list's own box width the place was read at: a different one is a
+// reflow. Its box, not its content (clientWidth): a scrollbar that takes room
+// (Windows, a Mac with a mouse) arrives with the open list's scrolling and
+// narrows the content 15px, and a place measured before it then read every
+// later scroll as a reflow and never took one — the next repaint put the list
+// back where it had last been read (the plan-days build log, 2026-09-27).
+let placeW = -1;
+const placeKey = (r) => (r.dataset.stop ? `${r.dataset.night || ''}#${r.dataset.stop}` : '');
+function takePlace() {
+  placeW = listEl ? listEl.offsetWidth : -1;
+  place = null;
+  if (!listEl || mode !== 'open' || listEl.scrollTop < 1) return;
+  const top = listEl.scrollTop;
+  const kids = [...listEl.children];
+  const i = kids.findIndex((r) => r.dataset.night && r.offsetTop + r.offsetHeight > top + 2);
+  if (i < 0) return;
+  const night = kids[i].dataset.night;
+  // The row's successors on its night, in order: a row that has gone (a stop
+  // the minute folded into Earlier, a pick taken back) hands its place to the
+  // next one still there, so what was under it stays where it was.
+  const keys = [];
+  for (let j = i; j < kids.length && kids[j].dataset.night === night; j++) keys.push(placeKey(kids[j]));
+  place = { keys, night, delta: top - kids[i].offsetTop };
+}
+// Back to the place: the same row (its night and stop), else the next of its
+// night's rows still there, else the night's head (a run of empty nights
+// counts for each of them), else the nearest later night, else the end. A
+// glide in progress keeps aiming at its night: on the list it is scrolling,
+// only the aim is checked (glideOn); a new list (`fresh`, draw) starts from
+// where the old one had got to and carries on from there.
+function keepPlace({ fresh = false } = {}) {
+  if (!listEl || mode !== 'open') return;
+  if (gliding && !fresh) { glideOn(); return; }
+  placeW = listEl.offsetWidth;
+  restorePlace();
+  if (gliding) glideOn();
+}
+function restorePlace() {
+  if (!place) return;
+  const kids = [...listEl.children];
+  const byKey = new Map(kids.map((r) => [placeKey(r), r]));
+  let row = null;
+  let delta = 0;
+  for (const [k, key] of place.keys.entries()) {
+    const r = byKey.get(key);
+    if (r) { row = r; delta = k === 0 ? place.delta : 0; break; }
+  }
+  const n = place.night;
+  if (!row) row = kids.find((r) => r.classList.contains('plan-day') && (r.dataset.night === n || (r.dataset.nights || '').split(' ').includes(n)));
+  if (!row && data && data.plan) {
+    const ids = data.plan.nights.map((x) => x.id);
+    const at = ids.indexOf(n);
+    row = kids.find((r) => r.dataset.night && !r.classList.contains('earlier') && ids.indexOf(r.dataset.night) >= at)
+      || kids.filter((r) => r.dataset.night).pop() || null;
+  }
+  if (!row) return;
+  const want = row.offsetTop + delta;
+  listEl.classList.add('scrolls');
+  // Only a real move: rewriting the same number stops a momentum scroll (iOS).
+  if (Math.abs(listEl.scrollTop - want) > 0.5) listEl.scrollTop = want;
+}
+
+function draw() {
+  const a = data;
+  drawn = a;
+  const ctx = ctxRef;
+  // The laptop's head line: the corner's words — the peek's night, always.
+  corner.c.textContent = `· ${a.weekday} · ${a.who || `${a.plan.us.length} picking`}`.toUpperCase();
   // The NOW row's card is grown in the day plan until a person folds it (the
   // approved frame); a tapped row's too. Each sits under its row, so the
   // peek's window (the row alone) never includes one.
-  const list = planList(a.route, {
-    ctx, plan: a.plan, peek: a.peek, nowMin: a.nowMin, grown: grownNow(),
-    earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord, highlight: a.highlight || [],
+  const list = planDays(a.plan, {
+    ctx, peek: a.peek, from: a.route ? a.route.id : null, nowMin: a.nowMin, landedPast: !!a.past, grown: grownNow(),
+    earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
+    dayOf: (id) => (a.dayOf ? a.dayOf(id) : {}), emptyWords: a.emptyWords || (() => ''),
   });
+  // A later day: the phone's shelf takes its full height (fitTail).
+  el.toggleAttribute('data-later', laterDay(a));
+  // The room under the last day (fitTail): the list's last box, empty.
+  const tail = mk('div', 'plan-tail');
+  tail.setAttribute('aria-hidden', 'true');
+  list.append(tail);
   list.addEventListener('click', onRowTap);
+  list.addEventListener('scroll', onListScroll, { passive: true });
+  for (const t of ['wheel', 'touchstart', 'pointerdown', 'keydown']) list.addEventListener(t, () => { gliding = null; }, { passive: true });
   // A new list element starts at the top: an open list someone had scrolled
   // keeps its place across a tick, a pick or a tap. A row with the focus
   // hands it to the same stop's new row — a keyboard growing a card, or
   // resting on a row through the minute's repaint, keeps its place. A stop
   // the minute has folded into Earlier hands it to that line (else the NOW
   // row, else the grabber): a focus is never dropped on the page.
-  const keep = mode === 'open' ? listEl.scrollTop : 0;
+  // The place is read from the rows on screen unless a reflow has moved them
+  // under the scroll since it was last read (a width change the refit has
+  // not answered yet): then the place from before it stands.
+  if (mode === 'open' && listEl.offsetWidth === placeW) takePlace();
   const f = document.activeElement;
   const focused = f && f !== listEl && listEl.contains(f) && f.dataset.stop ? f.dataset.stop : null;
   listEl.replaceWith(list);
   listEl = list;
-  if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
+  fitTail();
+  keepPlace({ fresh: true });
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
   if (focused) {
     const again = [...list.children].find((r) => r.dataset.stop === focused)
@@ -329,7 +540,8 @@ function draw() {
     again.focus({ preventScroll: true });
   }
   watchBoxes();
-  el.dataset.tag = a.peek.tag;
+  paintHead(mode === 'open' ? nightAtTop() : (a.route ? a.route.id : ''));
+  el.dataset.tag = a.peek.tag || 'none';
   grab.setAttribute('aria-label', mode === 'open' ? CLOSE_WORDS : OPEN_WORDS);
   grab.setAttribute('aria-expanded', mode === 'open' ? 'true' : 'false');
 }
@@ -402,7 +614,9 @@ const below = () => (geo && geo.desk ? `translate(${-SIDE}px, ${geo.H}px)` : `tr
 // The laptop's window: the card's box in the corner at 0, the whole panel at 1.
 const clipAt = (q) => `inset(0px ${SIDE * (1 - q)}px ${(geo.H - geo.cardH) * (1 - q)}px ${SIDE * (1 - q)}px round ${RADIUS * (1 - q)}px)`;
 
-function settleState() {
+// `headLater`: a close that animates keeps the head (and the Share's words)
+// on the day it is closing until its fade is done (settleTo).
+function settleState({ headLater = false } = {}) {
   el.dataset.state = mode;
   frame.dataset.state = mode;
   if (geo && geo.desk && mode === 'open') el.dataset.side = 'open'; else delete el.dataset.side;
@@ -430,7 +644,14 @@ function settleState() {
     else r.setAttribute('aria-expanded', next && next.classList.contains('plan-grow') ? 'true' : 'false');
   }
   listEl.classList.toggle('scrolls', !peek);
-  if (peek) listEl.scrollTop = 0;
+  fitTail();
+  if (peek) { listEl.scrollTop = 0; place = null; } else keepPlace();
+  // The head names the day at the top: today's in the peek (its row is
+  // today's), else the day the list is reading.
+  if (!headLater && data) {
+    const id = peek ? (data.route ? data.route.id : '') : nightAtTop();
+    if (id && id !== topNight) paintHead(id);
+  }
   // A focused ✕ or row that the peek just hid hands its focus to the grabber.
   if (peek && f && f !== grab && el.contains(f)) grab.focus({ preventScroll: true });
   grab.setAttribute('aria-label', peek ? OPEN_WORDS : CLOSE_WORDS);
@@ -513,21 +734,14 @@ function redraw() {
 
 function snapshot() {
   const rows = new Map();
-  const dims = new Set();
   if (listEl) {
     for (const r of listEl.children) {
-      if (!r.dataset.stop) continue;
-      rows.set(r.dataset.stop, r.getBoundingClientRect().top);
-      if (r.classList.contains('dim')) dims.add(r.dataset.stop);
+      if (r.dataset.stop) rows.set(r.dataset.stop, r.getBoundingClientRect().top);
     }
   }
-  return { rows, dims, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
+  return { rows, top: el ? el.getBoundingClientRect().top : 0, tagged: taggedRow() ? taggedRow().dataset.stop : null };
 }
-// A row's content — never the row, whose opacity is the window's — steps back
-// or forward when a highlight changes (v3.css .dim), the wall's dim in place.
-const DIMMED = ':scope > .plan-node, :scope > .plan-what, :scope > .plan-when, :scope > .plan-n, :scope > .sheet-card';
 
-const dimOf = (r) => Number(window.getComputedStyle(r).getPropertyValue('--plan-dim')) || 0.28;
 function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
@@ -536,19 +750,13 @@ function play(before, { duration, easing }) {
   }
   let arrivals = 0;
   for (const r of listEl.children) {
+    if (r.classList.contains('plan-tail')) continue;
     const was = before.rows.get(r.dataset.stop);
     const now = r.getBoundingClientRect().top;
     const shown = r.style.opacity === '' ? 1 : Number(r.style.opacity);
     if (was == null) {
       if (shown > 0) r.animate([{ opacity: 0 }, { opacity: shown }], { duration: CASCADE_MS, delay: arrivals++ * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       continue;
-    }
-    const dimmed = r.classList.contains('dim');
-    if (before.dims.has(r.dataset.stop) !== dimmed) {
-      for (const c of r.querySelectorAll(DIMMED)) {
-        const to = Number(window.getComputedStyle(c).opacity);
-        c.animate([{ opacity: dimmed ? 1 : dimOf(r) }, { opacity: to }], { duration, easing });
-      }
     }
     const dy = was - now - (before.top - top);
     // The row that WAS the peek's leaves the window as it scrolls by: seen
@@ -564,10 +772,57 @@ function play(before, { duration, easing }) {
 function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 // `focus`: a keyboard opened it from somewhere else (the people menu's row),
 // so its focus comes along to the grabber, as if Enter had been pressed there.
-export function openPlan({ instant = false, focus = false } = {}) {
+// `night`: a later night the plan opens on (a Share's link for it, app.js
+// openPlanForLink — the plan-days build: a link opens on the day its words
+// were about). See glideTo.
+export function openPlan({ instant = false, focus = false, night = null } = {}) {
   if (!el || mode === 'gone' || leaving) return;
   settleTo(1, { instant });
+  if (night) glideTo(night);
   if (focus) grab.focus({ preventScroll: true });
+}
+// The plan opens on today, as it always does — the peek's row is where the
+// window grows from — and once it has landed, the list glides down to the
+// night the link was about, the head turning over as that night reaches the
+// top: every piece travels to where it is going, nothing jumps. Scrolled
+// before the open, the peek's own row would have left the window in place.
+// Instant under Reduce Motion or Low power. A hand on the window, a scroll of
+// the person's own, or a plan closed meanwhile keeps things where they are;
+// a repaint on the way (the minute's tick, a friend's pick) carries on to the
+// night from wherever the list had got to (`gliding`, draw).
+let glide = 0;
+let gliding = null;
+let aim = null; // the glide's last ask: { list, top } — asked again only when the night has moved
+function glideTo(id) {
+  const mine = ++glide;
+  gliding = null;
+  const from = listEl ? listEl.scrollTop : 0;
+  const go = () => {
+    if (mine !== glide || mode !== 'open' || drag || leaving || !listEl || Math.abs(listEl.scrollTop - from) > 1) return;
+    gliding = id;
+    aim = null;
+    glideOn();
+  };
+  const moving = motions().filter((a) => a.playState === 'running'
+    && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
+  if (!moving.length) { go(); return; }
+  Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(go);
+}
+const rowOfNight = (id) => [...listEl.children].find((r) => r.dataset.night === id || (r.dataset.nights || '').split(' ').includes(id));
+function glideOn() {
+  const row = gliding && mode === 'open' && !drag && !leaving && listEl ? rowOfNight(gliding) : null;
+  if (!row) { gliding = null; aim = null; return; }
+  fitTail();
+  const top = row.offsetTop; // where the night's head sits in the list's scroll space (nightAtTop)
+  // A settle or a refit on the way asks again only if the night has moved: a
+  // smooth scroll asked twice starts its curve again, a hitch mid-glide.
+  if (aim && aim.list === listEl && Math.abs(aim.top - top) < 1) return;
+  aim = { list: listEl, top };
+  if (canAnimate(el, ctxRef) && typeof listEl.scrollTo === 'function') { listEl.scrollTo({ top, behavior: 'smooth' }); return; }
+  gliding = null;
+  aim = null;
+  listEl.scrollTop = top;
+  onListScroll();
 }
 // `fn` once the peek has landed: now when nothing is arriving, else when the
 // arrival ends. An open during the arrival cancels it, and the peek appears
@@ -603,15 +858,38 @@ export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
 // state at once and the animation plays from where it was — so an animation
 // that never finishes still leaves the right state behind.
 function settleTo(target, { instant = false } = {}) {
+  // An open plan a highlight emptied has no row to close to (the plan-days
+  // round): closing it takes the shelf away, as a paint with no peek would.
+  if (target === 0 && data && !data.peek.stop) { leave({ instant }); return; }
   const seen = seenTop();
   if (target === 1 && mode !== 'open') unpin();
+  // Closing from further down the list (a later day at the top): the peek's
+  // row is today's, at the list's top, so the list goes back there before
+  // the window is measured — measured scrolled, the rows' shift came out
+  // short by the scroll and the peek showed the wrong rows. What was on
+  // screen stays where it was while it fades (`lift`, below), and the peek's
+  // row comes down to its place from where it was, or fades in there if it
+  // was out of sight.
+  const lift = target === 0 && listEl ? listEl.scrollTop : 0;
+  const peekRow = lift ? taggedRow() : null;
+  const seenRow = !!peekRow && (() => {
+    const lb = listEl.getBoundingClientRect();
+    const rb = peekRow.getBoundingClientRect();
+    return rb.bottom > lb.top && rb.top < lb.bottom;
+  })();
+  if (lift) listEl.scrollTop = 0;
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
   apply(caughtAt(seen, p));
   const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
   apply(target);
-  settleState();
-  if (instant || !canAnimate(el, ctxRef) || from.p === target) return;
+  const moves = !instant && canAnimate(el, ctxRef) && from.p !== target;
+  // The close's fade shows the day being closed — its head and its Share's
+  // words included — and today's head is painted once they are out of sight
+  // (the P1–P3 review, 2026-09-27: the first frame of the close swapped to
+  // today).
+  settleState({ headLater: moves && target === 0 });
+  if (!moves) return;
   const timing = target === 1 ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_LEAVE };
   el.animate(geo.desk
     ? [{ transform: from.el, clipPath: from.clip }, { transform: el.style.transform, clipPath: el.style.clipPath }]
@@ -619,14 +897,25 @@ function settleTo(target, { instant = false } = {}) {
   body.animate([{ transform: from.body }, { transform: body.style.transform || 'none' }], timing);
   const fade = [{ opacity: from.p }, { opacity: target }];
   const unfade = [{ opacity: 1 - from.p }, { opacity: 1 - target }];
-  headEl.animate(fade, timing);
+  const headFade = headEl.animate(fade, timing);
   footEl.animate(fade, timing);
-  for (const r of listEl.children) if (!r.classList.contains('tagged')) r.animate(fade, timing);
+  const held = lift ? `translateY(${-lift}px)` : null;
+  for (const r of listEl.children) {
+    if (r.classList.contains('plan-tail')) continue;
+    if (!r.classList.contains('tagged')) r.animate(held ? [{ opacity: from.p, transform: held }, { opacity: target, transform: held }] : fade, timing);
+    else if (held) r.animate(seenRow ? [{ transform: held }, { transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }], timing);
+  }
   if (geo.desk) {
     corner.head.animate(fade, timing);
     corner.close.animate(fade, timing);
     corner.line.animate(unfade, timing);
     corner.open.animate(unfade, timing);
+  }
+  if (target === 0) {
+    // Ended or caught by a hand: the peek's head is today's either way (a
+    // plan opened again meanwhile names the day at its top itself).
+    const today = () => { if (mode === 'peek' && data && data.route && topNight !== data.route.id) paintHead(data.route.id); };
+    headFade.finished.then(today, today);
   }
 }
 
@@ -640,6 +929,7 @@ function settleTo(target, { instant = false } = {}) {
 // only if it is free, give it back only if it is ours).
 function onDown(e) {
   if (mode === 'gone' || leaving || e.button > 0 || drag) return;
+  gliding = null;
   if (geo && geo.desk) return; // a laptop's card is a button: its click opens it (onClickPeek)
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
@@ -721,6 +1011,9 @@ function flushHeld() {
   sig = signature(data);
   draw();
   measure();
+  // The rows now say what the last paint said: the NOW tab asks again
+  // (planShowsNow reads the rows drawn), so there is still exactly one NOW.
+  if (typeof data.onDrawn === 'function') data.onDrawn();
 }
 // A settle still playing when a hand or a key takes the window: the window is
 // caught where it stands on screen, its motion stopped, and whatever comes
@@ -789,9 +1082,14 @@ async function sharePlan() {
   // four, 2026-09-26). Nor when this minute took the plan away.
   const a = drawn;
   if (mode !== 'open' || leaving || held || !a || a !== data) return;
-  const text = planText(a.route, {
-    ctx: ctxRef, plan: a.plan, peek: a.peek, nowMin: a.nowMin, highlight: a.highlight || [],
-    fest: a.fest || '', day: a.day || '', today: !!a.peek.today, link: a.linkOf ? a.linkOf() : '',
+  // The day at the top of the view, and the button said so (the plan-days
+  // round): the peek's night reads from now; any other night reads whole.
+  const id = topNight || (a.route && a.route.id);
+  const landed = !!a.route && id === a.route.id;
+  const route = landed ? a.route : a.plan.night(id);
+  const text = planText(route, {
+    ctx: ctxRef, plan: a.plan, peek: landed ? a.peek : null, nowMin: landed ? a.nowMin : null,
+    fest: a.fest || '', day: a.nightLabelOf ? a.nightLabelOf(id) : (a.day || ''), today: landed && !!a.peek.today, link: a.linkOf ? a.linkOf(id) : '',
   });
   // A new build waits while the sheet is up or the copy is on its way: a
   // reload would take the plan, and the words, from under either.
@@ -805,11 +1103,20 @@ async function sharePlan() {
     letGo();
   }
 }
-const shareLabel = () => `${canShare() ? 'Share' : 'Copy'} ${PLAN_NAME.toLowerCase()}`; // "Share our picks"
+// "Share today's picks" · "Share Sunday's picks" · "Share Sat Oct 10's picks"
+// (the plan-days round: the button names the day it sends, the day at the top
+// of the view). `d.share` is the day's word from app.js dayOf.
+const shareLabel = (d = null) => (d && d.bare ? `Nothing to share ${d.name}`
+  : `${canShare() ? 'Share' : 'Copy'} ${d && d.share ? `${d.share} picks` : PLAN_NAME.toLowerCase()}`);
 function sayOnShare(words) {
   clearTimeout(shareTimer);
   shareWords.textContent = words;
-  shareTimer = setTimeout(() => { shareWords.textContent = shareLabel(); }, 1800);
+  shareSaid.textContent = words;
+  shareTimer = setTimeout(() => {
+    shareTimer = 0;
+    shareWords.textContent = shareLabel(data && data.dayOf ? data.dayOf(topNight) : null);
+    shareSaid.textContent = ''; // so the next copy is said again
+  }, 1800);
 }
 
 // Nothing under the peek's window is a control of its own: a tap there opens
@@ -833,7 +1140,7 @@ function onClickPeek(e) {
 function onRowTap(e) {
   if (mode !== 'open') return;
   const row = e.target.closest('.plan-row');
-  if (!row || row.classList.contains('earlier') || row.classList.contains('scattered') || row.classList.contains('or')) return;
+  if (!row || row.tagName !== 'BUTTON' || row.classList.contains('earlier')) return;
   if (e.target.closest('.plan-grow')) return;
   const key = row.dataset.stop;
   const next = new Set(grownNow());

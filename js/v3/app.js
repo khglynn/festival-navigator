@@ -74,8 +74,9 @@ import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, remem
 import { showJoinShelf, joinShelf } from './join-shelf.js';
 // Our plan (2026-09-26): the model, the phone's peek-and-day shelf, and the
 // floor they change (the dock plus the peek).
-import { planOf, planAt, peekOf } from './plan.js';
+import { planOf, planAt, peekOf, isoAfter } from './plan.js';
 import { shortDate } from './events.js';
+import { thinnedWords } from './wall.js'; // the List's words for a highlight with nothing here (v103's)
 import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
@@ -1453,7 +1454,7 @@ function setPeopleFilter(names) {
   if (zoomedCard()) { repaintWall(); return; }
   if (list) thinFlow(before);
   else dimInPlace();
-  paintPlan(); // the plan's rows dim with the cards, and the one NOW follows (planAnswer)
+  paintPlan(); // the plan re-plans for them (plan.js rule 10), and the one NOW follows (planAnswer)
 }
 let dimSettle = 0;
 function dimInPlace() {
@@ -1535,9 +1536,10 @@ const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
 // for its own layout: the dock under 720, the rail above.) The tab stays
 // wherever the plan is not saying NOW (nothing today, a live set that is no
 // stop of ours, a NEXT peek). A highlight filters both doors (Kevin,
-// 2026-09-26: "the filters should filter the now too"): the peek says NOW
-// only for a stop the highlighted people are in (plan.js peekOf), and where
-// it does not, the tab comes back as "what is on for Ross right now".
+// 2026-09-26: "the filters should filter the now too"): under a highlight
+// the plan is theirs (plan.js rule 10), so the peek says NOW only for a stop
+// of theirs, and where it does not, the tab comes back as "what is on for
+// Ross right now".
 function paintNowTabs(date = ctx.now || new Date()) {
   const live = !!nowLanding($('wall-root'), ctx, date) && !planShowsNow();
   for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), live);
@@ -1551,7 +1553,10 @@ function paintNowTabs(date = ctx.now || new Date()) {
 function currentPlan() {
   if (planDirty || !planModel) {
     const fest = state.fest();
-    planModel = fest ? planOf(fest, { picks: ctx.picks, members: state.activePeople().map(([n]) => n), folded: ctx.folded }) : null;
+    // The highlight is an input (plan.js rule 10): it filters the route to
+    // the highlighted people, and bodies are still seated on the whole crew.
+    planModel = fest ? planOf(fest, { picks: ctx.picks, members: state.activePeople().map(([n]) => n), folded: ctx.folded,
+      people: ctx.filterPeople || [] }) : null;
     planDirty = false;
     planGen += 1;
   }
@@ -1567,8 +1572,8 @@ function currentPlan() {
 //   · a night ahead only when it is TOMORROW's — after tonight's last stop the
 //     peek says where we start tomorrow, and the days before a festival have
 //     no peek at all (Kevin, 2026-09-26: "tomorrow only, as built");
-//   · with a highlight on, only the highlighted people's stops (peekOf) —
-//     and the rows none of them is in step back, as their cards do.
+//   · with a highlight on, the plan is theirs (plan.js rule 10): the peek
+//     reads their route, and nothing dims.
 function planAnswer(date) {
   const fest = state.fest();
   if (!fest || !state.getCrewToken() || ctx.query) return null;
@@ -1577,14 +1582,27 @@ function planAnswer(date) {
   if ($('screen-app').querySelector(':scope > .bring-offer')) return null;
   const plan = currentPlan();
   if (!plan || !plan.available) return null;
-  const highlight = ctx.filterPeople || [];
-  const peek = peekOf(plan, fest, date, { people: highlight });
-  if (!peek) return null;
+  let peek = peekOf(plan, fest, date);
   const at = planAt(plan, fest, date);
   const tonight = at ? at.night.iso : festivalClock(date, fest.timezone || null).iso;
-  if (!peek.today && peek.night.iso !== isoAfter(tonight)) return null;
+  if (peek && !peek.today && peek.night.iso !== isoAfter(tonight)) peek = null;
+  if (!peek) {
+    // An open plan a highlight has emptied stays open on the day it was on
+    // (the plan-days round: a menu over the plan must never take it away);
+    // closing it lets it go. Closed, no peek is no shelf, as before.
+    if (!planIsOpen() || !plan.nights.length) return null;
+    const on = (at && at.night) || plan.night((plan.nights.find((n) => n.iso && n.iso >= tonight) || plan.nights[plan.nights.length - 1]).id);
+    // Past 5 AM after the festival's last night, a plan left open stays on
+    // that night as a night BEFORE today (Sol's important on 0f076a6: it came
+    // back whole and undimmed, its Share on, as if still to come): drawn past
+    // under its head, as an opened Earlier draws one, and its Share names it
+    // and sends it whole, as a past night's does. Not closed by the clock —
+    // a tick never takes an open plan from under its reader (the menu rule
+    // above) — and a close lets it go (no peek to close to).
+    const past = !at && !!on.iso && on.iso < tonight;
+    peek = { night: on, stop: null, tag: null, count: 0, today: !!at && at.night.id === on.id, past };
+  }
   const entry = plan.nights.find((n) => n.id === peek.night.id) || {};
-  const when = entry.iso ? shortDate(entry.iso) : '';
   // "also Thu" on Portola, "also Oct 9" where two nights share a weekday
   // (ACL's two weekends): a night is called what tells it apart.
   const wdCount = new Map();
@@ -1594,27 +1612,65 @@ function planAnswer(date) {
     if (!n) return '';
     return wdCount.get(n.wd) > 1 && n.iso ? shortDate(n.iso) : (n.wd || '');
   };
+  // Whose picks the head says (rule 10): the crew's count, or the
+  // highlighted people by name on this screen (never in the Share's words).
+  const who = pickingWords(plan);
+  const landing = peek.night.id;
+  const nowMin = peek.today && at && at.night.id === peek.night.id ? at.minutes : null;
+  // A night's head and the Share's word for it (the plan-days round). The
+  // head is the wall's grammar — SUN, then its date and whose picks — and
+  // the Share names the day it sends: today's, Sunday's, Sat Oct 10's.
+  const dayOf = (id) => {
+    const n = plan.nights.find((x) => x.id === id) || {};
+    const date = n.iso ? shortDate(n.iso) : '';
+    const isToday = id === landing && peek.today;
+    const name = isToday ? 'today' : (wdCount.get(n.wd) > 1 && n.iso ? `${n.wd || ''} ${date}` : (FULL_DAY[n.wd] || n.wd || ''));
+    // A day with no stop has nothing to send: the Share says so and rests.
+    // Today's is sent from now, so today with every stop behind it rests too
+    // (an open plan a highlight emptied; the last night after its last stop).
+    const route = n.id ? (id === peek.night.id ? peek.night : plan.night(id)) : null;
+    const bare = !!route && !route.items.some((i) => i.kind === 'stop' && (!isToday || nowMin == null || i.to > nowMin));
+    return { weekday: String(n.wd || '').toUpperCase(), date, sub: [date, who].filter(Boolean).join(' · '), share: `${name}’s`, name, bare };
+  };
+  // A night with no stop says why, in one quiet line (plan.js night().why).
+  const emptyWords = (route) => {
+    if (route.why === 'over') return 'Nothing left today';
+    if (route.why === 'no-times') return 'No set times yet';
+    if (route.why === 'unpicked') return plan.group ? capital(thinnedWords(plan.highlight, ctx.meName)) : 'Nothing picked yet';
+    return plan.group ? 'Never together — no stop' : 'Scattered all day';
+  };
   return {
-    plan, peek, route: peek.night, gen: planGen, highlight,
-    nowMin: peek.today && at && at.night.id === peek.night.id ? at.minutes : null,
+    plan, peek, route: peek.night, gen: planGen, nowMin, past: !!peek.past,
     weekday: String(entry.wd || '').toUpperCase(),
-    sub: [when, `${plan.us.length} picking`].filter(Boolean).join(' · '),
+    sub: dayOf(landing).sub,
     dayWord: peek.today ? '' : (entry.wd || ''),
-    nightLabelOf,
+    nightLabelOf, dayOf, emptyWords, who,
     // The Share's words (plan-rows.js planText): "for Sat Portola", the night
     // called what tells it apart, and the link that opens on the plan.
-    fest: fest.name || '', day: nightLabelOf(peek.night.id), linkOf: () => planLink(peek.night.iso), opens: opensLine(),
+    // `linkOf(id)`: the link opens on the night the Share sends (the day at the
+    // top of the open plan, plan-shelf.js sharePlan), the peek's by default.
+    fest: fest.name || '', day: nightLabelOf(peek.night.id),
+    linkOf: (id) => planLink(((plan.nights || []).find((n) => n.id === id) || peek.night).iso),
+    opens: plan.group ? opensForHighlight() : opensLine(),
     // The Share's first step: this paint again at the tap's minute, so the
     // words come from the rows on screen (plan-shelf.js sharePlan).
     repaint: () => paintPlan(),
+    // Rows that waited for a hand are drawn when it lets go (plan-shelf.js
+    // flushHeld): the NOW tab asks again then, of the rows on screen.
+    onDrawn: () => paintNowTabs(),
   };
 }
-const isoAfter = (iso) => {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
-};
+const FULL_DAY = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+const capital = (w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w);
+// "9 picking" for the crew; under a highlight, who: "Gus", "you + Cy",
+// "Ana, Cy + Hal", "5 of us".
+function pickingWords(plan) {
+  if (!plan.group) return `${plan.us.length} picking`;
+  const names = (plan.highlight || []).map((p) => (p === ctx.meName ? 'you' : p));
+  if (names.length === 1) return `just ${names[0]}`;
+  if (names.length <= 3) return `${names.slice(0, -1).join(', ')} + ${names[names.length - 1]}`;
+  return `${names.length} of us`;
+}
 
 // ONE paint for the peek and then the NOW tab, on one date — so they can never
 // disagree across a minute (the tab reads whether the peek says NOW). Called
@@ -1637,16 +1693,18 @@ function paintPlan(date = ctx.now || new Date()) {
   // The people menu offers Our plan only while there is one: a plan that
   // comes or goes (the minute past the last stop, the welcome card leaving)
   // redraws the menu's rows, an open menu's included (Codex, 2026-09-26).
-  if (planHere() !== menuHasPlan) paintHighlight();
+  if ((planHere() && !planIsOpen()) !== menuHasPlan) paintHighlight();
 }
 
 // `&plan=<date>` (the plan's Share link, crew.js planFromHash): the first
 // paint with this crew's plan on screen opens it — a member's as soon as the
 // peek has risen (plan-shelf.js afterArrival: the rise, then the plan grows),
 // a newcomer's once the welcome card has gone and the peek has risen — when
-// the plan is on the link's night. On another (a Saturday text opened on
-// Sunday) the link lands on the wall with its peek: the plan shows one night,
-// and that one is not what the words were about. A paint
+// the plan lands on the link's night, or on an earlier one: the open plan
+// holds every night from today on, so a Sunday text read on Saturday opens
+// scrolled to Sunday (the plan-days build, BUILD.md P2). A night already over
+// (a Saturday text opened on Sunday) lands on the wall with its peek: the
+// words were about a day that is gone. A paint
 // that finds nothing to open with nothing in the way (the festival's over,
 // or no stop left today or tomorrow) drops the wish: a plan that turns up
 // later is not what the link opened on. While a card is up, the join shelf
@@ -1672,9 +1730,11 @@ function openPlanForLink(answer) {
     // it opens only on the wall, on the crew, festival and night the link
     // named (Sol, 2026-09-26: Settings opened mid-rise got the plan opened
     // behind it, there when the reader came back).
+    const landed = answer && answer.route ? answer.route.iso : null;
+    const later = !!landed && night > landed && answer.plan.nights.find((n) => n.iso === night);
     const still = () => $('screen-app').style.display !== 'none' && !planIsOpen()
-      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === night;
-    if (answer && answer.route && answer.route.iso === night && !planIsOpen()) afterArrival(() => { if (still()) openPlan(); });
+      && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === landed;
+    if ((landed === night || later) && !planIsOpen()) afterArrival(() => { if (still()) openPlan({ night: later ? later.id : null }); });
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
@@ -2330,7 +2390,10 @@ function catchStrayTaps(on) {
 
 function openShowMenu(wrap, link, pop, { onClose = null } = {}) {
   closeShowMenu({ instant: true });
-  closePlan(); // Our plan: the fest name is a way out of the open plan too (SPEC-ui §7)
+  // The plan-days round (Kevin, 2026-09-26: "filtering while viewing the
+  // picks view is just as valid as in the grid / list views"): both menus
+  // open OVER the open plan, and the route re-plans as rooms hide and people
+  // are highlighted. (Before: closePlan() here — SPEC-ui §7.)
   settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
   // The bar the menu lives in (the dock, the day rail) is a stacking context:
   // its menu paints at the bar's own level, which put the dock's upward menu
@@ -2611,7 +2674,9 @@ function peopleMenuPlanRow() {
 let menuHasPlan = false; // whether the people menu was last drawn with Our plan's row (paintPlan)
 function peopleMenuData() {
   const guest = !ctx.meName;
-  menuHasPlan = planHere();
+  // Offered while there is a plan to open, not while it is open (the menu
+  // opens over the open plan now — the row would only close the menu).
+  menuHasPlan = planHere() && !planIsOpen();
   const active = state.activePeople();
   return {
     people: active.map(([name, p]) => ({ name, color: hslOf(colorIndexOf(name, p)) })),
@@ -3223,6 +3288,13 @@ function opensLine() {
   const view = shareView();
   if (!view) return '';
   return view.label ? `Opens on ${view.label}${view.list ? ', as a list' : ''}` : 'Opens as a list';
+}
+// Under a highlight the plan's link still opens on everyone's picks: a
+// highlight is this phone's lens and never rides in a link (it would carry
+// names). The foot says so, so the sender is not surprised (rule 10).
+function opensForHighlight() {
+  const view = shareView();
+  return `Opens on everyone’s picks${view && view.label ? ` in ${view.label}` : ''}${view && view.list ? ', as a list' : ''}`;
 }
 function inviteViewLine() {
   const opens = opensLine();

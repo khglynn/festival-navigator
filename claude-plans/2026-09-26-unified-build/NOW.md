@@ -27,12 +27,28 @@
   walker 8/8; CI browser green. Held because it moves NOW on phones and
   Portola's last day is Sunday (Kevin agreed, 2026-09-26 evening). Kevin's
   call on NOW at phone width: option a, as built.
-- **Next build: Our picks across days** (`live/plan-days-design`, the
-  sibling session; Kevin approved every default on its design page, C6
-  included): Despacio as a drop-in room, the plan scrolling on through later
-  days, both menus over the open plan with a highlight that filters the
-  route; the window model and the banked catches come back here. Aimed at
-  ACL Late nights (Tue Sep 29).
+- **Our picks across days ships today as v105** (`live/plan-days-design`,
+  the sibling session; log `plan-days-design/BUILD.md`; Kevin approved every
+  default on its design page, C6 included): Despacio as a drop-in room, the
+  plan scrolling on through later days, both menus over it with a highlight
+  filtering the route (one NOW kept under a highlight, Kevin's call), a
+  short changeover standing as its own stop so no stop outlives its act, ACL
+  goldens. Reviewed in `plan-days-design/REVIEW-P1P3.md`, three Sol rounds
+  (`plan-days-design/SOL-R3.md` the last on the build alone) and a walk
+  (`plan-days-design/WALK-1.md`). **The v105 head** (2026-09-27, moved up
+  to today once v104 went out at 12:18 PM PT): the build plus Sol's two last
+  findings, `live/v103`, both main fixes (the composer's focus, the suites'
+  pinned clock) and main at v104, merged; one NOW while a hand holds the
+  plan (ccd23ba). Gate: unit on three clocks, the plan and NOW browser
+  suites locally, Sol on the merge (`plan-days-design/SOL-R4.md`, nothing
+  blocks), a real-input walk over Despacio and both builds' surfaces
+  (`plan-days-design/WALK-2.md`, 11 of 12; the fail, 320px names cut with
+  "…", predates the build), CI to two greens. The SHA goes to the
+  coordinator, who stamps festival-nav-v105 and releases before Despacio's
+  Sunday set (3:30 PM PT). Follow-ups after it: a past check deferred until
+  a hold clears, the 320px names, Despacio leaving the plan once its window
+  ends (Kevin's call), the day rail's ResizeObserver loop (TAP-BUILD
+  follow-up 6).
 - **Map for Kevin**: `claude-plans/2026-09-25-portola-live/maps/` (CSVs,
   `gen.py`, prices); a Google My Map in his personal account, link-shared.
   The in-app version is a Pen card (the 2027 reference tab).
