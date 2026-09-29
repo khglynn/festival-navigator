@@ -40,11 +40,23 @@ const { planText } = await import('../js/v3/plan-rows.js');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
 // ACL with the close its own meta note quotes (posters: 12:45 PM to 10 PM).
+// The file carries that close since 2026-09-29 (dayMeta Fri/Sat/Sun); these
+// tests still set it themselves, so they hold whatever the file says.
 const withClose = (fest, close) => ({
   ...fest,
   dayMeta: Object.fromEntries(Object.entries(fest.dayMeta).map(([k, m]) => [k, fest.days[k] ? { ...m, close } : m])),
 });
 const ACL_10 = withClose(ACL, '10 PM');
+// ACL as a festival that publishes no close: every day's close taken off.
+const withoutClose = (fest) => ({
+  ...fest,
+  dayMeta: Object.fromEntries(Object.entries(fest.dayMeta).map(([k, m]) => {
+    const rest = { ...m };
+    delete rest.close;
+    return [k, rest];
+  })),
+});
+const ACL_NO_CLOSE = withoutClose(ACL);
 const byName = (list) => Object.fromEntries(list.map((a) => [a.name, a]));
 const TEN_PM = 22 * 60;
 
@@ -68,11 +80,14 @@ test('a printed end is untouched and not approximate', () => {
 });
 
 test('without a published close, the latest printed end only ever lengthens: ACL keeps its default', () => {
-  const sets = byName(daySetsOf(ACL, 'Friday', 'W1'));
+  assert.ok(Object.values(ACL_NO_CLOSE.dayMeta).every((m) => !('close' in m)), 'the fixture publishes no close');
+  const sets = byName(daySetsOf(ACL_NO_CLOSE, 'Friday', 'W1'));
   // 8:30 PM is the latest printed end that day, before 8:15 + 75.
   assert.equal(sets.Skrillex.endMin, sets.Skrillex.startMin + 75);
   assert.equal(sets['Charli xcx'].endMin, sets['Charli xcx'].startMin + 75);
   assert.equal(sets.Skrillex.endApprox, true, 'a default is a guess too');
+  // The file itself publishes the close, so the same day reads 10 PM there.
+  assert.equal(byName(daySetsOf(ACL, 'Friday', 'W1')).Skrillex.endMin, TEN_PM, 'the file\'s own close');
 });
 
 test('without a published close, a later printed end on another stage is the day\'s close', () => {
