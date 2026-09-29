@@ -28,9 +28,10 @@ const typeError = (msg, stack = V8(msg)) => { const e = new TypeError(msg); e.st
 const settle = (ms = 5) => new Promise((r) => setTimeout(r, ms));
 
 let instance = 0;
-async function fresh({ key = KEY, settings = null, online = true, ua = null, touch = 0, url = 'https://fest.kevinhg.com/', hosts = 'kevinhg.com' } = {}) {
+async function fresh({ key = KEY, settings = null, online = true, ua = null, touch = 0, url = 'https://fest.kevinhg.com/', hosts = 'kevinhg.com', build = null } = {}) {
   const hostsAttr = hosts === null ? '' : ` data-hosts="${hosts}"`;
-  const dom = new JSDOM(`<!doctype html><html><head><meta name="fn-report-key" content="${key}"${hostsAttr}></head>`
+  const buildMeta = build === null ? '' : `<meta name="fn-build" content="${build}">`;
+  const dom = new JSDOM(`<!doctype html><html><head><meta name="fn-report-key" content="${key}"${hostsAttr}>${buildMeta}</head>`
     + '<body><div id="screen-app"></div><span id="sync-label">online</span></body></html>', { url });
   globalThis.window = dom.window;
   const store = new Map();
@@ -543,6 +544,45 @@ test('a report made before the worker answers gets this page\'s build once it do
   assert.equal(p.sw, 'controlled');
   m.record('error', typeError('later'));
   assert.equal(queue()[1].e.properties.build, 'v88', 'known from then on');
+});
+
+// LEDGER follow-up 2 (2026-09-26): every report that night said build: null,
+// sw: "none" — no worker controlled the page, and the cache names said
+// nothing either. The page knows its own build (index.html's fn-build meta,
+// written by scripts/sw-stamp.mjs beside CACHE_VERSION), so a page no worker
+// controls still names it.
+test('with no worker in control, a report names the page\'s own build', async () => {
+  const { m, queue } = await fresh({ build: 'v105' });
+  m.record('boot', typeError('first open, no worker yet'));
+  const p = queue()[0].e.properties;
+  assert.equal(p.build, 'v105');
+  assert.equal(p.stamp, null, 'the stamp is the worker\'s to say');
+  assert.equal(p.sw, 'none', 'and it still says no worker was in control');
+});
+
+test('a worker that never answers leaves the page\'s own build, not a guess from the caches', async (t) => {
+  const { m, dom, queue } = await fresh({ build: 'v105' });
+  const container = new dom.window.EventTarget();
+  container.controller = { postMessage: () => {} };
+  Object.defineProperty(dom.window.navigator, 'serviceWorker', { configurable: true, value: container });
+  dom.window.caches = { keys: async () => ['festival-nav-data-v1', 'festival-nav-v99'] };
+  mock.timers.enable({ apis: ['setTimeout'] });
+  t.after(() => mock.timers.reset());
+  m.record('boot', typeError('an old worker'));
+  assert.equal(queue()[0].e.properties.build, null, 'waiting on the worker');
+  mock.timers.tick(3000); // BUILD_WAIT_MS: the worker had its chance
+  mock.timers.reset();
+  await settle();
+  assert.equal(queue()[0].e.properties.build, 'v105');
+  assert.equal(queue()[0].e.properties.sw, 'controlled');
+});
+
+test('a page build that is not a version is never sent', async () => {
+  for (const bad of ['', 'latest', 'v', 'v12a', '<b>v1</b>', 'festival-nav-v105', ' v105']) {
+    const { m, queue } = await fresh({ build: bad });
+    m.record('boot', typeError('odd meta'));
+    assert.equal(queue()[0].e.properties.build, null, `"${bad}" is not a build`);
+  }
 });
 
 test('the hooks: an uncaught error, a rejection, a module that failed to load; a parse error keeps its file', async () => {
