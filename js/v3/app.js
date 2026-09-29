@@ -2242,6 +2242,9 @@ function renderDayNav() {
   // day tabs are rebuilt: NOW is the row's first item for good (v103), so it
   // never leaves the row, and a keyboard on it keeps its place.
   const rested = NOW_DOORS.map(([, row]) => $(row).scrollLeft);
+  // The day lit before the rebuild: what the row shows until the spy has
+  // read the placed page (wall.js wireScrollspy's initial claim).
+  const was = ((dock.querySelector('.day-tab.active') || rail.querySelector('.day-tab.active') || {}).dataset || {}).day || null;
   for (const row of [dock, rail]) for (const t of [...row.children]) if (!t.classList.contains('now-tab')) t.remove();
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
@@ -2270,7 +2273,7 @@ function renderDayNav() {
   }
   NOW_DOORS.forEach(([, row], i) => { $(row).scrollLeft = rested[i]; });
   unspy();
-  unspy = wireScrollspy([dock, rail], $('wall-root'));
+  unspy = wireScrollspy([dock, rail], $('wall-root'), { was });
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
   // Our plan's peek paints first, so the one-NOW rule reads this pass's peek.
