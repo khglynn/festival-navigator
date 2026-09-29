@@ -72,3 +72,33 @@ your thumb".
   entry's time. dated-occurrence case red first (Palace, 12:30 AM stale).
 - `npm test` after both: 1353 pass / 1 fail (the SW stamp, left for the
   coordinator) / 1 skipped / 1 todo.
+
+### 4. Fix: the open lands again when the fonts arrive (38ef147)
+`maybeOpenOnDay` → `landAgainWithFonts`: when `document.fonts` is still
+loading at the open, land once more on `fonts.ready` (+2 frames) — only if
+the page is where the open left it, no wheel/touch/pointer/key since, no
+sheet up, same festival. tests/browser/acl-latenights.test.mjs: WebKit 1280
+red before (gap 36, rail SUN 11), green after, both engines × 390/1280 ×
+fonts on time / held 900ms; the hand guard's test is red with the guard
+removed.
+
+### 5. Our picks on a Late night — two real bugs, fixed (dece4e7)
+Probe (`acl-latenights-share.mjs`): at 8:20 PM the Share said "Mohawk Austin
+for Total Wife and Fcukers @ 8:45pm" — no tilde on Fcukers' guessed start;
+at 11:59 PM the NOW row grew Total Wife's card while Fcukers played.
+Cause: plan-rows `actFor` took `headlinersOf(...)[0]`, which is PLAY order
+(the opener), not the most-picked act its comment promises; `approxOf`
+read that act. Fixed both; the tilde now follows the act playing at the
+stop's first minute. tests/plan-latenights.test.mjs red first. The ACL
+goldens (node + browser plan-acl) had frozen the same bug on Stubb's Oct 1
+("8:30 PM" is Brandon Flowers' guess) — now "~8:30".
+
+### Notes door, List, Share — checked, fine
+- Tue Sep 29's head "TUE LATE NIGHTS" is a button "Notes for Tue · Sep 29";
+  it opens the DATE sheet (`sheet:day:2026-09-29`, title "TUE · SEP 29") and
+  a note lands under `notes.day["2026-09-29"]` as a keyed object (the write
+  refused by the rig, kept pending). Matches the CLAUDE.md law.
+- List at every clock: Late-night rooms fold their own over sets ("Earlier ·
+  1 set" at 11:59 PM, "· 2 sets" after close), rings identical to the Board.
+- Share at 11:59 PM: "Mohawk Austin for Total Wife and Fcukers @ now till
+  12am". plan-acl's per-night Share goldens cover the other nights.
