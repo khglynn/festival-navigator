@@ -169,3 +169,18 @@ copy of the test, run on CI), not a local run.
   engine scroll adjustment that fires none), or landAgainWithFonts bailing
   (`fonts.status` already 'loaded' at the open, or `scrollY !== at`) after
   a read that saw the pre-font layout.
+
+### 9. CI on 80b8b94 (this log only, no app change) — the intermittent again
+- PR run 36643510080: all green (both WebKit 1280 landing cases green).
+- Push run 36643504112: browser red on two, checks green —
+  1. "WebKit 1280: Tue 4 PM … says LATE" (fonts on time), the same
+     `{"gap":0,"active":["SUN 11"],"fonts":"loaded"}`. Linux tally for that
+     case now 4 of 8 green over four heads with the same landing code.
+  2. plan-drag "WebKit 1280: the welcome card waits in the corner card's own
+     box …": timed out waiting for `#plan[data-state="peek"]`. Known
+     intermittent — V103-BUILD.md recorded the same timeout on 2026-09-26
+     (green on a re-run); green in the six other runs pulled today.
+- So the release head's CI is green or red by the draw. A merge gate that
+  needs a green browser job will need either the landing fixed (the probe
+  in §8) or a re-run, and a re-run only hides the landing, which friends'
+  laptops in Safari could hit on the open.
