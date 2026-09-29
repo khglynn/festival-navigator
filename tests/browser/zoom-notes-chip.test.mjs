@@ -71,6 +71,9 @@ test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes,
     await sleep(600);
     const journal = await page.evaluate(() => import('/js/errlog.js').then((m) => m.recent()));
     assert.deepEqual(journal.filter((e) => /focus left/.test(e.msg || '')).map((e) => e.msg), [], 'no close on the way to the chip');
+    // And the chip's own close is meant: no "Zoom closed right after a click:
+    // notes sheet opened" warning (LEDGER follow-up 3, 2026-09-26).
+    assert.deepEqual(journal.filter((e) => e.kind === 'zoom-close-after-click').map((e) => e.msg), [], 'no surprise close reported');
     // The notes sheet itself, by the id every sheet path owns — not a journal
     // line: a close that was meant (the chip opening its sheet) records
     // nothing since v92, which only reports a close nobody asked for.

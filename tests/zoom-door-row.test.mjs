@@ -145,6 +145,33 @@ test('the note door opens the notes, as the chip did', async () => {
   assert.equal(zoomCard(), null, 'and no zoom grew there');
 });
 
+// LEDGER follow-up 3 (2026-09-26): "Zoom closed right after a click: notes
+// sheet opened" came in as a warning. That close IS the press's purpose, so it
+// is `meant` (app.js onOpenNotes) and journals nothing. A bare .click() never
+// arms the after-a-press check (the overlay's mousedown does), so this one
+// presses the door as a mouse really does: down, up, click.
+test('a mouse press on the note door opens the notes and reports nothing — that close was meant', async () => {
+  const errlog = await import('../js/errlog.js');
+  const surprises = () => errlog.recent().filter((r) => r.kind === 'zoom-close-after-click');
+  const before = surprises().length;
+  await hover('Robyn');
+  const door = zoomCard().querySelector('button.f-chip.notes');
+  const id = 1;
+  door.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'mouse', pointerId: id }));
+  door.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+  door.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerType: 'mouse', pointerId: id }));
+  door.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+  door.dispatchEvent(new window.PointerEvent('click', { bubbles: true, cancelable: true, pointerType: 'mouse', pointerId: id }));
+  await settle(20);
+  const sheet = document.getElementById('artist-sheet');
+  assert.ok(sheet && !sheet.classList.contains('join-shelf'), 'the notes sheet');
+  assert.equal(zoomCard(), null, 'the zoom went back into its card');
+  assert.deepEqual(surprises().slice(before).map((r) => r.msg), [], 'no "closed right after a click" for the door that asked for it');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  await settle(80);
+  assert.equal(document.getElementById('artist-sheet'), null);
+});
+
 test('a click on a RESTING card still cycles, as in v91 — including must back to nothing', async () => {
   const tap = () => { pointerClick(window, cardOf('Robyn'), 'mouse'); };
   tap();
