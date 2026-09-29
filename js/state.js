@@ -7,7 +7,7 @@
 //     festivals: {fid: {selections: {artist: {person: level}}}},
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge, subtractLeaves } from './merge.js';
-import { computeDayArtists } from './time.js';
+import { daySetsOf } from './time.js';
 import { loadJSON, saveLS, getLS, removeLS } from './util.js';
 import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
 
@@ -403,9 +403,9 @@ export function forgetComputedDays(fid = null) {
 export function getDayArtists(day, weekend) {
   const key = `${activeFestivalId}|${day}|${weekend || 'all'}`;
   if (dayCache[key]) return dayCache[key];
-  const dayData = fest().days[day];
-  const sets = (dayData.artists || []).filter((a) => !weekend || !a.weekend || a.weekend === 'both' || a.weekend === weekend);
-  const computed = computeDayArtists({ ...dayData, artists: sets });
+  // time.js daySetsOf: the weekend's sets and the day's close, the one call
+  // Our picks makes too (plan.js), so a set ends in the same place on both.
+  const computed = daySetsOf(fest(), day, weekend);
   dayCache[key] = computed;
   return computed;
 }

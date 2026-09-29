@@ -410,8 +410,7 @@ function toggleFoldFlow(key) {
       for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
       place = takeWallPlace();
     }
-    repaintWall();
-    keepWallPlace(place);
+    repaintWall({ place });
     if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
     else if (notice()) arrive([notice()]);
   };
@@ -455,8 +454,7 @@ function unfoldAll() {
   ctx.folded = [];
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
-  repaintWall();
-  keepWallPlace(place);
+  repaintWall({ place });
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
@@ -549,8 +547,7 @@ function pastMayMove() {
 function recomputePast() {
   ctx.pastAt = new Date();
   const place = takeWallPlace();
-  repaintWall();
-  keepWallPlace(place, { byTime: true });
+  repaintWall({ place, byTime: true });
 }
 
 // ---- the List's highlight: a filter that moves (v103, 2026-09-26) ------------------------
@@ -635,8 +632,7 @@ function thinFlow(before, { keep = rowsInHand() } = {}) {
     for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
     // A hand scroll during the fade wins: the place is read again, there.
     const place = Math.abs(window.scrollY - before.y) >= 1 ? takeWallPlace() : before.place;
-    repaintWall();
-    keepWallPlace(place);
+    repaintWall({ place });
     if (!canAnimate(root, ctx)) return;
     const arriving = [];
     const moves = [];
@@ -751,9 +747,8 @@ function switchView(next) {
     if (pendingView === sw) pendingView = null;
     // A hand scroll during the fade wins: the place is read again, there.
     if (Math.abs(window.scrollY - tookAt) >= 1) place = takeWallPlace();
-    repaintWall();
+    repaintWall({ place, byTime: true });
     if (fade) { fade.onfinish = null; fade.oncancel = null; try { fade.cancel(); } catch { /* done */ } }
-    keepWallPlace(place, { byTime: true });
     viewPlace = place ? { place, y: window.scrollY } : null;
     arriveBlocks(inView(root));
     keepWallAddress(); // the address says the view it is showing (wallUrl)
@@ -2123,16 +2118,50 @@ function maybeOpenOnDay() {
   // During the festival: the now line, or today's first head before doors —
   // a Late nights date counts as today when no grid day is (wall.js
   // scrollToNowLine).
-  if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) {
+    rememberScrolled(key);
+    landAgainWithFonts(() => scrollToNowLine($('wall-root'), { timeZone: tz }));
+    return;
+  }
   // During it with today hidden: the next visible day. Before it and after
   // it: the first visible grid day.
   const tabs = dayNavOf(state.fest(), ctx);
   const day = nextVisibleDay(tabs, festivalClock(new Date(), tz).iso) || defaultDayOf(tabs);
   if (!day) return;
-  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  const anchor = anchorFor(day.anchor || day.key);
+  const block = document.querySelector(anchor);
   if (!block) return;
   landOnDay(block);
   rememberScrolled(key);
+  landAgainWithFonts(() => { const again = document.querySelector(anchor); if (again) landOnDay(again); });
+}
+
+// The open usually lands before the web fonts do (a cold phone, a first
+// visit). When they arrive every card's text re-sets, and each grid day above
+// the landing grows a few pixels: on ACL's laptop wall, six days × 6px put
+// tonight's Late nights room 36px under the chrome and the day row on SUN 11
+// (2026-09-29). Chromium's scroll anchoring holds the landing through that;
+// WebKit has none, so the open lands once more when the fonts are in — only
+// if nothing has happened since: the page is where the open left it, no hand
+// has touched it, no sheet is up and it is the same festival. A second
+// landing on a page that did not move is the same landing.
+const HANDS = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+function landAgainWithFonts(land) {
+  const fonts = document.fonts;
+  if (!fonts || fonts.status !== 'loading' || !fonts.ready || typeof fonts.ready.then !== 'function') return;
+  const fid = ctx.fid;
+  const at = window.scrollY;
+  let touched = false;
+  const touch = () => { touched = true; };
+  HANDS.forEach((t) => window.addEventListener(t, touch, { capture: true, passive: true }));
+  fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
+    HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true }));
+    if (touched || ctx.fid !== fid || ctx.query || window.scrollY !== at) return;
+    // An open plan (a Share link's landing, say) is the page now: the wall
+    // behind it stays where it is (Sol on v106).
+    if (document.getElementById('sheet-backdrop') || $('screen-app').style.display === 'none' || planIsOpen()) return;
+    land();
+  }, () => HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true })));
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -2242,6 +2271,9 @@ function renderDayNav() {
   // day tabs are rebuilt: NOW is the row's first item for good (v103), so it
   // never leaves the row, and a keyboard on it keeps its place.
   const rested = NOW_DOORS.map(([, row]) => $(row).scrollLeft);
+  // The day lit before the rebuild: what the row shows until the spy has
+  // read the placed page (wall.js wireScrollspy's initial claim).
+  const was = ((dock.querySelector('.day-tab.active') || rail.querySelector('.day-tab.active') || {}).dataset || {}).day || null;
   for (const row of [dock, rail]) for (const t of [...row.children]) if (!t.classList.contains('now-tab')) t.remove();
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
@@ -2270,7 +2302,7 @@ function renderDayNav() {
   }
   NOW_DOORS.forEach(([, row], i) => { $(row).scrollLeft = rested[i]; });
   unspy();
-  unspy = wireScrollspy([dock, rail], $('wall-root'));
+  unspy = wireScrollspy([dock, rail], $('wall-root'), { was });
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
   // Our plan's peek paints first, so the one-NOW rule reads this pass's peek.
@@ -2883,7 +2915,13 @@ function refocusPlace(was) {
   focusQuietly(el);
 }
 
-function repaintWall() {
+// `place` (takeWallPlace, or thinBefore's anchor): the page is held there
+// BEFORE a standing zoom is grown again on its fresh card. The other order
+// grew it where its card sat for the moment between the repaint and the
+// hold: a List row leaving above Robyn put Robyn's zoom one row too high,
+// under a hand that never moved, where it closed or snapped back and a click
+// meant for its − picked the card (2026-09-29, the CI red on list-view).
+function repaintWall({ place = null, byTime = false } = {}) {
   // Rows the person is still on stay through the repaint in a filtered List
   // (a friend's pick arriving on the poll must not pull the row you just
   // un-picked out from under you) — read before the zoom is let go.
@@ -2903,6 +2941,7 @@ function repaintWall() {
   ctx.holdRows = hold;
   try { renderWall($('wall-root'), ctx); } finally { ctx.holdRows = null; }
   if (hold.size) watchLeftovers(); // what was held leaves once it is let go
+  if (place) keepWallPlace(place, { byTime });
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
@@ -2920,6 +2959,11 @@ function repaintWall() {
   updateArchiveNote();
   measureStickyChrome();
   measureFoot(); // Our plan: the shell's padding follows the dock and the peek
+  // Once more at the end: a strip above the wall (the archive note, the
+  // migration banner) or the chrome just measured can move it. Nothing moved,
+  // nothing scrolls; if it did, a standing zoom follows its card as it does
+  // any scroll.
+  if (place) keepWallPlace(place, { byTime });
 }
 
 // The first-wall coach mark (CT-1) lived here until v92: one strip in the

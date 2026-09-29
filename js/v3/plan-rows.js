@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, isoAfter, STEP } from './plan.js';
+import { forkFor, headlinersOf, tillOf, tillApprox, alsoOf, quietClock, isoAfter, STEP } from './plan.js';
 
 // What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
 // was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
@@ -49,11 +49,16 @@ const whereOf = (stop) => (typeof stop.place === 'string' ? stop.place : placeOf
 export const stopKey = (stop) => `${stop.nightId || ''}|${whereOf(stop)}|${stop.from}`;
 
 // The act a node and a grown card speak for: a set's own act; in a room, the
-// headliner most of the stop's people picked (else the room's first act).
+// headliner most of the stop's people picked, the earlier on a tie (else the
+// room's first act). headlinersOf hands its three back in PLAY order, so its
+// first is the opener — which grew Total Wife's card under the NOW row at
+// 11:59 PM on ACL's first Late night, with Fcukers on and picked by more
+// (2026-09-29).
 function actFor(stop, picks) {
   const acts = actsOf(stop);
   if (kindOf(stop) === 'set') return acts[0] || null;
-  return headlinersOf(stop, picks)[0] || acts[0] || null;
+  const top = headlinersOf(stop, picks).reduce((best, h) => (!best || h.n > best.n ? h : best), null);
+  return top || acts[0] || null;
 }
 
 // ---- the pieces ----------------------------------------------------------------
@@ -150,9 +155,17 @@ function whoOf(people, plan, meName) {
 }
 const withEl = (who) => mk('span', 'with', who.join(' + '));
 
+// Whether a stop's start is a guess: the start rests on the room's act
+// playing at its first minute (people arrive for their first pick), so that
+// act's `approx` decides — never the act the row speaks for, which in a
+// room can be another act entirely (Mohawk's stop starts at Fcukers' guessed
+// ~8:45, and was printed "8:45 PM" plain while it spoke for Total Wife's
+// posted 8 PM, 2026-09-29). A grid set's time is the festival's own.
 const approxOf = (stop, picks) => {
   if (kindOf(stop) === 'set') return false;
-  const act = actFor(stop, picks);
+  const acts = actsOf(stop);
+  const on = acts.find((a) => a.from != null && a.to != null && a.from <= stop.from && stop.from < a.to);
+  const act = on || actFor(stop, picks);
   return !!(act && act.approx);
 };
 
@@ -173,7 +186,7 @@ export function stopRow(stop, opts) {
   r.dataset.stop = stopKey(stop);
   if (tag) r.dataset.tag = tag;
   const start = `${approxOf(stop, ctx.picks) ? '~' : ''}${quietClock(stop.from)}`;
-  const text = tag === 'now' ? `till ${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
+  const text = tag === 'now' ? `till ${tillApprox(stop) ? '~' : ''}${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
   const what = whatEl(stop, { ctx, plan, also, nightLabelOf });
   // Under a highlight the place line names who instead (rule 10): a face per
   // row would say it twice, and for a highlight of one it is always them.
@@ -578,6 +591,8 @@ const endOf = (s) => Math.min(...[s.to, tillOf(s), s.place.end].filter((t) => t 
 // The "till" a live line says: its act's end, a room's stop end, never past
 // the place's own end.
 const tillText = (s) => { const t = tillOf(s); return t != null && s.place.end != null ? Math.min(t, s.place.end) : t ?? s.place.end ?? null; };
+// …and whether it is the set's own end the poster left off (plan.js tillApprox).
+const tillMark = (s) => { const t = tillText(s); return t != null && t === tillOf(s) && tillApprox(s) ? '~' : ''; };
 // Who is at a stop or a fork at the minute `now`: its five-minute slice's
 // crowd (a stop's timeline, a fork's crowds), never who was there earlier.
 const crowdAt = (s, now) => ((s.timeline || s.crowds || []).find((c) => c.t <= now && now < c.t + STEP) || { people: [] }).people;
@@ -628,7 +643,7 @@ export function planPicks(route, { ctx, plan, peek = null, nowMin = null, limit 
     .map(({ stop, count, people }) => {
       const live = nowMin != null && stop.from <= nowMin;
       const till = live ? tillText(stop) : null;
-      const when = live ? `now${till != null ? ` till ${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
+      const when = live ? `now${till != null ? ` till ${tillMark(stop)}${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
       const { title, acts } = placeForTitle(stop, ctx.picks, [...people]);
       return { line: `${title} @ ${when}`, from: stop.from, count, acts, stop };
     });

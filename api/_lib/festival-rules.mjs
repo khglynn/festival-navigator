@@ -67,10 +67,16 @@ function checkEventFields(fest, err, warn) {
   const rooms = new Map();
   // How many shows each room holds at all, timed or not.
   const acts = new Map();
+  // A room is a venue on a night — a weekday (Portola's Afters) or a DATE
+  // (ACL's Late nights, keyed by the date since 2026-09-29: before, a dated
+  // room had no key and every run check below skipped it, LEDGER follow-up
+  // 21). An entry that says both is refused above; the date wins here so it
+  // still lands in one room.
   const roomKey = (a) => {
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
-    const night = WEEKDAYS.includes(a.night) ? a.night
-      : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
+    const night = realDate(a.date) ? a.date
+      : WEEKDAYS.includes(a.night) ? a.night
+        : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
     const venue = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
       : bits ? bits.slice(1).join(' · ').trim() : '';
     return night && venue ? `${a.day || ''}|${night}|${venue}` : null;
@@ -692,6 +698,20 @@ export function validateFestivalDoc(fest, { filename } = {}) {
             else if (!realDate(v)) err(`dayMeta.${safeKey(label)}.isos.${wk} must be a real YYYY-MM-DD date`);
             else claim(wk, v, label);
           }
+        }
+      }
+      // A grid day's published doors and close (2026-09-29): the grid spans
+      // them (wall.js renderScheduledDayBody) and a stage's last set with no
+      // printed end runs to the close (time.js computeDayArtists), so each is
+      // one clock time, and a close no set starts before is a slip.
+      for (const k of ['doors', 'close']) {
+        if (meta[k] === undefined) continue;
+        if (typeof meta[k] !== 'string' || !CLOCK_RE.test(meta[k])) { err(`dayMeta.${safeKey(label)}.${k} must be a single clock time like "10 PM" (got ${JSON.stringify(safeKey(meta[k]))})`); continue; }
+        const day = isPlain(fest.days) ? fest.days[label] : null;
+        if (k === 'close' && isPlain(day) && Array.isArray(day.artists)) {
+          const close = timeToMinutes(meta.close);
+          const late = day.artists.filter((a) => isPlain(a) && typeof a.time === 'string' && TIME_RE.test(a.time) && timeToMinutes(a.time.split(' - ')[0]) >= close);
+          if (late.length) warn(`dayMeta.${safeKey(label)}.close ${JSON.stringify(meta.close)} is not after ${safeKey(late[0].name)}'s start (${safeKey(late[0].time)}) — the close would not reach that set`);
         }
       }
       // Each date is typed twice — once to show (the day rule), once as ISO

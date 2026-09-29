@@ -85,6 +85,11 @@ export function factsFor(artistName, ctx, occ = null) {
   // a name can be a grid billing AND an event — says whether its time is a
   // guess, the room's real window, and where it sits in the order.
   const entry = occ ? findEventEntry(fest, artistName, occ) : null;
+  // The entry's clock is the truth: an occurrence written before a data drop
+  // (a notes sheet's history entry) can carry a time the file has since
+  // moved, and findEventEntry still finds its venue show (LEDGER follow-up
+  // 21). An exact match says the same time, so nothing changes for it.
+  if (entry && typeof entry.time === 'string') time = entry.time;
   // A cancelled act (2026-09-23): the entry this card IS says so — or, with
   // no occurrence to ask (a list that only knows the name), the name has
   // nothing left anywhere (events.js cancelledNames). A cancelled card has

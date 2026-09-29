@@ -12,6 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
@@ -113,6 +114,12 @@ test('a thrown error in the real page sends exactly one scrubbed request to /fn-
     assert.equal(p.pid, PID);
     assert.equal(p.fest, FID);
     assert.equal(p.screen, 'wall');
+    // No worker controls this page (blocked), and a fresh context has no
+    // caches: the report still names the build, from the page's own
+    // fn-build meta (LEDGER follow-up 2 — every report on Sep 26 said null).
+    const shipped = readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8').match(/const CACHE_VERSION = 'festival-nav-(v\d+)';/)[1];
+    assert.equal(p.sw, 'none');
+    assert.equal(p.build, shipped, 'the page names the build it is');
     assert.equal(p.$exception_list[0].type, 'TypeError');
     assert.equal(p.$exception_list[0].mechanism.handled, false);
     assert.match(p.$exception_list[0].value, /^thrown in a real page https:\/\/fest\.kevinhg\.com\/f\/portola-2026 \/api\/crew‹param› ‹token›$/);

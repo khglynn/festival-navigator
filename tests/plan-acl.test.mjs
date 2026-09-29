@@ -138,12 +138,20 @@ function close() {
 }
 // The goldens: the open plan as each moment draws it (a PLAN_ACL_PRINT run,
 // read line by line against the data and the model before freezing).
+// (2026-09-29: Stubb's on Oct 1 reads "~8:30 PM" — its stop starts on Brandon
+// Flowers' guessed start, which the row used to print plain; see
+// tests/plan-latenights.test.mjs.)
+// (2026-09-29, the file's 10 PM close on its Zilker days: a stage's last set
+// with no printed end runs to it — tests/day-close.test.mjs. Skrillex now ends
+// with Charli xcx, so her 9:30 tail after him is no stop of its own on Fri
+// Oct 2; Lorde's end moves Sat Oct 10's scattered gap to 10 PM; The xx's NOW
+// says "till ~10 PM", where it said ~9:45.)
 const GOLDEN = {
   tue: [
     "HEAD TUE OUR PICKS Sep 29 · 8 picking",
     "SOME Mohawk Austin Fcukers also Oct 4, Oct 10, Oct 11 NEXT ~8:45 PM 4 picked",
     "# THU Oct 1",
-    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 8:30 PM 3 picked",
+    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 ~8:30 PM 3 picked",
     "# FRI Oct 2",
     "SOME Faouzia Miller Lite also Oct 9 1:45 PM 3 picked",
     "  … Scattered till 3:15 PM 2:30 PM",
@@ -154,7 +162,6 @@ const GOLDEN = {
     "  … Scattered till 8:15 PM 7:15 PM",
     "MOST Skrillex T-Mobile C D E F G 8:15 PM 5 picked",
     "    or Charli xcx · American Express 3 picked",
-    "SOME Charli xcx American Express 9:30 PM 3 picked",
     "# SAT Oct 3",
     "SOME Arcy Drive Miller Lite also Oct 8, Oct 10 3:15 PM 3 picked",
     "    or Ryan Beatty · Beatbox 3 picked",
@@ -183,7 +190,7 @@ const GOLDEN = {
     "SOME Ryan Beatty Beatbox also Oct 4 5:30 PM 3 picked",
     "  … Scattered till 8:15 PM 6:30 PM",
     "MOST Lorde T-Mobile A B C D E F 8:15 PM 6 picked",
-    "  … Scattered till 11:45 PM 9:30 PM",
+    "  … Scattered till 11:45 PM 10 PM",
     "SOME Devil May Care Fcukers also Sep 29, Oct 4, Oct 11 11:45 PM 4 picked",
     "# SUN Oct 11",
     "SOME Fcukers Tito's also Sep 29, Oct 10 6:30 PM 4 picked",
@@ -209,7 +216,7 @@ const GOLDEN = {
     "SOME Ryan Beatty Beatbox also Oct 4 5:30 PM 3 picked",
     "  … Scattered till 8:15 PM 6:30 PM",
     "MOST Lorde T-Mobile A B C D E F 8:15 PM 6 picked",
-    "  … Scattered till 11:45 PM 9:30 PM",
+    "  … Scattered till 11:45 PM 10 PM",
     "SOME Devil May Care Fcukers also Sep 29, Oct 4, Oct 11 11:45 PM 4 picked",
     "# SUN Oct 11",
     "SOME Fcukers Tito's also Sep 29, Oct 10 6:30 PM 4 picked",
@@ -225,7 +232,7 @@ const GOLDEN = {
     "SOME Ryan Beatty Beatbox also Oct 4 5:30 PM 3 picked",
     "  … Scattered till 8:15 PM 6:30 PM",
     "MOST Lorde T-Mobile A B C D E F 8:15 PM 6 picked",
-    "  … Scattered till 11:45 PM 9:30 PM",
+    "  … Scattered till 11:45 PM 10 PM",
     "SOME Devil May Care Fcukers also Sep 29, Oct 4, Oct 11 11:45 PM 4 picked",
     "# SUN Oct 11",
     "SOME Fcukers Tito's also Sep 29, Oct 10 6:30 PM 4 picked",
@@ -239,7 +246,7 @@ const GOLDEN = {
     "# TUE Sep 29 (past)",
     "SOME Mohawk Austin Fcukers also Oct 4, Oct 10, Oct 11 ~8:45 PM 4 picked (past)",
     "# THU Oct 1 (past)",
-    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 8:30 PM 3 picked (past)",
+    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 ~8:30 PM 3 picked (past)",
     "# FRI Oct 2 (past)",
     "SOME Faouzia Miller Lite also Oct 9 1:45 PM 3 picked (past)",
     "  … Scattered till 3:15 PM 2:30 PM (past)",
@@ -250,7 +257,6 @@ const GOLDEN = {
     "  … Scattered till 8:15 PM 7:15 PM (past)",
     "MOST Skrillex T-Mobile C D E F G 8:15 PM 5 picked (past)",
     "    or Charli xcx · American Express 3 picked (past)",
-    "SOME Charli xcx American Express 9:30 PM 3 picked (past)",
     "# SAT Oct 3 (past)",
     "SOME Arcy Drive Miller Lite also Oct 8, Oct 10 3:15 PM 3 picked (past)",
     "    or Ryan Beatty · Beatbox 3 picked (past)",
@@ -279,7 +285,7 @@ const GOLDEN = {
     "SOME Ryan Beatty Beatbox also Oct 4 5:30 PM 3 picked",
     "  … Scattered till 8:15 PM 6:30 PM",
     "MOST Lorde T-Mobile A B C D E F 8:15 PM 6 picked",
-    "  … Scattered till 11:45 PM 9:30 PM",
+    "  … Scattered till 11:45 PM 10 PM",
     "SOME Devil May Care Fcukers also Sep 29, Oct 4, Oct 11 11:45 PM 4 picked",
     "# SUN Oct 11",
     "SOME Fcukers Tito's also Sep 29, Oct 10 6:30 PM 4 picked",
@@ -290,7 +296,7 @@ const GOLDEN = {
   sun: [
     "HEAD SUN OUR PICKS Oct 11 · 8 picking",
     "» Earlier · Sep 29 – Oct 10 · 1 stop",
-    "SOME The xx T-Mobile NOW till 9:45 PM 4 picked",
+    "SOME The xx T-Mobile NOW till ~10 PM 4 picked",
     "    or Twenty One Pilots · American Express 3 picked",
   ],
   sunLate: [

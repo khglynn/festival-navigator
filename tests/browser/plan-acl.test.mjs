@@ -172,7 +172,7 @@ const SHARE_GOLDEN = [
   { night: '2026-10-01', wd: 'THU', share: 'Share Thu Oct 1’s picks', text: [
     "Our crew's main picks for Oct 1 ACL Music Festival",
     '',
-    "Stubb's for Jess Williamson and Brandon Flowers @ 8:30pm",
+    "Stubb's for Jess Williamson and Brandon Flowers @ ~8:30pm",
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-01',
   ].join('\n') },

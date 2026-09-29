@@ -294,13 +294,20 @@ test('windows: every Portola Friday and Saturday act has the same now window as 
   assert.ok(n > 60, `compared ${n} cards`);
 });
 
-test('windows: every ACL night — both weekends (an unprinted closer glows +75, the wall\'s rule) and every Late night', () => {
+test('windows: every ACL night — both weekends (an unprinted closer glows to the day\'s close, the wall\'s rule) and every Late night', () => {
   const root = renderBoard('acl-2026');
   const plan = P.planOf(ACL, { picks: { Skrillex: { A: 1, B: 1, C: 1 } }, members: ['A', 'B', 'C'] });
   const blocks = ['Friday', 'Saturday', 'Sunday'].flatMap((d) => [`${d}|W1`, `${d}|W2`]);
   const n = checkWindows(root, plan, plan.nights.map((n) => n.id), [...blocks, 'Late nights']);
   const skrillex = plan.places.find((p) => p.acts[0].name === 'Skrillex');
-  assert.deepEqual([q(skrillex.start), q(skrillex.end)], ['8:15 PM', '9:30 PM'], 'start + 75, as the grid cell glows (the prototype said +60)');
+  // ACL publishes a 10 PM close on its Zilker days (dayMeta, 2026-09-29), and
+  // a stage's last set with no printed end runs to it (js/time.js). Without a
+  // close it is start + 75 (the prototype said +60) — the same rule, the plan's
+  // copy of it on the file with its close taken off.
+  assert.deepEqual([q(skrillex.start), q(skrillex.end)], ['8:15 PM', '10 PM'], 'to the day\'s close, as the grid cell glows');
+  const noClose = { ...ACL, dayMeta: Object.fromEntries(Object.entries(ACL.dayMeta).map(([k, m]) => { const r = { ...m }; delete r.close; return [k, r]; })) };
+  const bare = P.planOf(noClose, { picks: { Skrillex: { A: 1, B: 1, C: 1 } }, members: ['A', 'B', 'C'] }).places.find((p) => p.acts[0].name === 'Skrillex');
+  assert.deepEqual([q(bare.start), q(bare.end)], ['8:15 PM', '9:30 PM'], 'with no close, start + 75');
   // Since main's data release #56 (2026-09-26) every Late nights show has a
   // time (posted, or tool-written and marked approx), so all 66 are windows
   // the plan holds — and checkWindows found each one's card, window for window.
@@ -377,8 +384,12 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
   // Bo stays at the Scoot Inn through Fcukers (both 3); Cal waits at Zilker for
   // The xx and goes after it. Two of them at the Scoot Inn at any moment is
   // under the bar, so the night is Tito's and T-Mobile.
-  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 6, 3, 2, 0, 0, 1, 5, 4, 2]);
-  assert.deepEqual(rows(plan, '2026-10-04'), ['some 6:30 PM–7:30 PM 3 Tito\'s (Fcukers)', '··· 7:30 PM–8:30 PM', 'some 8:30 PM–9:45 PM 4 T-Mobile (The xx)']);
+  // Fri Oct 2 had six stops until the file published its 10 PM close
+  // (2026-09-29): Skrillex ended at 9:30 (start + 75) and Charli xcx's last
+  // 25 minutes were a stop of their own; both now run to the close, so she
+  // is his fork to the end. The xx runs to the close on Oct 4 the same way.
+  assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 5, 3, 2, 0, 0, 1, 5, 4, 2]);
+  assert.deepEqual(rows(plan, '2026-10-04'), ['some 6:30 PM–7:30 PM 3 Tito\'s (Fcukers)', '··· 7:30 PM–8:30 PM', 'some 8:30 PM–10 PM 4 T-Mobile (The xx)']);
 });
 
 test('ACL: no two grid places of one weekend overlap on one stage (the prototype had 41)', () => {
@@ -471,16 +482,18 @@ test('ACL: rule 5 — the same stage on the same weekday on the other weekend is
   assert.deepEqual(sun.alsoAt.map((o) => [o.nightId, o.place]), [['2026-09-29', 'Mohawk Austin'], ['2026-10-10', 'Devil May Care']], 'never the same set on the other weekend');
   // How many stops carry an "also" on this crew (the log records it).
   const all = plan.nights.flatMap((n) => stops(plan, n.id));
-  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [25, 13], 'was [22, 7] before #56, [28, 16] before the trip took Sun Oct 4\'s three Scoot Inn stops');
+  assert.deepEqual([all.length, all.filter((s) => s.alsoAt.length).length], [24, 13], 'was [22, 7] before #56, [28, 16] before the trip took Sun Oct 4\'s three Scoot Inn stops, [25, 13] before the 10 PM close took Fri Oct 2\'s Charli xcx tail');
 });
 
 test('ACL: an unprinted closer\'s NOW row runs to the wall\'s end for it', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
+  // The wall's end for a closer is the day's published close, 10 PM (it was
+  // start + 75, 9:30, before the file carried the close — 2026-09-29).
   const skrillex = stopOf(plan, '2026-10-02', 'Skrillex');
-  assert.equal(P.tillOf(skrillex), M(21, 30));
+  assert.equal(P.tillOf(skrillex), M(22));
   const kol = stopOf(plan, '2026-10-09', 'Kings of Leon');
   assert.equal(kol.to, M(20, 40), 'the route moves to Charli xcx at 8:40 …');
-  assert.equal(P.tillOf(kol), M(21, 30), '… but the NOW row says the set\'s own end');
+  assert.equal(P.tillOf(kol), M(22), '… but the NOW row says the set\'s own end');
 });
 
 // ---- 4. the rules, on tiny festivals ----------------------------------------------------

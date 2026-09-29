@@ -355,8 +355,12 @@ function hostKind() {
 // The worker that controlled this page when it loaded served its modules, so
 // its CACHE_VERSION and ASSET_STAMP are this page's build — even after a
 // newer worker takes over (the "v75 shell judging v76 code" case, 2026-09-01).
-// It answers a postMessage (service-worker.js). No controller: the cache
-// names are the best guess, and `sw` says so.
+// It answers a postMessage (service-worker.js). No controller, or one that
+// never answers: the page's OWN build — index.html's fn-build meta, which
+// scripts/sw-stamp.mjs writes beside CACHE_VERSION, so the HTML that loaded
+// these modules says which release it is (LEDGER follow-up 2, 2026-09-26:
+// every report that night said build null, sw "none"). Only a page with no
+// such meta falls back to the cache names, a guess. `sw` says which it was.
 let buildInfo = null;
 let buildStarted = false;
 let buildWaiters = [];
@@ -385,7 +389,18 @@ function settleBuild(version, stamp, sw) {
   for (let i = 0; i < w.length; i++) { try { w[i](); } catch { /* a waiter */ } }
 }
 
+// "v105" from the page's own meta, or null. Only that shape is ever sent.
+function metaBuild() {
+  try {
+    const el = window.document.querySelector('meta[name="fn-build"]');
+    const v = el && el.getAttribute('content');
+    return typeof v === 'string' && /^v\d{1,6}$/.test(v) ? v : null;
+  } catch { return null; }
+}
+
 function buildFromCaches(sw) {
+  const own = metaBuild();
+  if (own) { settleBuild('festival-nav-' + own, null, sw); return; }
   try {
     window.caches.keys().then((keys) => {
       let hit = null;

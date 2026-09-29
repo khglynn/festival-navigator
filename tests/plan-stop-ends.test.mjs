@@ -91,7 +91,7 @@ const at = (m) => P.quietClock(m);
 // past 24:00 (an afters party prints "till 6 AM") and a day party can run
 // from 10 AM to "12 AM".
 const tillMin = (text, nowMin) => {
-  const t = text.match(/till (\d+)(?::(\d+))? ?([AaPp])[Mm]/);
+  const t = text.match(/till ~?(\d+)(?::(\d+))? ?([AaPp])[Mm]/); // ~: an end the poster left off (time.js endApprox)
   if (!t) return null;
   const m = (Number(t[1]) % 12 + (/[Pp]/.test(t[3]) ? 12 : 0)) * 60 + Number(t[2] || 0);
   return m + 1440 * Math.max(0, Math.ceil((nowMin - 120 - m) / 1440));
