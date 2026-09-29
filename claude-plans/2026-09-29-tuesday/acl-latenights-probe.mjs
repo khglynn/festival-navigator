@@ -27,6 +27,11 @@ export const CLOCKS = {
   'sep30-1230am': CDT('2026-09-30T00:30:00'),
   'sep30-6am': CDT('2026-09-30T06:00:00'),
   'oct3-9pm': CDT('2026-10-03T21:00:00'),
+  // Extra (not in the brief's six): past midnight on a busier Late night,
+  // and the rollover after it.
+  'oct2-130am': CDT('2026-10-02T01:30:00'),
+  'oct2-5am': CDT('2026-10-02T05:00:00'),
+  'oct8-4pm': CDT('2026-10-08T16:00:00'),
 };
 // Invented crew; placeholder names, made-up picks on the real lineup.
 export const CREW = {

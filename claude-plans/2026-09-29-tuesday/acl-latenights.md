@@ -102,3 +102,34 @@ goldens (node + browser plan-acl) had frozen the same bug on Stubb's Oct 1
   1 set" at 11:59 PM, "· 2 sets" after close), rings identical to the Board.
 - Share at 11:59 PM: "Mohawk Austin for Total Wife and Fcukers @ now till
   12am". plan-acl's per-night Share goldens cover the other nights.
+
+### 6. Past midnight on a busier night, and later dates (probe extras)
+- Fri Oct 2 1:30 AM (Oct 1's night): The Chainsmokers (12–2 AM) and
+  Montclair (10:30 PM–1:45 AM) lit, NOW in the row, a NOW tap lands on the
+  Oct 1 room with The Chainsmokers in view. 5:00 AM: nothing lit, the open
+  lands on FRI 2 (today, before doors).
+- Thu Oct 8 4 PM: the open lands on the Oct 8 room; W1 folds to "Earlier ·
+  FRI 2 · SAT 3 · SUN 4".
+
+### Findings for the coordinator (not fixed here)
+A. **A date with no Late night skips the next one** (Wed Sep 30, Wed Oct 7):
+   the open lands on the next GRID day (Fri Oct 2 / Fri Oct 9), passing the
+   Late night the evening before it (Thu Oct 1 / Thu Oct 8). `app.js
+   nextVisibleDay` ignores dated rooms and calls Sep 30 "before the
+   festival". A product call: count dated rooms as days for "during" and
+   for "the next visible day". Nothing is wrong on the screen; the LATE tab
+   is one tap away.
+B. **Oct 3 9 PM (Zilker Saturday) with no stop left today**: the open plan
+   heads to Sunday (tomorrow-only rule) and files today under "Earlier ·
+   Sep 29 – Oct 3" while Saturday still has sets on. Plan design, v105;
+   worth Kevin's eye if a friend finds it odd.
+C. **LEDGER follow-up 12 does not bite tonight.** Late nights is one day
+   block, so it can only fold whole after Oct 10. In the List each past
+   date keeps its head with an "Earlier · N sets" line (by Oct 8, six of
+   them above tonight's room); the Board keeps past dates whole. The open
+   lands on tonight's room either way. A per-date fold (past dates as one
+   line) is the build if the stack gets in the way.
+D. WebKit 1280 List at Oct 3 9 PM: one "ResizeObserver loop" page error
+   (LEDGER follow-up 37).
+E. The phone's NOW can rest half behind the day row's fade (follow-up 34):
+   the probe's blind tap on its box centre missed it at Oct 3 9 PM.
