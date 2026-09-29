@@ -133,3 +133,19 @@ D. WebKit 1280 List at Oct 3 9 PM: one "ResizeObserver loop" page error
    (LEDGER follow-up 37).
 E. The phone's NOW can rest half behind the day row's fade (follow-up 34):
    the probe's blind tap on its box centre missed it at Oct 3 9 PM.
+
+### Gate (2026-09-29, on 2994f84 + this log)
+- `npm test`: 1360 tests, 1357 pass, 1 fail (the SW stamp — left for the
+  coordinator, not stamped), 1 skipped, 1 todo.
+- `TZ=Asia/Tokyo npm test`: same 1357 / 1 (stamp) / 1 / 1.
+- `NIGHT_CLOCK=2026-09-30T02:30:00Z` + night-clock import: same.
+- `node scripts/validate-festivals.mjs`: 10 files, 0 errors, 2 warnings (both
+  pre-existing: Flight by Nothing billed Sunday with no grid set;
+  Tomorrowland winter empty lineup).
+- Full browser suite, both engines (`BROWSER_TEST_REQUIRED=1`): 516 tests,
+  513 pass, 2 skipped (by design: WebKit Tab-order, WebKit glide race), 1
+  fail — plan-drag "Chromium: a row tap grows its card where the finger
+  is" timed out under the full-suite load; alone it passed 3/3 in both
+  engines.
+- `LATE_ANIMATIONS_MS=800` on acl-latenights + plan-acl + plan-drag: 61
+  tests, 60 pass, 0 fail, 1 skipped.
