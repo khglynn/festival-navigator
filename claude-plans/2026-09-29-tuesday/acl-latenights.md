@@ -45,3 +45,30 @@ date's room folds its own sets in the List at the next held clock (boot,
 resume, 5 AM) — a phone left open from 11:59 PM keeps Fcukers visible past
 midnight until it is resumed, which is the designed "never vanishes under
 your thumb".
+
+### 2. WebKit + laptop widths
+- Every clock in WebKit (390, 1280), Chromium 1280, and WebKit List: the
+  same rings, the same NOW presence, the same folds, no page errors (one
+  "ResizeObserver loop" in WebKit 1280 List = LEDGER follow-up 37).
+- **Found: WebKit at 1280 opens 36px short of the Late nights room, and the
+  rail says SUN 11.** The open lands while the web fonts are still loading;
+  each of the six grid days above grows 6px when Inter lands (6 × 6 = 36),
+  and WebKit has no scroll anchoring to hold the landing (Chromium does, so
+  it lands at 50px = --jump-offset). The day row's scroll spy then reads
+  Sunday Oct 11. Laptop Safari, every festival's open; at 390 the growth
+  is ~1px. Fix below (§4).
+- Phone "second NOW tap stays put" on Oct 3 was the probe tapping a NOW the
+  row had rested half behind its fade (LEDGER follow-up 34); with
+  `nowInView` first, tap 2 goes to the Late nights cards and tap 3 comes
+  back to the grid line, both engines.
+
+### 3. LEDGER follow-up 21 — both halves real, both fixed
+- Validator (4de188b): `roomKey` needed a weekday `night`, so dated rooms
+  had no key and every run check skipped them. Keyed by the date now; a
+  new section-entries case was red first. ACL still validates with 0 errors.
+- Notes sheet restore (e9828d6): `findEventEntry` matched on time; a venue
+  show now matches on name + day + date + venue + stage with time as a
+  tie-break (ambiguous → null, grid sets unchanged) and factsFor reads the
+  entry's time. dated-occurrence case red first (Palace, 12:30 AM stale).
+- `npm test` after both: 1353 pass / 1 fail (the SW stamp, left for the
+  coordinator) / 1 skipped / 1 todo.
