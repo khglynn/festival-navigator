@@ -653,16 +653,28 @@ export function runFactsOf(entry) {
 // occurrence from an old route key, or one a caller wrote by hand, still
 // matches the way it always did. `null` is an answer ("this show has no
 // date"), `undefined` is silence.
+//
+// A VENUE show (an occurrence that names its room: an afters, a Late night)
+// is the same show on the same night in the same room whatever its clock
+// says — and a guessed clock is designed to move with each data drop
+// (guess-run-times.mjs). An occurrence written before the move (a notes
+// sheet's history entry, LEDGER follow-up 21) must still find its show, so
+// for a venue show the time only breaks a tie: with no exact match, the one
+// entry for that act on that night in that room answers, and two such
+// entries (an early and a late show) answer nothing rather than a guess. A
+// grid set never loosens — its stage and time ARE its identity.
 const sameField = (a, b) => (a || null) === (b || null);
 export function findEventEntry(fest, name, occ) {
   if (!occ || !fest) return null;
   const want = occ.stage || '';
-  return (fest.artists || []).find((a) => a && a.name === name
+  const same = (fest.artists || []).filter((a) => a && a.name === name
     && sameField(a.day, occ.day)
-    && sameField(a.time, occ.time)
     && (occ.date === undefined || sameField(dateOf(a), occ.date))
     && (occ.venue === undefined || sameField(venueOf(a), occ.venue))
-    && (occOf(a).stage || '') === want) || null;
+    && (occOf(a).stage || '') === want);
+  const exact = same.find((a) => sameField(a.time, occ.time));
+  if (exact) return exact;
+  return occ.venue && same.length === 1 ? same[0] : null;
 }
 
 

@@ -133,6 +133,37 @@ test('findEventEntry resolves each night to its OWN entry', () => {
   assert.equal(findEventEntry(portola, 'VTSS', legacy), portola.artists.find((a) => a.name === 'VTSS' && a.day === 'Afters'));
 });
 
+// LEDGER follow-up 21 (2026-09-29): a notes sheet restored from a history
+// entry carries the occurrence as it was WRITTEN — its time included — and a
+// guessed time is designed to move (guess-run-times.mjs re-reads the venue
+// registry on every drop). The ACL prep round found Palace's sheet, reopened
+// from an entry written before that drop, printing "Thu · Oct 1 · 12:30 AM":
+// the stale guess, with no tilde, because the entry no longer matched on
+// time. A venue show is the same show on the same night in the same room
+// whatever its clock says, so the time only breaks a tie.
+test('a notes sheet reopened from an old history entry finds its show after the time moved', () => {
+  const ctx = ctxFor('acl-2026');
+  state.setActiveFestivalId('acl-2026');
+  const palace = lateNight('Palace', '2026-10-01');
+  assert.ok(palace && palace.approx === true, 'Palace is still a guessed set in the shipped file');
+  const stale = { ...occOf(palace), time: '12:30 AM' }; // the entry an earlier build wrote
+  assert.equal(findEventEntry(acl, 'Palace', stale), palace, 'the same show, found by its night and its room');
+  const f = facts.factsFor('Palace', ctx, stale);
+  assert.equal(f.when, facts.factsFor('Palace', ctx, occOf(palace)).when, 'the header tells today’s truth');
+  assert.match(f.when, /^Thu · Oct 1 · Runs 7 PM – ~12 AM$/);
+  assert.equal(f.time, palace.time, 'the clock is the file’s, not the stale one');
+  assert.equal(f.approx, true);
+  assert.ok(f.order && /2nd of 2/.test(f.order.text), JSON.stringify(f.order));
+  // Two shows by one act in one room on one night: the time is the only
+  // thing that tells them apart, so a stale time finds neither.
+  const twice = { ...acl, artists: [...acl.artists, { ...palace, time: '11:30 PM', order: undefined }] };
+  assert.equal(findEventEntry(twice, 'Palace', stale), null, 'an ambiguous show is never guessed');
+  assert.equal(findEventEntry(twice, 'Palace', occOf(palace)), palace, 'an exact match still wins');
+  // A grid set never loosens: its identity IS its stage and time.
+  const vtss = portola.artists.find((a) => a.name === 'VTSS' && a.day === 'Afters');
+  assert.equal(findEventEntry(portola, 'VTSS', { ...occOf(vtss), stage: null, venue: null, time: '1 AM' }), null);
+});
+
 // ---- the facts -----------------------------------------------------------------------
 
 test('factsFor tells each late night its own truth: the right venue, the right door, the right date', () => {
