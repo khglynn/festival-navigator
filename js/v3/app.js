@@ -2162,7 +2162,9 @@ function landAgainWithFonts(land) {
   fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
     HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true }));
     if (touched || ctx.fid !== fid || ctx.query || window.scrollY !== at) return;
-    if (document.getElementById('sheet-backdrop') || $('screen-app').style.display === 'none') return;
+    // An open plan (a Share link's landing, say) is the page now: the wall
+    // behind it stays where it is (Sol on v106).
+    if (document.getElementById('sheet-backdrop') || $('screen-app').style.display === 'none' || planIsOpen()) return;
     land();
   }, () => HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true })));
 }
