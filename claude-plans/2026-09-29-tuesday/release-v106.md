@@ -148,3 +148,24 @@ this log. Nothing refused. Open item for the coordinator: §6 — the Linux
 WebKit 1280 fonts-on-time landing still reads SUN 11 with the scrollspy fix
 in; it needs a Linux probe (log each spy claim + scrollY + fonts.status in a
 copy of the test, run on CI), not a local run.
+
+### 8. CI on the pushed head 8c51084 — green, and what that does and does not say
+- Push run 36642095621 and PR #71 run 36642102114: checks green, browser
+  green (515 tests, 511 pass, 0 fail, 4 skipped each), all four WebKit
+  "Tue 4 PM … says LATE" cases green in both.
+- But 8c51084's app code is byte-identical to 0f4901e's except the
+  fn-build meta (read only by js/errlog.js for crash reports; 3de19fa had
+  no meta and still failed once). So the green is the same intermittent
+  landing coming up heads, not a fix. Linux WebKit, "WebKit 1280: Tue 4 PM"
+  fonts-on-time: 3de19fa 1/2, 0f4901e 0/2, 8c51084 2/2 → 3 of 6; the
+  fonts-late variant 5 of 6. Always `{"gap":0,"active":["SUN 11"]}` when
+  red: the page lands, the row does not follow.
+- Next step (coordinator's call): a Linux probe — a copy of the test that
+  logs every spy claim (scrollY, the LATE and SUN 11 block tops,
+  --jump-offset, fonts.status, and whether landAgainWithFonts ran or bailed
+  and why) — pushed on a throwaway branch so CI's WebKit runs it a few
+  times. Candidates to confirm there: a geometry read between the font
+  growth and the second landing with no scroll event after it (e.g. an
+  engine scroll adjustment that fires none), or landAgainWithFonts bailing
+  (`fonts.status` already 'loaded' at the open, or `scrollY !== at`) after
+  a read that saw the pre-font layout.
