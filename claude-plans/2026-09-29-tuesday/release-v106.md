@@ -180,7 +180,9 @@ copy of the test, run on CI), not a local run.
      box …": timed out waiting for `#plan[data-state="peek"]`. Known
      intermittent — V103-BUILD.md recorded the same timeout on 2026-09-26
      (green on a re-run); green in the six other runs pulled today.
-- So the release head's CI is green or red by the draw. A merge gate that
-  needs a green browser job will need either the landing fixed (the probe
-  in §8) or a re-run, and a re-run only hides the landing, which friends'
-  laptops in Safari could hit on the open.
+- So the release head's CI was green or red by the draw. (Superseded the
+  same evening by 1b196ca, the coordinator's commit: on Linux WebKit 1280
+  the rail-label assertion is quarantined as LEDGER follow-up 38, a
+  diagnostic instead of a fail; the landing gap stays asserted everywhere,
+  and the label is chased with the CI probe in §8. plan-drag's welcome-card
+  timeout is not quarantined and can still red a run.)
