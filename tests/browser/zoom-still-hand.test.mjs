@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER, lateStarts } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FID = 'portola-2026';
@@ -46,6 +46,7 @@ const doc = () => ({
 
 async function openWall(engine, at) {
   const ctx = await engine.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  await lateStarts(ctx); // LATE_ANIMATIONS_MS: Linux WebKit's late motion, on any machine
   const TOKEN = 'stillhandcontract_012345'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -131,14 +132,52 @@ const stopZoomWatch = (page) => page.evaluate(() => { const w = window.__zoomWat
 const railNow = (page) => page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
 const labelOf = (page, a) => page.evaluate((x) => { const c = [...document.querySelectorAll('#wall-root .card')].find((el) => el.dataset.artist === x); return c && c.getAttribute('aria-label'); }, a);
 
+// Where the hand clicks NOW, once the page is at rest: a point on the tab (4px
+// in from its edges) straight above a card column, as near the tab's middle
+// as that allows — so the glide slides a card under the still pointer — and
+// one the engine's own hit test gives to NOW, the same point for three frames
+// running. The highlight brings NOW into the rail's row and slides the days
+// over for it (v104), and dims the wall; a fixed 400ms beat measured NOW
+// mid-slide. Linux WebKit starts that motion 700ms+ late, and while a slide
+// is held at its start WebKit draws NOW 21px left of where its hit test puts
+// it: the click at the drawn middle went to #day-rail and nothing glided
+// (main's CI runs 36347630741 and 36402337479; the throwaway probe branch
+// probe/webkit-reds caught it with the hit logged, 2026-09-29).
+async function aimAtNow(page) {
+  const h = await page.waitForFunction(() => {
+    const busy = document.getAnimations().some((a) => a.timeline === document.timeline
+      && (a.playState === 'running' || a.pending)
+      && Number.isFinite(a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming().endTime : Infinity));
+    const n = document.getElementById('rail-now');
+    const w = window.__aim || (window.__aim = { last: null, same: 0 });
+    if (busy || !n || n.hidden || n.dataset.leaving || !n.getClientRects().length) { w.last = null; w.same = 0; return null; }
+    const r = n.getBoundingClientRect();
+    const lo = Math.ceil(r.left + 4), hi = Math.floor(r.right - 4), mid = Math.round(r.left + r.width / 2);
+    const cols = [...document.querySelectorAll('#wall-root .card.cell')].map((c) => c.getBoundingClientRect()).filter((b) => b.width > 0);
+    const over = (x) => cols.some((b) => x >= b.left + 2 && x <= b.right - 2);
+    let x = null;
+    for (let d = 0; d <= hi - lo && x == null; d++) x = [mid - d, mid + d].find((c) => c >= lo && c <= hi && over(c)) ?? null;
+    const y = Math.round(r.top + r.height / 2);
+    const hit = x != null && n.contains(document.elementFromPoint(x, y));
+    const key = hit ? `${x},${y}` : null;
+    w.same = key && key === w.last ? w.same + 1 : 0;
+    w.last = key;
+    return w.same >= 2 ? { x, y } : null;
+  }, null, { timeout: 8000, polling: 'raf' });
+  const at = await h.jsonValue();
+  await page.evaluate(() => { delete window.__aim; });
+  return at;
+}
+
 // The glide: NOW clicked with the mouse, the page settling under it.
 async function glide(page) {
   await page.locator('#person-chips .person-chip', { hasText: 'Ross' }).first().click();
-  await sleep(400);
-  const now = await railNow(page);
+  const now = await aimAtNow(page);
+  const top = await page.evaluate(() => window.scrollY);
   await page.mouse.click(now.x, now.y);
   await sleep(200); // let the glide begin
-  await scrollSettled(page);
+  const landed = await scrollSettled(page);
+  assert.ok(landed > top + 100, `not vacuous: the click on NOW glided the page (scrollY ${top} to ${landed})`);
   return now;
 }
 
