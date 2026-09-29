@@ -15,19 +15,25 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchWebkit } from '../helpers/browser.mjs';
+import { launchWebkit, launchBrowser } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 let webkit = null;
 webkit = await launchWebkit();
-test.after(async () => { if (webkit) await webkit.close(); await server.close(); });
+// Chromium too since 2026-09-29: the chip's own close is meant, and neither
+// engine may report it as a surprise (LEDGER follow-up 3).
+const chromium = await launchBrowser();
+test.after(async () => { if (webkit) await webkit.close(); if (chromium) await chromium.close(); await server.close(); });
 
-test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes, and the zoom does not close first', { skip: webkit ? false : 'WebKit not installed' }, async () => {
+test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes, and the zoom does not close first', { skip: webkit ? false : 'WebKit not installed' }, () => chipFlow(webkit));
+test('Chromium: the same click on the notes chip opens the notes and reports no surprise close', { skip: chromium ? false : 'Chromium not installed' }, () => chipFlow(chromium));
+
+async function chipFlow(engine) {
   const FID = 'portola-2026';
   const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
-  const ctx = await webkit.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: 'America/Los_Angeles' });
+  const ctx = await engine.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: 'America/Los_Angeles' });
   try {
     await ctx.addInitScript(([t, f]) => {
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Chip' }]));
@@ -82,4 +88,4 @@ test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes,
       return !!s && !s.classList.contains('join-shelf');
     }), true, 'the notes opened on the first click');
   } finally { await ctx.close(); }
-});
+}
