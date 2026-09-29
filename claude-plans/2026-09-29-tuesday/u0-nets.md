@@ -72,3 +72,38 @@ Branch `fix/u0-nets`, off main 1c97b25 (production v105). From the LEDGER's
   my post-finally `return 'again'` ran — the retry never fired and the shell
   test still passed (it only asserted "not blocked"). The unit test caught it
   ('syncing'); the shell test now also asserts 'online'.
+
+### Real-engine nets (23c946b)
+- tests/browser/error-report (Chromium, workers blocked, fresh context — no
+  caches): the report's `build` equals the shipped CACHE_VERSION's vN and
+  `sw` is 'none'. Red on the old errlog (actual null), green now. It reads
+  the version from service-worker.js, so it survives the release stamp.
+- tests/browser/zoom-notes-chip now runs in Chromium too; both engines red
+  with `meant` removed, green on main.
+
+## Gate (2026-09-29, fix/u0-nets, before the coordinator's stamp)
+- `npm test`: 1367 tests, 1365 pass, 1 skipped, 1 fail = the SW stamp test
+  (expected: index.html, errlog.js, sync.js, state.js changed; NOT stamped).
+- `TZ=Asia/Tokyo npm test`: same — 1365 / 1 skipped / 1 fail (stamp).
+- `NIGHT_CLOCK=2026-09-30T02:30:00Z npm test` (the npm script already
+  `--import`s night-clock.mjs; the NODE_OPTIONS form was refused by this
+  worktree's sandbox): same — 1365 / 1 skipped / 1 fail (stamp).
+- `node scripts/validate-festivals.mjs`: 10 files, 0 errors, 2 warnings (known).
+- Touched browser suites (error-report: Chromium; zoom-notes-chip: WebKit +
+  Chromium): 3/3 pass; again with LATE_ANIMATIONS_MS=800: 3/3 pass.
+- Whole browser suite once as a wider net: 505 tests, 502 pass, 2 skipped,
+  1 fail — tap-shelf-contract "WebKit (iPhone): closed during its rise, the
+  shelf goes straight down" — passed 31/31 three times running that file
+  alone: load timing, not this branch (nothing here touches the shelf).
+
+## Findings outside the lane (not changed)
+1. Settings → Diagnostics' `build` still reads cache names only
+   (errlog.js `diagnostics()`), so a worker-less page pastes 'no-cache'.
+   One line to fall back to `metaBuild()` — left for the coordinator to call.
+2. A note written offline as "drew" keeps author "drew" after the person
+   reconciles to "Drew" (note ids embed the author; rewriting orphans replies).
+3. tap-shelf "closed during its rise" can go red under full-suite load on
+   WebKit (above) — a candidate for the flakes list beside LEDGER 35.
+4. Reports queued on phones by v88–v91 carrying "notes sheet opened" will
+   still trickle in until they expire (a week) — they are old shells, and
+   with (a) their build will be visible from the next release on.
