@@ -125,3 +125,32 @@ banked as I go.
   `was` (shown until the claim) and a disposed spy.
 - Browser: tests/browser/day-row-first-paint.test.mjs 6/6 green on the fix
   (4 red on main: the 11:30 PM open and the day turn, both engines).
+
+## Gate (2026-09-29, on the branch head after 6a623e3)
+- `npm test`: 1366 tests, 1363 pass, 1 skipped, 1 fail = the service-worker
+  stamp (left for the coordinator, as briefed).
+- `TZ=Asia/Tokyo npm test`: same, 1363 / 1 skipped / stamp only.
+- `NIGHT_CLOCK=2026-09-30T02:30:00Z npm test` (the npm script imports the
+  night-clock helper itself): same, 1363 / 1 skipped / stamp only.
+- `node scripts/validate-festivals.mjs`: 0 errors, 2 warnings (both
+  pre-existing: Flight by Nothing with no set; Tomorrowland's empty lineup).
+- Browser, Chromium + WebKit: day-row-first-paint, now-jump, people-menu,
+  shell-contract, heads-contract = 110/110; plan-acl, plan-share,
+  plan-stop-ends, list-view = 73/73; with LATE_ANIMATIONS_MS=800
+  day-row-first-paint, now-jump, people-menu = 92/92.
+
+## Findings for the coordinator (outside my lane)
+1. DATA, needed for item 1 to help ACL: add `"close": "10 PM"` to
+   `dayMeta.Friday`, `dayMeta.Saturday`, `dayMeta.Sunday` in
+   data/festivals/acl-2026.json (source already in the file's meta note:
+   posters "12:45 PM to 10 PM"; CultureMap 2026-08-17, the AmEx headliner
+   finishes at 10 PM). The validator accepts it (tested). Goldens that will
+   move when it lands: tests/plan-acl.test.mjs (Skrillex / Charli xcx /
+   Lorde / RUFUS / The xx / Twenty One Pilots stops and forks run to 10 PM;
+   "SOME Charli xcx American Express 9:30 PM" becomes a different split) and
+   possibly the browser plan-acl Share goldens — rerun with PLAN_ACL_PRINT=1.
+   Also re-check no Late-night guess (guess-run-times) reads a grid close.
+2. The zoom still says a headliner's time as printed ("8:15 PM"); it could
+   say "8:15 PM – ~10 PM" like a room with a guessed close. Product call.
+3. The open no longer glides the day row in from its start: the first paint
+   is at rest. A walker should look at it on a phone.
