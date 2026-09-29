@@ -293,7 +293,7 @@ const GOLDEN = {
   sun: [
     "HEAD SUN OUR PICKS Oct 11 · 8 picking",
     "» Earlier · Sep 29 – Oct 10 · 1 stop",
-    "SOME The xx T-Mobile NOW till 9:45 PM 4 picked",
+    "SOME The xx T-Mobile NOW till ~9:45 PM 4 picked",
     "    or Twenty One Pilots · American Express 3 picked",
   ],
   sunLate: [

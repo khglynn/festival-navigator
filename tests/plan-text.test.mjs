@@ -166,7 +166,7 @@ test('Sunday 8:10 PM: a set that ended at 8:05 is gone, and every "now" is still
     `Full rundown: ${linkFor('2026-09-27')}`,
   ].join('\n'));
   assert.doesNotMatch(text, /Zara Larsson/);
-  for (const [, h, m, ap] of text.matchAll(/now till (\d+)(?::(\d+))?(am|pm)/g)) {
+  for (const [, h, m, ap] of text.matchAll(/now till ~?(\d+)(?::(\d+))?(am|pm)/g)) {
     const min = (Number(h) % 12 + (ap === 'pm' ? 12 : 0)) * 60 + Number(m || 0);
     assert.ok(min > 20 * 60 + 10, `"now till ${h}${m ? `:${m}` : ''}${ap}" is over at 8:10pm`);
   }
@@ -251,7 +251,7 @@ test('the Share only ever names what the open plan shows, and "now" only while i
             // the highlighted people's picks there, the row the whole crowd's).
             const act = (x.stop.placeKind || x.stop.place.kind) !== 'room' && title.includes(' for ') ? x.acts[0] : null;
             if (!rows.some((r) => r.includes(where) && (!act || r.includes(act)))) say('not in the open plan', x);
-            const till = x.line.match(/now till (\d+)(?::(\d+))?(am|pm)/);
+            const till = x.line.match(/now till ~?(\d+)(?::(\d+))?(am|pm)/);
             if (till && clock(till) <= nowMin) say('over, and still "now"', x);
             if (/@ now/.test(x.line) && hl.length) {
               const here = (x.stop.timeline || x.stop.crowds || []).find((c) => c.t <= nowMin && nowMin < c.t + P.STEP);

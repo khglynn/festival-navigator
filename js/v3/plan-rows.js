@@ -22,7 +22,7 @@ import * as state from '../state.js';
 import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { hslOf, strokeOf } from './palette.js';
-import { forkFor, headlinersOf, tillOf, alsoOf, quietClock, isoAfter, STEP } from './plan.js';
+import { forkFor, headlinersOf, tillOf, tillApprox, alsoOf, quietClock, isoAfter, STEP } from './plan.js';
 
 // What people read (Kevin, 2026-09-26, after a friend's "my picks are what I
 // was interested in, not necessarily what I'm planning to go to"): OUR PICKS,
@@ -186,7 +186,7 @@ export function stopRow(stop, opts) {
   r.dataset.stop = stopKey(stop);
   if (tag) r.dataset.tag = tag;
   const start = `${approxOf(stop, ctx.picks) ? '~' : ''}${quietClock(stop.from)}`;
-  const text = tag === 'now' ? `till ${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
+  const text = tag === 'now' ? `till ${tillApprox(stop) ? '~' : ''}${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
   const what = whatEl(stop, { ctx, plan, also, nightLabelOf });
   // Under a highlight the place line names who instead (rule 10): a face per
   // row would say it twice, and for a highlight of one it is always them.
@@ -591,6 +591,8 @@ const endOf = (s) => Math.min(...[s.to, tillOf(s), s.place.end].filter((t) => t 
 // The "till" a live line says: its act's end, a room's stop end, never past
 // the place's own end.
 const tillText = (s) => { const t = tillOf(s); return t != null && s.place.end != null ? Math.min(t, s.place.end) : t ?? s.place.end ?? null; };
+// …and whether it is the set's own end the poster left off (plan.js tillApprox).
+const tillMark = (s) => { const t = tillText(s); return t != null && t === tillOf(s) && tillApprox(s) ? '~' : ''; };
 // Who is at a stop or a fork at the minute `now`: its five-minute slice's
 // crowd (a stop's timeline, a fork's crowds), never who was there earlier.
 const crowdAt = (s, now) => ((s.timeline || s.crowds || []).find((c) => c.t <= now && now < c.t + STEP) || { people: [] }).people;
@@ -641,7 +643,7 @@ export function planPicks(route, { ctx, plan, peek = null, nowMin = null, limit 
     .map(({ stop, count, people }) => {
       const live = nowMin != null && stop.from <= nowMin;
       const till = live ? tillText(stop) : null;
-      const when = live ? `now${till != null ? ` till ${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
+      const when = live ? `now${till != null ? ` till ${tillMark(stop)}${typed(till)}` : ''}` : `${approxOf(stop, ctx.picks) ? '~' : ''}${typed(stop.from)}`;
       const { title, acts } = placeForTitle(stop, ctx.picks, [...people]);
       return { line: `${title} @ ${when}`, from: stop.from, count, acts, stop };
     });

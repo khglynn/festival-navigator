@@ -207,7 +207,9 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
   // Both filters repaint the wall, which re-wires the scrollspy. Its first
   // claim used to be "tabs[0]" unconditionally — true at load, a lie after
   // any repaint while scrolled into Sunday, and it stayed wrong until the
-  // next scroll event (UI walk, 2026-08-27).
+  // next scroll event (UI walk, 2026-08-27). The claim itself is a microtask
+  // (2026-09-29): it reads the page once the task that drew the wall has put
+  // it in place, so each read here waits one (`await null`).
   const { wireScrollspy } = await import('../js/v3/wall.js');
   const hadIO = globalThis.IntersectionObserver;
   globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
@@ -222,6 +224,7 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
   try {
     // fresh load: nothing scrolled, the first day is the honest claim
     let un = wireScrollspy(nav, root);
+    await null;
     assert.deepEqual(active(), ['Saturday']);
     assert.equal(nav.querySelector('[aria-current]').dataset.day, 'Saturday');
     un();
@@ -230,6 +233,7 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     sat.getBoundingClientRect = () => ({ top: -975 });
     sun.getBoundingClientRect = () => ({ top: -162 });
     un = wireScrollspy(nav, root);
+    await null;
     assert.deepEqual(active(), ['Sunday'], 'the claim comes from geometry, not tab order');
     assert.equal(nav.querySelector('[aria-current]').dataset.day, 'Sunday', 'assistive tech hears the same answer');
     un();
@@ -248,13 +252,29 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     sat3.getBoundingClientRect = () => ({ top: 8 + 24 }); // the iPhone's landing (--jump-offset is unset in jsdom, so 8)
     sun3.getBoundingClientRect = () => ({ top: 900 });
     un = wireScrollspy(nav, root);
+    await null;
     assert.deepEqual(active(), ['Saturday'], 'the day you are looking at, even when the jump parked it a hair low');
     un();
     // A rule genuinely still below the fold is not the day you are standing in.
     sat3.getBoundingClientRect = () => ({ top: 8 + 200 });
     un = wireScrollspy(nav, root);
+    await null;
     assert.deepEqual(active(), ['Friday'], 'the next day has to be nearly here before it counts');
     un();
+    // Until the claim, the row keeps the day it was showing (`was`), never a
+    // guess from a page that is not placed yet: the rows are rebuilt with
+    // Sunday lit, the page is about to be put back in Saturday.
+    sat3.getBoundingClientRect = () => ({ top: 8 });
+    un = wireScrollspy(nav, root, { was: 'Sunday' });
+    assert.deepEqual(active(), ['Sunday'], 'what was on screen, until the page is placed');
+    await null;
+    assert.deepEqual(active(), ['Saturday'], 'then the day the placed page is in');
+    un();
+    // A spy torn down before its claim never claims.
+    un = wireScrollspy(nav, root, { was: 'Sunday' });
+    un();
+    await null;
+    assert.deepEqual(active(), ['Sunday'], 'a disposed spy leaves the row alone');
   } finally {
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     globalThis.IntersectionObserver = hadIO;
@@ -296,7 +316,9 @@ test('scrollspy: the day you are in is brought into the middle of its row, on op
   globalThis.requestAnimationFrame = (fn) => { fn(); return 1; }; // the scroll path, synchronously
   try {
     const un = wireScrollspy(nav, root);
+    await null; // the claim, once the page is placed
     assert.deepEqual(shown.map(([day]) => day), ['Saturday'], 'the opening day is brought into view (clamped at the start)');
+    assert.equal(shown[0][1].behavior, 'auto', 'a row nobody has seen yet is simply at rest: it does not glide in from its start');
     assert.equal(pageScrolls.length, 0, 'by scrolling the row, never the page');
 
     // A scroll into Sunday moves the row; a second read of the same day does not.

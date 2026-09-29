@@ -37,10 +37,27 @@ export function activityMinutes(timeStr) {
   return total;
 }
 
+// A clock time on the grid's axis ("10 PM", "2 AM"), or null when it is not
+// one — a day's close is a single time, never a range.
+const CLOSE_RE = /^\d{1,2}(:\d{2})? ?(AM|PM)$/i;
+const closeMinutes = (s) => (typeof s === 'string' && CLOSE_RE.test(s.trim()) ? timeToMinutes(s.trim().replace(/(\d)(AM|PM)$/i, '$1 $2')) : null);
+
 // Resolve a day's raw {name, stage, time} sets into {name, stage, startStr,
-// startMin, endMin}. Missing ends are filled from the next set on the same
-// stage (clamped 30..120 min); a stage's last set defaults to 75 min.
-export function computeDayArtists(dayData) {
+// startMin, endMin, endApprox}. A printed end is the end. A missing end is
+// ours, and says so (`endApprox`):
+//   - a set with a later set on its stage runs until that one starts
+//     (clamped 30..120 min);
+//   - a stage's LAST set runs to the day's close when it is in the closing
+//     slot — it starts no earlier than every set with a printed end has
+//     started, so it is on as the day ends (ACL's headliners print a start
+//     only; LEDGER follow-up 20, 2026-09-29). The close is the festival's
+//     published one for that day (`close`, dayMeta.<day>.close), which also
+//     bounds it; with none, the latest printed end on any stage that day,
+//     which is only a floor of the day — it may lengthen the set past the
+//     default, never shorten it (ACL's latest printed end is 8:30 PM, at or
+//     before every headliner's start);
+//   - otherwise 75 min.
+export function computeDayArtists(dayData, { close = null } = {}) {
   const raw = dayData.artists.map((a) => {
     let startStr = a.time, endStr = null;
     if (a.time.includes(' - ')) { [startStr, endStr] = a.time.split(' - '); }
@@ -49,8 +66,12 @@ export function computeDayArtists(dayData) {
     let endMin = endStr ? timeToMinutes(endStr) : null;
     // The raw `time` and `weekend` ride along: the card's occurrence (the zoom,
     // the sheet header, the route key) is built from them (2026-08-29).
-    return { name: a.name, stage: a.stage, startStr: startStr.trim(), endStr: endStr ? endStr.trim() : null, startMin, endMin, time: a.time, weekend: a.weekend || null };
+    return { name: a.name, stage: a.stage, startStr: startStr.trim(), endStr: endStr ? endStr.trim() : null, startMin, endMin, endApprox: endMin == null, time: a.time, weekend: a.weekend || null };
   });
+  const printed = raw.filter((a) => a.endMin != null);
+  const published = closeMinutes(close);
+  const latestEnd = printed.length ? Math.max(...printed.map((a) => a.endMin)) : null;
+  const lastPrintedStart = printed.length ? Math.max(...printed.map((a) => a.startMin)) : -Infinity;
   const byStage = {};
   raw.forEach((a) => { (byStage[a.stage] = byStage[a.stage] || []).push(a); });
   Object.values(byStage).forEach((list) => {
@@ -61,12 +82,32 @@ export function computeDayArtists(dayData) {
       if (next) {
         const gap = next.startMin - a.startMin;
         a.endMin = a.startMin + Math.min(Math.max(gap, 30), 120);
-      } else {
-        a.endMin = a.startMin + 75;
+        return;
       }
+      const fallback = a.startMin + 75;
+      const closing = a.startMin >= lastPrintedStart;
+      if (closing && published != null && published > a.startMin) a.endMin = published;
+      else if (closing && published == null && latestEnd != null && latestEnd > fallback) a.endMin = latestEnd;
+      else a.endMin = fallback;
     });
   });
   return raw;
+}
+
+// Whether a set plays the weekend being drawn: untagged (or 'both') sets play
+// every weekend; no weekend means no filter (a one-weekend festival).
+export const playsWeekend = (a, weekend) => !weekend || !a.weekend || a.weekend === 'both' || a.weekend === weekend;
+
+// One grid day's sets, resolved: the weekend's sets through computeDayArtists
+// with the day's published close. The ONE call behind every window a grid
+// set has — the wall's cell and its now window (state.getDayArtists), the
+// List's rows, Our picks' stops and the Share (plan.js) — so a rule about
+// where a set ends moves all of them together.
+export function daySetsOf(fest, dayKey, weekend = null) {
+  const dayData = ((fest && fest.days) || {})[dayKey] || {};
+  const meta = ((fest && fest.dayMeta) || {})[dayKey] || {};
+  const sets = (dayData.artists || []).filter((a) => playsWeekend(a, weekend));
+  return computeDayArtists({ ...dayData, artists: sets }, { close: meta.close });
 }
 
 // A day KEY is frozen pick data (artists[].day) and can be verbose —

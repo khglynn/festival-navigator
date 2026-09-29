@@ -33,7 +33,7 @@
 //      where you arrive for your first pick and stay through your last), or a
 //      PARTY (one show in a section that reads by time — Folsom — which is its
 //      own show, never a run). Windows are the wall's, by construction: a grid
-//      set's comes from computeDayArtists on its weekend's sets (the grid
+//      set's comes from time.js daySetsOf on its weekend's sets (the grid
 //      cell's), a room's members' from venueGroupsOf, a party's from
 //      timeBandsOf — the same calls, on the same lists, the wall makes.
 //   5. AN ARTIST WHO PLAYS TWICE counts at both places. "Twice" is two PLAYS:
@@ -76,7 +76,7 @@
 import { wallPlanFor, weekendRoom, computeTimesLayout, applyWeekend, nightMinutes } from './wall.js';
 import { venueGroupsOf, timeBandsOf, sectionLayoutOf, BY_TIME, occOf, weekdayOfIso, parseEventTime } from './events.js';
 import { festivalClock, clockLabel } from './now.js';
-import { computeDayArtists } from '../time.js';
+import { daySetsOf, playsWeekend } from '../time.js';
 import { FEST_ROOM, passesPeople } from './filters.js';
 
 export const STEP = 5;          // minutes per slice
@@ -150,12 +150,12 @@ function weekPlaces(fest, whole, shown) {
     const night = nightFor(d.iso || d.key, d.iso);
     if (!night.wd && d.wd) night.wd = d.wd;
     if (!d.grid) continue;
-    // The grid cell's window: computeDayArtists on the weekend's sets, the
-    // way state.getDayArtists filters (untagged and 'both' play every
-    // weekend), then wall.js renderScheduledDayBody's liveTo.
+    // The grid cell's window: time.js daySetsOf, the very call behind
+    // state.getDayArtists (the weekend's sets, the day's close), then wall.js
+    // renderScheduledDayBody's liveTo.
     const dayData = fest.days[d.dayKey] || {};
-    const sets = (dayData.artists || []).filter((a) => !d.weekend || !a.weekend || a.weekend === 'both' || a.weekend === d.weekend);
-    const computed = computeDayArtists({ ...dayData, artists: sets });
+    const sets = (dayData.artists || []).filter((a) => playsWeekend(a, d.weekend));
+    const computed = daySetsOf(fest, d.dayKey, d.weekend);
     // Rule 9: the grid sets the file declares drop-in rooms.
     const declared = new Set(sets.filter((a) => a.dropIn === true).map((a) => `${a.stage}|${a.name}|${a.time}`));
     const dropInSet = (a) => declared.has(`${a.stage}|${a.name}|${a.time}`);
@@ -168,7 +168,7 @@ function weekPlaces(fest, whole, shown) {
       night.places.push({
         id: `${night.id}|set|${a.stage}|${a.name}|${a.time}`, nightId: night.id, kind: 'set', place: a.stage, room: fest.name,
         start: a.startMin, end: to, approx: false, roomKeys: [roomKey], shown: isShown, dayKey: d.dayKey, dropIn: dropInSet(a),
-        acts: [{ name: a.name, from: a.startMin, to, time: a.time || null, approx: false, occ: { day: d.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null }, play: playOf(a.stage), section: null }],
+        acts: [{ name: a.name, from: a.startMin, to, time: a.time || null, approx: false, endApprox: !!a.endApprox, occ: { day: d.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null }, play: playOf(a.stage), section: null }],
       });
     }
     // A set whose stage is not a column is still the festival's: the wall
@@ -714,6 +714,14 @@ export function headlinersOf(stop, picks) {
 export function tillOf(stop) {
   if (!stop) return null;
   return stop.place.kind === 'room' ? stop.to : actEnd(stop.place);
+}
+// Whether that "till" is ours rather than printed: a set whose end the poster
+// left off (time.js endApprox — ACL's headliners run to the day's close). The
+// line wears the app's tilde, "till ~10 PM", the way a guessed start does.
+export function tillApprox(stop) {
+  if (!stop || stop.place.kind === 'room') return false;
+  const a = stop.place.acts[0];
+  return !!(a && a.to != null && a.endApprox);
 }
 
 // The row's "also …": each other play once — on the same night by its time,

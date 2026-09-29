@@ -3152,7 +3152,7 @@ export function restDayRow(c, behavior = 'auto') {
 }
 // One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
-export function wireScrollspy(containers, wallRoot) {
+export function wireScrollspy(containers, wallRoot, { was = null } = {}) {
   const list = Array.isArray(containers) ? containers : [containers];
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
@@ -3171,17 +3171,21 @@ export function wireScrollspy(containers, wallRoot) {
   // one place the active day changes, so it is the one place the row glides;
   // where it comes to rest is restDayRow's rule (NOW's promise included).
   let active = null;
-  const setActive = (day) => {
-    if (day === active) return;
+  // Which day is lit: the class and aria-current, nothing else.
+  const light = (day) => {
     active = day;
-    const glide = !reduced() && !document.body.classList.contains('low-power');
     tabs.forEach((t) => {
       const on = t.dataset.day === day;
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
     });
-    for (const c of list) restDayRow(c, glide ? 'smooth' : 'auto');
+  };
+  const glides = () => !reduced() && !document.body.classList.contains('low-power');
+  const setActive = (day, behavior = null) => {
+    if (day === active && !behavior) return;
+    light(day);
+    for (const c of list) restDayRow(c, behavior || (glides() ? 'smooth' : 'auto'));
   };
   const markOverflow = () => { for (const c of list) markDayRow(c); };
   markOverflow();
@@ -3204,9 +3208,8 @@ export function wireScrollspy(containers, wallRoot) {
   // The band answers nothing geometry does not, so it is gone rather than
   // taught to defer.
   let ticking = false;
-  const syncFromGeometry = () => {
-    ticking = false;
-    if (!headers.length) return;
+  // The day block whose top you have scrolled past, last in document order.
+  const dayAtGeometry = () => {
     const offset = parseFloat(
       window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
@@ -3220,28 +3223,51 @@ export function wireScrollspy(containers, wallRoot) {
       if (h.getBoundingClientRect().top <= offset + LANDED_WITHIN) current = h;
       else break; // headers are in document order
     }
-    setActive(current.dataset.day);
+    return current.dataset.day;
   };
-  // The initial claim. At load the first day is on screen — say so instead
-  // of nothing. But this also runs on every re-wire (a people filter or the
-  // show menu repaints the wall), and there the page may be scrolled deep
-  // into Sunday: claiming "Saturday" was a lie the tab wore until the next
-  // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
-  // scroll to read; position 0 keeps the first-day shortcut so a fresh load
-  // never depends on layout having settled.
+  const syncFromGeometry = () => {
+    ticking = false;
+    if (!headers.length) return;
+    setActive(dayAtGeometry());
+  };
+  // The initial claim — made once the page is where it belongs, never
+  // before (2026-09-29, the "FRI flash on open"). The spy is wired inside the
+  // repaint, and every caller places the page AFTER it: the open lands on
+  // today (app.js maybeOpenOnDay), a day turning or a fold holds the place
+  // (keepWallPlace). A claim made at wiring time read a page that was not
+  // there yet — the first block on the wall at the top, else whatever the OLD
+  // scroll pointed at in the NEW wall — and it was painted: an ACL Saturday at
+  // 11:30 PM wore SUN 3 for a second while the page stood in LATE, because
+  // the landing's scroll event never came back to it (both engines,
+  // tests/browser/day-row-first-paint.test.mjs). So the tab lit NOW is the
+  // day that was lit before the rows were rebuilt (`was`, what is on screen),
+  // with no glide; and the real claim runs as a microtask, once the task that
+  // drew the wall has placed it and before anything is painted. The row goes
+  // straight to rest when the day is the one it showed (or on a fresh open:
+  // a row nobody has seen yet travels from nowhere), and glides only when
+  // the day really changed under it.
   let frame = 0;
-  if (window.scrollY > 0) {
-    syncFromGeometry();
-    // …and once more next frame: the caller measures the sticky chrome
-    // (--jump-offset) AFTER wiring, and entering or leaving search adds or
-    // drops the stage strip, so the first read can be against the old
-    // offset (Codex round 4, 2026-08-27).
-    if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
-  } else setActive((headers[0] || tabs[0]).dataset.day);
-  // (At the top of the page the first day ON THE WALL is the one you are in —
-  // not the first tab: a day that is over keeps its tab in the row while its
-  // block waits behind the days line (Phase 1), and THU lit over SAT PORTOLA
-  // would be a lie.)
+  let disposed = false;
+  // Read the geometry whenever there is scroll to read; at the top the first
+  // day ON THE WALL is the one you are in — not the first tab: a day that is
+  // over keeps its tab in the row while its block waits behind the days line
+  // (Phase 1), and THU lit over SAT PORTOLA would be a lie. (A re-wire deep
+  // in Sunday that claimed the first day was a lie the tab wore until the
+  // next scroll event — UI walk, 2026-08-27.)
+  const claimDay = () => (window.scrollY > 0 && headers.length ? dayAtGeometry() : (headers[0] || tabs[0]).dataset.day);
+  const shown = was && tabDays.has(was) ? was : null;
+  light(shown || (headers[0] || tabs[0]).dataset.day);
+  const claim = () => {
+    if (disposed) return;
+    const day = claimDay();
+    setActive(day, !shown || day === shown || !glides() ? 'auto' : 'smooth');
+    // …and once more next frame: a caller may measure the sticky chrome
+    // (--jump-offset) after this, and entering or leaving search adds or
+    // drops the stage strip, so this read can be against the old offset
+    // (Codex round 4, 2026-08-27).
+    if (window.scrollY > 0 && typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
+  };
+  if (typeof queueMicrotask === 'function') queueMicrotask(claim); else Promise.resolve().then(claim);
   const onScroll = () => {
     if (ticking) return;
     ticking = true;
@@ -3272,6 +3298,7 @@ export function wireScrollspy(containers, wallRoot) {
   }
 
   return () => {
+    disposed = true;
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
     if (rows) rows.disconnect();
