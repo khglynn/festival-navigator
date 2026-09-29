@@ -96,6 +96,17 @@ Two files, one command:
      draws the line at the festival's clock and lands on it once per open.
      No `iso`, no line, no guess. The validator rejects a date that isn't
      real.
+   - **Give each grid day its published close** when the festival prints
+     one (`dayMeta.<day>.close: "10 PM"`, a single clock time; `doors` the
+     same way). A poster that prints a closer's START only (ACL's
+     headliners) leaves the end to the app: a stage's last set with no
+     printed end, starting no earlier than every printed set has begun,
+     runs to that close (time.js `computeDayArtists`) — its grid cell, its
+     ring, Our picks and the Share all read it, and each "till" wears the
+     tilde (`till ~10 PM`) because the poster never said it. With no close
+     the latest printed end that day can only lengthen such a set past the
+     75-minute default. The validator rejects a close that is not one
+     clock time and warns when a set starts at or after it (2026-09-29).
    - **Give the file its `timezone`** (IANA, e.g. `"America/Los_Angeles"`,
      ACL/Seismic: `"America/Chicago"`) — required as soon as `dayMeta`
      carries dates. "Now" is read in that zone, so a friend checking from

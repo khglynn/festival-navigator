@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { paintFree } from './helpers/paint-free.mjs';
 import { computeDayArtists, daySetsOf } from '../js/time.js';
+import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
 
 // plan-rows.js draws rows too, so it reads a document and storage at import
 // (tests/plan-stop-ends.test.mjs's setup).
@@ -140,4 +141,44 @@ test('Our picks: a headliner stop ends at the close, and the Share says "till ~1
   const at9 = 21 * 60 + 30; // Friday 9:30 PM: past the old 9:30 end
   const text = planText(route, { ctx: { picks: CREW.picks, meName: CREW.me }, plan, nowMin: at9, fest: 'ACL', day: 'Fri' });
   assert.match(text, /T-Mobile for Skrillex @ now till ~10pm/, text);
+});
+
+// ---- the validator: the close is one clock time, after every set's start ------------
+test('the validator takes ACL with its published close, and stops a close that is not a time', () => {
+  const ok = validateFestivalDoc(ACL_10, { filename: 'acl-2026.json' });
+  assert.deepEqual(ok.errors, []);
+  assert.deepEqual(ok.warnings.filter((w) => /close/.test(w)), []);
+  const bad = validateFestivalDoc(withClose(ACL, '10 PM - 11 PM'), { filename: 'acl-2026.json' });
+  assert.ok(bad.errors.some((e) => /dayMeta\.Friday\.close must be a single clock time/.test(e)), bad.errors.join('\n'));
+  const early = validateFestivalDoc(withClose(ACL, '8:30 PM'), { filename: 'acl-2026.json' });
+  assert.ok(early.warnings.some((w) => /dayMeta\.Friday\.close "8:30 PM" is not after Charli xcx/.test(w)), early.warnings.join('\n'));
+});
+
+// ---- the wall: the same end draws the cell and its now window -------------------------
+test('the Board: Skrillex\'s cell reaches 10 PM and its now window ends there, the grid with it', async () => {
+  globalThis.location = globalThis.location || { origin: 'https://fest.kevinhg.com', hash: '' };
+  const state = await import('../js/state.js');
+  const { FESTIVAL_INDEX } = await import('../js/festivals.js');
+  const { renderWall } = await import('../js/v3/wall.js');
+  if (!FESTIVAL_INDEX.some((f) => f.id === ACL.id)) FESTIVAL_INDEX.push({ id: ACL.id, status: 'scheduled' });
+  state.activateCrew(['day', 'close', 'test', '0123456789'].join('_'), { // made up, never a real link
+    v: 4, meta: {}, spotify: {}, affinity: {}, people: { Ada: { colorIndex: 0 } },
+    festivals: { [ACL.id]: { selections: {} } },
+  }, ACL.id, { festival: ACL.id });
+  state.FESTIVALS[ACL.id] = ACL_10;
+  state.forgetComputedDays(ACL.id);
+  state.setActiveFestivalId(ACL.id);
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  renderWall(root, { fid: ACL.id, meName: 'Ada', picks: {}, affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all', onTap: () => {} });
+  const fri = root.querySelector('.day-block[data-day="Friday|W1"]');
+  const cell = [...fri.querySelectorAll('.times-grid .card')].find((c) => c.dataset.artist === 'Skrillex');
+  assert.ok(cell, 'Skrillex has a cell on the first Friday');
+  assert.equal(cell.dataset.nowFrom, String(20 * 60 + 15));
+  assert.equal(cell.dataset.nowTo, String(TEN_PM), 'NOW counts him live till the close');
+  // 8:15 to 10 PM is seven quarter-hour rows (it was five: 75 minutes).
+  assert.match(cell.style.gridRow, /span 7$/);
+  const grid = cell.closest('.times-grid');
+  assert.equal((Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15, TEN_PM, 'the grid ends at the close');
+  root.remove();
 });
