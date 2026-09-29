@@ -375,43 +375,72 @@ for (const [label, selections, roomAbove] of [['room above to hold by', LONG, tr
       if (roomAbove) assert.ok(y0 > 150, `the page has room above (${y0})`);
       else assert.ok(y0 < 60, `the page is near its top (${y0})`);
       // A mouse steps a pick down with the grown card's − (the zoom's own
-      // control, never a wrap): real clicks on its box until nothing is left.
+      // control, never a wrap: − lowers one level and stops at nothing). The
+      // hand comes to rest on the − and stays there, as a person's does: every
+      // step is a click at that one point, and before each the − has to be
+      // what is under it. Nothing may slide the zoom out from under a still
+      // hand, or put it away. On CI (run 36347015035) Robyn's zoom went while
+      // Robyn was still picked, and a probe of this walk found why: Tricky
+      // leaving repainted the List and grew Robyn's zoom again BEFORE the page
+      // was held, one row too high, so it closed under the hand or snapped
+      // back, and a click meant for the − landed on the card and stepped the
+      // pick UP (picked to picked ×2). claude-plans/2026-09-29-tuesday/webkit-reds.md
       const face = (bb) => ({ x: bb.x + bb.width * 0.25, y: bb.y + bb.height * 0.3 });
       const onZoomOf = (a) => page.waitForFunction((n) => [...document.querySelectorAll('#zoom-layer .zoom-slot.shown')].some((z) => (z.querySelector('.f-name') || {}).textContent === n), a, { timeout: 4000 });
-      const minusAll = async () => {
-        for (let i = 0; i < 4; i++) {
-          const m = await page.locator('#zoom-layer .zoom-slot.shown .f-step.minus').boundingBox();
-          if (!m) break;
-          await page.mouse.click(m.x + m.width / 2, m.y + m.height / 2);
-          await sleep(200);
-        }
+      const label = (a) => page.evaluate((s) => { const c = document.querySelector(s); return c ? c.getAttribute('aria-label') : null; }, sel(a));
+      const level = (l) => (!l || / — not picked/.test(l) ? 0 : / — must/.test(l) ? 4 : Number((l.match(/ — picked ×(\d)/) || [0, 1])[1]));
+      const onMinus = (p) => page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return !!(e && e.closest('#zoom-layer .zoom-slot.shown .f-step.minus')); }, [p.x, p.y]);
+      const restOnMinus = async (a) => {
+        await onZoomOf(a);
+        const m = await page.evaluate(() => {
+          const e = document.querySelector('#zoom-layer .zoom-slot.shown .f-step.minus');
+          const r = e && e.getBoundingClientRect();
+          return r && r.width ? { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) } : null;
+        });
+        assert.ok(m, `${a}'s zoom stands with its −`);
+        await page.mouse.move(m.x, m.y, { steps: 2 });
+        return m;
       };
-      // Tricky: 2 → 3 → must → nothing, the pointer resting on it.
+      const stepDown = async (a, hand) => {
+        for (let i = 1; i <= 4 && (await has(a)) !== 'dim'; i++) {
+          const was = await label(a);
+          assert.ok(await onMinus(hand), `${a} is still picked (${was}), and the still hand is on its zoom's − (step ${i})`);
+          await page.mouse.click(hand.x, hand.y);
+          await page.waitForFunction(([s, w]) => { const c = document.querySelector(s); return !c || c.getAttribute('aria-label') !== w; }, [sel(a), was], { timeout: 4000 });
+          const now = await label(a);
+          assert.equal(level(now), level(was) - 1, `the − stepped ${a} down one level (step ${i}: ${was} → ${now})`);
+        }
+        assert.equal(await has(a), 'dim', `${a} un-picked, dimmed, still there under the hand`);
+      };
+      // Tricky: 2 → 1 → nothing, the hand resting on its −.
       let b = await page.locator(sel('Tricky')).boundingBox();
       let at = face(b);
       await page.mouse.move(at.x, at.y, { steps: 4 });
-      await sleep(500);
-      await minusAll();
-      await sleep(600);
-      assert.equal(await has('Tricky'), 'dim', 'Tricky dimmed, still there under the pointer');
+      await stepDown('Tricky', await restOnMinus('Tricky'));
       // Down to Robyn, watching where it is from the moment the pointer leaves Tricky.
       b = await page.locator(sel('Robyn')).boundingBox();
       await page.evaluate((s) => {
         window.__robyn = [];
-        const iv = setInterval(() => { const c = document.querySelector(s); if (c) window.__robyn.push(Math.round(c.getBoundingClientRect().top)); }, 16);
-        setTimeout(() => clearInterval(iv), 4000);
+        window.__robynWatch = setInterval(() => { const c = document.querySelector(s); if (c) window.__robyn.push(Math.round(c.getBoundingClientRect().top)); }, 16);
       }, sel('Robyn'));
       // Onto Robyn's lower half: Tricky's grown zoom can reach over the top of
       // the row just below it, and the pointer has to leave that zoom to be on Robyn.
       at = { x: b.x + b.width / 2, y: b.y + b.height * 0.85 };
       await page.mouse.move(at.x, at.y, { steps: 8 });
-      await onZoomOf('Robyn');
-      await minusAll(); // must → nothing
-      await sleep(1200);
+      const hand = await restOnMinus('Robyn');
+      if (roomAbove) {
+        // Tricky, let go, leaves while the hand rests on Robyn's zoom (the
+        // leftover watch looks every 400 ms), and the page is held by Robyn.
+        await page.waitForFunction((s) => !document.querySelector(s), sel('Tricky'), { timeout: 5000 });
+        await motionDone(page, { within: '#wall-root' });
+      }
+      await stepDown('Robyn', hand); // must → ×3 → ×2 → picked → nothing
+      await sleep(600); // a negative's window: a let-go Tricky has had its turns at the watch
       await motionDone(page, { within: '#wall-root' });
       assert.equal(await has('Robyn'), 'dim', 'Robyn un-picked, dimmed, held');
+      assert.ok(await onMinus(hand), 'Robyn\'s zoom still stands under the still hand');
       assert.equal(await has('Tricky'), roomAbove ? 'gone' : 'dim', roomAbove ? 'Tricky gone while Robyn is held' : 'Tricky waits for Robyn');
-      const tops = await page.evaluate(() => window.__robyn);
+      const tops = await page.evaluate(() => { clearInterval(window.__robynWatch); return window.__robyn; });
       assert.ok(Math.max(...tops) - Math.min(...tops) <= 1, `Robyn never moved under the pointer: ${[...new Set(tops)]}`);
       // Let go: whatever is left goes.
       await page.mouse.move(4, 4, { steps: 6 });
