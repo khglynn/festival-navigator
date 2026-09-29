@@ -2123,16 +2123,48 @@ function maybeOpenOnDay() {
   // During the festival: the now line, or today's first head before doors —
   // a Late nights date counts as today when no grid day is (wall.js
   // scrollToNowLine).
-  if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) {
+    rememberScrolled(key);
+    landAgainWithFonts(() => scrollToNowLine($('wall-root'), { timeZone: tz }));
+    return;
+  }
   // During it with today hidden: the next visible day. Before it and after
   // it: the first visible grid day.
   const tabs = dayNavOf(state.fest(), ctx);
   const day = nextVisibleDay(tabs, festivalClock(new Date(), tz).iso) || defaultDayOf(tabs);
   if (!day) return;
-  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  const anchor = anchorFor(day.anchor || day.key);
+  const block = document.querySelector(anchor);
   if (!block) return;
   landOnDay(block);
   rememberScrolled(key);
+  landAgainWithFonts(() => { const again = document.querySelector(anchor); if (again) landOnDay(again); });
+}
+
+// The open usually lands before the web fonts do (a cold phone, a first
+// visit). When they arrive every card's text re-sets, and each grid day above
+// the landing grows a few pixels: on ACL's laptop wall, six days × 6px put
+// tonight's Late nights room 36px under the chrome and the day row on SUN 11
+// (2026-09-29). Chromium's scroll anchoring holds the landing through that;
+// WebKit has none, so the open lands once more when the fonts are in — only
+// if nothing has happened since: the page is where the open left it, no hand
+// has touched it, no sheet is up and it is the same festival. A second
+// landing on a page that did not move is the same landing.
+const HANDS = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+function landAgainWithFonts(land) {
+  const fonts = document.fonts;
+  if (!fonts || fonts.status !== 'loading' || !fonts.ready || typeof fonts.ready.then !== 'function') return;
+  const fid = ctx.fid;
+  const at = window.scrollY;
+  let touched = false;
+  const touch = () => { touched = true; };
+  HANDS.forEach((t) => window.addEventListener(t, touch, { capture: true, passive: true }));
+  fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
+    HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true }));
+    if (touched || ctx.fid !== fid || ctx.query || window.scrollY !== at) return;
+    if (document.getElementById('sheet-backdrop') || $('screen-app').style.display === 'none') return;
+    land();
+  }, () => HANDS.forEach((t) => window.removeEventListener(t, touch, { capture: true })));
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
