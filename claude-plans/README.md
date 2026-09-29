@@ -46,6 +46,8 @@ live in `archive/`.
 
 ## Banked, not built
 
+- `2026-09-29-native-apps-stack.md`: iOS + Android — Capacitor around the
+  web app, the native pieces that earn the listing, which agent does what.
 - `2026-09-02-add-a-show.md`
 - `2026-08-27-schedule-drop-watcher-future-build.md`
 
