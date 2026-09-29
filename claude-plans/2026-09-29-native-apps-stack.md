@@ -155,8 +155,85 @@ Android 16's Live Updates in place of a Live Activity (later).
 4. **Submit both stores** well ahead of the first 2027 festival.
    Store screenshots come from gallery.html states.
 
+## Decisions (Kevin, 2026-09-29) and the Thursday runbook
+
+Kevin: TestFlight (and Android's equivalent) only, this year. Live updates
+yes, unless they turn into a huge pain. First native piece: "a live tile
+mirroring our footer that opens to our plan". Target: a Mac session on
+**Thursday Oct 1**, the day before ACL, using Claude.
+
+**Bundled app plus our own live updates. Loading the live site is out.**
+Loading fest.kevinhg.com in the shell (`server.url`) would get us live
+updates for free, but on iOS the service worker and Capacitor's plugins
+don't work together there (ionic-team/capacitor #5278, #7069; App-Bound
+Domains break plugin injection). So the app would lose offline, or lose
+the tile. Instead the web code ships inside the app, and a self-hosted
+updater (`@capgo/capacitor-updater` in manual mode, open source) checks a
+version file on our host at launch, downloads the new bundle in the
+background, and switches to it on the next cold start. That's never
+mid-use, the same rule as the web: a new build reloads only when nothing is
+in progress. Cost $0. A bundle is built from a branch, so **none of this
+touches production during ACL**; the web-side changes merge through the
+normal gate afterwards.
+
+**The tile is a widget first, with a Live Activity after.** The footer's
+peek (`peekOf(plan, fest, date)`, plan.js) is a pure function of the clock.
+So JS can compute tonight's whole run of peeks ahead of time (NOW Robyn
+till 9:40, then NEXT …) and give that list to a WidgetKit timeline. iOS
+then flips the Lock Screen and Home Screen widget on schedule, with no
+signal and without the app running. Tapping it opens the plan
+(`openPlan`). A Live Activity (Dynamic Island) can't advance on its own
+without server pushes, and it ends after 8 hours, so it comes second: a
+countdown to the next stop, refreshed whenever the app is opened. Android
+widget (Glance): later.
+
+**Buy me a coffee:** unchanged. The link opens buymeacoffee.com in the
+system browser, whose checkout handles payment. US apps may currently link
+out to purchases with no Apple commission (Epic v. Apple; the Supreme
+Court has the appeal, so revisit before an App Store listing). No in-app
+purchase this year.
+
+**Store art:** TestFlight needs no screenshots. This year the "ad" is a
+sticker with the public TestFlight link as a QR code, for the crew.
+Screenshots and stickers made from gallery.html states come before a 2027
+listing.
+
+**Before Thursday (Kevin):**
+- Enroll in the Apple Developer Program today; approval can take up to 48h.
+- Install Xcode 26 plus the iOS simulator runtime, and Android Studio.
+- Create a Play Console account and start its identity check, which can
+  take days. Fallback: a signed APK sent straight to Android friends.
+- Turn on Developer Mode on the iPhone (it appears after the phone is
+  first connected to Xcode).
+- Pull the app ideas from Apple Notes.
+
+**Prep a cloud session can do before Thursday (this branch, no prod):**
+1. `apiBase()` for the ~20 `/api` calls, `REPORT_PATH`, and the festival
+   JSON loads; native HTTP (CapacitorHttp) so the API needs no CORS change.
+2. Native offline: skip service-worker registration inside the app; the
+   festival data comes from the network (4s budget), then the last good
+   copy, then the bundled copy.
+3. `peekTimeline(plan, fest, from, hours)`: the widget's entries, each with
+   its moment, tag, name, place, time words and count. Tested in Node
+   against the real Portola and ACL files.
+4. The bridge (inert on the web): after each plan paint, hand the
+   timeline to the widget's App Group.
+5. A script that zips the web bundle and writes the updater's version file.
+
+**Thursday on the Mac (Claude Code desktop, Simulator pane):**
+`npx cap add ios android`, the app icon and launch screen, the widget
+extension (SwiftUI, the footer's look from v3-tokens.css) plus the App
+Group, the small Swift plugin that receives the timeline, the updater, a
+walk in the Simulator and then on the phone with a real finger, archive,
+TestFlight. Friends: TestFlight internal testers (App Store Connect users,
+up to 100, no review) are available the same day. The public link needs a
+Beta App Review of the first build, typically about a day, so ACL weekend 1
+is tight for it. Android: a debug-signed APK Thursday; Play internal
+testing once the account clears.
+
 ## Open calls for Kevin
 
-- Live updates vs. every change going through App Store review.
+- The bundle ID (permanent once registered): `com.kevinhg.festival`? And the
+  home-screen name: "Festival" (manifest short_name) or "Festival Navigator"?
+
 - Whether alerts are opt-in per pick, or on for musts only.
-- Stores for 2027, or a TestFlight-only beta for the crew first.
