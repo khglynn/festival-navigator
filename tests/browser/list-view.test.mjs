@@ -16,7 +16,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, motionDone, NO_BROWSER, nowInView } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER, nowInView } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -35,6 +35,7 @@ async function open(engine, { width = 390, view = 'list', now = SAT_415, selecti
     viewport: { width, height: phone ? 844 : 900 }, hasTouch: phone, isMobile: phone && engine === chromium,
     deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block',
   });
+  await lateStarts(ctx); // LATE_ANIMATIONS_MS: Linux WebKit's late motion, on any machine
   const doc = {
     v: 4, meta: { name: 'List Crew', inviteFestId: FID }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 }, Ross: { colorIndex: 5 } },
@@ -193,6 +194,9 @@ for (const [name, get, width] of ENGINES) {
       assert.equal((await page.locator(line).textContent()).trim(), 'Earlier · 7 sets');
       await press(page, phone, line);
       await sleep(700);
+      // The past arriving is motion; the next tap waits for it to stop, as the
+      // line's box is where the finger lands (a late start held it mid-way).
+      await motionDone(page, { within: '#wall-root' });
       assert.equal(await page.locator(line).getAttribute('aria-expanded'), 'true');
       assert.equal((await page.locator(line).textContent()).trim(), 'Hide earlier');
       const y1 = (await page.locator(line).boundingBox()).y;
@@ -200,6 +204,7 @@ for (const [name, get, width] of ENGINES) {
       assert.ok(await page.locator('.room[data-room=":fest"] .card[data-artist="Airwolf Paradise"]').first().isVisible(), 'the past is back, below it');
       await press(page, phone, line);
       await sleep(700);
+      await motionDone(page, { within: '#wall-root' });
       assert.equal((await page.locator(line).textContent()).trim(), 'Earlier · 7 sets');
       const y2 = (await page.locator(line).boundingBox()).y;
       assert.ok(Math.abs(y2 - y0) < 1.5, `and held folding back (${y0} → ${y2})`);
@@ -318,11 +323,15 @@ for (const [name, get, width] of ENGINES) {
         // A finger opens the shelf; − steps Robyn from must to nothing.
         await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
         await page.waitForSelector('#artist-sheet .f-step.minus', { timeout: 5000 });
-        await sleep(400);
-        for (let i = 0; i < 4; i++) {
+        // Each tap once the shelf stands still (it rises, and a step re-lays
+        // its row: a late start held the − mid-way and the tap missed it),
+        // and the next only once the pick has changed.
+        for (let i = 0; i < 4 && !(await rows()).includes('Robyn:dim'); i++) {
+          await motionDone(page, { within: '#artist-sheet' });
           const m = await page.locator('#artist-sheet .f-step.minus').boundingBox();
+          const was = await page.locator(robyn).getAttribute('aria-label');
           await page.touchscreen.tap(m.x + m.width / 2, m.y + m.height / 2);
-          await sleep(250);
+          await page.waitForFunction(([s, w]) => { const c = document.querySelector(s); return !c || c.getAttribute('aria-label') !== w; }, [robyn, was], { timeout: 4000 });
         }
       } else {
         // A mouse click cycles: must → nothing. The pointer stays on the row.
