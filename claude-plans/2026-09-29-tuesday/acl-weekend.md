@@ -104,3 +104,24 @@ banked as I go.
   frame in both engines before the held place is read back.
 - The brief's own case (ACL Sat 3 PM) is green on old code today: Friday is
   folded, the first block IS Saturday. Kept as the control.
+
+### 2. Fixed (commit 6a623e3)
+- `wall.js wireScrollspy(containers, root, { was })`: the tab lit at wiring
+  is the day the rebuilt row was showing (`was`, read by app.js renderDayNav
+  before it removes the tabs), with no glide — or, on a fresh open, the first
+  block, which is never painted. The real claim is a MICROTASK: it runs after
+  the task that drew the wall has also placed it (maybeOpenOnDay /
+  keepWallPlace are synchronous after repaintWall in every caller I found:
+  boot, closeSettings, recomputePast, the fold's finish, the view switch) and
+  before any frame. Geometry reader shared (`dayAtGeometry`); a disposed spy
+  never claims; the next-frame re-read at scrollY > 0 stays (Codex r4).
+- Row motion: a fresh row (no `was`) and an unchanged day rest with 'auto';
+  only a real change of day glides. Before, the open glided the row in from
+  its start (probes: row 0 -> 97 on an ACL Saturday, 168 -> 185 -> 120 ->
+  361 on the 11:30 PM open); now the first painted frame is at rest (361).
+  That is a visible change at open — a walker should look at it (design
+  call: I think a row nobody has seen yet should just be where it rests).
+- Unit tests: wall-filters' two spy tests await the microtask; new cases for
+  `was` (shown until the claim) and a disposed spy.
+- Browser: tests/browser/day-row-first-paint.test.mjs 6/6 green on the fix
+  (4 red on main: the 11:30 PM open and the day turn, both engines).
