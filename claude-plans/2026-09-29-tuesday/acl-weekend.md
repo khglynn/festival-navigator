@@ -64,3 +64,28 @@ banked as I go.
   open at 11:30 PM (landing in LATE) starts with SAT lit until the landing's
   scroll event arrives. On an engine whose scroll event arrives after a paint,
   that provisional day is what paints — the ~1 s flash.
+
+## Built
+
+### 1. Closers run to the close (commits 271431c, d05e027)
+- `js/time.js`: `computeDayArtists(dayData, { close })` + `daySetsOf(fest,
+  day, weekend)` + `playsWeekend`. `state.getDayArtists` and `plan.js
+  weekPlaces` both call daySetsOf now (plan.js had its own copy of the
+  weekend filter). Every set carries `endApprox`.
+- `plan.js tillApprox` + `plan-rows.js`: the NOW row and the Share's "now
+  till" wear `~` when the till is an end the poster left off.
+- Validator: `dayMeta.<day>.close|doors` must be one clock time; a close no
+  set starts before warns. Doc: docs/add-a-festival.md.
+- No festival's windows change today (diffed every file old vs new: zero
+  endMin changes, because no file has a close yet and ACL's latest printed
+  end never beats the default). What changes today: the tilde on inferred
+  "till"s — ACL has 12 inferred ends, Electric Forest 199, Lolla 2025 one,
+  Portola none (its goldens are untouched). One ACL golden moved:
+  "SOME The xx T-Mobile NOW till ~9:45 PM".
+- Red first: tests/day-close.test.mjs run against origin/main's js/ (with a
+  shim exporting the old behaviour as daySetsOf): 8 of 10 red at the time
+  (the 2 green were cases whose answer is the old default). The Board test
+  and the validator test were added after and fail on old code by
+  construction (nowTo 1290, no close error).
+- The till parsers in plan-stop-ends / plan-text accepted only "till 9:45";
+  they now accept "till ~9:45" (otherwise the sweeps silently skip the line).
