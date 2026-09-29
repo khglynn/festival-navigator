@@ -107,3 +107,14 @@ Branch `fix/u0-nets`, off main 1c97b25 (production v105). From the LEDGER's
 4. Reports queued on phones by v88–v91 carrying "notes sheet opened" will
    still trickle in until they expire (a week) — they are old shells, and
    with (a) their build will be visible from the next release on.
+
+## Cut from v106 (coordinator, 2026-09-29 evening)
+
+Sol's review of the combined v106 head found a BLOCKER in (c): the pending-name
+reconcile matched names case-insensitively without checking `pid`, so a person
+who joined offline as "drew" while another phone added a different "Drew" would
+have their picks moved onto the other person, and the phone's identity followed.
+It also dropped a conflicting pending edit when both keys held a value. (c) is
+reverted from the release (the todo test is back); (a) and (b) ship. The redo
+must key the reconcile on `pid` (same pid = same person, different pid = a name
+conflict to surface, never a merge) and resolve conflicting edits explicitly.

@@ -329,69 +329,6 @@ export function clearPending(pushed) {
   saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed, IS_ATOMIC)));
 }
 
-// ---- one person, one key: a pending name against the server's names ---------
-// "Drew" and "drew" are one person to every human, and the server refuses a
-// doc that would hold both active (api/_lib/crew-sql.mjs). A name this phone
-// added while it could not hear the crew — the Invite sheet's offline add, an
-// offline join, Stay offline — is spelled the way THIS phone knew it. If the
-// crew meanwhile has that person under another capitalisation, the pending
-// add is not a second person: it is them, under the server's key (LEDGER
-// follow-up 13, 2026-09-26: the add blocked the phone's whole sync).
-//
-// `namesToReconcile` finds them: a pending person that would be ACTIVE after
-// the merge (not a tombstone) whose name the server holds, active, spelled
-// differently. `renamePending` moves every edit keyed by that name (their
-// picks, affinity, Spotify stats) onto the server's key and drops the pending
-// person entry itself — the server's person stands, colour and pid included.
-// Notes keep their author: a note's id embeds its author and the server holds
-// the two together, so rewriting one would orphan its replies.
-export function namesToReconcile(pending, remotePeople) {
-  const renames = {};
-  const mine = (pending && pending.people) || {};
-  const theirs = remotePeople && typeof remotePeople === 'object' ? remotePeople : {};
-  const active = new Map();
-  for (const [name, p] of Object.entries(theirs)) if (isActivePerson(p)) active.set(name.toLowerCase(), name);
-  for (const [name, p] of Object.entries(mine)) {
-    if (!p || typeof p !== 'object' || p.removed === true) continue;
-    const key = active.get(name.toLowerCase());
-    if (key && key !== name) renames[name] = key;
-  }
-  return renames;
-}
-
-function moveKey(obj, from, to) {
-  if (!obj || typeof obj !== 'object' || !(from in obj)) return;
-  if (!(to in obj)) obj[to] = obj[from]; // an edit already under the server's key wins
-  delete obj[from];
-}
-
-export function renamePending(pending, renames) {
-  const out = JSON.parse(JSON.stringify(pending || {}));
-  for (const [from, to] of Object.entries(renames)) {
-    if (out.people) { delete out.people[from]; if (!Object.keys(out.people).length) delete out.people; }
-    for (const f of Object.values(out.festivals || {})) {
-      for (const who of Object.values((f && f.selections) || {})) moveKey(who, from, to);
-    }
-    moveKey(out.affinity, from, to);
-    moveKey(out.spotifyStats, from, to);
-  }
-  return out;
-}
-
-// Reconcile this crew's pending edits, in memory and on disk, against the
-// server's people. Returns the renames made ({} when none). The disk copy is
-// renamed on its own and written whole — persistPending merges with disk and
-// would bring the old spelling straight back.
-export function reconcilePendingNames(remotePeople) {
-  const onDisk = loadJSON(LS.pending(crewToken), {});
-  const renames = namesToReconcile(deepMerge(onDisk, pendingChanges), remotePeople);
-  if (!Object.keys(renames).length) return renames;
-  pendingChanges = renamePending(pendingChanges, renames);
-  saveLS(LS.pending(crewToken), JSON.stringify(renamePending(onDisk, renames)));
-  editSeq++;
-  return renames;
-}
-
 // The pre-v31 deepMerge object-ified arrays ({"0":..,"1":..}) whenever one
 // landed on a key that wasn't already an array. The playlist artists ledger
 // is the only array that travels through pending, and a blob corrupted that
