@@ -410,8 +410,7 @@ function toggleFoldFlow(key) {
       for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
       place = takeWallPlace();
     }
-    repaintWall();
-    keepWallPlace(place);
+    repaintWall({ place });
     if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
     else if (notice()) arrive([notice()]);
   };
@@ -455,8 +454,7 @@ function unfoldAll() {
   ctx.folded = [];
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
-  repaintWall();
-  keepWallPlace(place);
+  repaintWall({ place });
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
@@ -549,8 +547,7 @@ function pastMayMove() {
 function recomputePast() {
   ctx.pastAt = new Date();
   const place = takeWallPlace();
-  repaintWall();
-  keepWallPlace(place, { byTime: true });
+  repaintWall({ place, byTime: true });
 }
 
 // ---- the List's highlight: a filter that moves (v103, 2026-09-26) ------------------------
@@ -635,8 +632,7 @@ function thinFlow(before, { keep = rowsInHand() } = {}) {
     for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
     // A hand scroll during the fade wins: the place is read again, there.
     const place = Math.abs(window.scrollY - before.y) >= 1 ? takeWallPlace() : before.place;
-    repaintWall();
-    keepWallPlace(place);
+    repaintWall({ place });
     if (!canAnimate(root, ctx)) return;
     const arriving = [];
     const moves = [];
@@ -751,9 +747,8 @@ function switchView(next) {
     if (pendingView === sw) pendingView = null;
     // A hand scroll during the fade wins: the place is read again, there.
     if (Math.abs(window.scrollY - tookAt) >= 1) place = takeWallPlace();
-    repaintWall();
+    repaintWall({ place, byTime: true });
     if (fade) { fade.onfinish = null; fade.oncancel = null; try { fade.cancel(); } catch { /* done */ } }
-    keepWallPlace(place, { byTime: true });
     viewPlace = place ? { place, y: window.scrollY } : null;
     arriveBlocks(inView(root));
     keepWallAddress(); // the address says the view it is showing (wallUrl)
@@ -2883,7 +2878,13 @@ function refocusPlace(was) {
   focusQuietly(el);
 }
 
-function repaintWall() {
+// `place` (takeWallPlace, or thinBefore's anchor): the page is held there
+// BEFORE a standing zoom is grown again on its fresh card. The other order
+// grew it where its card sat for the moment between the repaint and the
+// hold: a List row leaving above Robyn put Robyn's zoom one row too high,
+// under a hand that never moved, where it closed or snapped back and a click
+// meant for its − picked the card (2026-09-29, the CI red on list-view).
+function repaintWall({ place = null, byTime = false } = {}) {
   // Rows the person is still on stay through the repaint in a filtered List
   // (a friend's pick arriving on the poll must not pull the row you just
   // un-picked out from under you) — read before the zoom is let go.
@@ -2903,6 +2904,7 @@ function repaintWall() {
   ctx.holdRows = hold;
   try { renderWall($('wall-root'), ctx); } finally { ctx.holdRows = null; }
   if (hold.size) watchLeftovers(); // what was held leaves once it is let go
+  if (place) keepWallPlace(place, { byTime });
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
@@ -2920,6 +2922,11 @@ function repaintWall() {
   updateArchiveNote();
   measureStickyChrome();
   measureFoot(); // Our plan: the shell's padding follows the dock and the peek
+  // Once more at the end: a strip above the wall (the archive note, the
+  // migration banner) or the chrome just measured can move it. Nothing moved,
+  // nothing scrolls; if it did, a standing zoom follows its card as it does
+  // any scroll.
+  if (place) keepWallPlace(place, { byTime });
 }
 
 // The first-wall coach mark (CT-1) lived here until v92: one strip in the
