@@ -138,12 +138,15 @@ function close() {
 }
 // The goldens: the open plan as each moment draws it (a PLAN_ACL_PRINT run,
 // read line by line against the data and the model before freezing).
+// (2026-09-29: Stubb's on Oct 1 reads "~8:30 PM" — its stop starts on Brandon
+// Flowers' guessed start, which the row used to print plain; see
+// tests/plan-latenights.test.mjs.)
 const GOLDEN = {
   tue: [
     "HEAD TUE OUR PICKS Sep 29 · 8 picking",
     "SOME Mohawk Austin Fcukers also Oct 4, Oct 10, Oct 11 NEXT ~8:45 PM 4 picked",
     "# THU Oct 1",
-    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 8:30 PM 3 picked",
+    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 ~8:30 PM 3 picked",
     "# FRI Oct 2",
     "SOME Faouzia Miller Lite also Oct 9 1:45 PM 3 picked",
     "  … Scattered till 3:15 PM 2:30 PM",
@@ -239,7 +242,7 @@ const GOLDEN = {
     "# TUE Sep 29 (past)",
     "SOME Mohawk Austin Fcukers also Oct 4, Oct 10, Oct 11 ~8:45 PM 4 picked (past)",
     "# THU Oct 1 (past)",
-    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 8:30 PM 3 picked (past)",
+    "SOME Stubb's Jess Williamson → Brandon Flowers also Oct 2, Oct 4, Oct 8 ~8:30 PM 3 picked (past)",
     "# FRI Oct 2 (past)",
     "SOME Faouzia Miller Lite also Oct 9 1:45 PM 3 picked (past)",
     "  … Scattered till 3:15 PM 2:30 PM (past)",

@@ -49,11 +49,16 @@ const whereOf = (stop) => (typeof stop.place === 'string' ? stop.place : placeOf
 export const stopKey = (stop) => `${stop.nightId || ''}|${whereOf(stop)}|${stop.from}`;
 
 // The act a node and a grown card speak for: a set's own act; in a room, the
-// headliner most of the stop's people picked (else the room's first act).
+// headliner most of the stop's people picked, the earlier on a tie (else the
+// room's first act). headlinersOf hands its three back in PLAY order, so its
+// first is the opener — which grew Total Wife's card under the NOW row at
+// 11:59 PM on ACL's first Late night, with Fcukers on and picked by more
+// (2026-09-29).
 function actFor(stop, picks) {
   const acts = actsOf(stop);
   if (kindOf(stop) === 'set') return acts[0] || null;
-  return headlinersOf(stop, picks)[0] || acts[0] || null;
+  const top = headlinersOf(stop, picks).reduce((best, h) => (!best || h.n > best.n ? h : best), null);
+  return top || acts[0] || null;
 }
 
 // ---- the pieces ----------------------------------------------------------------
@@ -150,9 +155,17 @@ function whoOf(people, plan, meName) {
 }
 const withEl = (who) => mk('span', 'with', who.join(' + '));
 
+// Whether a stop's start is a guess: the start rests on the room's act
+// playing at its first minute (people arrive for their first pick), so that
+// act's `approx` decides — never the act the row speaks for, which in a
+// room can be another act entirely (Mohawk's stop starts at Fcukers' guessed
+// ~8:45, and was printed "8:45 PM" plain while it spoke for Total Wife's
+// posted 8 PM, 2026-09-29). A grid set's time is the festival's own.
 const approxOf = (stop, picks) => {
   if (kindOf(stop) === 'set') return false;
-  const act = actFor(stop, picks);
+  const acts = actsOf(stop);
+  const on = acts.find((a) => a.from != null && a.to != null && a.from <= stop.from && stop.from < a.to);
+  const act = on || actFor(stop, picks);
   return !!(act && act.approx);
 };
 
