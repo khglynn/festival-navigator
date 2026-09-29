@@ -2,7 +2,7 @@
 // Model: the remote crew document is the shared truth; our not-yet-pushed
 // edits live in state.pendingChanges and always overlay on top of remote.
 import * as state from './state.js';
-import { isApiNotFound } from './crew.js';
+import { isApiNotFound, me as myName, setMe } from './crew.js';
 import { timeoutSignal as makeTimeoutSignal, errorText } from './util.js';
 import { record } from './errlog.js';
 
@@ -105,11 +105,46 @@ async function fetchRemote() {
   return await res.json();
 }
 
+// Every server doc this phone applies goes through here. First, a name this
+// phone added while it could not hear the crew, and the crew holds under
+// another capitalisation, becomes the crew's key (state.reconcilePendingNames
+// — one person, one key); if that name is who this phone IS in the crew (an
+// offline join), who it is follows. Then the doc applies over what is left.
+function applyServerDoc(remote) {
+  const token = state.getCrewToken();
+  const renames = state.reconcilePendingNames(remote && remote.people);
+  const mine = myName(token);
+  if (mine && Object.prototype.hasOwnProperty.call(renames, mine)) setMe(token, renames[mine]);
+  return state.applyRemoteDoc(remote);
+}
+
 function applyRemote(remote) {
-  if (state.applyRemoteDoc(remote)) onRemoteChange();
+  if (applyServerDoc(remote)) onRemoteChange();
+}
+
+// A refusal with a person in it may be a name the crew already has in another
+// capitalisation, added before this phone could hear it (the Invite sheet's
+// offline add, LEDGER follow-up 13). The push itself never read the crew, so
+// read it once now: if that reconciles the pending edits, the refused bytes
+// are no longer what is owed, and the push goes again — once. Anything else
+// (a full crew, a bad field) leaves the payload as it was, and stays refused.
+async function reconciledAfterRefusal(token, payload) {
+  if (!payload.people || !Object.keys(payload.people).length) return false;
+  const gen = pushGen;
+  try {
+    const remote = await fetchRemote();
+    if (state.getCrewToken() !== token) return false;
+    heard(token, gen);
+    applyRemote(remote);
+  } catch { return false; }
+  return sig(state.pendingChanges) !== sig(payload);
 }
 
 export async function pushSync() {
+  if (await pushOnce(false) === 'again') await pushOnce(true);
+}
+
+async function pushOnce(retry) {
   if (!state.getCrewToken()) return;
   // A guest reads and never sends (v92): whatever is queued on this phone —
   // an earlier owner's edits, say — stays queued, untouched, for its owner.
@@ -118,6 +153,9 @@ export async function pushSync() {
   if (stayOffline) { setSyncStatus('offline'); return; }
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) { syncQueued = true; return; }
+  // The retry after a reconciliation may find nothing left to send: the
+  // pending add WAS the crew's person all along.
+  if (retry && !state.hasPending()) { setSyncStatus('online'); announceSynced(); return; }
 
   // Freeze the payload. state.pendingChanges is live and can gain leaves while
   // the request is in flight; both the refusal check and the post-success
@@ -135,6 +173,7 @@ export async function pushSync() {
 
   isSyncing = true; setSyncStatus('syncing');
   const genAtStart = pushGen; // when this left (heardAt)
+  let again = false;
   try {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
       method: 'POST',
@@ -152,6 +191,7 @@ export async function pushSync() {
     // are still on disk and still pending.
     if (res.status === 413 || res.status === 400) {
       const body = await res.json().catch(() => ({}));
+      if (!retry && res.status === 400 && await reconciledAfterRefusal(tokenAtStart, payload)) { again = true; return 'again'; }
       refusedPayload = sig(payload);
       refusedFor = tokenAtStart;
       // Refused after "Stay offline" was switched on: the refusal is kept
@@ -193,7 +233,7 @@ export async function pushSync() {
     setSyncStatus(navigator.onLine && !stayOffline ? 'error' : 'offline');
   } finally {
     isSyncing = false;
-    if (syncQueued) { syncQueued = false; scheduleSync(); }
+    if (!again && syncQueued) { syncQueued = false; scheduleSync(); }
     if (pollAfterPush) { pollAfterPush = false; pollSync(); }
   }
 }
@@ -289,7 +329,7 @@ export async function pollSync() {
     if (pushGen !== genAtStart) return;
 
     heard(tokenAtStart, genAtStart);
-    const changed = state.applyRemoteDoc(remote);
+    const changed = applyServerDoc(remote);
     if (changed) {
       onRemoteChange();
       // The crew moved, so a refusal made against the OLD crew document may no

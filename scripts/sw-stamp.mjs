@@ -48,28 +48,54 @@ export function readStamp(sw) {
   return m ? m[1] : null;
 }
 
-const main = () => {
-  const args = new Set(process.argv.slice(2));
+// The page's own build (2026-09-29, LEDGER follow-up 2): index.html carries
+// <meta name="fn-build" content="vN">, the same N as CACHE_VERSION, so a page
+// no worker controls can still say which release it is (js/errlog.js reads
+// it for crash reports). It is written here, BEFORE the stamp is hashed —
+// index.html is itself in APP_CORE, so writing it after would stale the stamp.
+const BUILD_META_RE = /(<meta name="fn-build" content=")(v\d+)(">)/;
+
+export function readPageBuild(html) {
+  const m = html.match(BUILD_META_RE);
+  return m ? m[2] : null;
+}
+
+export function withPageBuild(html, n) {
+  if (!BUILD_META_RE.test(html)) throw new Error('index.html carries no <meta name="fn-build" content="vN">');
+  return html.replace(BUILD_META_RE, `$1v${n}$3`);
+}
+
+// The whole ritual against one checkout; the CLI below is a thin wrapper.
+// Returns { code, out } — 0 done or fresh, 1 stale (--check), 2 bad usage.
+export function stamp(root, argv = []) {
+  const args = new Set(argv);
   // Anything but --check / --keep refuses: `--help` once performed a real
   // bump (a review run, 2026-09-25), and a stamp is a release decision.
   const unknown = [...args].filter((a) => a !== '--check' && a !== '--keep');
   if (unknown.length) {
-    console.error(`sw-stamp: unknown ${unknown.join(' ')}. Usage: node scripts/sw-stamp.mjs [--keep | --check]` +
-      ' — no flag bumps CACHE_VERSION and restamps; --keep restamps only; --check exits 1 when stale.');
-    process.exit(2);
+    return { code: 2, out: `sw-stamp: unknown ${unknown.join(' ')}. Usage: node scripts/sw-stamp.mjs [--keep | --check]` +
+      ' — no flag bumps CACHE_VERSION and restamps; --keep restamps only; --check exits 1 when stale.' };
   }
-  let sw = readFileSync(SW, 'utf8');
-  const fresh = assetStamp(sw);
-  const current = readStamp(sw);
-  if (args.has('--check')) {
-    if (current === fresh) { console.log(`sw-stamp: fresh (${fresh})`); return; }
-    console.error(`sw-stamp: STALE — cached assets changed since ${current || 'no stamp'}; run node scripts/sw-stamp.mjs`);
-    process.exit(1);
-  }
+  const swPath = join(root, 'service-worker.js');
+  const htmlPath = join(root, 'index.html');
+  let sw = readFileSync(swPath, 'utf8');
   const vm = sw.match(/const CACHE_VERSION = 'festival-nav-v(\d+)';/);
   if (!vm) throw new Error('CACHE_VERSION line not found');
   const v = Number(vm[1]);
+  const html = readFileSync(htmlPath, 'utf8');
+  const current = readStamp(sw);
+  if (args.has('--check')) {
+    if (readPageBuild(html) !== `v${v}`) {
+      return { code: 1, out: `sw-stamp: STALE — index.html says ${readPageBuild(html) || 'no build'}, the worker v${v}; run node scripts/sw-stamp.mjs --keep` };
+    }
+    const fresh = assetStamp(sw, root);
+    if (current === fresh) return { code: 0, out: `sw-stamp: fresh (${fresh})` };
+    return { code: 1, out: `sw-stamp: STALE — cached assets changed since ${current || 'no stamp'}; run node scripts/sw-stamp.mjs` };
+  }
   const next = args.has('--keep') ? v : v + 1;
+  const nextHtml = withPageBuild(html, next);
+  if (nextHtml !== html) writeFileSync(htmlPath, nextHtml);
+  const fresh = assetStamp(sw, root); // after index.html names the build it ships in
   sw = sw.replace(/const CACHE_VERSION = 'festival-nav-v\d+';/, `const CACHE_VERSION = 'festival-nav-v${next}';`);
   // Write with the worker's OWN line ending — never mix endings on a CRLF checkout.
   const eol = sw.includes('\r\n') ? '\r\n' : '\n';
@@ -77,8 +103,14 @@ const main = () => {
   sw = current
     ? sw.replace(/const ASSET_STAMP = '[0-9a-f]{8}';[^\r\n]*/, stampLine)
     : sw.replace(/(const CACHE_VERSION = [^\r\n]*\r?\n)/, `$1${stampLine}${eol}`);
-  writeFileSync(SW, sw);
-  console.log(`sw-stamp: v${v} -> v${next}, stamp ${current || '(none)'} -> ${fresh}`);
+  writeFileSync(swPath, sw);
+  return { code: 0, out: `sw-stamp: v${v} -> v${next}, stamp ${current || '(none)'} -> ${fresh}` };
+}
+
+const main = () => {
+  const { code, out } = stamp(ROOT, process.argv.slice(2));
+  (code === 0 ? console.log : console.error)(out);
+  if (code) process.exit(code);
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();

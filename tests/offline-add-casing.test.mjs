@@ -1,22 +1,21 @@
-// BANKED — a follow-up, not this release (2026-09-26, the people build;
-// PEOPLE-BUILD.md "Follow-ups"). Written now so the acceptance test exists
-// before the fix does; it runs as a TODO and does not fail the suite.
+// The Invite sheet's offline add against a crew that already has the person
+// in another capitalisation (LEDGER follow-up 13, banked 2026-09-26 as a
+// TODO on the people build; fixed 2026-09-29).
 //
 // A local-only add (offline, or Stay offline) names the person by what THIS
 // phone knows. If the crew already has "Drew" and this phone does not know
 // it yet, an offline add of "drew" queues a pending person keyed "drew";
 // the server's merge refuses two names that differ only by case
 // (api/_lib/crew-sql.mjs, 400 "Someone in the crew already has that name"),
-// sync.js treats that as a deterministic refusal, and the phone's sync is
-// BLOCKED — every later pick waits behind it until a new edit changes the
-// payload. Production's offline add (main, openAddMember's catch branch) has
-// the same exposure: it writes people[canonical] with canonical taken from
-// the local copy's casing and no reconciliation.
+// and sync.js used to treat that as a deterministic refusal: the phone's sync
+// was BLOCKED, every later pick waiting behind it until a new edit changed
+// the payload.
 //
 // Acceptance: a pending add whose name matches a server person
 // case-insensitively reconciles to the server's key and never blocks sync.
-// The fix is sync-engine design (reconciling a pending person against the
-// server's names), not the Invite sheet's.
+// The fix is the sync engine's (state.reconcilePendingNames, sync.js
+// applyServerDoc and the one read after a refusal), not the Invite sheet's;
+// its cases are pinned in tests/pending-name-reconcile.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -78,9 +77,7 @@ await settle(200);
 const state = await import('../js/state.js');
 const sync = await import('../js/sync.js');
 
-test('a pending add whose name matches a server person case-insensitively reconciles to the server’s key and never blocks sync', {
-  todo: 'banked: sync-engine reconciliation of a pending person against the server’s names (PEOPLE-BUILD.md follow-ups); production’s offline add has the same exposure',
-}, async () => {
+test('a pending add whose name matches a server person case-insensitively reconciles to the server’s key and never blocks sync', async () => {
   sync.setStayOffline(true);
   SERVER = deepMerge(SERVER, { people: { Drew: { colorIndex: 1 } } }); // another phone; this one does not hear it
   assert.equal(state.people().Drew, undefined, 'this phone does not know Drew');
@@ -96,6 +93,7 @@ test('a pending add whose name matches a server person case-insensitively reconc
   await sync.pushSync();
   await settle(20);
   assert.notEqual(sync.syncState(), 'blocked', 'sync is never blocked by it');
+  assert.equal(sync.syncState(), 'online', 'and nothing is left owed');
   assert.equal(Object.keys(state.people()).filter((n) => n.toLowerCase() === 'drew').length, 1, 'one Drew');
   assert.ok(state.people().Drew, 'under the server’s key');
   assert.equal(((state.pendingChanges || {}).people || {}).drew, undefined, 'and nothing left pending under the other casing');
