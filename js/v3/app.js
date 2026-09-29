@@ -1901,6 +1901,7 @@ const pageGeo = (root) => ({
   },
 });
 function jumpToNow() {
+  try { (window.__dbg = window.__dbg || []).push([Math.round(performance.now()), 'jumpToNow-enter']); } catch {} // DEBUG-PROBE
   settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
   settleView();
   settlePast();
@@ -1912,7 +1913,7 @@ function jumpToNow() {
   const root = $('wall-root');
   const geo = pageGeo(root);
   const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
-  if (!plan || !plan.stops.length) { nowCycle = null; paintPlan(); return; }
+  if (!plan || !plan.stops.length) { try { (window.__dbg = window.__dbg || []).push([Math.round(performance.now()), 'jumpToNow-noplan']); } catch {} /* DEBUG-PROBE */ nowCycle = null; paintPlan(); return; }
   const { best } = plan;
   // Which stop, led by what, landing where: wall.js nowStep. A stop lands the
   // same way every time it is reached — first tap, next tap or wrap — at its
@@ -1955,6 +1956,7 @@ function jumpToNow() {
     rowsSlid.push(r.el);
   }
   const moves = Math.abs(target - window.scrollY) >= 1;
+  try { (window.__dbg = window.__dbg || []).push([Math.round(performance.now()), 'jumpToNow', Math.round(target), Math.round(window.scrollY), moves, behavior, fresh, stop && stop.members && stop.members.length]); } catch {} // DEBUG-PROBE
   if (moves) window.scrollTo({ top: target, behavior });
   // Anything this tap moved: the page, a grid, a stack row.
   const moved = moves || slid || rowsSlid.length > 0;
