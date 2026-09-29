@@ -93,3 +93,18 @@ origin/fix/list-hold-minus (798fc92).
    test must never click something mid-slide in WebKit.
 3. The welcome-card WebKit 1280 flake (the 09-27 notes' item 3) did not
    appear in this branch's or the probe's runs.
+
+## Gate (head cb3017b + this log commit)
+
+- CI run 36627536174: **browser job green** — 496 tests, 492 pass, 0 fail,
+  4 skipped (the WebKit glides, the slow hand and the List hold all ✔ by
+  name). checks job red only on the SW stamp (the coordinator stamps).
+- Local: `npm run test:browser` both engines 504 / 502 pass / 0 fail / 2
+  skipped. list-view 20/20 at 0 and 800 ms late; zoom-still-hand 6/6 at 0,
+  800, 1500 (+36/36 repeats). `npm test` 1351 pass / 1 fail (stamp); Tokyo
+  1351/1 (stamp, see finding 1); NIGHT_CLOCK=2026-09-30T02:30:00Z 1351/1
+  (stamp) — run as `NIGHT_CLOCK=… npm test`, since npm test already imports
+  night-clock.mjs (the harness refused the NODE_OPTIONS form);
+  validate-festivals 0 errors, 2 warnings (known empty lineups).
+- Throwaway branch `probe/webkit-reds` (4ec95f4 + probe test + DEBUG lines in
+  app.js) is on origin; never merge it — delete when convenient.
