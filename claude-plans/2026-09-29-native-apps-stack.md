@@ -233,6 +233,8 @@ testing once the account clears.
 
 ## Open calls for Kevin
 
+- **The widget itself** (2026-09-29, after this plan): Kevin is not convinced about a widget. Talk it through before building any of the Lock Screen / Home Screen / Live Activity pieces; the Capacitor shell and TestFlight come first either way.
+
 - The bundle ID (permanent once registered): `com.kevinhg.festival`? And the
   home-screen name: "Festival" (manifest short_name) or "Festival Navigator"?
 
