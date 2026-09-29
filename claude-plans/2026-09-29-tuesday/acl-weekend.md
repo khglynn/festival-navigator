@@ -89,3 +89,18 @@ banked as I go.
   construction (nowTo 1290, no close error).
 - The till parsers in plan-stop-ends / plan-text accepted only "till 9:45";
   they now accept "till ~9:45" (otherwise the sweeps silently skip the line).
+
+### 2, reproduced PAINTED (tests/browser/day-row-first-paint.test.mjs, red on 1c97b25's js)
+- Under page.clock (the suite's clock) the wrong day is painted, both engines:
+  ACL opened Sat Oct 3 11:30 PM paints SUN 3 (W1 — the first block left on
+  the wall once Saturday's grid is over) for ~600 ms in Chromium and ~1 s in
+  WebKit, while the page already stands in LATE (y 6813, the LATE block's top
+  at -2226, --jump-offset 6px): the spy claimed at scrollY 0 before
+  maybeOpenOnDay scrolled, and the landing's scroll event never re-read it —
+  the fix came only when the late font landed and something re-read. That is
+  Kevin's "FRI for about a second": before Phase 1 folded a finished Friday,
+  FRI 2 was the first block on an ACL Saturday.
+- The Portola day turn (Sat -> Tue on visibilitychange) paints FRIDAY for a
+  frame in both engines before the held place is read back.
+- The brief's own case (ACL Sat 3 PM) is green on old code today: Friday is
+  folded, the first block IS Saturday. Kept as the control.
