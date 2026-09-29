@@ -107,6 +107,41 @@ test('two nights of one artist in a night section are two shows, not a duplicate
   assert.ok(sameNight.warnings.some((w) => /duplicate artist/.test(w)), sameNight.warnings.join('\n'));
 });
 
+// LEDGER follow-up 21 (2026-09-29): the run checks keyed a room by its
+// weekday `night`, so a dated room (ACL's Late nights: a venue on a DATE)
+// had no key and every run check skipped it — two sets claiming one slot,
+// a run whose numbering fought its clock, a room with two windows, all
+// passed in silence. The ACL prep round ran the same invariants by hand.
+// A dated room is keyed by its date: the same checks, the same words.
+const RUN = { source: 'https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets', confirmed: false };
+const LATE = (name, extra) => ({ name, day: 'Late nights', date: '2026-09-29', venue: 'Mohawk Austin', doors: '7 PM', close: '12 AM', ...extra });
+test('a dated room is a room: its run is checked the way a night room is', () => {
+  const good = withSections(
+    LATE('Total Wife', { time: '8 PM', order: { seq: 1, of: 2, ...RUN } }),
+    LATE('Fcukers', { time: '8:45 PM', approx: true, order: { seq: 2, of: 2, ...RUN } }),
+  );
+  assert.deepEqual(validateFestivalDoc(good), { errors: [], warnings: [] });
+  const say = (...entries) => validateFestivalDoc(withSections(...entries));
+  // Two sets in one slot.
+  let r = say(LATE('Total Wife', { time: '8 PM', order: { seq: 1, of: 2, ...RUN } }), LATE('Fcukers', { time: '8:45 PM', approx: true, order: { seq: 1, of: 2, ...RUN } }));
+  assert.ok(r.errors.some((e) => /Late nights · 2026-09-29 · Mohawk Austin: two sets both claim position 1/.test(e)), r.errors.join('\n'));
+  // The numbering and the clock disagree.
+  r = say(LATE('Total Wife', { time: '9 PM', order: { seq: 1, of: 2, ...RUN } }), LATE('Fcukers', { time: '8:45 PM', approx: true, order: { seq: 2, of: 2, ...RUN } }));
+  assert.ok(r.errors.some((e) => /running order and the clock disagree/.test(e)), r.errors.join('\n'));
+  // One room, two windows.
+  r = say(LATE('Total Wife', { time: '8 PM', order: { seq: 1, of: 2, ...RUN } }), LATE('Fcukers', { time: '8:45 PM', approx: true, close: '1 AM', order: { seq: 2, of: 2, ...RUN } }));
+  assert.ok(r.errors.some((e) => /disagree on close/.test(e)), r.errors.join('\n'));
+  // A run of one act.
+  r = say(LATE('Total Wife', { time: '8 PM', order: { seq: 1, of: 2, ...RUN } }));
+  assert.ok(r.errors.some((e) => /one act in the room carries an order/.test(e)), r.errors.join('\n'));
+  // Two timed sets and no order: the doors-time smell.
+  r = say(LATE('Total Wife', { time: '8 PM' }), LATE('Fcukers', { time: '8 PM' }));
+  assert.ok(r.warnings.some((w) => /Mohawk Austin: all 2 sets say "8 PM"/.test(w)), r.warnings.join('\n'));
+  // The same venue on another date is another room.
+  r = say(LATE('Total Wife', { time: '8 PM', order: { seq: 1, of: 2, ...RUN } }), LATE('Fcukers', { date: '2026-10-10', time: '8:45 PM', approx: true, order: { seq: 1, of: 2, ...RUN } }));
+  assert.ok(!r.errors.some((e) => /both claim/.test(e)), r.errors.join('\n'));
+});
+
 test('a fest with no grid has no sections — its whole wall is the lineup', () => {
   // Every archived and lineup-only file in data/festivals is this shape: days
   // like "Friday" on entries that carry nothing else. They are not rooms.

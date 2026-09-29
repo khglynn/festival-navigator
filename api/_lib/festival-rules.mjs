@@ -67,10 +67,16 @@ function checkEventFields(fest, err, warn) {
   const rooms = new Map();
   // How many shows each room holds at all, timed or not.
   const acts = new Map();
+  // A room is a venue on a night — a weekday (Portola's Afters) or a DATE
+  // (ACL's Late nights, keyed by the date since 2026-09-29: before, a dated
+  // room had no key and every run check below skipped it, LEDGER follow-up
+  // 21). An entry that says both is refused above; the date wins here so it
+  // still lands in one room.
   const roomKey = (a) => {
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
-    const night = WEEKDAYS.includes(a.night) ? a.night
-      : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
+    const night = realDate(a.date) ? a.date
+      : WEEKDAYS.includes(a.night) ? a.night
+        : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
     const venue = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
       : bits ? bits.slice(1).join(' · ').trim() : '';
     return night && venue ? `${a.day || ''}|${night}|${venue}` : null;
