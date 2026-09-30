@@ -198,14 +198,22 @@ sticker with the public TestFlight link as a QR code, for the crew.
 Screenshots and stickers made from gallery.html states come before a 2027
 listing.
 
-**Before Thursday (Kevin):**
-- Enroll in the Apple Developer Program today; approval can take up to 48h.
-- Install Xcode 26 plus the iOS simulator runtime, and Android Studio.
-- Create a Play Console account and start its identity check, which can
-  take days. Fallback: a signed APK sent straight to Android friends.
+**Before Thursday (Kevin)** — status as of Tue Sep 29, 2026, 7:30 PM CT:
+- Apple Developer Program: **done.** Approved Sep 29 (welcome mail 7:32 AM
+  PT), enrolled as an Individual, Team ID 63P283TPFT, renews Sep 29, 2027.
+  The Apple ID is Kevin's gmail one.
+- Play Console: **identity verified** Sep 29 (1:49 AM CT), on Kevin's
+  trimm.co Google account, so the two stores sit on different identities.
+  Still to confirm in the console: the contact phone and the Android-device
+  check. Fallback stays a signed APK sent straight to Android friends.
+- Xcode 26 plus the iOS simulator runtime, and Android Studio: **not
+  installed** on the Mac this was checked from, which had 9.5 GB free.
+  Xcode and one simulator runtime want roughly 20–30 GB with room to build
+  ([Bitrise's Xcode 26 size notes](https://bitrise.io/blog/post/xcode-app-size-reduction-in-26-0-beta-5)),
+  so Thursday runs on a Mac with that much free.
 - Turn on Developer Mode on the iPhone (it appears after the phone is
-  first connected to Xcode).
-- Pull the app ideas from Apple Notes.
+  first connected to Xcode): not yet.
+- Pull the app ideas from Apple Notes: not yet.
 
 **Prep a cloud session can do before Thursday (this branch, no prod):**
 1. `apiBase()` for the ~20 `/api` calls, `REPORT_PATH`, and the festival
