@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-29 5:00 PM PT (v106 live) · mode: live**
+**last-updated: 2026-10-01 4:10 PM PT (v106 live, v107 in review) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -16,6 +16,24 @@ how we got here belongs in DEVLOG.md.
   Share. Rows, reviews, rollback targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), each saying what the error means in plain words.
+
+## In flight: v107 (PR #76, branch `release/v107`)
+
+Opens on bad signal — the two live ACL failures in PostHog: an iPhone fatal
+(the fallback fetched Portola over the same dead network and saved it) and
+an Android black page (one module never arrived on a first visit). No
+fallback fetch; a held festival stands in for one open without being saved;
+a calm "can't be reached" screen that retries itself; an inline watchdog for
+the black page. Reviews done: Sol 6.1 via Eachie (2 rounds), a Claude
+three-lens review with skeptics; a final-gate review and CI (both engines)
+pending. **Next:** fix what they confirm → merge → verify all three hosts
+serve festival-nav-v107 → update the two PostHog Slack functions from
+`ops/posthog/slack-alert.hog` (staged as drafts; Kevin publishes) → DEVLOG +
+LEDGER. Rollback: Vercel dpl_8UgomsbYZ7tC6HYCnsgMeHfaa9aV (b8a89a9); Neon
+backup branch `backup-2026-10-01-pre-v107`. Eachie cap: $1/run, $5 session
+(spent ≈$0.06), no Astra/Fable. **Then v108:** the full usage tracking
+(DESIGN §2b, Kevin 2026-10-01: "do it now"), and find-your-crew from a bare
+fest.kevinhg.com (three ideas offered, no answer yet).
 
 ## Next: the iOS app
 

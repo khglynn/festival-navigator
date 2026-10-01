@@ -1327,8 +1327,10 @@ function lookAround(token, doc) {
 // shows no "Opened as a list." and never undoes a Board chosen since (which
 // also rewrote the address without the view).
 function wallUrl(token) {
-  const fid = state.activeFestivalId;
-  const list = !!fid && listOffered(state.fest()) && loadView(fid) === LIST;
+  // A festival standing in for this open is never the address: a reload or a
+  // copied link asks for the one this phone wanted (v107).
+  const fid = state.festivalForLinks();
+  const list = !!fid && !state.isShownForNow() && listOffered(state.fest()) && loadView(fid) === LIST;
   return crew.crewLink(token, fid, null, null, list ? LIST : null);
 }
 
@@ -5018,7 +5020,10 @@ function renderFatal({ offline = null } = {}) {
     // The buttons first: if anything below throws, the last-resort screen
     // still has working buttons.
     $('error-retry').onclick = () => location.reload();
-    $('error-home').onclick = () => { stopOfflineRetry(); history.replaceState(null, '', '/'); renderLanding(); };
+    // Your crews means it: an automatic retry already under way is cancelled
+    // with the timer, or it would land its wall — or the calm screen — over
+    // the crews a moment later (v107 final review).
+    $('error-home').onclick = () => { stopOfflineRetry(); bootGeneration++; history.replaceState(null, '', '/'); renderLanding(); };
     $('error-home').style.display = ''; // index.html's watchdog hides it while no app is running
     const msg = $('error-msg'); // absent from an older index.html (an old worker's shell)
     if (msg) {
@@ -5266,7 +5271,7 @@ export async function boot() {
     // No signal and no copy of the festival is its own kind, reported once
     // per stretch of the calm screen rather than once per automatic retry.
     const offline = e && e.offline ? e.offline : null;
-    if (!current()) record('boot:superseded', e);
+    if (!current()) { if (!offline) record('boot:superseded', e); } // a retry left behind is not news
     else if (!offline) record('boot', e);
     else if (!offlineTries) record('boot:offline', e.cause || e);
     if (current()) renderFatal({ offline });

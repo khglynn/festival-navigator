@@ -120,7 +120,9 @@ export function setActiveFestivalId(fid) {
 let shownForNow = null;
 let wantedForNow = null;
 export function showFestivalForNow(fid) {
-  wantedForNow = activeFestivalId;
+  // A second stand-in before anything was chosen keeps the first one's wish:
+  // the festival the person asked for is still the one links name.
+  if (!isShownForNow()) wantedForNow = activeFestivalId;
   activeFestivalId = fid;
   shownForNow = fid;
   ensureFestivalState(fid);

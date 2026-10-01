@@ -56,3 +56,19 @@ test('a crew rename repaints', () => {
   renamed.meta.name = 'The Crew, Renamed';
   assert.equal(state.applyRemoteDoc(renamed), true);
 });
+
+test('a second stand-in before anything is chosen keeps the first wish: links still name it', () => {
+  // v107 review, round 3 (Sol): showFestivalForNow captured the active
+  // festival every call, so a second stand-in recorded the first stand-in as
+  // the wish and invite links named a festival nobody chose.
+  FESTIVAL_INDEX.push({ id: 'held-a', status: 'scheduled' }, { id: 'held-b', status: 'scheduled' });
+  state.activateCrew(TOKEN, base(), null, { festival: 'sync-fest' });
+  assert.equal(state.festivalForLinks(), 'sync-fest');
+  state.showFestivalForNow('held-a');
+  state.showFestivalForNow('held-b');
+  assert.equal(state.activeFestivalId, 'held-b');
+  assert.equal(state.isShownForNow(), true);
+  assert.equal(state.festivalForLinks(), 'sync-fest', 'the festival the person asked for');
+  state.setActiveFestivalId('held-b');
+  assert.equal(state.festivalForLinks(), 'held-b', 'a festival chosen is no longer a stand-in');
+});

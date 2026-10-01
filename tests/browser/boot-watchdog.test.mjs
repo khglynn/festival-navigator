@@ -85,6 +85,40 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     } finally { await ctx.close(); }
   });
 
+  test(`${name}: an OLDER app is left alone when another script's error came first`, { skip }, async () => {
+    // A vendor file throwing before app.js's load, or a cross-origin
+    // "Script error." with no file at all (an extension, an app's injected
+    // script), says nothing about the app: the watchdog counts only the
+    // app's own files and a module that cannot link (v107 review, rounds 3
+    // and 4).
+    const ctx = await engine.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => {
+      if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+      document.addEventListener('readystatechange', () => {
+        if (document.readyState !== 'interactive') return; // parsed; app.js has not run yet
+        window.dispatchEvent(new ErrorEvent('error', { message: 'Script error.', filename: '' }));
+      });
+    });
+    const page = await ctx.newPage();
+    let navs = 0;
+    page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) navs += 1; });
+    await page.route('**/vendor/html2canvas.min.js', (route) => route.fulfill({
+      status: 200, contentType: 'text/javascript; charset=utf-8', body: "throw new Error('a vendor file broke');\n",
+    }));
+    await page.route('**/js/v3/app.js', (route) => route.fulfill({
+      status: 200, contentType: 'text/javascript; charset=utf-8',
+      body: "document.getElementById('screen-landing').style.display = '';\n",
+    }));
+    try {
+      await page.goto(`${server.origin}/`, { waitUntil: 'load' });
+      await page.waitForTimeout(2500);
+      assert.ok(await visible(page, 'screen-landing'), 'the old app\u2019s screen');
+      assert.ok(!(await visible(page, 'screen-error')), 'no error screen over a running app');
+      assert.ok(!(await page.evaluate(() => window.__fnAppFailed)), 'the watchdog never fired');
+      assert.equal(navs, 1, 'no second try');
+    } finally { await ctx.close(); }
+  });
+
   test(`${name}: a first visit that loses a file shows Try again at once — and Try again opens it`, { skip }, async () => {
     // No worker serves this page yet, so it never reloads by itself: on a
     // dead network a reload could swap this page for the browser's own error

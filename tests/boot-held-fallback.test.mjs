@@ -62,6 +62,11 @@ test('a festival this phone holds stands in for this open only — saved choice 
   assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), FID, 'this phone still means ACL');
   assert.ok(!asked.includes('/data/festivals/portola-2026.json'), 'read from the copy, never fetched');
   assert.ok(!journal().some((e) => e.kind === 'boot' || e.kind === 'boot:offline'), 'nothing broke');
+  // The address too (v107 final review): the browser's own Share, a copied
+  // link and a reload all read it, so it names the festival this phone means.
+  const address = location.href.replace(/#g=[^&]+/, '#g=…');
+  assert.doesNotMatch(address, /portola/, address);
+  assert.match(address, /acl-2026/, address);
 });
 
 // The poll rebuilds the doc around the festival on screen (applyRemoteDoc),

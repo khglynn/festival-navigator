@@ -386,10 +386,17 @@
         // error is left to the 10 s net: it may not be the app's at all.
         window.addEventListener('error', function (e) {
           if (e.target && e.target !== window) return;
-          sawError = true;
+          // Only the app's own errors count: one thrown from its files, or a
+          // module that cannot link (which an engine may file under the page,
+          // or nothing). A vendor script's, an extension's, a cross-origin
+          // "Script error." says nothing about whether the app ran.
+          var f = String((e && e.filename) || '');
           var m = String((e && e.message) || '');
-          var syntax = /SyntaxError/.test(m) || (e.error && e.error.name === 'SyntaxError');
-          if (syntax && /import|export|module|binding/i.test(m)) setTimeout(stuck, 1500);
+          var syntax = /SyntaxError/.test(m) || !!(e.error && e.error.name === 'SyntaxError');
+          var linking = syntax && /import|export|module|binding/i.test(m);
+          if (!linking && f.indexOf(location.origin + '/js/') !== 0) return;
+          sawError = true;
+          if (linking) setTimeout(stuck, 1500);
         });
         document.addEventListener('load', function (e) {
           if (!isApp(e.target)) return;
