@@ -59,8 +59,29 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.waitForFunction(() => document.getElementById('screen-landing').style.display !== 'none', null, { timeout: 8000 });
       await page.waitForTimeout(800);
       assert.equal(navs(), 1, 'one load, no reload');
-      assert.equal(await page.evaluate(() => window.__fnAppFailed), undefined, 'the watchdog never fired');
+      assert.ok(!(await page.evaluate(() => window.__fnAppFailed)), 'the watchdog never fired');
       assert.equal(await page.evaluate(() => window.__fnAppRan), true);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: an OLDER app that never says it ran is left alone past the 10 s net`, { skip }, async () => {
+    // A returning phone's first open after a release: this page, the old
+    // worker's cached app.js (no __fnAppRan). It loads fine and runs; the net
+    // must not cover it (v107 review).
+    const ctx = await engine.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => {
+      if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+    });
+    const page = await ctx.newPage();
+    await page.route('**/js/v3/app.js', (route) => route.fulfill({
+      status: 200, contentType: 'text/javascript; charset=utf-8',
+      body: "document.getElementById('screen-landing').style.display = '';\n",
+    }));
+    try {
+      await page.goto(`${server.origin}/`, { waitUntil: 'load' });
+      await page.waitForTimeout(11000);
+      assert.ok(await visible(page, 'screen-landing'), 'the old app\u2019s screen');
+      assert.ok(!(await visible(page, 'screen-error')), 'no "still loading" over a running app');
     } finally { await ctx.close(); }
   });
 
@@ -189,5 +210,33 @@ test('chromium, real worker: a first visit keeps its festival, and the next open
     await page.waitForFunction(() => ['screen-app', 'screen-error'].some((id) => document.getElementById(id).style.display !== 'none'), null, { timeout: 20000 });
     assert.ok(await visible(page, 'screen-app'), 'the ACL wall, from the copy the first visit kept');
     assert.match(await page.title(), /ACL/);
+  } finally { await ctx.close(); }
+});
+
+test('chromium, real worker: a slow first open that does start is not reloaded when the worker claims it', { skip: skipSw }, async () => {
+  // The app arrives after the 10 s net (its page copy of one file held 11 s),
+  // the worker after that (its script held 13 s): the claim must leave the
+  // running app alone (v107 review).
+  const ctx = await chromium.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  let navs = 0;
+  page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) navs += 1; });
+  let slowed = 0;
+  await page.route(`**${DEEP}`, async (route) => {
+    if (slowed++ === 0) await new Promise((r) => setTimeout(r, 11000));
+    return route.continue();
+  });
+  let swSlowed = 0;
+  await ctx.route('**/service-worker.js', async (route) => {
+    if (swSlowed++ === 0) await new Promise((r) => setTimeout(r, 13000));
+    return route.continue();
+  });
+  try {
+    await page.goto(`${server.origin}/`, { waitUntil: 'commit' });
+    await page.waitForFunction(() => window.__fnAppRan === true, null, { timeout: 20000 });
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 30000 });
+    await page.waitForTimeout(2500);
+    assert.equal(navs, 1, `a page whose app started was not reloaded (${navs} loads)`);
+    assert.ok(await visible(page, 'screen-landing'));
   } finally { await ctx.close(); }
 });

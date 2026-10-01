@@ -334,7 +334,12 @@
       (function () {
         var done = false;
         var sawError = false;
-        function ran() { return !!window.__fnAppRan; }
+        // The app is running once app.js says so, or once its script's load
+        // fires with no error seen first — the proof an OLDER app.js gives too
+        // (none says __fnAppRan): a returning phone's first open after a
+        // release runs the old worker's cached app under this new page, and
+        // must be left alone (v107 review).
+        function ran() { return !!(window.__fnAppRan || window.__fnAppLoaded); }
         function stayingOffline() {
           try { return JSON.parse(localStorage.getItem('fn_settings_v1') || '{}').stayOffline === true; } catch (e) { return false; }
         }
@@ -386,7 +391,11 @@
           var syntax = /SyntaxError/.test(m) || (e.error && e.error.name === 'SyntaxError');
           if (syntax && /import|export|module|binding/i.test(m)) setTimeout(stuck, 1500);
         });
-        document.addEventListener('load', function (e) { if (isApp(e.target) && sawError) setTimeout(stuck, 0); }, true);
+        document.addEventListener('load', function (e) {
+          if (!isApp(e.target)) return;
+          if (sawError) setTimeout(stuck, 0);
+          else window.__fnAppLoaded = true;
+        }, true);
         setTimeout(function () {
           if (done || ran()) return;
           window.__fnAppFailed = true; // still nothing: the worker's first claim may reload it from its snapshot
@@ -444,7 +453,7 @@
           // unless the app never started on this page (the watchdog above):
           // the worker that just claimed it holds a whole snapshot, so a
           // reload now opens from it (2026-10-01).
-          if (!hadController) { hadController = true; if (!window.__fnAppFailed) return; }
+          if (!hadController) { hadController = true; if (!window.__fnAppFailed || window.__fnAppRan || window.__fnAppLoaded) return; }
           if (pending) return;
           pending = true;
           settle();

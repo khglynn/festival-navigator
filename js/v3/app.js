@@ -86,7 +86,7 @@ import { getLS } from '../util.js';
 // This module's body is running, so every file it imports arrived and linked.
 // index.html's watchdog reads it: an app that never got here is a black page,
 // and the page has to say so itself (2026-10-01).
-try { window.__fnAppRan = true; } catch { /* no window: a test's import */ }
+try { window.__fnAppRan = true; window.__fnAppFailed = false; } catch { /* no window: a test's import */ }
 
 const $ = (id) => document.getElementById(id);
 
@@ -1297,7 +1297,7 @@ function lookAround(token, doc) {
     restorePlace(p.place);
     return;
   }
-  enterApp(token, doc).catch((e) => { record('join:look', e); renderFatal(); });
+  enterApp(token, doc).catch((e) => failedEntry('join:look', e));
 }
 
 // "Add yourself" from inside a layer — Settings → You, a notes sheet's door.
@@ -3074,7 +3074,7 @@ function showNewBuildStrip() {
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
-  if (screen !== 'screen-error') { stopOfflineRetry(); offlineTries = 0; } // any other screen: past it
+  if (screen !== 'screen-error') { stopOfflineRetry(); offlineTries = 0; offlineDoc = null; offlineUnshown = null; } // any other screen: past it
   // The Show menu belongs to the wall's screen, and goes with it: left open,
   // it came back up over the wall the next time that screen showed. An open
   // Our plan goes back to its peek the same way.
@@ -3323,14 +3323,14 @@ function shareView() {
 }
 function inviteLink(meName = null) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null, view && view.list ? LIST : null);
+  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), meName, view ? view.show : null, view && view.list ? LIST : null);
 }
 // The open plan's Share: the same link and view, opening on Our picks for
 // the night the words are about (`&plan=<date>`, read once at boot). It says
 // no one's name (no `&me=`).
 function planLink(night) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
+  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
@@ -3354,7 +3354,8 @@ function inviteViewLine() {
 // into the crew until they join (v92). Every door that hands out the crew
 // link does it (the invite sheet, the Show menu's row).
 function stampInviteFest() {
-  if (!ctx.meName || (state.crewDoc.meta || {}).inviteFestId === state.activeFestivalId) return;
+  // A stand-in shown for this open is never stamped into the crew (v107).
+  if (!ctx.meName || state.isShownForNow() || (state.crewDoc.meta || {}).inviteFestId === state.activeFestivalId) return;
   state.recordInviteFest(state.activeFestivalId);
   sync.scheduleSync();
 }
@@ -4460,7 +4461,9 @@ function joinAnswers(token, doc, { festHint = null, hold = () => {}, say = () =>
     const claim = takeQuestion();
     crew.setMe(token, name);
     guestOf = null;
-    entered(enterApp(token, doc, undefined, undefined, { member: true }), claim, name).finally(() => lock(false));
+    entered(enterApp(token, doc, undefined, undefined, { member: true }), claim, name)
+      .catch((e) => failedEntry('join:claim', e))
+      .finally(() => lock(false));
   };
   const joinNew = async (name) => {
     // The answer decides where this goes: every door waits for it, "Look
@@ -4500,7 +4503,14 @@ function joinAnswers(token, doc, { festHint = null, hold = () => {}, say = () =>
       crew.setMe(token, name);
       guestOf = null;
       // A name new to the crew: someone new here, who gets the welcome.
-      await entered(enterApp(token, merged, undefined, undefined, { joined: true, member: true }), claim, name);
+      try {
+        await entered(enterApp(token, merged, undefined, undefined, { joined: true, member: true }), claim, name);
+      } catch (e) {
+        // In, but the festival cannot be reached yet: the calm screen, not
+        // the offline-join branch below (which would record them twice).
+        if (e && e.offline) { failedEntry('join:new', e); return; }
+        throw e;
+      }
     } catch {
       // Network failure (or no answer by the deadline): offline-first join,
       // sync catches up (old behavior). The name is set first, so the crew is
@@ -4513,7 +4523,10 @@ function joinAnswers(token, doc, { festHint = null, hold = () => {}, say = () =>
       state.recordPerson(name, person);
       try {
         await entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true, member: true }), claim, name);
-      } catch (e) { record('join:offline', e); }
+      } catch (e) {
+        if (e && e.offline) { failedEntry('join:offline', e); return; }
+        record('join:offline', e);
+      }
       sync.scheduleSync();
       if (state.getCrewToken() === token && ctx.meName === name) {
         showToast($('toast-root'), 'You’re in on this phone — the crew sees you once there’s signal.', 6000);
@@ -4682,7 +4695,11 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   planOpenFor = pendingPlanOpen && pendingFestHint ? { token, fest: pendingFestHint, night: pendingPlanOpen }
     : planOpenFor && planOpenFor.token === token ? planOpenFor : null;
   pendingPlanOpen = null;
-  const showFor = (showHint || viewHint) && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
+  // A festival the calm screen stood in for was saved but never shown: its
+  // retry still gets the link's view (v107 review).
+  const neverShown = (fid) => !festShownBefore(fid) || (offlineUnshown && offlineUnshown.token === token && offlineUnshown.fid === fid);
+  const firstShow = pendingFestHint && neverShown(pendingFestHint) ? pendingFestHint : null; // read before activation saves it
+  const showFor = (showHint || viewHint) && firstShow ? firstShow : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   mergeCustoms(await customs); // crew-private fests join the catalog first
@@ -4760,12 +4777,15 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       // Nothing to show. No signal is not a crash: boot says so calmly and
       // tries again by itself. Anything else (a 404, a broken file) stays
       // the loud fatal it is.
-      if (e && e.network) throw offlineBoot(wantedName, token, e);
+      if (e && e.network) {
+        if (firstShow === wanted) offlineUnshown = { token, fid: wanted };
+        throw offlineBoot(wantedName, token, e, null, doc);
+      }
       throw e;
     }
     state.showFestivalForNow(held);
     const heldName = model.festLabelFor(held, FESTIVAL_INDEX).name;
-    showToast($('toast-root'), `Couldn’t reach ${wantedName} — showing ${heldName} for now. ${wantedName} opens next time there’s signal.`, 7000);
+    showToast($('toast-root'), `Couldn’t reach ${wantedName} — showing ${heldName} for now. ${wantedName} opens the next time you open the app with signal.`, 7000);
   }
   festivalKept(); // a first visit's festival, kept once the worker has claimed the page
   // A festival this device was pointed at and the catalog has since dropped.
@@ -5017,11 +5037,25 @@ function renderFatal({ offline = null } = {}) {
 // screen, which re-boots this crew when signal plausibly came back — the
 // browser says online, the phone comes back to the app, or a backoff timer
 // (iOS on a connected-but-dead festival network never says online).
-function offlineBoot(festName, token, cause, fid = null) {
+// `doc`: the crew doc this open already had. A guest's is never on disk (only
+// a member's writes persist it), so a retry that cannot fetch it again falls
+// back to this one instead of the bad-link screen (v107 review).
+let offlineDoc = null;
+let offlineUnshown = null; // { token, fid }: a festival saved by the failed entry, never on screen
+function offlineBoot(festName, token, cause, fid = null, doc = null) {
   const e = new Error(`${festName} unreachable`);
   e.offline = { festName, token, fid };
   e.cause = cause;
+  if (doc) offlineDoc = { token, doc };
   return e;
+}
+// An entry from the join screen (a name tapped, Look around) that cannot
+// reach its festival gets the same calm screen as a boot that could not.
+function failedEntry(kind, e) {
+  const off = e && e.offline ? e.offline : null;
+  if (!off) record(kind, e);
+  else if (!offlineTries) record('boot:offline', e.cause || e);
+  renderFatal({ offline: off });
 }
 const OFFLINE_RETRY_MS = [15000, 30000, 60000, 120000];
 let offlineTries = 0;    // re-boots since the calm screen first showed; only the first is reported
@@ -5044,9 +5078,9 @@ function startOfflineRetry(token, fid = null) {
     if (!screen || screen.style.display === 'none') return;
     // A later boot does not resume the active crew on a bare URL, so name it,
     // with the festival a first visit's link asked for (its activation never
-    // ran to save it). Otherwise the saved festival stands — the fallback no
-    // longer overwrites it.
-    history.replaceState(null, '', crew.crewLink(token, fid));
+    // ran to save it). A link already naming this crew stays as it is: its
+    // view, its &me, its plan are all still wanted (v107 review).
+    if (crew.tokenFromHash() !== token) history.replaceState(null, '', crew.crewLink(token, fid));
     boot();
   };
   const onOnline = () => again();
@@ -5198,13 +5232,15 @@ export async function boot() {
     // cached doc just to bounce out one sync later (Codex trailing review).
     if (gone) { renderBadLink(token, { gone: true }); return; }
     if (!doc) doc = state.cachedDoc(token);
+    // The calm screen's retry, still without signal: the doc this page had.
+    if (!doc && offlineDoc && offlineDoc.token === token) doc = offlineDoc.doc;
     if (!doc) { renderBadLink(token, { gone }); return; }
     // A first visit whose catalog never arrived: activation needs one, and
     // its absence is the network (index.json is precached for every phone a
     // worker controls), not a fault — so the calm screen, not a crash
     // (2026-10-01; it threw from defaultFestivalId on an empty list).
     if (!FESTIVAL_INDEX.length && !(await festivalIndexFromCache())) {
-      throw offlineBoot('Your festival', token, Object.assign(new Error('festival catalog unreachable'), { network: true }), pendingFestHint);
+      throw offlineBoot('Your festival', token, Object.assign(new Error('festival catalog unreachable'), { network: true }), pendingFestHint, doc);
     }
     if (!current()) return;
     let recognized = null;

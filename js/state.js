@@ -118,13 +118,30 @@ export function setActiveFestivalId(fid) {
 // asked for this festival, the phone just happened to hold it. A pick made on
 // it is a real write and syncs as one.
 let shownForNow = null;
+let wantedForNow = null;
 export function showFestivalForNow(fid) {
+  wantedForNow = activeFestivalId;
   activeFestivalId = fid;
   shownForNow = fid;
   ensureFestivalState(fid);
 }
+export function isShownForNow() { return shownForNow !== null && shownForNow === activeFestivalId; }
+// The festival a shared link or the crew's invite stamp should name: never a
+// stand-in — the one this phone actually means (v107 review).
+export function festivalForLinks() { return isShownForNow() ? wantedForNow : activeFestivalId; }
 
-export function persist() { saveLS(LS.doc(crewToken), JSON.stringify(crewDoc)); }
+// A stand-in's empty row stays off the disk too: the cached doc is what the
+// landing and Settings list a crew's festivals from, and the crew never had
+// this one (v107 review). A pick or note on it is real, and is kept.
+export function persist() {
+  let d = crewDoc;
+  const standIn = shownForNow && d.festivals ? d.festivals[shownForNow] : null;
+  if (standIn && !Object.keys(standIn.selections || {}).length && !standIn.notes) {
+    d = { ...d, festivals: { ...d.festivals } };
+    delete d.festivals[shownForNow];
+  }
+  saveLS(LS.doc(crewToken), JSON.stringify(d));
+}
 
 // Merge with what's already on disk, never a blind overwrite: two tabs on the
 // same crew each hold their own in-memory pendingChanges, and last-writer-

@@ -144,13 +144,14 @@ function currentFestCard(ctx, actions) {
   share.addEventListener('click', async () => {
     // The invite carries the fest being shared (FLOW-1): &f= on the link for
     // this invite, meta.inviteFestId in the doc for links already out there.
-    const fid = state.activeFestivalId;
+    // Never a stand-in shown for this open (v107): the festival this phone means.
+    const fid = state.festivalForLinks();
     // The link carries this phone's view (v92, SD1) — the line under the
     // invite link below says which.
     const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), fid);
     // A guest shares the link it holds, and writes nothing into the crew
     // until it joins (v92): the invite-festival stamp is a member's.
-    if (ctx.meName && (state.crewDoc.meta || {}).inviteFestId !== fid) {
+    if (ctx.meName && fid && !state.isShownForNow() && (state.crewDoc.meta || {}).inviteFestId !== fid) {
       state.recordInviteFest(fid);
       actions.afterBulk(); // schedules the sync push
     }

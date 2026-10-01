@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootShell, settleUntil } from './helpers/shell-rig.mjs';
+import { bootShell, settle, settleUntil } from './helpers/shell-rig.mjs';
 import { cachesHolding } from './helpers/warm-rig.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -74,4 +74,31 @@ test('…and stays out of the crew: no Portola row queued, not on the first poll
   assert.ok(!(pending.festivals && pending.festivals['portola-2026']), `nothing queued for Portola: ${JSON.stringify(pending)}`);
   assert.ok(!(state.pendingChanges.festivals && state.pendingChanges.festivals['portola-2026']), `nor in memory: ${JSON.stringify(state.pendingChanges)}`);
   assert.equal(state.activeFestivalId, 'portola-2026', 'and the wall still shows it');
+});
+
+// v107 review: the stand-in stays off this phone's saved copy of the crew
+// too — the landing and Settings list a crew's festivals from it.
+test('…nor in this phone’s saved copy of the crew, so Your crews never lists it', async () => {
+  const state = await import('../js/state.js');
+  state.applyRemoteDoc(DOC);
+  const cached = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`) || '{}');
+  assert.ok(!Object.keys(cached.festivals || {}).includes('portola-2026'), `saved festivals: ${Object.keys(cached.festivals || {})}`);
+  assert.ok(Object.keys(cached.festivals || {}).includes(FID));
+});
+
+// v107 review: inviting from the stand-in wall never stamps it into the crew,
+// and the link it hands out names the festival this phone means.
+test('…and an invite from the stand-in names ACL and stamps nothing', async () => {
+  const state = await import('../js/state.js');
+  const add = [...document.querySelectorAll('.person-chip.add')][0];
+  assert.ok(add, 'the invite chip');
+  add.click();
+  await settle(50);
+  assert.ok(!(state.pendingChanges.meta && state.pendingChanges.meta.inviteFestId), `no invite stamp queued: ${JSON.stringify(state.pendingChanges.meta || null)}`);
+  const links = [...document.querySelectorAll('input')].map((i) => i.value).filter((v) => v.includes('#g='));
+  assert.ok(links.length, 'the sheet shows a link');
+  for (const l of links) {
+    assert.match(l, /f=acl-2026/, `the link names ACL: ${l.replace(/#g=[^&]+/, '#g=…')}`);
+    assert.doesNotMatch(l, /portola/);
+  }
 });
