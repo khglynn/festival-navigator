@@ -160,7 +160,7 @@ function currentFestCard(ctx, actions) {
       catch { share.textContent = 'See the link below'; setTimeout(() => { share.textContent = 'Share invite'; }, 2500); }
     };
     try {
-      if (navigator.share) await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link });
+      if (navigator.share) await navigator.share({ title: 'Festival Navigator', text: crew.inviteText(state.festivalNameForLinks()), url: link });
       else await copyFallback();
     } catch (e) {
       // A dismissed share sheet is a choice; anything else falls back to the

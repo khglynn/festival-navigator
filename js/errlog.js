@@ -720,6 +720,7 @@ const ISSUE_NAMES = {
   'sync:blocked': 'Server refused a sync',
   'module-load': 'App code didn’t load',
   'boot:offline': 'Festival unreachable and not on the phone yet',
+  'festival:stand-in': 'A festival file is broken or missing',
 };
 // The words each engine uses for "the request never got an answer".
 const NETWORK_FAILURE = /^(?:Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?|The network connection was lost\.?|The Internet connection appears to be offline\.?)$/;

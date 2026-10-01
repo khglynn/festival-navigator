@@ -72,3 +72,26 @@ test('a second stand-in before anything is chosen keeps the first wish: links st
   state.setActiveFestivalId('held-b');
   assert.equal(state.festivalForLinks(), 'held-b', 'a festival chosen is no longer a stand-in');
 });
+
+test('a stand-in festival the crew really has keeps its row on disk, even with nothing picked in it', () => {
+  // Copilot's review of v107: the save stripped any empty row for the
+  // stand-in, so a crew that had the festival (nothing picked yet) lost it
+  // from this phone's copy, and Your crews stopped listing it. Only the row
+  // made to render the stand-in comes off.
+  FESTIVAL_INDEX.push({ id: 'held-real', status: 'scheduled' }, { id: 'held-made', status: 'scheduled' });
+  const doc = base();
+  doc.festivals['held-real'] = { selections: {} };
+  state.activateCrew(TOKEN, doc, null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-real');
+  state.persist();
+  let saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(saved.festivals['held-real'], 'the crew’s own row stays');
+
+  state.activateCrew(TOKEN, base(), null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-made');
+  assert.ok(state.crewDoc.festivals['held-made'], 'rendered');
+  state.persist();
+  saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(!saved.festivals['held-made'], 'the row made to render it stays off the disk');
+  assert.ok(saved.festivals['sync-fest']);
+});

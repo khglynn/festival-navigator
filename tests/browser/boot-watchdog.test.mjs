@@ -90,7 +90,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     // "Script error." with no file at all (an extension, an app's injected
     // script), says nothing about the app: the watchdog counts only the
     // app's own files and a module that cannot link (v107 review, rounds 3
-    // and 4).
+    // to 5).
     const ctx = await engine.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     await ctx.addInitScript(() => {
       if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -102,8 +102,10 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     const page = await ctx.newPage();
     let navs = 0;
     page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) navs += 1; });
+    // A SyntaxError that says "export", the words a module-link failure uses
+    // too — from a vendor file it is still not the app's (Sol, round 5).
     await page.route('**/vendor/html2canvas.min.js', (route) => route.fulfill({
-      status: 200, contentType: 'text/javascript; charset=utf-8', body: "throw new Error('a vendor file broke');\n",
+      status: 200, contentType: 'text/javascript; charset=utf-8', body: "export const broken = 1;\n",
     }));
     await page.route('**/js/v3/app.js', (route) => route.fulfill({
       status: 200, contentType: 'text/javascript; charset=utf-8',

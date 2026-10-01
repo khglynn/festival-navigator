@@ -44,6 +44,7 @@ const shell = await bootShell({
     [`fn_crew_fest_v3_${TOKEN}`]: FID,
     [`fn_me_v3_${TOKEN}`]: 'Kevin',
     fn_welcome_v1: '1',
+    'fn_view_v1_portola-2026': 'list', // this phone reads Portola as a List: a view that must not ride an ACL link
   },
   fetch: network,
 });
@@ -61,7 +62,7 @@ test('a festival this phone holds stands in for this open only — saved choice 
   assert.match($('toast-root').textContent, /Couldn’t reach ACL Music Festival — showing Portola for now/);
   assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), FID, 'this phone still means ACL');
   assert.ok(!asked.includes('/data/festivals/portola-2026.json'), 'read from the copy, never fetched');
-  assert.ok(!journal().some((e) => e.kind === 'boot' || e.kind === 'boot:offline'), 'nothing broke');
+  assert.ok(!journal().some((e) => e.kind === 'boot' || e.kind === 'boot:offline' || e.kind === 'festival:stand-in'), 'nothing broke: no signal is not a fault');
   // The address too (v107 final review): the browser's own Share, a copied
   // link and a reload all read it, so it names the festival this phone means.
   const address = location.href.replace(/#g=[^&]+/, '#g=…');
@@ -105,5 +106,25 @@ test('…and an invite from the stand-in names ACL and stamps nothing', async ()
   for (const l of links) {
     assert.match(l, /f=acl-2026/, `the link names ACL: ${l.replace(/#g=[^&]+/, '#g=…')}`);
     assert.doesNotMatch(l, /portola/);
+    assert.doesNotMatch(l, /view=/, 'the stand-in’s List is Portola’s view, not ACL’s (Copilot’s review)');
   }
+});
+
+// Copilot's review of v107: the words beside the link named the stand-in.
+test('…and the invite’s share words name ACL too', async () => {
+  const shared = [];
+  Object.defineProperty(window.navigator, 'share', { configurable: true, value: async (d) => { shared.push(d); } });
+  try {
+    document.querySelectorAll('.sheet .sheet-close').forEach((b) => b.click());
+    await settle(50);
+    [...document.querySelectorAll('.person-chip.add')][0].click();
+    await settle(50);
+    const btn = document.querySelector('.inv-share');
+    assert.ok(btn, 'a share button where the phone can share');
+    btn.click();
+    await settle(50);
+    assert.equal(shared.length, 1);
+    assert.match(shared[0].text, /ACL/, shared[0].text);
+    assert.doesNotMatch(shared[0].text, /Portola/, shared[0].text);
+  } finally { delete window.navigator.share; }
 });

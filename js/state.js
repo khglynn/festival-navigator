@@ -119,6 +119,10 @@ export function setActiveFestivalId(fid) {
 // it is a real write and syncs as one.
 let shownForNow = null;
 let wantedForNow = null;
+// The rows made only so a stand-in could render. A crew may really have the
+// stand-in's festival, even with nothing picked in it yet: that row is the
+// server's, never in here, and stays (Copilot's review of v107).
+const madeForNow = new WeakSet();
 export function showFestivalForNow(fid) {
   // A second stand-in before anything was chosen keeps the first one's wish:
   // the festival the person asked for is still the one links name.
@@ -131,6 +135,12 @@ export function isShownForNow() { return shownForNow !== null && shownForNow ===
 // The festival a shared link or the crew's invite stamp should name: never a
 // stand-in — the one this phone actually means (v107 review).
 export function festivalForLinks() { return isShownForNow() ? wantedForNow : activeFestivalId; }
+// …and the name an invite's words give it.
+export function festivalNameForLinks() {
+  if (!isShownForNow()) return (fest() || {}).name;
+  const wanted = FESTIVAL_INDEX.find((f) => f.id === wantedForNow);
+  return wanted ? wanted.name : undefined;
+}
 
 // A stand-in's empty row stays off the disk too: the cached doc is what the
 // landing and Settings list a crew's festivals from, and the crew never had
@@ -138,7 +148,7 @@ export function festivalForLinks() { return isShownForNow() ? wantedForNow : act
 export function persist() {
   let d = crewDoc;
   const standIn = shownForNow && d.festivals ? d.festivals[shownForNow] : null;
-  if (standIn && !Object.keys(standIn.selections || {}).length && !standIn.notes) {
+  if (standIn && madeForNow.has(standIn) && !Object.keys(standIn.selections || {}).length && !standIn.notes) {
     d = { ...d, festivals: { ...d.festivals } };
     delete d.festivals[shownForNow];
   }
@@ -181,6 +191,7 @@ export function activePeople() { return Object.entries(people()).filter(([, p]) 
 export function ensureFestivalState(fid) {
   if (!crewDoc.festivals[fid]) {
     crewDoc.festivals[fid] = { selections: {} };
+    if (fid === shownForNow) madeForNow.add(crewDoc.festivals[fid]);
     // A guest renders the row and records nothing (v92): the membership is a
     // write, and theirs waits until they have a name here. A stand-in shown
     // for this open (showFestivalForNow) is rendered and never recorded.

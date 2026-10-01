@@ -388,13 +388,16 @@
           if (e.target && e.target !== window) return;
           // Only the app's own errors count: one thrown from its files, or a
           // module that cannot link (which an engine may file under the page,
-          // or nothing). A vendor script's, an extension's, a cross-origin
-          // "Script error." says nothing about whether the app ran.
+          // or nothing). A file that is not the app's — a vendor script, an
+          // extension, another origin — never counts, whatever its words; nor
+          // does a cross-origin "Script error." with no file at all.
           var f = String((e && e.filename) || '');
+          var own = f.indexOf(location.origin + '/js/') === 0;
+          if (f && !own && f.split('#')[0] !== location.href.split('#')[0]) return;
           var m = String((e && e.message) || '');
           var syntax = /SyntaxError/.test(m) || !!(e.error && e.error.name === 'SyntaxError');
           var linking = syntax && /import|export|module|binding/i.test(m);
-          if (!linking && f.indexOf(location.origin + '/js/') !== 0) return;
+          if (!linking && !own) return;
           sawError = true;
           if (linking) setTimeout(stuck, 1500);
         });

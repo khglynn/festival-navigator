@@ -1652,7 +1652,9 @@ function planAnswer(date) {
     // `linkOf(id)`: the link opens on the night the Share sends (the day at the
     // top of the open plan, plan-shelf.js sharePlan), the peek's by default.
     fest: fest.name || '', day: nightLabelOf(peek.night.id),
-    linkOf: (id) => planLink(((plan.nights || []).find((n) => n.id === id) || peek.night).iso),
+    // On a stand-in there is no link to send: the words are about a festival
+    // the crew never chose, and a plan link opens the one it did (v107).
+    linkOf: state.isShownForNow() ? null : (id) => planLink(((plan.nights || []).find((n) => n.id === id) || peek.night).iso),
     opens: plan.group ? opensForHighlight() : opensLine(),
     // The Share's first step: this paint again at the tap's minute, so the
     // words come from the rows on screen (plan-shelf.js sharePlan).
@@ -2610,7 +2612,7 @@ function shareLinkRow() {
     const letGo = holdForShare('crew');
     try {
       if (canShare()) {
-        try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); done(); return; }
+        try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText(state.festivalNameForLinks()), url: link }); done(); return; }
         catch (e) { if (e && e.name === 'AbortError') { done(); return; } }
       }
       try { await navigator.clipboard.writeText(link); say('Copied ✓'); } catch { say('Couldn’t copy'); }
@@ -3317,6 +3319,9 @@ async function batchCreateFlow(myName) {
 // The view rides the same link (Phase 1): `&view=list` when this phone reads
 // the wall as a List; Board, the default, sends nothing.
 function shareView() {
+  // A stand-in's rooms and view are another festival's: a link for the one
+  // this phone wants carries none of them (Copilot's review of v107).
+  if (state.isShownForNow()) return null;
   const rooms = roomsOnWall();
   const folded = ctx.folded || [];
   const show = showOf(rooms, folded);
@@ -3575,7 +3580,7 @@ function openInvite({ moment = false } = {}) {
     shareBtn.className = 'btn-tonal inv-share';
     shareBtn.textContent = INVITE_WORDS.share;
     shareBtn.addEventListener('click', async () => {
-      try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); }
+      try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText(state.festivalNameForLinks()), url: link }); }
       catch { /* dismissed — the visible link is the fallback */ }
     });
     actions.appendChild(shareBtn);
@@ -4785,6 +4790,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       }
       throw e;
     }
+    // A file that came back broken or missing is a fault, not the signal:
+    // the friend still gets a wall, and Kevin hears of it (Copilot's review).
+    if (!(e && e.network)) record('festival:stand-in', e);
     state.showFestivalForNow(held);
     const heldName = model.festLabelFor(held, FESTIVAL_INDEX).name;
     showToast($('toast-root'), `Couldn’t reach ${wantedName} — showing ${heldName} for now. ${wantedName} opens the next time you open the app with signal.`, 7000);
