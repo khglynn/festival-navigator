@@ -4999,12 +4999,13 @@ function renderFatal({ offline = null } = {}) {
     // still has working buttons.
     $('error-retry').onclick = () => location.reload();
     $('error-home').onclick = () => { stopOfflineRetry(); history.replaceState(null, '', '/'); renderLanding(); };
+    $('error-home').style.display = ''; // index.html's watchdog hides it while no app is running
     const msg = $('error-msg'); // absent from an older index.html (an old worker's shell)
     if (msg) {
       msg.textContent = !offline ? FATAL_WORDS
         : appSettings().stayOffline
           ? `${offline.festName} isn’t saved on this phone yet, and Stay offline is on. Tap Try again once you have signal.`
-          : `${offline.festName} isn’t saved on this phone yet, and there’s no signal to fetch it. It opens by itself when signal comes back.`;
+          : `${offline.festName} isn’t saved on this phone yet, and it can’t be reached right now — usually no signal. It opens by itself as soon as it can.`;
     }
     if (offline) startOfflineRetry(offline.token, offline.fid);
   } catch { /* even the error screen failed — nothing safe left to render */ }
@@ -5039,7 +5040,8 @@ function startOfflineRetry(token, fid = null) {
   const again = () => {
     if (offlineRetry !== r) return;
     stopOfflineRetry();
-    if ($('screen-error').style.display === 'none') return;
+    const screen = $('screen-error');
+    if (!screen || screen.style.display === 'none') return;
     // A later boot does not resume the active crew on a bare URL, so name it,
     // with the festival a first visit's link asked for (its activation never
     // ran to save it). Otherwise the saved festival stands — the fallback no
@@ -5506,6 +5508,10 @@ export function init() {
   // hiccup must never nuke a working wall.
   window.addEventListener('error', () => { if (!anyScreenVisible()) renderFatal(); });
   window.addEventListener('unhandledrejection', () => { if (!anyScreenVisible()) renderFatal(); });
+  // index.html's watchdog may have put its "still loading" screen up while
+  // this app was on its way (a download slower than its 10 s net): the app is
+  // here now, so its own loader takes over.
+  $('screen-error').style.display = 'none';
   showBootLoader();
   keepFestivalForOffline();
   boot();

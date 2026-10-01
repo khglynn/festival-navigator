@@ -719,7 +719,7 @@ const ISSUE_NAMES = {
   'zoom-close-after-click': 'Zoom closed right after a click',
   'sync:blocked': 'Server refused a sync',
   'module-load': 'App code didn’t load',
-  'boot:offline': 'No signal, festival not on the phone yet',
+  'boot:offline': 'Festival unreachable and not on the phone yet',
 };
 // The words each engine uses for "the request never got an answer".
 const NETWORK_FAILURE = /^(?:Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?|The network connection was lost\.?|The Internet connection appears to be offline\.?)$/;

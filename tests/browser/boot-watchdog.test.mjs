@@ -4,8 +4,9 @@
 // new ones) leaves app.js unrun: before v107, a dark page with nothing to tap
 // (PostHog: "App code didn't load", an Android first open; the Sep 25-26
 // "Importing binding name" errors on iPhones). index.html's watchdog now
-// gives the person a way forward: one automatic second try, then the error
-// screen with Try again — never a loop, and never on a healthy open.
+// gives the person a way forward: the error screen with Try again (an
+// automatic second try only where the worker serves the page), a "still
+// loading" screen when a file hangs — never a loop, never on a healthy open.
 //
 // Both engines with the worker blocked (the first-visit case: nothing serves
 // from a cache). Then Chromium with a real worker: the worker's first claim
@@ -34,7 +35,7 @@ const visible = (page, id) => page.evaluate((i) => {
   return !!el && el.style.display !== 'none' && el.getClientRects().length > 0;
 }, id);
 
-async function open(engine, routeDeep) {
+async function open(engine, routeDeep, waitUntil = 'load') {
   const ctx = await engine.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
   // A blocked worker's register() resolves to nothing; the glue's update
   // checks want a registration to call.
@@ -45,7 +46,7 @@ async function open(engine, routeDeep) {
   let navs = 0;
   page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) navs += 1; }); // document loads, an aborted one too (framenavigated also counts replaceState)
   if (routeDeep) await page.route(`**${DEEP}`, routeDeep);
-  await page.goto(`${server.origin}/`, { waitUntil: 'load' });
+  await page.goto(`${server.origin}/`, { waitUntil });
   return { ctx, page, navs: () => navs };
 }
 
@@ -63,32 +64,38 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     } finally { await ctx.close(); }
   });
 
-  test(`${name}: one file lost once — the page tries again by itself and opens`, { skip }, async () => {
+  test(`${name}: a first visit that loses a file shows Try again at once — and Try again opens it`, { skip }, async () => {
+    // No worker serves this page yet, so it never reloads by itself: on a
+    // dead network a reload could swap this page for the browser's own error
+    // page (Sol's review, 2026-10-01). The person's tap is the second try.
     let failures = 0;
     const { ctx, page, navs } = await open(engine, (route) => {
       if (failures === 0) { failures += 1; return route.abort('failed'); }
       return route.continue();
     });
     try {
+      await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 10000 });
+      assert.equal(navs(), 1, 'no automatic reload of a page no worker serves');
+      assert.ok(!(await visible(page, 'error-home')), 'Your crews needs the app that did not load: hidden');
+      assert.match(await page.textContent('#error-msg'), /didn’t finish loading/);
+      await page.click('#error-retry'); // real input: the person's own second try
       await page.waitForFunction(() => document.getElementById('screen-landing').style.display !== 'none', null, { timeout: 10000 });
       assert.equal(failures, 1);
-      assert.equal(navs(), 2, 'exactly one automatic second try');
+      assert.equal(navs(), 2);
     } finally { await ctx.close(); }
   });
 
-  test(`${name}: a file that never arrives — one second try, then Try again, never a loop`, { skip }, async () => {
+  test(`${name}: a file that never arrives — Try again, and never a loop`, { skip }, async () => {
     const { ctx, page, navs } = await open(engine, (route) => route.abort('failed'));
     try {
       await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 10000 });
       await page.waitForTimeout(1500);
-      assert.equal(navs(), 2, 'one second try, and no more');
+      assert.equal(navs(), 1, 'no reload by itself');
       assert.ok(await visible(page, 'error-retry'), 'Try again is on screen');
-      assert.ok(!(await visible(page, 'error-home')), 'Your crews needs the app that did not load: hidden');
-      assert.match(await page.textContent('#error-msg'), /didn’t finish loading/);
     } finally { await ctx.close(); }
   });
 
-  test(`${name}: a stale file that cannot link — one second try, then Try again`, { skip }, async () => {
+  test(`${name}: a stale file that cannot link — Try again, never a loop`, { skip }, async () => {
     // What an old copy beside new ones looks like: the file is there, its
     // exports are not (the "Importing binding name … is not found" family).
     const { ctx, page, navs } = await open(engine, (route) => route.fulfill({
@@ -97,8 +104,23 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     try {
       await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 10000 });
       await page.waitForTimeout(1500);
-      assert.equal(navs(), 2, 'one second try, and no more');
+      assert.equal(navs(), 1);
       assert.ok(await visible(page, 'error-retry'));
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name}: a file that hangs — "still loading" at 10 s, and the app takes over when it arrives`, { skip }, async () => {
+    let release = null;
+    // A hung module holds the page's load event too: wait only for the commit.
+    const { ctx, page, navs } = await open(engine, (route) => { release = () => route.continue(); }, 'commit');
+    try {
+      await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 16000 });
+      assert.match(await page.textContent('#error-msg'), /Still loading/);
+      assert.ok(await visible(page, 'error-retry'));
+      assert.equal(navs(), 1);
+      release(); // the slow file arrives after all
+      await page.waitForFunction(() => document.getElementById('screen-landing').style.display !== 'none', null, { timeout: 10000 });
+      assert.ok(!(await visible(page, 'screen-error')), 'the app took the screen over');
     } finally { await ctx.close(); }
   });
 }
@@ -133,9 +155,8 @@ test('chromium, real worker: a first open whose app never started is reloaded wh
   try {
     await page.goto(`${server.origin}/`, { waitUntil: 'load' });
     await page.waitForFunction(() => document.getElementById('screen-landing').style.display !== 'none', null, { timeout: 20000 });
-    // The load and its one second try; then the claim's reload, unless the
-    // worker was already in control by the second try. Never more.
-    assert.ok(navs >= 2 && navs <= 3, `${navs} loads`);
+    // The load, then the claim's reload from the worker's snapshot. Never more.
+    assert.equal(navs, 2, `${navs} loads`);
     assert.ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'served by the worker now');
   } finally { await ctx.close(); }
 });

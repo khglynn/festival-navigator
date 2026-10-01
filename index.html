@@ -312,15 +312,24 @@
     <script src="/vendor/html2canvas.min.js" defer></script>
     <!-- The page's own net for an app that never starts (2026-10-01). A file
          of app.js's graph that never arrives (one lost on a weak signal, on a
-         first visit nothing is cached yet), or arrives and cannot link to the
-         rest (a stale copy beside new ones), leaves app.js unrun: no loader,
-         no error screen, a black page with nothing to tap. Classic and inline
-         on purpose — it must run when no module can — and BEFORE the module
-         scripts, so it is listening when they fail. It sends nothing
-         (errlog.js records these itself and is the only door out); it only
-         gives the person a way forward: one automatic second try, then the
-         error screen with Try again. The loop guard is the navigation's own
-         type, not storage, which can throw. -->
+         first visit nothing is cached yet), hangs, or arrives and cannot link
+         to the rest (a stale copy beside new ones), leaves app.js unrun: no
+         loader, no error screen, a black page with nothing to tap. Classic
+         and inline on purpose — it must run when no module can — and BEFORE
+         the module scripts, so it is listening when they fail. It sends
+         nothing (errlog.js records these itself and is the only door out); it
+         only gives the person a way forward.
+         - A page the worker serves gets one automatic second try (its shell
+           comes from the worker's cache, so a dead network cannot replace
+           this page with the browser's own error page). The loop guard is
+           the navigation's own type — never storage, which can throw — and
+           without one there is no automatic try at all.
+         - A page no worker serves yet (a first visit) shows the error screen
+           with Try again at once, and the worker's first claim reloads it
+           from the whole snapshot it just installed (the glue below).
+         - Nothing at all after 10 s (a download that hangs rather than
+           fails): the same screen, worded as still loading; a slow app that
+           then arrives takes the screen over as usual. -->
     <script>
       (function () {
         var done = false;
@@ -329,26 +338,33 @@
         function stayingOffline() {
           try { return JSON.parse(localStorage.getItem('fn_settings_v1') || '{}').stayOffline === true; } catch (e) { return false; }
         }
+        function servedByWorker() {
+          try { return !!(navigator.serviceWorker && navigator.serviceWorker.controller); } catch (e) { return false; }
+        }
         function secondTryAllowed() {
+          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
           var nav = null;
           try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) { nav = null; }
-          if (nav && nav.type === 'reload') return false; // this load IS the second try, or the person's own
+          if (!nav || nav.type !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
           return navigator.onLine !== false && !stayingOffline();
+        }
+        function panel(words) {
+          var screen = document.getElementById('screen-error');
+          if (!screen) return;
+          var msg = document.getElementById('error-msg');
+          if (msg) msg.textContent = words;
+          var home = document.getElementById('error-home');
+          if (home) home.style.display = 'none'; // it needs the app that has not started
+          var retry = document.getElementById('error-retry');
+          if (retry) retry.onclick = function () { location.reload(); };
+          screen.style.display = '';
         }
         function stuck() {
           if (done || ran()) return;
           done = true;
           window.__fnAppFailed = true; // the worker's first claim reloads this page (below)
           if (secondTryAllowed()) { location.reload(); return; }
-          var screen = document.getElementById('screen-error');
-          if (!screen) return;
-          var msg = document.getElementById('error-msg');
-          if (msg) msg.textContent = 'The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.';
-          var home = document.getElementById('error-home');
-          if (home) home.style.display = 'none'; // it needs the app that did not load
-          var retry = document.getElementById('error-retry');
-          if (retry) retry.onclick = function () { location.reload(); };
-          screen.style.display = '';
+          panel('The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.');
         }
         function isApp(t) {
           return !!t && t.tagName === 'SCRIPT' && t.type === 'module' && /\/js\/v3\/app\.js(?:[?#]|$)/.test(t.src || '');
@@ -360,15 +376,22 @@
         // on the window first, then the entry script's load with the app
         // unrun. An element's load never reaches the window, so the document
         // listens. And in case an engine fires no load after a link error
-        // (Chromium 141 does not), a module-shaped SyntaxError checks again
-        // a moment later.
+        // (Chromium 141 does not), a module-shaped SyntaxError — an import
+        // that cannot be found — checks again a moment later. Any other
+        // error is left to the 10 s net: it may not be the app's at all.
         window.addEventListener('error', function (e) {
           if (e.target && e.target !== window) return;
           sawError = true;
           var m = String((e && e.message) || '');
-          if (/SyntaxError/.test(m) || (e.error && e.error.name === 'SyntaxError')) setTimeout(stuck, 1500);
+          var syntax = /SyntaxError/.test(m) || (e.error && e.error.name === 'SyntaxError');
+          if (syntax && /import|export|module|binding/i.test(m)) setTimeout(stuck, 1500);
         });
         document.addEventListener('load', function (e) { if (isApp(e.target) && sawError) setTimeout(stuck, 0); }, true);
+        setTimeout(function () {
+          if (done || ran()) return;
+          window.__fnAppFailed = true; // still nothing: the worker's first claim may reload it from its snapshot
+          panel('Still loading \u2014 the signal\u2019s weak. Keep this open, or try again.');
+        }, 10000);
       })();
     </script>
     <!-- The crash journal hooks in from a module script of its OWN, before

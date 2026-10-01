@@ -49,7 +49,7 @@ test('no catalog on a first visit is the calm no-signal screen, not a crash', as
   assert.deepEqual(shown(), ['screen-error']);
   assert.ok(!journal().some((e) => e.kind === 'boot'), `not a crash: ${JSON.stringify(journal())}`);
   assert.ok(journal().some((e) => e.kind === 'boot:offline'));
-  assert.match($('screen-error').textContent, /no signal/);
+  assert.match($('screen-error').textContent, /can’t be reached right now/);
 });
 
 test('the catalog comes back: the wall opens by itself, on the link’s festival', async () => {

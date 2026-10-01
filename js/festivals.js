@@ -30,8 +30,8 @@ export const FEST_FILE_DEADLINE_MS = 12000;
 // The festival file: live (network-first through the worker), else the copy
 // this phone holds. Throws only when neither answers; the error then carries
 // `network: true` when the network is what failed (no answer, no body, no
-// answer in time), as against a server that answered wrongly (a 404, a broken
-// JSON drop) — a real fault that must stay loud (2026-10-01).
+// answer in time, a 5xx), as against a server that answered wrongly (a 404, a
+// broken JSON drop) — a real fault that must stay loud (2026-10-01).
 export async function loadFestival(id) {
   if (FESTIVALS[id]) return FESTIVALS[id];
   const path = `/data/festivals/${id}.json`;
@@ -42,7 +42,14 @@ export async function loadFestival(id) {
     const live = (async () => {
       let res;
       try { res = await fetch(path); } catch (e) { throw networkFailure(e); }
-      if (!res.ok) throw new Error(`festival ${id} failed: ` + res.status);
+      // A 5xx is a server or a proxy that could not get through right now — on
+      // a festival network, often the carrier's own gateway — so it counts
+      // with the network: the calm screen and its retries, not the crash.
+      // A 4xx (a renamed or missing file) is a real fault and stays loud.
+      if (!res.ok) {
+        const bad = new Error(`festival ${id} failed: ` + res.status);
+        throw res.status >= 500 ? networkFailure(bad) : bad;
+      }
       let text;
       // A body that dies mid-download is the network too: on one bar the
       // worker hands back live headers inside its 4 s budget and the rest
