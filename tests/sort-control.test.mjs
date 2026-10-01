@@ -1,7 +1,7 @@
 // The sort chip's popover, in isolation. A row used to be a click-only
 // <li role="option"> at 32px — the same touch-floor miss the show menu just
 // fixed (app.js showMenuRow) — so a phone tap could land on a neighbour.
-// Rows are now native <button role="option"> (CLAUDE.md: the 44px floor is
+// Rows are now native <button role="option"> (AGENTS.md: the 44px floor is
 // applied to `button`, not to a list of selectors); this file pins that the
 // listbox presentation and the chip's own roving keyboard (arrows, Enter,
 // Escape, typeahead) survive the swap. The real-device touch-floor

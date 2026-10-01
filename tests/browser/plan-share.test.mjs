@@ -640,7 +640,7 @@ test('Chromium, a refused share sheet: both shares copy instead, and say so wher
   } finally { await ctx.close(); }
 });
 
-// The 44px floor is applied to `button` on a coarse pointer (CLAUDE.md), and
+// The 44px floor is applied to `button` on a coarse pointer (AGENTS.md), and
 // a class rule out-ranks it: the pill's own height is kept to a mouse.
 test('Chromium: the Share keeps the 44px floor under a finger, and its own 36px pill under a mouse', { skip: chromium ? false : NO_BROWSER }, async () => {
   for (const [how, opts, min, max] of [['a phone', { mobile: true }, 44, 60], ['a laptop', { desk: true }, 34, 40]]) {

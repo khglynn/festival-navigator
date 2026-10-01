@@ -11,7 +11,7 @@
 // (where the 44px floor comes from), the `.pop-div` line and the `.chev`.
 // app.js opens and closes it through the Show menu's own open/close, so the
 // two menus share one outside-tap rule, one Escape, one busy flag and no
-// history entry (a popover is not a place — CLAUDE.md, "Browser history is
+// history entry (a popover is not a place — AGENTS.md, "Browser history is
 // shared state").
 //
 // While a highlight is on and the menu is shut, the avatar's slot is ONE

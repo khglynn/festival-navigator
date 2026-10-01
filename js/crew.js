@@ -113,7 +113,7 @@ export function crewLink(token, festId, meName, show = null, view = null, { plan
   //
   // The TOKEN never joins any of it. A path or query lands in platform access
   // logs and referrer headers, and a crew token IS that crew's data
-  // (CLAUDE.md, with teeth). A festival id is public catalogue information; a
+  // (AGENTS.md, with teeth). A festival id is public catalogue information; a
   // token is not. A crew-wide link with no festival keeps the plain `/#g=`.
   const base = ok ? `${location.origin}/f/${festId}` : `${location.origin}/`;
   const f = ok ? `&f=${festId}` : '';

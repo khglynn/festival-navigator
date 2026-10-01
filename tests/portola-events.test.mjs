@@ -317,7 +317,7 @@ test('validator warns when only part of a run is numbered', () => {
 });
 
 test('a malformed new field fails the CI command, not just the unit test', async () => {
-  // scripts/validate-festivals.mjs is what CLAUDE.md tells every data session
+  // scripts/validate-festivals.mjs is what AGENTS.md tells every data session
   // to run. Prove the new rules reach it rather than living only in here.
   const { execFileSync } = await import('node:child_process');
   const bad = clone(portola);

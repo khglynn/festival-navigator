@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"POST-COMPACTION — festival-navigator. Re-ground from CLAUDE.md (the rules) and NOW.md (where things stand, one screen) before acting. Open DEVLOG.md or claude-plans/archive only when the task needs history, and search them rather than reading them whole. Post-compaction sessions drift toward doing the minimum — refuse it.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"POST-COMPACTION — festival-navigator. Re-ground from AGENTS.md (the rules) and NOW.md (where things stand, one screen) before acting. Open DEVLOG.md or claude-plans/archive only when the task needs history, and search them rather than reading them whole. Post-compaction sessions drift toward doing the minimum — refuse it.\"}}'"
           }
         ]
       }

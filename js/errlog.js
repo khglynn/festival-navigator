@@ -943,7 +943,7 @@ export function beaconReports() {
     const blob = new window.Blob([body(key, chosen.map((c) => c.ev))], { type: 'text/plain;charset=UTF-8' });
     let ok = false;
     // Called ON navigator: a bare or re-homed sendBeacon throws Illegal
-    // invocation in every browser (CLAUDE.md, WebIDL receivers).
+    // invocation in every browser (AGENTS.md, WebIDL receivers).
     try { ok = nav.sendBeacon(REPORT_PATH, blob) === true; } catch { ok = false; }
     if (ok) {
       const ids = chosen.map((c) => c.id);

@@ -6,7 +6,7 @@
 // editing in place with Save · Cancel and Delete kept apart inside it, and a
 // folded pinned root that shows a count and no door until it is opened.
 //
-// Two of this surface's rules are invisible to Node (CLAUDE.md's standing
+// Two of this surface's rules are invisible to Node (AGENTS.md's standing
 // lesson): the hover / focus-within reveal is CSS, and Element.animate does
 // not exist here, so every motion path takes its instant branch. Those want
 // the real-browser walk; everything below is the logic underneath them.

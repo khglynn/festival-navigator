@@ -1,7 +1,7 @@
 # claude-plans
 
 Specs, session plans and review logs. Most of it is history. The few living
-specs that code, tests or CLAUDE.md cite stay at this level; finished arcs
+specs that code, tests or AGENTS.md cite stay at this level; finished arcs
 live in `archive/`.
 
 ## Living specs

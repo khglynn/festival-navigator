@@ -965,7 +965,7 @@ const dockRow = (page) => page.evaluate(() => {
   };
 });
 const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
-const LINUX = process.platform === 'linux'; // CI: Inter draws wider there (CLAUDE.md, the two bottom corners)
+const LINUX = process.platform === 'linux'; // CI: Inter draws wider there (AGENTS.md, the two bottom corners)
 // `shows`: what this engine shows at that width, as Kevin's frames name it
 // (null: only the contract — the glyphs decide, as they do on Linux).
 for (const [fest, width, height, now, shows] of [
@@ -1051,7 +1051,7 @@ for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
 // days, it is not pinned over them (v103). A finger's swipe on the row brings
 // it into view whole, where it always is, and a tap on it lands. Real input:
 // CDP touches, the drag ending with the finger still (a flick's fling eats the
-// next tap on Linux — CLAUDE.md).
+// next tap on Linux — AGENTS.md).
 test('390, Saturday: NOW rests past the row\'s left edge; a finger\'s swipe brings it whole, and a tap on it lands on what is playing', { skip }, async () => {
   const { ctx, page } = await openApp();
   try {
