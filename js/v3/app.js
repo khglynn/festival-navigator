@@ -8,7 +8,7 @@ import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
+import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX } from '../festivals.js';
 import { renderWall, listOffered, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey, listFilters, rowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded, loadView, saveView, viewIsSet, LIST, BOARD } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
@@ -80,8 +80,13 @@ import { thinnedWords } from './wall.js'; // the List's words for a highlight wi
 import { paintPlanShelf, planIsOpen, planShowsNow, planHere, planNight, openPlan, afterArrival, closePlan, dropPlan, hidePlanShelf, planDragging, refitPlanShelf, glyph, canShare, holdForShare, dropShares, SHARE_MARK, COPY_MARK } from './plan-shelf.js';
 import { footTop, measureFoot, measureOffer } from './foot.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
-import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
+import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals, heldFestivalId } from '../festivals.js';
 import { getLS } from '../util.js';
+
+// This module's body is running, so every file it imports arrived and linked.
+// index.html's watchdog reads it: an app that never got here is a black page,
+// and the page has to say so itself (2026-10-01).
+try { window.__fnAppRan = true; } catch { /* no window: a test's import */ }
 
 const $ = (id) => document.getElementById(id);
 
@@ -3069,6 +3074,7 @@ function showNewBuildStrip() {
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
+  if (screen !== 'screen-error') { stopOfflineRetry(); offlineTries = 0; } // any other screen: past it
   // The Show menu belongs to the wall's screen, and goes with it: left open,
   // it came back up over the wall the next time that screen showed. An open
   // Our plan goes back to its peek the same way.
@@ -4738,18 +4744,30 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     // this answers from memory.
     if (warm && !state.FESTIVALS[warm.fid]) state.FESTIVALS[warm.fid] = warm.fest;
     await loadFestival(state.activeFestivalId);
-  } catch {
-    // Offline with this fest uncached: fall back to a loadable fest rather
-    // than stranding a blank wall (CORE-12). If the default also fails,
-    // boot's error boundary takes over.
-    const fallback = defaultFestivalId();
-    if (state.activeFestivalId === fallback) throw new Error(`festival ${fallback} failed to load`);
-    const wantedName = FESTIVAL_INDEX.find((f) => f.id === state.activeFestivalId)?.name || 'that festival';
-    state.setActiveFestivalId(fallback);
-    state.ensureFestivalState(fallback);
-    await loadFestival(fallback);
-    showToast($('toast-root'), `Couldn’t load ${wantedName} offline — it opens once you’re back online.`, 6000);
+  } catch (e) {
+    // This festival did not load: not live, not from the copy this phone
+    // holds (loadFestival asks both). Rather than strand a blank wall, open
+    // one the phone already HOLDS (CORE-12) — for this open only. Never
+    // fetched: the network just failed, and fetching a festival this friend
+    // never opened (Portola, the catalog's default) was the fatal screen on
+    // 2026-10-01. Never saved: their own choice stands, so it opens again the
+    // next time there is signal (the old fallback saved Portola over it).
+    const wanted = state.activeFestivalId;
+    const wantedName = model.festLabelFor(wanted, FESTIVAL_INDEX).name;
+    const held = await heldFestivalId(wanted);
+    if (!current()) return;
+    if (!held) {
+      // Nothing to show. No signal is not a crash: boot says so calmly and
+      // tries again by itself. Anything else (a 404, a broken file) stays
+      // the loud fatal it is.
+      if (e && e.network) throw offlineBoot(wantedName, token, e);
+      throw e;
+    }
+    state.showFestivalForNow(held);
+    const heldName = model.festLabelFor(held, FESTIVAL_INDEX).name;
+    showToast($('toast-root'), `Couldn’t reach ${wantedName} — showing ${heldName} for now. ${wantedName} opens next time there’s signal.`, 7000);
   }
+  festivalKept(); // a first visit's festival, kept once the worker has claimed the page
   // A festival this device was pointed at and the catalog has since dropped.
   // We opened a real one instead; say which, and say the picks survived —
   // otherwise the board just changes underneath the person and the landing
@@ -4969,13 +4987,77 @@ function renderBadLink(token, { gone, malformed }) {
 
 // The last-resort screen (FLOW-4): an exception escaping boot/enterApp used
 // to leave every screen display:none — a permanently blank page.
-function renderFatal() {
+// `offline` ({ festName, token }): not a crash — the phone has no signal and
+// does not hold the festival yet. The screen says that, and tries again by
+// itself while it is up (2026-10-01).
+const FATAL_WORDS = 'The app hit an error while loading. Your picks are safe on this device.';
+function renderFatal({ offline = null } = {}) {
   try {
     show('screen-error');
     document.title = 'Festival Navigator';
+    // The buttons first: if anything below throws, the last-resort screen
+    // still has working buttons.
     $('error-retry').onclick = () => location.reload();
-    $('error-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
+    $('error-home').onclick = () => { stopOfflineRetry(); history.replaceState(null, '', '/'); renderLanding(); };
+    const msg = $('error-msg'); // absent from an older index.html (an old worker's shell)
+    if (msg) {
+      msg.textContent = !offline ? FATAL_WORDS
+        : appSettings().stayOffline
+          ? `${offline.festName} isn’t saved on this phone yet, and Stay offline is on. Tap Try again once you have signal.`
+          : `${offline.festName} isn’t saved on this phone yet, and there’s no signal to fetch it. It opens by itself when signal comes back.`;
+    }
+    if (offline) startOfflineRetry(offline.token, offline.fid);
   } catch { /* even the error screen failed — nothing safe left to render */ }
+}
+
+// No signal at boot (2026-10-01). A boot that cannot reach a festival this
+// phone has never held throws this; boot records it as `boot:offline` (still
+// paged red: a friend is locked out of their festival) and shows the calm
+// screen, which re-boots this crew when signal plausibly came back — the
+// browser says online, the phone comes back to the app, or a backoff timer
+// (iOS on a connected-but-dead festival network never says online).
+function offlineBoot(festName, token, cause, fid = null) {
+  const e = new Error(`${festName} unreachable`);
+  e.offline = { festName, token, fid };
+  e.cause = cause;
+  return e;
+}
+const OFFLINE_RETRY_MS = [15000, 30000, 60000, 120000];
+let offlineTries = 0;    // re-boots since the calm screen first showed; only the first is reported
+let offlineRetry = null; // the armed retry: { timer, off }
+function stopOfflineRetry() {
+  const r = offlineRetry;
+  offlineRetry = null;
+  if (!r) return;
+  clearTimeout(r.timer);
+  r.off();
+}
+function startOfflineRetry(token, fid = null) {
+  stopOfflineRetry();
+  if (appSettings().stayOffline) return; // they chose no network: Try again is theirs to press
+  const r = { timer: null, off: () => {} };
+  const again = () => {
+    if (offlineRetry !== r) return;
+    stopOfflineRetry();
+    if ($('screen-error').style.display === 'none') return;
+    // A later boot does not resume the active crew on a bare URL, so name it,
+    // with the festival a first visit's link asked for (its activation never
+    // ran to save it). Otherwise the saved festival stands — the fallback no
+    // longer overwrites it.
+    history.replaceState(null, '', crew.crewLink(token, fid));
+    boot();
+  };
+  const onOnline = () => again();
+  const onVisible = () => { if (document.visibilityState === 'visible') again(); };
+  window.addEventListener('online', onOnline);
+  document.addEventListener('visibilitychange', onVisible);
+  r.off = () => {
+    window.removeEventListener('online', onOnline);
+    document.removeEventListener('visibilitychange', onVisible);
+  };
+  r.timer = setTimeout(again, OFFLINE_RETRY_MS[Math.min(offlineTries, OFFLINE_RETRY_MS.length - 1)]);
+  offlineTries++;
+  offlineRetry = r;
 }
 
 // ---- boot -----------------------------------------------------------------------
@@ -4989,6 +5071,7 @@ let pendingPlanOpen = null; // &plan=<date> — the plan's Share link, consumed 
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it
+  stopOfflineRetry(); // one boot at a time: a retry armed for an earlier one never fires over this one
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
   const isFirst = firstBoot;
@@ -5114,6 +5197,14 @@ export async function boot() {
     if (gone) { renderBadLink(token, { gone: true }); return; }
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
+    // A first visit whose catalog never arrived: activation needs one, and
+    // its absence is the network (index.json is precached for every phone a
+    // worker controls), not a fault — so the calm screen, not a crash
+    // (2026-10-01; it threw from defaultFestivalId on an empty list).
+    if (!FESTIVAL_INDEX.length && !(await festivalIndexFromCache())) {
+      throw offlineBoot('Your festival', token, Object.assign(new Error('festival catalog unreachable'), { network: true }), pendingFestHint);
+    }
+    if (!current()) return;
     let recognized = null;
     if (!crew.me(token)) {
       recognized = recognizeOnOpen(token, doc);
@@ -5134,8 +5225,13 @@ export async function boot() {
     // that locks a friend out was the one Diagnostics could not see).
     // A boot a newer one already replaced (a hashchange mid-boot) was never
     // on screen: still worth knowing, but not "the app won't open".
-    record(current() ? 'boot' : 'boot:superseded', e);
-    if (current()) renderFatal();
+    // No signal and no copy of the festival is its own kind, reported once
+    // per stretch of the calm screen rather than once per automatic retry.
+    const offline = e && e.offline ? e.offline : null;
+    if (!current()) record('boot:superseded', e);
+    else if (!offline) record('boot', e);
+    else if (!offlineTries) record('boot:offline', e.cause || e);
+    if (current()) renderFatal({ offline });
   }
 }
 
@@ -5411,7 +5507,39 @@ export function init() {
   window.addEventListener('error', () => { if (!anyScreenVisible()) renderFatal(); });
   window.addEventListener('unhandledrejection', () => { if (!anyScreenVisible()) renderFatal(); });
   showBootLoader();
+  keepFestivalForOffline();
   boot();
+}
+
+// A first visit fetches its festival before the worker controls the page, so
+// the worker's data cache never sees it, and the next open on a dead network
+// had nothing to fall back to (2026-10-01: the iPhone that could not open ACL
+// had opened it fine the day before). Once BOTH have happened — the worker's
+// first claim and a festival on the wall — the festival goes through the
+// worker once, which keeps it. Never under Stay offline; never a crew's own
+// festival (those live with the crew, not under /data/festivals).
+let keepFestival = null;
+function keepFestivalForOffline() {
+  try {
+    const sw = navigator.serviceWorker;
+    if (!sw || sw.controller) return; // a controlled page fetched through the worker already
+    keepFestival = { claimed: false, done: false };
+    sw.addEventListener('controllerchange', () => {
+      if (keepFestival) keepFestival.claimed = true;
+      festivalKept();
+    }, { once: true });
+  } catch { /* no worker here: nothing to keep */ }
+}
+function festivalKept() {
+  try {
+    const k = keepFestival;
+    if (!k || k.done || !k.claimed) return;
+    const fid = state.activeFestivalId;
+    if (!fid || !state.FESTIVALS[fid] || appSettings().stayOffline) return;
+    if (FESTIVAL_INDEX.some((f) => f.id === fid && f.custom)) return;
+    k.done = true;
+    fetchFestivalFile(fid); // network-first through the worker, which stores it; never rejects
+  } catch { /* a convenience: never the thing that throws */ }
 }
 
 init();

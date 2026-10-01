@@ -21,13 +21,73 @@ export async function loadFestivalIndex() {
   return FESTIVAL_INDEX;
 }
 
+// How long the wall waits on a festival file before answering from this
+// phone's copy instead. The request is never aborted — the worker keeps
+// downloading under waitUntil, so a slow file still lands in its data cache
+// for the next try. Exported for the tests.
+export const FEST_FILE_DEADLINE_MS = 12000;
+
+// The festival file: live (network-first through the worker), else the copy
+// this phone holds. Throws only when neither answers; the error then carries
+// `network: true` when the network is what failed (no answer, no body, no
+// answer in time), as against a server that answered wrongly (a 404, a broken
+// JSON drop) — a real fault that must stay loud (2026-10-01).
 export async function loadFestival(id) {
   if (FESTIVALS[id]) return FESTIVALS[id];
-  const res = await fetch(`/data/festivals/${id}.json`);
-  if (!res.ok) throw new Error(`festival ${id} failed: ` + res.status);
-  const fest = await res.json();
-  FESTIVALS[id] = fest;
-  return fest;
+  const path = `/data/festivals/${id}.json`;
+  let fest = null;
+  let failure = null;
+  let timer = null;
+  try {
+    const live = (async () => {
+      let res;
+      try { res = await fetch(path); } catch (e) { throw networkFailure(e); }
+      if (!res.ok) throw new Error(`festival ${id} failed: ` + res.status);
+      let text;
+      // A body that dies mid-download is the network too: on one bar the
+      // worker hands back live headers inside its 4 s budget and the rest
+      // never comes (2026-10-01).
+      try { text = await res.text(); } catch (e) { throw networkFailure(e); }
+      return JSON.parse(text);
+    })();
+    live.catch(() => { /* a loser of the race below must not surface as an unhandled rejection */ });
+    const late = new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(networkFailure(new Error(`festival ${id} took too long`))), FEST_FILE_DEADLINE_MS);
+    });
+    fest = await Promise.race([live, late]);
+  } catch (e) {
+    failure = e;
+  } finally {
+    clearTimeout(timer);
+  }
+  // The worker answers from its copy when the network fails outright; this
+  // covers the two cases it cannot see — a body cut after the headers, and a
+  // page no worker controls yet.
+  if (!fest) fest = await cachedJSON(path);
+  if (!fest) throw failure;
+  if (!FESTIVALS[id]) FESTIVALS[id] = fest;
+  return FESTIVALS[id];
+}
+
+function networkFailure(cause) {
+  const e = cause instanceof Error ? cause : new Error(String(cause));
+  try { e.network = true; } catch { /* a frozen error: the caller treats it as a fault */ }
+  return e;
+}
+
+// A festival this phone already HOLDS, other than `except` — the catalog
+// default first, then catalog order — read from its own copies, never fetched.
+// Null when it holds none. Crew-private festivals are not offered: their
+// files live with the crew (cachedCustomFestivals), not under /data/festivals.
+export async function heldFestivalId(except) {
+  let first = null;
+  try { first = defaultFestivalId(); } catch { first = null; }
+  const ids = [first, ...FESTIVAL_INDEX.filter((f) => !f.custom).map((f) => f.id)];
+  for (const id of ids) {
+    if (!id || id === except) continue;
+    if (await festivalFromCache(id)) return id;
+  }
+  return null;
 }
 
 // Crew-private festivals added via LLM research (api/festival-add.js).

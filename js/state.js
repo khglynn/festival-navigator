@@ -74,6 +74,7 @@ export function setSelectedPerson(p) { selectedPerson = p; }
 // choice (Codex round 4: it picked Portola and overwrote the saved festival).
 export function activateCrew(token, doc, festHint, { festival = null } = {}) {
   crewToken = token;
+  shownForNow = null; // a stand-in belongs to the open that showed it
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
   // Write a heal back to disk immediately: subtractLeaves can never match the
@@ -106,7 +107,21 @@ export function activateCrew(token, doc, festHint, { festival = null } = {}) {
 
 export function setActiveFestivalId(fid) {
   activeFestivalId = fid;
+  shownForNow = null; // a festival chosen is no longer a stand-in
   saveLS(LS.fest(crewToken), fid);
+}
+
+// The offline fallback (CORE-12, reshaped 2026-10-01): a festival shown for
+// THIS open only. Never saved — the person's own choice stands, so the next
+// open with signal goes back to it — and no membership row queued, now or
+// when a poll rebuilds the doc around it (applyRemoteDoc): the crew never
+// asked for this festival, the phone just happened to hold it. A pick made on
+// it is a real write and syncs as one.
+let shownForNow = null;
+export function showFestivalForNow(fid) {
+  activeFestivalId = fid;
+  shownForNow = fid;
+  ensureFestivalState(fid);
 }
 
 export function persist() { saveLS(LS.doc(crewToken), JSON.stringify(crewDoc)); }
@@ -148,8 +163,9 @@ export function ensureFestivalState(fid) {
   if (!crewDoc.festivals[fid]) {
     crewDoc.festivals[fid] = { selections: {} };
     // A guest renders the row and records nothing (v92): the membership is a
-    // write, and theirs waits until they have a name here.
-    if (!mayWrite()) return;
+    // write, and theirs waits until they have a name here. A stand-in shown
+    // for this open (showFestivalForNow) is rendered and never recorded.
+    if (!mayWrite() || fid === shownForNow) return;
     // Sync the membership, not just the local render: this write is what
     // makes "the crew has this festival" true for OTHER devices. Without it,
     // every added festival was a ghost only this device could see — The
