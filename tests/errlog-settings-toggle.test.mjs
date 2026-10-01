@@ -1,7 +1,7 @@
 // "Send crash reports to Kevin" (v88, Kevin 2026-09-24): one toggle in
 // Settings → App, on by default, with a line beside it saying what goes —
 // your name included. It is this phone's choice alone: it lives in the
-// device's own settings and never in the crew doc (CLAUDE.md: mute/hide and
+// device's own settings and never in the crew doc (AGENTS.md: mute/hide and
 // every viewer-side choice stay off the shared doc). Off throws away what was
 // waiting and nothing leaves after that; the journal on the phone keeps
 // working. A build with no report key sends nothing, so it offers nothing.

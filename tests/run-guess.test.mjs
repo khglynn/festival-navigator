@@ -331,7 +331,7 @@ test('a close for one date is the registry\'s most specific rule, and the event 
   // Stubb's amphitheater, Oct 1: the indoor after-show opens at 10 PM, so the
   // outdoor show is over by then. That is an inference from another show's
   // page, not a printed end: the registry keeps the page as its source, the
-  // event says which rule gave the close (CLAUDE.md, run guesses).
+  // event says which rule gave the close (AGENTS.md, run guesses).
   const afterShow = 'https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/';
   const profile = { kind: 'outdoor', close: { default: null, byWeekday: { Thu: '12 AM' }, byDate: { '2026-10-01': '10 PM' }, sources: [{ url: afterShow, quote: 'Doors: 10:00PM. Show: 10:30PM. Free with wristband from Brandon Flowers' }] }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null };
   const members = [{ name: 'Jess Williamson', seq: 1, time: '8 PM', posted: true }, { name: 'Brandon Flowers', seq: 2 }];

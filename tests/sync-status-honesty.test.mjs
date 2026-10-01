@@ -1,4 +1,4 @@
-// The sync dot tells the truth (CLAUDE.md: online / syncing / offline / error
+// The sync dot tells the truth (AGENTS.md: online / syncing / offline / error
 // / blocked). Two inherited gaps (Codex round 4, 2026-09-23):
 //   (a) a push the server refuses (400/413) AFTER "Stay offline" was switched
 //       on showed blocked. The refusal is still remembered — the same bytes

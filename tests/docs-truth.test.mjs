@@ -1,5 +1,5 @@
 // Docs that CAN drift eventually DO drift. This suite is the forcing function:
-// the "current truth" docs (README, VERCEL_SETUP, CLAUDE.md) are asserted against
+// the "current truth" docs (README, VERCEL_SETUP, AGENTS.md) are asserted against
 // the code they describe, so a lie fails CI instead of misleading a forker.
 //
 // Written 2026-07-12 after the finish-pass audit found the README describing a
@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
@@ -145,13 +145,13 @@ test('NOW.md stays a one-screen cursor', () => {
   );
 });
 
-test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
+test('every repo path NOW.md and AGENTS.md cite in backticks exists', () => {
   // Only words that look like repo files: relative, at least one slash, and
   // either a file extension or a trailing slash. Branch names (origin/main,
   // fix/docs), URLs and bare hostnames, globs and CSS/JS identifiers do not match.
   const looksLikePath = /^\.?[\w-]+(\/[\w.-]+)*\/([\w-][\w.-]*\.[a-z0-9]+|)$/i;
   const missing = [];
-  for (const doc of ['NOW.md', 'CLAUDE.md']) {
+  for (const doc of ['NOW.md', 'AGENTS.md']) {
     for (const [, span] of read(doc).matchAll(/`([^`]+)`/g)) {
       for (const word of span.split(/\s+/)) {
         const path = word.replace(/:\d+(-\d+)?$/, '');
@@ -161,6 +161,15 @@ test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
     }
   }
   assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
+});
+
+// The rules live in AGENTS.md so Codex reads them too; Claude Code reaches them
+// only through CLAUDE.md's `@AGENTS.md` import (2026-10-01). Lose that line and
+// Claude sessions start without the rules; make AGENTS.md a link to CLAUDE.md
+// again (its shape until 2026-10-01) and the import points at itself.
+test('CLAUDE.md imports AGENTS.md, and AGENTS.md is the real file', () => {
+  assert.match(read('CLAUDE.md'), /^@AGENTS\.md[ \t]*$/m, 'CLAUDE.md must keep its @AGENTS.md line');
+  assert.ok(lstatSync(new URL('AGENTS.md', root)).isFile(), 'AGENTS.md must be a regular file, not a link');
 });
 
 // MODEL-V4 §3a.4 names all eight rows — their ORDER and their words — as Kevin's
@@ -200,7 +209,7 @@ test('Settings → How it works says Kevin\u2019s rows, word for word and in his
   // Its label is the fixed `ACL '26`, never the current fest's name (a long
   // name broke out of the box at 390 — ship round, 2026-09-17), and the
   // picture wears brand, not the fest accent: the accent has four homes and
-  // this drill is not one of them (CLAUDE.md).
+  // this drill is not one of them (AGENTS.md).
   const demo = /function festLinkDemo\(\) \{([\s\S]*?)\n\}/.exec(settings)[1];
   assert.ok(demo.includes(`"ACL '26"`), 'the one fest name, coded in');
   assert.equal(/state\.fest\(/.test(demo), false, 'the current fest is never asked');

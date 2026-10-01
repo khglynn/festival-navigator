@@ -401,7 +401,7 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
   // instant path. A recording stub stands in and finishes on the next tick the
   // way a real animation would, so this is the path a phone takes. Portola's
   // Thursday is an afters-only night: hide Afters and Thursday goes with it —
-  // it must LEAVE with the room, not vanish on the repaint (CLAUDE.md: nothing
+  // it must LEAVE with the room, not vanish on the repaint (AGENTS.md: nothing
   // vanishes in place, nothing pops). A day is one block holding its rooms
   // (one-line heads, 2026-09-23), so a day the fold empties leaves as ONE
   // element, and the room inside it is not animated a second time. A weekend

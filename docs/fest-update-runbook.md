@@ -9,7 +9,7 @@ days{} with stages + times, afters/events as data, a meta.note that reads
 like a lab notebook). For a section that runs longer than a week, see the
 Late nights section in `data/festivals/acl-2026.json`.
 
-## The law (CLAUDE.md, with teeth)
+## The law (AGENTS.md, with teeth)
 1. Artist names and day strings in a live file are PICK KEYS. Never rename,
    re-case, or "fix" one — `tests/fixtures/live-pick-keys.json` freezes them
    and CI fails on any disappearance. A name the official source now spells

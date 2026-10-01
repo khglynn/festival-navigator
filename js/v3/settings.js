@@ -365,7 +365,7 @@ function openAddFestival(actions) {
 // one fest name, probs ACL"). It is a span, not a button: this is a picture
 // of the door, and the door is at the bottom of the screen.
 //
-// THE ACCENT LAW (CLAUDE.md): `--fest` appears in exactly four places, and
+// THE ACCENT LAW (AGENTS.md): `--fest` appears in exactly four places, and
 // this drill is not one of them — but the component's own rule paints its
 // name in `--fest`, and `--fest` is set on <body> per fest, so the picture
 // wore the current fest's colour. The token is re-scoped to brand on the
@@ -736,7 +736,7 @@ function youSection(ctx, actions) {
       // people map (tombstones included, not activePeople() — that would
       // silently drop the removed-name check above): two active names
       // differing only by case are one person to a human and two forever to
-      // the document (CLAUDE.md), and the server refuses that merge for
+      // the document (AGENTS.md), and the server refuses that merge for
       // good — a bare-lookup here let the rename toast "succeed" and then
       // desync permanently. Your OWN current key is excluded so a pure case
       // fix ("kev" -> "Kev") doesn't collide with yourself.

@@ -72,7 +72,7 @@ const hide = (dom) => {
 };
 
 // A receiver-strict sendBeacon: called anywhere but ON navigator it throws
-// "Illegal invocation", as every browser does (CLAUDE.md, WebIDL receivers).
+// "Illegal invocation", as every browser does (AGENTS.md, WebIDL receivers).
 function strictBeacon(dom, answer = () => true) {
   const calls = [];
   const nav = dom.window.navigator;

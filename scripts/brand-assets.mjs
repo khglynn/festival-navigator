@@ -53,7 +53,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p));
 
 // ---- the palette, quoted from assets/v3-tokens.css --------------------------------
-// Look values up, never invent (CLAUDE.md). If one of these moves in the
+// Look values up, never invent (AGENTS.md). If one of these moves in the
 // tokens file it has to move here too — that is the price of rendering
 // outside the browser.
 const T = {
