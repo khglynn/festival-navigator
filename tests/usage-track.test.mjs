@@ -295,6 +295,30 @@ test('session_end is never capped, and its duration is whole seconds past a quar
   assert.equal(ends[ends.length - 1].e.properties.duration_s, 1200, 'twenty minutes, not 999 seconds');
 });
 
+// The final-gate review of v108: the summaries never use up the detail's room
+// (a page alive for 400 stretches still counts a pick), and a page that loads
+// hidden counts only the time it is seen.
+test('400 stretches later a pick still counts; a page that loads hidden counts only its seen time', async () => {
+  const a = await fresh();
+  a.m.hookGlobalErrors();
+  for (let i = 0; i < 401; i++) { a.m.track('now_tap', { stops: 1, highlight: false, landed: 'card' }); hide(a.dom); show(a.dom); }
+  const before = a.m.usageCounts().byEvent.pick || 0;
+  a.m.track('pick', { from: 0, to: 1, via: 'click' });
+  assert.equal(a.m.usageCounts().byEvent.pick, before + 1, 'not dropped behind 401 summaries');
+
+  const b = await fresh();
+  Object.defineProperty(b.dom.window.document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+  b.m.hookGlobalErrors();
+  mock.timers.setTime(LATER + 60 * 60 * 1000); // an hour in a background tab
+  show(b.dom);
+  mock.timers.setTime(LATER + 60 * 60 * 1000 + 10 * 1000);
+  b.m.track('pick', { from: 0, to: 1, via: 'click' });
+  hide(b.dom);
+  const ends = b.queue().filter((x) => x.e.event === 'session_end');
+  assert.equal(ends.length, 1);
+  assert.equal(ends[0].e.properties.duration_s, 10, 'ten seconds seen, not an hour and ten seconds');
+});
+
 // The Claude review of v108 (L10): Diagnostics' "did Kevin already get
 // this?" counts reports, not taps.
 test('reports waiting counts errors only', async () => {

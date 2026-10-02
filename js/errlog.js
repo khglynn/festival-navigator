@@ -931,9 +931,9 @@ const pageLoadAt = Date.now();
 // Counts for session_end: kept even when the detail was capped away.
 const tallies = Object.create(null);
 let visibleSince = Date.now();
-let droppedBefore = 0;
+let droppedBefore = 0;      // usageDropped when this stretch began
 let stretchOpen = true;   // ended once, by whichever of hidden / pagehide comes first
-let stretchClean = true;  // reports stayed on for the whole stretch // usageDropped when this stretch began
+let stretchClean = true;  // reports stayed on for the whole stretch
 
 export function track(name, props) {
   try {
@@ -947,7 +947,7 @@ export function track(name, props) {
     // never capped — there is at most one per time the page is hidden.
     if (name !== 'session_end' && (usageCount >= USAGE_CAP || n >= USAGE_EVENT_CAP)) { usageDropped++; return; }
     usageByEvent[name] = n + 1;
-    usageCount++;
+    if (name !== 'session_end') usageCount++; // the summaries never use up the detail's room
     const spec = USAGE[name];
     const p = usageBase();
     if (props && typeof props === 'object') {
@@ -1213,6 +1213,9 @@ export function hookGlobalErrors() {
       else openStretch();
     });
     window.addEventListener('pageshow', (e) => { if (e && e.persisted) openStretch(); });
+    // A page that loads hidden (a background tab) starts with no stretch: the
+    // first time it is seen opens one, so its time unseen is never counted.
+    if (window.document.visibilityState === 'hidden') stretchOpen = false;
     const wirePagehide = () => { window.addEventListener('pagehide', () => { endStretch(); beaconReports(); }); };
     if (window.document.readyState === 'complete') wirePagehide();
     else window.addEventListener('load', wirePagehide, { once: true });
