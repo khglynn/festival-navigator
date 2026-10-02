@@ -1,41 +1,34 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-01 6:30 PM PT (v107 live, v108 in review) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-02 7:45 AM PT (v108 live) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v107, from `main`** (PR #76, merged 2026-10-01 5:24 PM PT) on fest /
-  festival / crew.kevinhg.com, all three serving festival-nav-v107 /
-  d3a555a0: opening on bad signal — the two ACL failures of Oct 1 (an
-  iPhone fatal when the fallback fetched and saved Portola over a dead
-  network; an Android black page when one module never arrived). A held
-  festival stands in for one open, never saved or shared; a calm
-  "can't be reached" screen that retries itself; an inline watchdog with
-  Try again for the black page. Rollback: Vercel
-  dpl_8UgomsbYZ7tC6HYCnsgMeHfaa9aV (v106); Neon `backup-2026-10-01-pre-v107`.
-  Rows, reviews, rollback targets for v103–v106: the LEDGER.
+- **v108, from `main`** (PR #78, merged 2026-10-02 7:38 AM PT) on fest /
+  festival / crew.kevinhg.com, all three serving festival-nav-v108 /
+  01887faf: usage through errlog.js's one door — `track()` with an
+  allowlist of 22 events (no free text, no tokens, no artist or note text),
+  on the error queue (usage evicted first, errors first in every send),
+  "Send crash reports and usage to Kevin" in Settings; the welcome card
+  now leaves however its animation ends (LEDGER 40). Rollback: Vercel
+  dpl_ixKdnSxze9Jz6DPZ9XVG8yYgNUgT (v107 + docs); Neon
+  `backup-2026-10-02-pre-v108`. v107 (Oct 1): opening on bad signal.
+  Rows, reviews, rollback targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
-  (`ops/posthog/`), each saying what the error means in plain words —
-  `boot:offline` (red) and `festival:stand-in` added with v107, live in
-  both functions.
+  (`ops/posthog/`), triggered by error-tracking issues only — usage never
+  reaches Slack.
 
-## In flight: v108, the full usage tracking (PR #78, branch `release/v108`)
+## Next: the "Festival health" dashboard (PostHog, once v108's events flow)
 
-Kevin, 2026-10-01: "do it now". `track()` in errlog.js — the one door — with
-an allowlist of 22 events (enums, booleans, rounded numbers; no free text,
-no tokens, no artist or note text), riding the error queue as kind `usage`
-(3-day TTL, evicted first), sent at most every 2 min unless an error rides
-along. One switch: Settings → "Send crash reports and usage to Kevin".
-Reviewed: Sol 6.1 via Eachie (3 parts), Copilot (6 findings) and a
-Claude reviewer (1 Medium, 10 Low), all fixed. **Next:** CI green on both
-engines → merge → verify three hosts → the "Festival health" dashboard and the
-"3+ phones can't sync" alert in PostHog once events flow. Nothing writes
-crew data; Neon backup `backup-2026-10-01-pre-v108`; rollback is the v107
-deployment. Find-your-crew: three ideas offered to Kevin, no answer yet
-(`landing_view` will say how often an open finds no crew).
+Opens per day (`app_open` where `page_load` is true), warm-open hit rate
+and miss reasons, first paint warm vs cold, sync health, picks, NOW, notes,
+the plan, Spotify, devices, and `landing_view` by crews (how often an open
+finds no crew — the find-your-crew question; three ideas offered to Kevin,
+no answer yet). Plus the "3+ phones can't sync" alert. DESIGN §2g in
+`claude-plans/2026-09-24-analytics/`.
 
 ## Next: the iOS app
 

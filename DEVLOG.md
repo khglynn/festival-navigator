@@ -2,6 +2,34 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-02 — v108: usage, through the one door
+
+Kevin, 2026-10-01: "Let's not hold till after ACL for the full tracking —
+do it now." Shipped the morning ACL opened (PR #78). Rows, reviews and
+follow-ups: the LEDGER.
+
+- **What leaves now.** Besides errors, how the app is used: 22 events built
+  by `track()` in errlog.js from an allowlist (`USAGE`) on a named base
+  (`USAGE_BASE`). Every value is a boolean, a bounded number, or a word from
+  its list — never an artist, a note, a URL or a token. The crew name and
+  pid ride, by Kevin's 2026-09-24 call, and Settings says so ("Send crash
+  reports and usage to Kevin"). One switch for both; Off counts nothing.
+- **How it travels.** The same queue as errors (kind `usage`, 3-day TTL,
+  evicted first, errors always first in a send). A queue of usage alone
+  goes by fetch at most every two minutes, never in an open's first two
+  (that sync is the network's busiest moment at a festival); the hide
+  beacon carries a short open, once per two minutes, and never under Low
+  power. Each time the page is hidden, one `session_end` sums the stretch.
+- **Lessons.** (1) Three reviewers found three different classes of bug —
+  Sol (a subtractive base would inherit future fields), Copilot (lifecycle:
+  pagehide-only Safari, Off mid-stretch, the drag-open), the Claude
+  reviewer (an error stuck behind a day of tap counts in the 16 KB beacon;
+  counts that lie). (2) A browser test caught what all three missed: a
+  healthy open now sent usage at its first sync. (3) The CI red that "was
+  a flake on main since Sep 26" (LEDGER 40) was a real bug: the welcome
+  card left only on its animation's finish, so a page whose timeline never
+  ticked kept the card up and the plan under it, for good.
+
 ## 2026-10-01 — v107: opening on bad signal, the day before ACL
 
 Kevin on his phone, a cloud session, friends already using the app for ACL
