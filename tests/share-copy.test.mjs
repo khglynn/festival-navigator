@@ -8,7 +8,11 @@
 //     it says the link is for IF they ever want to pick (Kevin: adding a
 //     friend by name is "a note for us that they're going there", often the
 //     end state, not a wait until they join);
-//   - My link is a master key, so its hint keeps the keep-it-private warning.
+//   - My link is a master key, so its hint keeps the keep-it-private warning;
+//   - the Invite sheet's QR (find your crew, slice 1, 2026-10-02) says what
+//     scanning it does, and only ever draws the crew link: never a personal
+//     (&me=) link — a QR of Drew's link tells whoever scans it "this is
+//     yours" — and never My link.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -43,4 +47,28 @@ test('the short versions are the ones on screen', () => {
   assert.doesNotMatch(APP, /until they open their link/, 'no waiting room');
   assert.match(INDEX, /Add your fests, then your people\.<br>Got a link\? Just open it\./);
   assert.match(SETTINGS, /’s in\. This link still gets them back in\./);
+});
+
+test('the QR says what scanning it does — the link is the credential, so the words say anyone is in', () => {
+  assert.match(APP, /qrAlt: 'QR code for the crew link',/);
+  assert.match(APP, /qrCaption: 'Point a phone camera here to join\. Anyone who scans it is in\.',/);
+});
+
+test('the QR only ever draws the crew link: never a personal link, never My link', () => {
+  const JS = ['js/v3/app.js', 'js/v3/settings.js', 'js/v3/people-menu.js', 'js/v3/plan-shelf.js', 'js/crew.js', 'js/v3/qr.js'];
+  const calls = [];
+  for (const f of JS) {
+    for (const m of read(f).matchAll(/\b(inviteQr|qrPng|qrMatrix)\(([^)]*)\)/g)) calls.push({ f, fn: m[1], args: m[2] });
+  }
+  assert.ok(calls.some((c) => c.fn === 'inviteQr' && c.args === 'link'), 'the Invite sheet draws its link');
+  for (const c of calls) {
+    assert.doesNotMatch(c.args, /meLink|theirs|canonical|meName|personal|#p=/, `${c.f}: ${c.fn}(${c.args}) — a QR of anything but the crew link`);
+  }
+  // The one sheet that draws it, drawing the link it prints: inviteLink()
+  // with no name, the bytes in the box under it.
+  const sheet = APP.slice(APP.indexOf('function openInvite('), APP.indexOf('const succeed = '));
+  assert.match(sheet, /const link = inviteLink\(\);/);
+  assert.match(sheet, /inviteQr\(link\), inviteLinkRow\(link, 'Crew invite link'\)/, 'the QR on top of the box, the same link in both');
+  const done = APP.slice(APP.indexOf('const succeed = '), APP.indexOf('let waiting = false;'));
+  assert.doesNotMatch(done, /inviteQr|qrPng/, 'the IS IN state — a personal link — has no QR');
 });

@@ -480,6 +480,23 @@ html { touch-action: manipulation; }
                                 border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body);
                                 font-size: 12px; font-family: var(--font-ui); }
 .invite-sheet .inv-copy { font-size: 12px; padding: 9px 15px; flex: none; }
+/* The crew link as a QR, on top of the box that prints it (find your crew,
+ * slice 1; app.js inviteQr). A white tile, square from the sheet's first
+ * frame, so nothing below moves when the image lands; the modules are
+ * --page on --text-primary (js/v3/qr.js), never the fest accent. The image
+ * keeps the OS's own long-press (Save to Photos, Share) and a laptop's
+ * right-click — callouts are off only on cards and controls — so there is
+ * no Save button. A QR drawn late fades in; the tokens' kill rules make
+ * that instant under Low power and Reduce Motion. The caption spans the
+ * sheet, so at 320 it is two lines, not four under a 166px tile. */
+.invite-sheet .inv-qr { margin: 0; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.invite-sheet .inv-qr-tile { width: min(176px, 52vw); aspect-ratio: 1; box-sizing: border-box; padding: 8px;
+                             background: var(--text-primary); border-radius: var(--r-card); }
+.invite-sheet .inv-qr img { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated;
+                            -webkit-touch-callout: default; opacity: 0; transition: opacity .2s ease-out; }
+.invite-sheet .inv-qr img.in { opacity: 1; }
+.invite-sheet .inv-qr figcaption { color: var(--text-tertiary); font-size: 11.5px; line-height: 1.45;
+                                   text-align: center; text-wrap: balance; max-width: 36ch; }
 /* Share fills the row; the quiet Done / Later sits at its end — alone on a
  * laptop with no share sheet, it stays small rather than span the sheet. */
 .invite-sheet .inv-actions { display: flex; gap: 8px; justify-content: flex-end; }
