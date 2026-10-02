@@ -21,6 +21,10 @@
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 170px); gap: 7px; }
   .demo-dock .dock, .demo-sheet .sheet { position: static; display: flex !important; }
+  /* ≥720 a sheet is a centred dialog (v3.css: translate -50% -50%), which a
+     static picture must not inherit — it slid each demo sheet off its column. */
+  .demo-sheet .sheet { translate: none; }
+  #invite-gallery .sheet { max-height: none; } /* every state whole, not behind the app's 72vh cap */
   .demo-dock .dock { width: 358px; }
   .demo-sheet .sheet { width: 358px; box-shadow: 0 8px 30px rgba(0,0,0,.5); border-radius: 20px; }
   .col { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
@@ -292,6 +296,61 @@
     </div>
   </div>
 </section>
+
+<section class="demo-sheet" id="invite-gallery">
+  <div class="g-label">The Invite sheet — a member, a guest, the share moment · the QR drawn by js/v3/qr.js on a made-up link (find your crew, slice 1)</div>
+  <!-- The same markup app.js openInvite builds (sheetChrome's head, then the
+       line, the QR, the link, the actions, and a member's two sections).
+       Static: nothing here adds anyone or shares anything. -->
+  <div class="row" style="align-items: flex-start; gap: 18px;">
+    <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">A member, sharing a view (Portola + Afters, as a list)</div>
+      <div class="sheet invite-sheet" data-path="/f/portola-2026" data-hash="&amp;f=portola-2026&amp;show=fest,afters&amp;view=list">
+        <div style="display: flex; align-items: center; gap: 9px;"><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
+        <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.<br>Opens on Portola + Afters, as a list — what you’re showing now.</div>
+        <figure class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><figcaption>Point a phone camera here to join. Anyone who scans it is in.</figcaption></figure>
+        <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
+        <div class="inv-actions"><button class="btn-tonal inv-share">Share the link</button><button class="btn-ghost inv-done">Done</button></div>
+        <div class="inv-section"><div class="micro-label">Or add a friend</div><div class="inv-sub">You pick for them; the crew sees where they’re going.</div><div class="inv-name"><input maxlength="24" placeholder="Their name" aria-label="Their name"><button class="btn-tonal inv-add">Add</button></div></div>
+        <div class="inv-section"><div class="micro-label">From your other fests</div><div class="inv-others"><button class="btn-tonal">+ Drew</button><button class="btn-tonal">+ Kat</button></div></div>
+      </div>
+    </div>
+    <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">A guest: the link and its QR, no name to add (v92)</div>
+      <div class="sheet invite-sheet" data-path="/f/portola-2026" data-hash="&amp;f=portola-2026">
+        <div style="display: flex; align-items: center; gap: 9px;"><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
+        <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.</div>
+        <figure class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><figcaption>Point a phone camera here to join. Anyone who scans it is in.</figcaption></figure>
+        <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
+        <div class="inv-actions"><button class="btn-tonal inv-share">Share the link</button><button class="btn-ghost inv-done">Done</button></div>
+      </div>
+    </div>
+    <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">The share moment: a crew just made, its link the first thing to send</div>
+      <div class="sheet invite-sheet" data-path="/f/acl-2026" data-hash="&amp;f=acl-2026">
+        <div style="display: flex; align-items: center; gap: 9px;"><span class="sheet-title" style="flex: 1;">ONE LINK MAKES IT A CREW</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
+        <div class="inv-sub">Opens straight into ACL 2026. No accounts needed.</div>
+        <figure class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><figcaption>Point a phone camera here to join. Anyone who scans it is in.</figcaption></figure>
+        <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
+        <div class="inv-actions"><button class="btn-tonal inv-share">Share the link</button><button class="btn-ghost inv-done">Later</button></div>
+        <div class="inv-section"><div class="micro-label">Or add a friend</div><div class="inv-sub">You pick for them; the crew sees where they’re going.</div><div class="inv-name"><input maxlength="24" placeholder="Their name" aria-label="Their name"><button class="btn-tonal inv-add">Add</button></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<script type="module">
+// The Invite sheet's QR: the real encoder and the real drawing (js/v3/qr.js),
+// on a made-up crew token of the real shape — never a real crew's link.
+import { qrPng } from '/js/v3/qr.js';
+const EXAMPLE = 'galleryexample_0123456789ab';
+for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) {
+  const link = `${location.origin}${sheet.dataset.path}#g=${EXAMPLE}${sheet.dataset.hash}`;
+  sheet.querySelector('.inv-link input').value = link;
+  const img = sheet.querySelector('.inv-qr img');
+  img.addEventListener('load', () => img.classList.add('in'), { once: true });
+  img.src = qrPng(link, 160);
+}
+</script>
 
 <section class="demo-dock">
   <div class="g-label">Mobile dock (Portola active, Saturday)</div>
