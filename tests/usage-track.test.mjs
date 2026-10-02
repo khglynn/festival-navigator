@@ -192,31 +192,155 @@ test('a fresh page holds usage alone for its first two minutes: the first sync o
   assert.equal(await m.flushReports(), true, 'two minutes in, it goes');
 });
 
+// A beacon the test can read: the bytes errlog hands the browser.
+function beaconInto(dom, landed = true) {
+  const got = [];
+  dom.window.Blob = class { constructor(parts) { this.parts = parts; } };
+  dom.window.navigator.sendBeacon = function sendBeacon(url, data) {
+    if (this !== dom.window.navigator) throw new TypeError('Illegal invocation');
+    got.push(...JSON.parse(data.parts.join('')).batch);
+    return landed;
+  };
+  return got;
+}
+const show = (dom) => {
+  Object.defineProperty(dom.window.document, 'visibilityState', { configurable: true, get: () => 'visible' });
+  dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange', { bubbles: true }));
+};
+
 test('the page hiding sends the stretch as counts (session_end); a stretch with nothing in it sends none', async () => {
   const { m, dom, events } = await fresh();
   m.hookGlobalErrors();
-  dom.window.navigator.sendBeacon = function sendBeacon(url, data) {
-    if (this !== dom.window.navigator) throw new TypeError('Illegal invocation');
-    return true;
-  };
+  const beaconed = beaconInto(dom);
   m.track('pick', { from: 0, to: 1, via: 'click' });
   m.track('pick', { from: 1, to: 2, via: 'step' });
   m.track('now_tap', { stops: 3, highlight: false, landed: 'card' });
   m.track('bogus_event');
   hide(dom);
-  await m.flushReports();
-  const ends = events().filter((e) => e.event === 'session_end');
+  const ends = beaconed.filter((e) => e.event === 'session_end');
   assert.equal(ends.length, 1);
   const p = ends[0].properties;
   assert.equal(p.picks, 2);
   assert.equal(p.now_taps, 1);
   assert.equal(p.zooms, 0);
   assert.equal(p.dropped, 1, 'the refusal this stretch');
+  // The Claude review of v108: usage a beacon carried is not fetched again.
+  await m.flushReports();
+  assert.equal(events().filter((e) => e.event === 'session_end' || e.event === 'pick').length, 0, 'nothing sent twice');
   // visible again, then hidden at once with nothing done
-  Object.defineProperty(dom.window.document, 'visibilityState', { configurable: true, get: () => 'visible' });
-  dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange', { bubbles: true }));
+  show(dom);
   hide(dom);
   assert.equal(m.usageCounts().byEvent.session_end, 1, 'an empty stretch sends nothing');
+});
+
+// The Claude review of v108 (M1): errors go first in every send. A phone
+// that was offline for a day holds a queue of tap counts; the crash that
+// comes after them must not wait behind them for the beacon or the fetch.
+test('an error goes ahead of a long queue of usage, in the beacon and in the fetch', async () => {
+  for (const by of ['beacon', 'fetch']) {
+    const { m, dom, events, queue } = await fresh();
+    m.hookGlobalErrors();
+    for (const name of ['zoom_open', 'pick']) for (let i = 0; i < 40; i++) m.track(name, name === 'pick' ? { from: 0, to: 1, via: 'click' } : { route: 'mouse' });
+    hide(dom); // no beacon on this phone yet: the taps settle into the queue, ahead of what comes next
+    show(dom);
+    assert.ok(queue().length >= 80, 'a queue of usage');
+    const beaconed = by === 'beacon' ? beaconInto(dom) : null;
+    m.record('boot', new TypeError('broke after a day of taps'));
+    if (by === 'beacon') hide(dom); else await m.flushReports();
+    const sent = by === 'beacon' ? beaconed : events();
+    assert.equal(sent[0].event, '$exception', `${by}: the error leads (${sent.length} sent)`);
+  }
+});
+
+// The Claude review of v108 (L9): the hide beacon keeps usage's pace too —
+// once per two minutes, however often the phone goes in and out of a pocket —
+// and Low power sends usage only after a sync.
+test('the hide beacon sends usage at most every two minutes, and never under Low power', async () => {
+  const { m, dom } = await fresh();
+  m.hookGlobalErrors();
+  const beaconed = beaconInto(dom);
+  m.track('pick', { from: 0, to: 1, via: 'click' });
+  hide(dom);
+  assert.equal(beaconed.filter((e) => e.event === 'pick').length, 1, 'the first hide carries it');
+  show(dom);
+  m.track('pick', { from: 1, to: 2, via: 'click' });
+  hide(dom);
+  assert.equal(beaconed.filter((e) => e.event === 'pick').length, 1, 'a hide a minute later waits');
+  mock.timers.setTime(LATER + 2 * 60 * 1000 + 1);
+  show(dom);
+  dom.window.document.body.classList.add('low-power');
+  hide(dom);
+  assert.equal(beaconed.filter((e) => e.event === 'pick').length, 1, 'Low power: usage waits for a sync');
+  dom.window.document.body.classList.remove('low-power');
+  show(dom);
+  hide(dom);
+  assert.equal(beaconed.filter((e) => e.event === 'pick').length, 2, 'two minutes on, the waiting pick goes');
+});
+
+// The Claude review of v108 (L8): the stretch summaries are what survives a
+// page left open all day, so no cap holds them, and a long stretch says how
+// long it really was.
+test('session_end is never capped, and its duration is whole seconds past a quarter hour', async () => {
+  const { m, dom, queue } = await fresh();
+  m.hookGlobalErrors();
+  for (let i = 0; i < 65; i++) {
+    m.track('pick', { from: 0, to: 1, via: 'click' });
+    hide(dom);
+    show(dom);
+  }
+  assert.equal(m.usageCounts().byEvent.session_end, 65, 'one per stretch, past the per-event cap of 60');
+  mock.timers.setTime(LATER + 20 * 60 * 1000);
+  hide(dom);
+  const ends = queue().filter((x) => x.e.event === 'session_end');
+  assert.equal(ends[ends.length - 1].e.properties.duration_s, 1200, 'twenty minutes, not 999 seconds');
+});
+
+// The Claude review of v108 (L10): Diagnostics' "did Kevin already get
+// this?" counts reports, not taps.
+test('reports waiting counts errors only', async () => {
+  const { m, dom } = await fresh();
+  m.hookGlobalErrors();
+  m.track('pick', { from: 0, to: 1, via: 'click' });
+  hide(dom); // the taps reach the queue
+  m.record('boot', new TypeError('one'));
+  assert.equal(m.pendingReports(), 1);
+});
+
+// Copilot's review of v108: a stretch's counts are taken only while reports
+// are on, and a stretch that saw Off sends no summary at all — not the taps
+// from before Off, nor the ones made while it was off.
+test('a stretch that saw reports switched off sends no session_end, even once they are back on', async () => {
+  const { m, dom, store, queue } = await fresh();
+  m.hookGlobalErrors();
+  m.track('pick', { from: 0, to: 1, via: 'click' });
+  store.set('fn_settings_v1', JSON.stringify({ crashReports: false }));
+  m.clearReports();
+  m.track('pick', { from: 1, to: 2, via: 'click' }); // made while Off
+  store.set('fn_settings_v1', JSON.stringify({ crashReports: true }));
+  m.track('now_tap', { stops: 1, highlight: false, landed: 'card' });
+  hide(dom);
+  assert.equal(queue().filter((x) => x.e.event === 'session_end').length, 0, 'no summary for a stretch that saw Off');
+  assert.equal(queue().filter((x) => x.e.event === 'now_tap').length, 1, 'what came after On still goes');
+  // the next stretch is whole again
+  Object.defineProperty(dom.window.document, 'visibilityState', { configurable: true, get: () => 'visible' });
+  dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange', { bubbles: true }));
+  m.track('pick', { from: 2, to: 3, via: 'click' });
+  hide(dom);
+  const ends = queue().filter((x) => x.e.event === 'session_end');
+  assert.equal(ends.length, 1);
+  assert.equal(ends[0].e.properties.picks, 1, 'only this stretch\'s pick');
+});
+
+test('a page that only fires pagehide (iOS Safari) still ends its stretch, and a page that fires both ends it once', async () => {
+  for (const both of [false, true]) {
+    const { m, dom, queue } = await fresh();
+    m.hookGlobalErrors();
+    dom.window.dispatchEvent(new dom.window.Event('load'));
+    m.track('pick', { from: 0, to: 1, via: 'click' });
+    if (both) hide(dom);
+    dom.window.dispatchEvent(new dom.window.Event('pagehide'));
+    assert.equal(queue().filter((x) => x.e.event === 'session_end').length, 1, both ? 'hidden then pagehide: one' : 'pagehide alone: one');
+  }
 });
 
 test('switching reports off throws away usage still gathering in memory', async () => {

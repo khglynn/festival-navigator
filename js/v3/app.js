@@ -1169,6 +1169,7 @@ function openPickAs() {
     },
   });
   shelfUp = shelf;
+  shelfJoins = false; // Pick as someone else: not a join, so never a join_shelf step
   try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
 }
 
@@ -1206,17 +1207,19 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace 
   });
   shelf = showJoinShelf({
     artist, intent, people, offline, ctx, opener,
-    onLook: () => { pendingJoin = null; popShelfEntry(); planAfterShelf(); },
+    onLook: () => { track('join_shelf', { step: 'look' }); pendingJoin = null; popShelfEntry(); planAfterShelf(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
   });
   shelfUp = shelf;
+  shelfJoins = true;
   try {
     if (replace) history.replaceState({ joinShelf: true }, '', location.href); // the notes shelf's entry becomes this one
     else history.pushState({ joinShelf: true }, '', location.href);
   } catch { /* no history: Back leaves, as before */ }
 }
 let shelfUp = null; // the join shelf's handle while it is up
+let shelfJoins = false; // it is a guest's join shelf (usage: join_shelf), not Pick as someone else
 // ONE close decision for the shelf, whoever asks — Escape, the system Back,
 // or its own ways out (review of 963e599: Escape mid-join took the shelf down
 // and the late answer joined Ana behind the person's back; Escape left the
@@ -1237,7 +1240,7 @@ function leaveShelf(via = 'escape') {
   }
   shelf.leave();
   pendingJoin = null;
-  track('join_shelf', { step: 'look' });
+  if (shelfJoins) track('join_shelf', { step: 'look' });
   if (via !== 'back') popShelfEntry();
   planAfterShelf();
   return true;
@@ -1941,7 +1944,7 @@ function jumpToNow() {
   // put the first tap and the wrap a few hundred px apart when the answer was
   // not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
   const { fresh, stop, lead, target } = nowStep(plan, nowCycle, geo);
-  track('now_tap', { stops: plan.stops.length, highlight: !!(ctx.filterPeople && ctx.filterPeople.length), landed: lead && lead.line ? 'line' : lead && lead.card ? 'card' : 'none' });
+  track('now_tap', { stops: plan.stops.length, highlight: !!(ctx.filterPeople && ctx.filterPeople.length), landed: lead && lead.card ? 'card' : lead && lead.line ? 'line' : 'none' });
   const quiet = fresh && best.match === false ? nothingOnFor(ctx.filterPeople || []) : null;
   if (quiet) showToast($('toast-root'), quiet);
   // Said as well as shown (Codex, 2026-09-24: NOW announced nothing — the
@@ -2142,6 +2145,13 @@ function maybeOpenOnDay() {
   // scrollToNowLine).
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) {
     rememberScrolled(key);
+    // The live landing is a day view too — the one that matters most at a
+    // festival (the Claude review of v108: it returned before counting).
+    try {
+      const iso = festivalClock(new Date(), tz).iso;
+      const on = dayNavOf(state.fest(), ctx).find((d) => (d.dates || []).includes(iso));
+      if (on) trackDay(on, 'boot');
+    } catch { /* a count is never worth a landing */ }
     landAgainWithFonts(() => scrollToNowLine($('wall-root'), { timeZone: tz }));
     return;
   }
@@ -3096,15 +3106,26 @@ function showNewBuildStrip() {
 // rest and never throws. These helpers only decide WHICH word to send.
 // app_open: a boot's first screen names the path the open took.
 let openPending = null; // { pageLoad, warm, offline } from boot() until its first screen
+let festViewPending = false; // boot() arms one fest_view; the wall's first paint spends it
+let wallFirst = false; // the page's first screen was the wall (first_paint is about that, nothing else)
 const OPEN_PATHS = { 'screen-landing': 'landing', 'screen-join': 'join', 'screen-badlink': 'badlink', 'screen-create': 'create' };
 function noteOpen(screen) {
   const o = openPending;
   if (!o) return;
   openPending = null;
+  if (o.pageLoad) wallFirst = screen === 'screen-app';
   const path = screen === 'screen-app' ? (o.warm ? 'warm' : 'cold')
     : screen === 'screen-error' ? (o.offline ? 'offline' : 'fatal')
       : OPEN_PATHS[screen];
   if (path) track('app_open', { path, page_load: o.pageLoad, build_changed: buildChanged() });
+  // How often an OPEN lands on Your crews, and with how many crews (the
+  // find-your-crew question, 2026-10-01) — never a trip back to it from
+  // Settings, Create or an error screen (Copilot's review of v108).
+  if (path === 'landing') {
+    let crews;
+    try { crews = crew.knownCrews().length; } catch { crews = undefined; }
+    track('landing_view', { crews, context: standaloneApp() ? 'standalone' : 'browser' });
+  }
 }
 // Did this phone open a different build last time? Read once a page load;
 // the store is a convenience, so a blocked one just says no.
@@ -3124,6 +3145,9 @@ let paintedOnce = false;
 function noteFirstPaint(warm) {
   if (paintedOnce) return;
   paintedOnce = true;
+  // A wall reached from Your crews, a join or Create is minutes of a person
+  // in between, not load time (the Claude review of v108).
+  if (!wallFirst) return;
   let nav = null;
   let now;
   try { nav = performance.getEntriesByType('navigation')[0] || null; } catch { nav = null; }
@@ -4196,9 +4220,6 @@ async function restoreFromMeLink(token, current = () => true) {
 function renderLanding() {
   show('screen-landing');
   document.title = 'Festival Navigator';
-  // How often a bare fest.kevinhg.com opens with no crew on it (the
-  // find-your-crew question, 2026-10-01): counts and context only.
-  track('landing_view', { crews: (() => { try { return crew.knownCrews().length; } catch { return undefined; } })(), context: standaloneApp() ? 'standalone' : 'browser' });
 
   // YOU card (21a + me link): who this device is, and the one link that
   // rebuilds everything on a new one. Only renders once a person exists —
@@ -4916,7 +4937,12 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   renderYou();
   repaintWall();
   noteFirstPaint(!!warm);
-  track('fest_view', { via: state.isShownForNow() ? 'stand_in' : festByLink ? 'link' : 'boot' });
+  // Once per boot (and per switch, in Settings): a join, a claim or Create
+  // coming back through here is the same festival still on screen.
+  if (festViewPending) {
+    festViewPending = false;
+    track('fest_view', { via: state.isShownForNow() ? 'stand_in' : festByLink ? 'link' : 'boot' });
+  }
   maybeOpenOnDay();
   startClock();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
@@ -5219,6 +5245,7 @@ export async function boot() {
   const isFirst = firstBoot;
   firstBoot = false;
   openPending = { pageLoad: isFirst, warm: false, offline: false };
+  festViewPending = true;
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
@@ -5319,7 +5346,8 @@ export async function boot() {
     // were already here. Anything short of that exact wall takes the path
     // below and waits, as it always did.
     const admitted = await canOpenWarm(token);
-    track('warm_open', admitted ? { result: 'hit' } : { result: 'miss', miss_reason: warmMiss || undefined });
+    // Only a boot that is still the page's says how its open went.
+    if (current()) track('warm_open', admitted ? { result: 'hit' } : { result: 'miss', miss_reason: warmMiss || undefined });
     if (admitted) {
       if (!current()) return;
       if (openPending) openPending.warm = true;

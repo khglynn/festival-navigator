@@ -36,3 +36,11 @@ test('a phone with no crew lands on Your crews, and says how many it knows and w
   assert.equal(open.path, 'landing');
   assert.equal(open.page_load, true);
 });
+
+// Copilot's review of v108: renderLanding is also the way BACK to Your crews
+// (Create, Settings, an error screen). Only an open counts as a landing.
+test('a trip back to Your crews from Create is not another landing', async () => {
+  $('create-back').click();
+  await settle(2300);
+  assert.equal(usage().filter((e) => e.event === 'landing_view').length, 1, JSON.stringify(usage().map((e) => e.event)));
+});

@@ -73,6 +73,7 @@ let sig = '';        // what that answer drew, to skip repaints that change noth
 let drawn = null;    // the answer the rows on screen were drawn from (draw): the Share's words
 let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
+let openVia = null;  // how the next open came (openPlan's `via`); none is a drag
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
 let geo = null;      // { H, peekH, shift } measured after every draw
 // Whose cards are grown under their rows: null = the default (the NOW row's
@@ -778,7 +779,7 @@ function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 // were about). See glideTo.
 export function openPlan({ instant = false, focus = false, night = null, via = 'peek' } = {}) {
   if (!el || mode === 'gone' || leaving) return;
-  if (mode !== 'open') track('plan_open', { via });
+  openVia = via;
   settleTo(1, { instant });
   if (night) glideTo(night);
   if (focus) grab.focus({ preventScroll: true });
@@ -864,7 +865,11 @@ function settleTo(target, { instant = false } = {}) {
   // round): closing it takes the shelf away, as a paint with no peek would.
   if (target === 0 && data && !data.peek.stop) { leave({ instant }); return; }
   const seen = seenTop();
-  if (target === 1 && mode !== 'open') unpin();
+  // The one place the plan goes from closed to open: a tap, a link, the
+  // menu, or a drag let go past the line (Copilot's review of v108 — the
+  // drag never passed through openPlan).
+  if (target === 1 && mode !== 'open') { unpin(); track('plan_open', { via: openVia || 'drag' }); }
+  openVia = null;
   // Closing from further down the list (a later day at the top): the peek's
   // row is today's, at the list's top, so the list goes back there before
   // the window is measured — measured scrolled, the rows' shift came out

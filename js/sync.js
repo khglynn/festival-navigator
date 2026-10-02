@@ -80,7 +80,7 @@ let statusSince = Date.now();
 export function setSyncStatus(s) {
   const was = currentStatus;
   if (s !== was) {
-    if (NOTICED.includes(s) || NOTICED.includes(was)) track('sync_state', { from: was, to: s, ms_in_from: Date.now() - statusSince });
+    if (NOTICED.includes(s) || NOTICED.includes(was)) track('sync_state', { from: was, to: s, secs_in_from: (Date.now() - statusSince) / 1000 });
     statusSince = Date.now();
   }
   currentStatus = s;
