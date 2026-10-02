@@ -4,7 +4,7 @@
 import * as state from './state.js';
 import { isApiNotFound } from './crew.js';
 import { timeoutSignal as makeTimeoutSignal, errorText } from './util.js';
-import { record } from './errlog.js';
+import { record, track } from './errlog.js';
 
 // A sync that succeeded proves the network works and the radio is already
 // awake: the moment crash reports waiting on this phone go out (js/errlog.js
@@ -72,7 +72,17 @@ export function initSync(opts) {
 let currentStatus = 'online';
 export function syncState() { return currentStatus; }
 
+// Usage (v108): the dot entering or leaving a state a person would notice —
+// offline, error, blocked — and how long the last one lasted. The
+// online↔syncing churn of every poll is not news.
+const NOTICED = ['offline', 'error', 'blocked'];
+let statusSince = Date.now();
 export function setSyncStatus(s) {
+  const was = currentStatus;
+  if (s !== was) {
+    if (NOTICED.includes(s) || NOTICED.includes(was)) track('sync_state', { from: was, to: s, secs_in_from: (Date.now() - statusSince) / 1000 });
+    statusSince = Date.now();
+  }
   currentStatus = s;
   // v3 has two dots (desktop header + mobile dock) — update every instance.
   document.querySelectorAll('.sync-dot').forEach((el) => { el.className = 'sync-dot sync-' + s; });

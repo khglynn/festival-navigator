@@ -36,6 +36,7 @@
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { planDays, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
+import { track } from '../errlog.js';
 
 const ID = 'plan';
 const OPEN_AT = 1 / 3;       // released past a third of the way, it opens (and short of two thirds, an open plan closes)
@@ -72,6 +73,7 @@ let sig = '';        // what that answer drew, to skip repaints that change noth
 let drawn = null;    // the answer the rows on screen were drawn from (draw): the Share's words
 let forced = false;  // the Share's repaint: drawn whatever the signature says
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
+let openVia = null;  // how the next open came (openPlan's `via`); none is a drag
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
 let geo = null;      // { H, peekH, shift } measured after every draw
 // Whose cards are grown under their rows: null = the default (the NOW row's
@@ -775,8 +777,9 @@ function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 // `night`: a later night the plan opens on (a Share's link for it, app.js
 // openPlanForLink — the plan-days build: a link opens on the day its words
 // were about). See glideTo.
-export function openPlan({ instant = false, focus = false, night = null } = {}) {
+export function openPlan({ instant = false, focus = false, night = null, via = 'peek' } = {}) {
   if (!el || mode === 'gone' || leaving) return;
+  openVia = via;
   settleTo(1, { instant });
   if (night) glideTo(night);
   if (focus) grab.focus({ preventScroll: true });
@@ -862,7 +865,11 @@ function settleTo(target, { instant = false } = {}) {
   // round): closing it takes the shelf away, as a paint with no peek would.
   if (target === 0 && data && !data.peek.stop) { leave({ instant }); return; }
   const seen = seenTop();
-  if (target === 1 && mode !== 'open') unpin();
+  // The one place the plan goes from closed to open: a tap, a link, the
+  // menu, or a drag let go past the line (Copilot's review of v108 — the
+  // drag never passed through openPlan).
+  if (target === 1 && mode !== 'open') { unpin(); track('plan_open', { via: openVia || 'drag' }); }
+  openVia = null;
   // Closing from further down the list (a later day at the top): the peek's
   // row is today's, at the list's top, so the list goes back there before
   // the window is measured — measured scrolled, the rows' shift came out
@@ -1071,6 +1078,7 @@ function motions() {
 // clock both read.
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
+  track('share', { kind: 'plan' });
   if (data.repaint) {
     forced = true;
     try { data.repaint(); } finally { forced = false; }

@@ -105,8 +105,11 @@ test('a thrown error in the real page sends exactly one scrubbed request to /fn-
     for (const secret of [CREW, PERSON, '#g=', '?t=', '&f=']) assert.ok(!r.body.includes(secret), `the bytes never carry ${secret.length > 4 ? 'a token' : secret}`);
     const body = JSON.parse(r.body);
     assert.equal(body.api_key, KEY);
-    assert.equal(body.batch.length, 1, 'one error, one event — the early hook and app.js share one reporter');
-    const ev = body.batch[0];
+    // Usage (v108) rides the same queue and leaves with the error; the claim
+    // here is about the error: one, not two.
+    const errors = body.batch.filter((e) => e.event === '$exception');
+    assert.equal(errors.length, 1, 'one error, one event — the early hook and app.js share one reporter');
+    const ev = errors[0];
     assert.equal(ev.event, '$exception');
     const p = ev.properties;
     assert.equal(p.kind, 'error');

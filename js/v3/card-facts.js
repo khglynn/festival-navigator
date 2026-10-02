@@ -17,7 +17,7 @@ import { ordered, auraBackground, auraLayers, nameColor, subColor } from './aura
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
-import { record } from '../errlog.js';
+import { record, track } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
@@ -1250,6 +1250,21 @@ function originFor(slot, r0, r1) {
 // the bloom never reads as tiny text blowing up.
 const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height));
 
+// Usage (v108): a zoom a person opened and closed, by route and by why —
+// never which card. A wall repaint closes and re-grows the same zoom
+// instantly; its open time rides across so the real close reports the dwell.
+let carriedOpenAt = 0;
+const CLOSE_WHY = [
+  [/Escape/, 'escape'],
+  [/scroll|sticky/, 'scroll'],
+  [/notes sheet|who you are|someone else/, 'door'],
+  [/pointer left|outside|Tab moved|focus left|new zoom/, 'away'],
+];
+function closeWhy(why) {
+  const w = String(why || '');
+  for (const [re, code] of CLOSE_WHY) if (re.test(w)) return code;
+  return 'other';
+}
 function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
   unzoom({ instant: true, why: 'a new zoom took the stage' });
@@ -1283,6 +1298,11 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
+  if (instant) { z.openedAt = carriedOpenAt; carriedOpenAt = 0; } else {
+    carriedOpenAt = 0;
+    z.openedAt = Date.now();
+    track('zoom_open', { route: source === 'keyboard' ? 'keyboard' : 'mouse' });
+  }
   wireSlot(z);
   slot.classList.add('shown'); // what tells the standing zoom from the ghosts still shrinking away (the browser rig and the gallery's slow-mo both read it; the shadow is static now)
   if (!animate) {
@@ -1510,6 +1530,8 @@ function unzoomInner({ instant = false, why = 'unspecified', meant = false } = {
   if (!meant && Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
   const z = zoomed;
   zoomed = null;
+  if (why === 'wall repaint') carriedOpenAt = z.openedAt || 0;
+  else if (z.openedAt) track('zoom_close', { why: closeWhy(why), dwell_ms: Date.now() - z.openedAt });
   const animate = !instant && z.el.isConnected && canAnimate(z.card, z.ctx);
   // A dismissal mid-bloom leaves from wherever the bloom has got to — read
   // the live values BEFORE anything else, or a fast skim pops the card to

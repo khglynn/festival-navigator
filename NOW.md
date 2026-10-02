@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-01 5:30 PM PT (v107 live) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-01 6:30 PM PT (v107 live, v108 in review) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -22,17 +22,20 @@ how we got here belongs in DEVLOG.md.
   `boot:offline` (red) and `festival:stand-in` added with v107, live in
   both functions.
 
-## Next: v108, the full usage tracking (Kevin, 2026-10-01: "do it now")
+## In flight: v108, the full usage tracking (PR #78, branch `release/v108`)
 
-DESIGN §2b–§2g in `claude-plans/2026-09-24-analytics/`: `track()` through
-errlog.js's one door with an allowlist (no free text, no tokens), the
-events at today's hooks, `landing_empty` (for finding your crew from a bare
-fest.kevinhg.com), "Send crash reports and usage to Kevin" in Settings, the
-"Festival health" dashboard. Same discipline: red-first tests, CI on both
-engines, Sol via Eachie ($1/run, $5 session, no Astra/Fable) plus a Claude
-reviewer. Carried from v107's last review: two Low stand-in edges and two
-test fixes (LEDGER follow-ups 42–46). Find-your-crew: three
-ideas offered to Kevin, no answer yet.
+Kevin, 2026-10-01: "do it now". `track()` in errlog.js — the one door — with
+an allowlist of 22 events (enums, booleans, rounded numbers; no free text,
+no tokens, no artist or note text), riding the error queue as kind `usage`
+(3-day TTL, evicted first), sent at most every 2 min unless an error rides
+along. One switch: Settings → "Send crash reports and usage to Kevin".
+Reviewed: Sol 6.1 via Eachie (3 parts), Copilot (6 findings) and a
+Claude reviewer (1 Medium, 10 Low), all fixed. **Next:** CI green on both
+engines → merge → verify three hosts → the "Festival health" dashboard and the
+"3+ phones can't sync" alert in PostHog once events flow. Nothing writes
+crew data; Neon backup `backup-2026-10-01-pre-v108`; rollback is the v107
+deployment. Find-your-crew: three ideas offered to Kevin, no answer yet
+(`landing_view` will say how often an open finds no crew).
 
 ## Next: the iOS app
 

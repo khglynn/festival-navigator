@@ -57,7 +57,9 @@ const shell = await bootShell({
 test.after(() => { shell.close(); mock.timers.reset(); });
 const { $, dom } = shell;
 const errlog = await import('../js/errlog.js'); // the SAME instance app.js holds
-const queued = () => JSON.parse(globalThis.localStorage.getItem('fn_telemetry_q_v1') || '[]');
+// Errors only: usage (v108) shares the queue — this boot's app_open lands in
+// it two seconds after the screen does.
+const queued = () => JSON.parse(globalThis.localStorage.getItem('fn_telemetry_q_v1') || '[]').filter((x) => x.k === 'error');
 
 test('the boot crash shows the error screen and is journaled on the phone', async () => {
   assert.notEqual(await within(2000, () => $('screen-error').style.display !== 'none'), null, 'the fatal screen');
@@ -89,6 +91,7 @@ test('the next time there is signal, exactly one scrubbed report goes to the rew
   const wire = JSON.stringify(reports[0]);
   for (const secret of [CREW, PERSON, '#g=']) assert.ok(!wire.includes(secret), `the wire never carries ${secret === '#g=' ? 'a crew link' : 'a token'}`);
   assert.equal(reports[0].api_key, KEY);
-  assert.equal(reports[0].batch[0].properties.kind, 'boot');
+  assert.equal(reports[0].batch.filter((e) => e.event === '$exception').length, 1);
+  assert.equal(reports[0].batch.find((e) => e.event === '$exception').properties.kind, 'boot');
   assert.deepEqual(queued(), [], 'sent, so off the phone');
 });

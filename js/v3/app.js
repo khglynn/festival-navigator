@@ -20,7 +20,7 @@ import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, keyHand, focusQuietly } from './card-facts.js';
-import { hookGlobalErrors, configureReports, record } from '../errlog.js';
+import { hookGlobalErrors, configureReports, record, track } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
 // hooks it earlier still, from a module script of its own; this second call
@@ -149,6 +149,7 @@ const ctx = {
     const a = document.activeElement;
     if (stood && stood.isConnected && (!a || a === document.body || (a.closest && a.closest('#zoom-layer')))) focusQuietly(stood);
     openArtistSheet(artist, ctx, onNotesChange, occ);
+    track('notes_open', { target: 'artist' });
     // The occurrence rides in the route key (router.encodeNotesKey — a tagged
     // payload no name can imitate), so back, forward and a refresh reopen
     // THIS set for an artist who plays twice.
@@ -160,10 +161,12 @@ const ctx = {
   // finds it again off the axis.
   onOpenDayNotes: (target, label = null) => {
     openDayNotes(target, label, ctx, onNotesChange);
+    track('notes_open', { target: String(target).includes('|') ? 'section' : 'date' });
     router.push(`sheet:day:${target}`);
   },
   onOpenFestNotes: () => {
     openFestNotes(ctx, onNotesChange);
+    track('notes_open', { target: 'fest' });
     router.push('sheet:fest');
   },
   onNotesChange: () => onNotesChange(),
@@ -740,6 +743,7 @@ function switchView(next) {
   const tookAt = window.scrollY;
   saveView(ctx.fid, next);
   ctx.view = next;
+  track('view_switch', { to: next === LIST ? 'list' : 'board' });
   for (const b of document.querySelectorAll('.sort-pop .view-row [data-view]')) {
     b.setAttribute('aria-selected', b.dataset.view === next ? 'true' : 'false');
   }
@@ -1035,7 +1039,7 @@ function handleTap(artistName, el = null, occ = null, hand = null) {
   }
   if (!ctx.meName) { askToJoin(artistName); return; }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  setLevel(artistName, model.nextTapLevel(current));
+  setLevel(artistName, model.nextTapLevel(current), { via: h === 'keyboard' ? 'key' : 'click', surface: surfaceOf(el) });
   // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
   // removing a must. it's not that destructive"): tapping again starts the
   // cycle over from the first bar.
@@ -1047,14 +1051,14 @@ function handleTap(artistName, el = null, occ = null, hand = null) {
 function stepPick(artistName, dir) {
   if (!ctx.meName) { askToJoin(artistName, { intent: dir > 0 ? 'pick' : 'less' }); return; }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  setLevel(artistName, Math.max(0, Math.min(4, current + (dir > 0 ? 1 : -1))));
+  setLevel(artistName, Math.max(0, Math.min(4, current + (dir > 0 ? 1 : -1))), { via: 'step' });
 }
 
 // The one write path for YOUR pick (the plan's §2.2, the part the tap change
 // needs): the tap cycle, − / + and the pick a guest's tap promised all land
 // here, behind the migration gate, in one order. Bulk paste and bring write
 // for a named person in a batch, and keep their own paths (REVIEW-1 #1).
-function setLevel(artistName, level) {
+function setLevel(artistName, level, how = null) {
   if (ctx.migrationPending) {
     showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
     return false;
@@ -1066,6 +1070,7 @@ function setLevel(artistName, level) {
   refreshCtx();
   refreshArtistCards(artistName);
   sync.scheduleSync();
+  if (how) track('pick', { from: current, to: level, via: how.via, surface: how.surface });
   return true;
 }
 
@@ -1164,6 +1169,7 @@ function openPickAs() {
     },
   });
   shelfUp = shelf;
+  shelfJoins = false; // Pick as someone else: not a join, so never a join_shelf step
   try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
 }
 
@@ -1186,6 +1192,7 @@ function shelfOpener(artist = null) {
 // screen (joinAnswers). A history entry of its own, so the system Back closes
 // it rather than leaving the app; the shelf's own ways out pop that entry.
 function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace = false } = {}) {
+  track('join_shelf', { step: 'open' });
   const doc = state.crewDoc || {};
   const people = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed))
     .map(([name, p]) => { const ci = colorIndexOf(name, p); return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, false) }; });
@@ -1200,17 +1207,19 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace 
   });
   shelf = showJoinShelf({
     artist, intent, people, offline, ctx, opener,
-    onLook: () => { pendingJoin = null; popShelfEntry(); planAfterShelf(); },
+    onLook: () => { track('join_shelf', { step: 'look' }); pendingJoin = null; popShelfEntry(); planAfterShelf(); },
     onClaim: (name) => answers.claimName(name),
     onAnswer: (typed) => answers.answer(typed),
   });
   shelfUp = shelf;
+  shelfJoins = true;
   try {
     if (replace) history.replaceState({ joinShelf: true }, '', location.href); // the notes shelf's entry becomes this one
     else history.pushState({ joinShelf: true }, '', location.href);
   } catch { /* no history: Back leaves, as before */ }
 }
 let shelfUp = null; // the join shelf's handle while it is up
+let shelfJoins = false; // it is a guest's join shelf (usage: join_shelf), not Pick as someone else
 // ONE close decision for the shelf, whoever asks — Escape, the system Back,
 // or its own ways out (review of 963e599: Escape mid-join took the shelf down
 // and the late answer joined Ana behind the person's back; Escape left the
@@ -1231,6 +1240,7 @@ function leaveShelf(via = 'escape') {
   }
   shelf.leave();
   pendingJoin = null;
+  if (shelfJoins) track('join_shelf', { step: 'look' });
   if (via !== 'back') popShelfEntry();
   planAfterShelf();
   return true;
@@ -1256,6 +1266,7 @@ function dropShelfEntry() {
 function finishJoin(token, claim, name) {
   if (!claim || claim.token !== token || state.getCrewToken() !== token || ctx.meName !== name) return;
   if (claim.fid !== ctx.fid) return;
+  track('join_shelf', { step: 'joined' });
   restorePlace(claim.place);
   if (!claim.artist) return;
   waitingPick = { token, fid: claim.fid, artist: claim.artist, name };
@@ -1279,7 +1290,7 @@ function applyWaitingPick() {
   if (((ctx.picks[w.artist] || {})[ctx.meName] || 0) > 0) return;
   // The data path, never the routing: after a finger's tap the routing would
   // open a shelf instead of making the pick that was promised.
-  setLevel(w.artist, 1);
+  setLevel(w.artist, 1, { via: 'waiting' });
 }
 
 // "Look around" (the join screen's way back): onto the wall as a guest. From the wall (a tap, the +,
@@ -1655,7 +1666,8 @@ function planAnswer(date) {
     // On a stand-in there is no link to send: the words are about a festival
     // the crew never chose, and a plan link opens the one it did (v107).
     linkOf: state.isShownForNow() ? null : (id) => planLink(((plan.nights || []).find((n) => n.id === id) || peek.night).iso),
-    opens: plan.group ? opensForHighlight() : opensLine(),
+    // And with no link, the foot promises nothing a link would open on.
+    opens: state.isShownForNow() ? '' : plan.group ? opensForHighlight() : opensLine(),
     // The Share's first step: this paint again at the tap's minute, so the
     // words come from the rows on screen (plan-shelf.js sharePlan).
     repaint: () => paintPlan(),
@@ -1738,7 +1750,7 @@ function openPlanForLink(answer) {
     const later = !!landed && night > landed && answer.plan.nights.find((n) => n.iso === night);
     const still = () => $('screen-app').style.display !== 'none' && !planIsOpen()
       && state.getCrewToken() === token && state.activeFestivalId === fest && planNight() === landed;
-    if ((landed === night || later) && !planIsOpen()) afterArrival(() => { if (still()) openPlan({ night: later ? later.id : null }); });
+    if ((landed === night || later) && !planIsOpen()) afterArrival(() => { if (still()) openPlan({ night: later ? later.id : null, via: 'link' }); });
     return;
   }
   const waiting = !state.fest() || ctx.query || $('screen-app').querySelector(':scope > .bring-offer');
@@ -1921,7 +1933,10 @@ function jumpToNow() {
   const root = $('wall-root');
   const geo = pageGeo(root);
   const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
-  if (!plan || !plan.stops.length) { nowCycle = null; paintPlan(); return; }
+  if (!plan || !plan.stops.length) {
+    track('now_tap', { stops: 0, highlight: !!(ctx.filterPeople && ctx.filterPeople.length), landed: 'none' });
+    nowCycle = null; paintPlan(); return;
+  }
   const { best } = plan;
   // Which stop, led by what, landing where: wall.js nowStep. A stop lands the
   // same way every time it is reached — first tap, next tap or wrap — at its
@@ -1929,6 +1944,7 @@ function jumpToNow() {
   // put the first tap and the wrap a few hundred px apart when the answer was
   // not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
   const { fresh, stop, lead, target } = nowStep(plan, nowCycle, geo);
+  track('now_tap', { stops: plan.stops.length, highlight: !!(ctx.filterPeople && ctx.filterPeople.length), landed: lead && lead.card ? 'card' : lead && lead.line ? 'line' : 'none' });
   const quiet = fresh && best.match === false ? nothingOnFor(ctx.filterPeople || []) : null;
   if (quiet) showToast($('toast-root'), quiet);
   // Said as well as shown (Codex, 2026-09-24: NOW announced nothing — the
@@ -2129,6 +2145,13 @@ function maybeOpenOnDay() {
   // scrollToNowLine).
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) {
     rememberScrolled(key);
+    // The live landing is a day view too — the one that matters most at a
+    // festival (the Claude review of v108: it returned before counting).
+    try {
+      const iso = festivalClock(new Date(), tz).iso;
+      const on = dayNavOf(state.fest(), ctx).find((d) => (d.dates || []).includes(iso));
+      if (on) trackDay(on, 'boot');
+    } catch { /* a count is never worth a landing */ }
     landAgainWithFonts(() => scrollToNowLine($('wall-root'), { timeZone: tz }));
     return;
   }
@@ -2142,6 +2165,7 @@ function maybeOpenOnDay() {
   if (!block) return;
   landOnDay(block);
   rememberScrolled(key);
+  trackDay(day, 'boot');
   landAgainWithFonts(() => { const again = document.querySelector(anchor); if (again) landOnDay(again); });
 }
 
@@ -2290,6 +2314,7 @@ function renderDayNav() {
   for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
     const at = day.anchor || day.key;
     const jump = () => {
+      trackDay(day, 'tap');
       settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
       settleView();
       settlePast();
@@ -2607,6 +2632,7 @@ function shareLinkRow() {
   // other owner of the page's busy mark letting go can drop the guard.
   const done = () => { if (openMenu && openMenu.pop.contains(row)) closeShowMenu(); };
   row.addEventListener('click', async () => {
+    track('share', { kind: 'crew_link' });
     const link = inviteLink();
     stampInviteFest();
     const letGo = holdForShare('crew');
@@ -2708,7 +2734,7 @@ const highlightOpenIn = (wrap) => !!(openMenu && openMenu.wrap === wrap);
 // Space, a screen reader) takes the focus into the plan with it.
 function peopleMenuPlanRow() {
   const r = menuActionRow({ label: PEOPLE_WORDS.plan, chev: true, act: 'plan', cls: 'plan' });
-  r.b.addEventListener('click', (e) => { closeShowMenu(); openPlan({ focus: e.detail === 0 }); });
+  r.b.addEventListener('click', (e) => { closeShowMenu(); openPlan({ focus: e.detail === 0, via: 'menu' }); });
   return r;
 }
 
@@ -3069,15 +3095,89 @@ function showNewBuildStrip() {
   refresh.className = 'btn-tonal';
   refresh.style.cssText = 'font-size: 11.5px; padding: 7px 13px; flex: none;';
   refresh.textContent = 'Refresh';
-  refresh.addEventListener('click', () => location.reload());
+  refresh.addEventListener('click', () => { track('new_build', { action: 'strip_tapped' }); location.reload(); });
   bar.append(msg, refresh);
   insertStrip(bar);
+  track('new_build', { action: 'strip_shown' });
+}
+
+// ---- usage (v108): how the app is used, never what is in it -----------------------
+// Every event and value is on errlog.js's allowlist (USAGE); track() drops the
+// rest and never throws. These helpers only decide WHICH word to send.
+// app_open: a boot's first screen names the path the open took.
+let openPending = null; // { pageLoad, warm, offline } from boot() until its first screen
+let festViewPending = false; // boot() arms one fest_view; the wall's first paint spends it
+let wallFirst = false; // the page's first screen was the wall (first_paint is about that, nothing else)
+const OPEN_PATHS = { 'screen-landing': 'landing', 'screen-join': 'join', 'screen-badlink': 'badlink', 'screen-create': 'create' };
+function noteOpen(screen) {
+  const o = openPending;
+  if (!o) return;
+  openPending = null;
+  if (o.pageLoad) wallFirst = screen === 'screen-app';
+  const path = screen === 'screen-app' ? (o.warm ? 'warm' : 'cold')
+    : screen === 'screen-error' ? (o.offline ? 'offline' : 'fatal')
+      : OPEN_PATHS[screen];
+  if (path) track('app_open', { path, page_load: o.pageLoad, build_changed: buildChanged() });
+  // How often an OPEN lands on Your crews, and with how many crews (the
+  // find-your-crew question, 2026-10-01) — never a trip back to it from
+  // Settings, Create or an error screen (Copilot's review of v108).
+  if (path === 'landing') {
+    let crews;
+    try { crews = crew.knownCrews().length; } catch { crews = undefined; }
+    track('landing_view', { crews, context: standaloneApp() ? 'standalone' : 'browser' });
+  }
+}
+// Did this phone open a different build last time? Read once a page load;
+// the store is a convenience, so a blocked one just says no.
+let buildChangedMemo = null;
+function buildChanged() {
+  if (buildChangedMemo !== null) return buildChangedMemo;
+  let now = null;
+  let last = null;
+  try { now = document.querySelector('meta[name="fn-build"]').getAttribute('content'); } catch { now = null; }
+  try { last = localStorage.getItem('fn_last_build_v1'); } catch { last = null; }
+  try { if (now) localStorage.setItem('fn_last_build_v1', now); } catch { /* a convenience */ }
+  buildChangedMemo = !!(now && last && last !== now);
+  return buildChangedMemo;
+}
+// first_paint: the first wall this page painted, once.
+let paintedOnce = false;
+function noteFirstPaint(warm) {
+  if (paintedOnce) return;
+  paintedOnce = true;
+  // A wall reached from Your crews, a join or Create is minutes of a person
+  // in between, not load time (the Claude review of v108).
+  if (!wallFirst) return;
+  let nav = null;
+  let now;
+  try { nav = performance.getEntriesByType('navigation')[0] || null; } catch { nav = null; }
+  try { now = performance.now(); } catch { now = undefined; }
+  track('first_paint', { ms_to_wall: now, nav_ms: nav ? nav.responseEnd : undefined, path: warm ? 'warm' : 'cold' });
+}
+function standaloneApp() {
+  try { if (window.matchMedia('(display-mode: standalone)').matches) return true; } catch { /* no media queries */ }
+  try { return navigator.standalone === true; } catch { return false; }
+}
+// day_view: a day tab tapped, or the open landing on a day.
+function trackDay(day, via) {
+  let today = null;
+  try { today = festivalClock(new Date(), (state.fest() || {}).timezone || null).iso; } catch { today = null; }
+  track('day_view', { via, day_kind: day.dated ? 'dated' : day.grid ? 'grid' : 'stack', is_today: !!today && (day.dates || []).includes(today) });
+}
+// pick: where the card a pick came from lives.
+function surfaceOf(el) {
+  try {
+    if (!el) return undefined;
+    if (el.closest('#zoom-layer')) return 'zoom';
+    return el.classList.contains('row') ? 'row' : 'card';
+  } catch { return undefined; }
 }
 
 // ---- screens ----------------------------------------------------------------------
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
+  noteOpen(screen);
   if (screen !== 'screen-error') { stopOfflineRetry(); offlineTries = 0; offlineDoc = null; offlineUnshown = null; } // any other screen: past it
   // The Show menu belongs to the wall's screen, and goes with it: left open,
   // it came back up over the wall the next time that screen showed. An open
@@ -3580,6 +3680,7 @@ function openInvite({ moment = false } = {}) {
     shareBtn.className = 'btn-tonal inv-share';
     shareBtn.textContent = INVITE_WORDS.share;
     shareBtn.addEventListener('click', async () => {
+      track('share', { kind: 'invite' });
       try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText(state.festivalNameForLinks()), url: link }); }
       catch { /* dismissed — the visible link is the fallback */ }
     });
@@ -3671,6 +3772,7 @@ function openInvite({ moment = false } = {}) {
       shareBtn.className = 'btn-tonal inv-share';
       shareBtn.textContent = `Share ${canonical}’s link`;
       shareBtn.addEventListener('click', async () => {
+        track('share', { kind: 'member_link' });
         try { await navigator.share({ title: 'Festival Navigator', url: theirs }); }
         catch { /* dismissed — the visible link is the fallback */ }
       });
@@ -3917,6 +4019,7 @@ function openSettings() {
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
+      track('fest_view', { via: 'switch' });
       // A festival opened here is a new wall (Phase 1, Sol's review of v97):
       // its past is judged now, nothing opened on the last one stays open, and
       // the last one's view switch leaves no place behind. Only a switch that
@@ -4147,6 +4250,7 @@ function renderLanding() {
     copyBtn.style.cssText = 'font-size: 12px; padding: 9px 14px; flex: none;';
     copyBtn.textContent = 'My link';
     copyBtn.addEventListener('click', async () => {
+      track('share', { kind: 'my_link' });
       try {
         await navigator.clipboard.writeText(crew.meLink());
         copyBtn.textContent = 'Copied ✓';
@@ -4721,6 +4825,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId)
     || (crew.me(token) ? null : guestFestOf(doc))
     || null;
+  const festByLink = !!pendingFestHint;
   pendingFestHint = null;
   state.activateCrew(token, doc, festHint, { festival: warm ? warm.fid : null });
   // Backfill (audit re-run finding): crews older than the fix never got the
@@ -4831,6 +4936,13 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   renderPersonChips();
   renderYou();
   repaintWall();
+  noteFirstPaint(!!warm);
+  // Once per boot (and per switch, in Settings): a join, a claim or Create
+  // coming back through here is the same festival still on screen.
+  if (festViewPending) {
+    festViewPending = false;
+    track('fest_view', { via: state.isShownForNow() ? 'stand_in' : festByLink ? 'link' : 'boot' });
+  }
   maybeOpenOnDay();
   startClock();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
@@ -4913,16 +5025,20 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
 // into activation as it is (enterApp → activateCrew's `festival`): the live
 // catalog can land while this is still reading the cache, and nothing after
 // this point may re-decide the festival on it (Codex round 4, 2026-09-23).
+let warmMiss = null; // why the last canOpenWarm said no (usage: warm_open)
 async function canOpenWarm(token) {
-  if (!crew.me(token) || !state.cachedDoc(token)) return null;
+  warmMiss = null;
+  if (!crew.me(token)) { warmMiss = 'no_member'; return null; }
+  if (!state.cachedDoc(token)) { warmMiss = 'no_cached_doc'; return null; }
   const saved = getLS(state.LS.fest(token));
-  if (!saved) return null; // no saved choice: which wall was "left" is not known
-  if (!(await festivalIndexFromCache())) return null;
+  if (!saved) { warmMiss = 'no_saved_fest'; return null; } // no saved choice: which wall was "left" is not known
+  if (!(await festivalIndexFromCache())) { warmMiss = 'no_cached_catalog'; return null; }
   const listed = FESTIVAL_INDEX.some((f) => f.id === saved && !f.custom);
   // A crew's own festival: the locally stored list IS its file.
   const fest = listed
     ? await festivalFromCache(saved)
     : cachedCustomFestivals(token).find((f) => f && f.id === saved);
+  if (!fest) warmMiss = 'no_cached_fest_file';
   return fest ? { fid: saved, fest } : null;
 }
 
@@ -5023,7 +5139,9 @@ function renderBadLink(token, { gone, malformed }) {
 const FATAL_WORDS = 'The app hit an error while loading. Your picks are safe on this device.';
 function renderFatal({ offline = null } = {}) {
   try {
+    if (openPending && offline) openPending.offline = true;
     show('screen-error');
+    if (offline && !offlineTries) track('calm_screen', { step: 'shown' });
     document.title = 'Festival Navigator';
     // The buttons first: if anything below throws, the last-resort screen
     // still has working buttons.
@@ -5089,6 +5207,7 @@ function startOfflineRetry(token, fid = null) {
     stopOfflineRetry();
     const screen = $('screen-error');
     if (!screen || screen.style.display === 'none') return;
+    track('calm_screen', { step: 'retried' });
     // A later boot does not resume the active crew on a bare URL, so name it,
     // with the festival a first visit's link asked for (its activation never
     // ran to save it). A link already naming this crew stays as it is: its
@@ -5125,6 +5244,8 @@ export async function boot() {
   const current = () => gen === bootGeneration;
   const isFirst = firstBoot;
   firstBoot = false;
+  openPending = { pageLoad: isFirst, warm: false, offline: false };
+  festViewPending = true;
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
@@ -5225,8 +5346,11 @@ export async function boot() {
     // were already here. Anything short of that exact wall takes the path
     // below and waits, as it always did.
     const admitted = await canOpenWarm(token);
+    // Only a boot that is still the page's says how its open went.
+    if (current()) track('warm_open', admitted ? { result: 'hit' } : { result: 'miss', miss_reason: warmMiss || undefined });
     if (admitted) {
       if (!current()) return;
+      if (openPending) openPending.warm = true;
       await enterApp(token, state.cachedDoc(token), current, Promise.resolve(cachedCustomFestivals(token)), { warm: admitted });
       if (current()) freshenFromNetwork(token, catalog, current);
       return;
@@ -5492,7 +5616,7 @@ export function init() {
   window.addEventListener('popstate', () => closeShowMenu({ instant: true }));
   window.addEventListener('pagehide', () => { closeShowMenu({ instant: true }); dropPlan(); dropShares(); });
   $('fest-list-btn').addEventListener('click', goToFestList);
-  $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
+  $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); track('notes_open', { target: 'all' }); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   $('create-back-2').addEventListener('click', () => renderCreate());
