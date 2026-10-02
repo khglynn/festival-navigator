@@ -264,7 +264,13 @@ export function parseStack(stack, known) {
 // both apps the same way (slack-alert-design.md §5). Versions are MAJOR only.
 // `engine` is ours: every browser on an iPhone is WebKit underneath, which is
 // what a WebKit-only bug needs to know.
+let deviceFacts = null; // the user agent doesn't change within a page load
 function device() {
+  if (deviceFacts) return deviceFacts;
+  deviceFacts = readDevice();
+  return deviceFacts;
+}
+function readDevice() {
   let ua = '';
   try { ua = String(window.navigator.userAgent || ''); } catch { ua = ''; }
   let touch = 0;
@@ -582,6 +588,8 @@ export function pendingReports() {
 export function clearReports() {
   memQueue = [];
   memHolds = false;
+  usageBuf = [];
+  if (usageTimer) { clearTimeout(usageTimer); usageTimer = null; }
   lsRemove(QUEUE_KEY);
 }
 
@@ -619,9 +627,9 @@ function retarget(ids) {
   seen.forEach((v) => { if (v.target && ids.indexOf(v.target) >= 0) v.target = null; });
 }
 
-// The one place anything is queued. Errors today; allowlisted usage events
-// (`track(name, props)`, DESIGN §2b) arrive through here later with
-// kind 'usage', the same base properties and the same bounds.
+// The one place an error is queued. Allowlisted usage events (`track`,
+// below) are written in batches by writeUsage, with kind 'usage', the same
+// base properties and the same bounds.
 function enqueue(kind, event, properties) {
   const id = uuid();
   if (properties.build == null) awaitingBuild.push(id);
@@ -830,6 +838,162 @@ export function record(kind, err, at) {
   } catch { /* a journal must never be the thing that throws */ }
 }
 
+// ---- usage (v108) ----------------------------------------------------------------
+// track(name, props): how the app is used, never what is in it (DESIGN §2b;
+// Kevin, 2026-10-01: "do it now"). Only the events and values below can
+// leave: an unknown event, an unknown property, or a value outside its shape
+// is dropped and counted — never sent, never coerced. There is no free text
+// here at all: every value is a boolean, a bounded whole number, a rounded
+// duration, or one word from its own list. The same switch as crash reports
+// (Settings: "Send crash reports and usage to Kevin"); the same queue, which
+// already sends usage after errors and evicts it first. track() never throws
+// and never waits: a counter must never be the thing that breaks a pick.
+const B = 'b';   // true / false
+const N = 'n';   // a whole number, 0..999
+const MS = 'ms'; // a duration: rounded to 50 ms, at most 10 minutes
+const PATHS = ['warm', 'cold', 'landing', 'join', 'badlink', 'create', 'fatal', 'offline'];
+const DAY_KINDS = ['grid', 'stack', 'dated'];
+const NOTE_TARGETS = ['fest', 'date', 'section', 'artist', 'all'];
+const SYNC_WORDS = ['online', 'syncing', 'offline', 'error', 'blocked'];
+export const USAGE = {
+  app_open: { path: PATHS, page_load: B, build_changed: B }, // page_load false: a retry or crew switch in an open page
+  warm_open: { result: ['hit', 'miss'], miss_reason: ['no_member', 'no_cached_doc', 'no_saved_fest', 'no_cached_catalog', 'no_cached_fest_file'] },
+  first_paint: { ms_to_wall: MS, nav_ms: MS, path: ['warm', 'cold'] },
+  fest_view: { via: ['boot', 'link', 'switch', 'stand_in'] },
+  day_view: { via: ['tap', 'boot'], day_kind: DAY_KINDS, is_today: B },
+  view_switch: { to: ['board', 'list'] },
+  pick: { from: N, to: N, via: ['click', 'key', 'step', 'waiting'], surface: ['card', 'row', 'zoom'] },
+  now_tap: { stops: N, highlight: B, landed: ['line', 'card', 'none'] },
+  zoom_open: { route: ['mouse', 'keyboard'] },
+  zoom_close: { why: ['escape', 'away', 'scroll', 'door', 'other'], dwell_ms: MS },
+  notes_open: { target: NOTE_TARGETS },
+  note_write: { target: NOTE_TARGETS, kind: ['new', 'reply', 'edit', 'delete'], len: ['short', 'medium', 'long'] },
+  plan_open: { via: ['peek', 'link', 'menu'] },
+  spotify: { action: ['connect_start', 'scan_start', 'scan_done', 'scan_fail', 'playlist_make', 'access_request'] },
+  sync_state: { from: SYNC_WORDS, to: SYNC_WORDS, ms_in_from: MS },
+  new_build: { action: ['strip_shown', 'strip_tapped', 'update_checked'] },
+  share: { kind: ['invite', 'member_link', 'copy_link', 'my_link', 'export', 'day_image', 'plan', 'crew_link'] },
+  setting: { setting: ['low_power', 'stay_offline'], on: B },
+  join_shelf: { step: ['open', 'look', 'joined'] },
+  calm_screen: { step: ['shown', 'retried'] },
+  landing_view: { crews: N, context: ['standalone', 'browser'] },
+  session_end: { duration_s: N, picks: N, zooms: N, now_taps: N, notes: N, shares: N, dropped: N },
+};
+const USAGE_CAP = 400;        // usage events one page load may queue
+const USAGE_EVENT_CAP = 60;   // any one event, per page load (hovers zoom a lot)
+const USAGE_WRITE_MS = 2000;  // taps gather in memory and reach storage together
+const USAGE_SEND_MS = 2 * 60 * 1000; // a queue of usage alone goes at most this often
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+function usageValue(shape, v) {
+  if (shape === B) return typeof v === 'boolean' ? v : undefined;
+  if (shape === N || shape === MS) {
+    if (typeof v !== 'number' || !isFinite(v) || v < 0) return undefined;
+    return shape === N ? Math.min(Math.round(v), 999) : Math.min(Math.round(v / 50) * 50, 600000);
+  }
+  if (Array.isArray(shape)) return typeof v === 'string' && shape.indexOf(v) >= 0 ? v : undefined;
+  return undefined;
+}
+
+// The error report's own base, minus what usage has no use for.
+// What every usage event carries, NAMED — never "the error base minus a few":
+// a field someone adds to baseProps for a crash report reaches usage only by
+// being written here too. (The name in the crew rides by Kevin's decision of
+// 2026-09-24, and Settings says so.)
+export const USAGE_BASE = ['distinct_id', '$process_person_profile', '$geoip_disable', '$lib', 'build', 'stamp', 'sw',
+  'session', 'host', 'screen', 'online', 'standalone', '$device', '$device_type', '$os', '$os_version',
+  '$browser', '$browser_version', 'engine', 'viewport', 'reduced_motion', 'low_power', 'fest', 'pid', 'member_name'];
+function usageBase() {
+  const b = baseProps();
+  const p = {};
+  for (let i = 0; i < USAGE_BASE.length; i++) if (has(b, USAGE_BASE[i])) p[USAGE_BASE[i]] = b[USAGE_BASE[i]];
+  return p;
+}
+
+let usageCount = 0;
+let usageDropped = 0;
+const usageByEvent = Object.create(null);
+let usageBuf = [];
+let usageTimer = null;
+// A fresh page counts as just sent: its first usage-only send waits two minutes
+// too, so an open's first sync never shares a festival field's network with a
+// tap count, and a short open leaves its usage to the hide beacon instead.
+let lastSentAt = Date.now();
+// Counts for session_end: kept even when the detail was capped away.
+const tallies = Object.create(null);
+let visibleSince = Date.now();
+let droppedBefore = 0; // usageDropped when this stretch began
+
+export function track(name, props) {
+  try {
+    if (typeof name !== 'string' || !has(USAGE, name)) { usageDropped++; return; }
+    tallies[name] = (tallies[name] || 0) + 1;
+    if (!reporting()) return;
+    const n = usageByEvent[name] || 0;
+    if (usageCount >= USAGE_CAP || n >= USAGE_EVENT_CAP) { usageDropped++; return; }
+    usageByEvent[name] = n + 1;
+    usageCount++;
+    const spec = USAGE[name];
+    const p = usageBase();
+    if (props && typeof props === 'object') {
+      for (const k in props) {
+        if (!has(props, k) || props[k] === undefined) continue; // not given: not a refusal
+        const v = has(spec, k) ? usageValue(spec[k], props[k]) : undefined;
+        if (v === undefined) usageDropped++;
+        else p[k] = v;
+      }
+    }
+    usageBuf.push({ t: new Date().toISOString(), event: name, p: p });
+    if (!usageTimer) usageTimer = setTimeout(writeUsage, USAGE_WRITE_MS);
+  } catch { /* a counter must never be the thing that throws */ }
+}
+
+// The gathered taps go to the queue in one write.
+function writeUsage() {
+  if (usageTimer) { clearTimeout(usageTimer); usageTimer = null; }
+  if (!usageBuf.length) return;
+  const items = usageBuf;
+  usageBuf = [];
+  try {
+    if (!reporting()) return;
+    askBuild();
+    withQueue((q) => {
+      for (let i = 0; i < items.length; i++) {
+        const id = uuid();
+        if (items[i].p.build == null) awaitingBuild.push(id);
+        q.push({ id: id, k: 'usage', t: items[i].t, n: 1, s: SESSION, e: { event: items[i].event, properties: items[i].p } });
+      }
+    });
+  } catch { /* best-effort */ }
+}
+
+// The page goes hidden: what this stretch of looking held, in counts. A
+// stretch with nothing in it sends nothing.
+function endStretch() {
+  try {
+    const secs = Math.round((Date.now() - visibleSince) / 1000);
+    const c = (k) => tallies[k] || 0;
+    const dropped = usageDropped - droppedBefore;
+    const any = c('pick') + c('zoom_open') + c('now_tap') + c('notes_open') + c('share') + dropped;
+    if (secs >= 2 || any) {
+      track('session_end', {
+        duration_s: secs, picks: c('pick'), zooms: c('zoom_open'), now_taps: c('now_tap'),
+        notes: c('notes_open'), shares: c('share'), dropped: dropped,
+      });
+    }
+    for (const k in tallies) delete tallies[k];
+    droppedBefore = usageDropped;
+    writeUsage();
+  } catch { /* best-effort */ }
+}
+
+// Diagnostics: this page's usage so far, by event — counts only.
+export function usageCounts() {
+  const out = {};
+  for (const k in usageByEvent) out[k] = usageByEvent[k];
+  return { queued: usageCount, dropped: usageDropped, byEvent: out };
+}
+
 // ---- sending ------------------------------------------------------------------------
 function pick(q, budget, skipBeaconed) {
   const chosen = [];
@@ -886,8 +1050,13 @@ export async function flushReports() {
     await buildReady();
     if (!maySend()) return false;
     applyFolds();
+    writeUsage();
     const key = reportKey();
-    const chosen = pick(readQueue(), FETCH_BYTES, false);
+    const waiting = readQueue();
+    // Usage alone waits its turn: a radio woken every poll for a tap count is
+    // a battery cost at a festival. An error goes at once and takes usage along.
+    if (!waiting.some((x) => x.k !== 'usage') && Date.now() - lastSentAt < USAGE_SEND_MS) return false;
+    const chosen = pick(waiting, FETCH_BYTES, false);
     const poisoned = chosen.filter((c) => !c.ev).map((c) => c.id);
     const events = chosen.filter((c) => c.ev).map((c) => c.ev);
     if (poisoned.length) drop(poisoned);
@@ -909,7 +1078,7 @@ export async function flushReports() {
       });
     } catch { res = null; } finally { if (timer) clearTimeout(timer); }
     if (!res) { backoff(); return false; }
-    if (res.ok) { failures = 0; drop(ids); return true; }
+    if (res.ok) { failures = 0; lastSentAt = Date.now(); drop(ids); return true; }
     // Refused for good — a malformed batch, no key, no door on this host
     // (401/403/404): the same bytes get the same answer every time, and
     // retrying them would stall everything behind them. A 408, a 429 or a
@@ -939,6 +1108,7 @@ export function beaconReports() {
     const nav = window.navigator;
     if (!nav || typeof nav.sendBeacon !== 'function') return false;
     applyFolds();
+    writeUsage();
     const key = reportKey();
     const chosen = pick(readQueue(), BEACON_BYTES, true).filter((c) => c.ev);
     if (!chosen.length) return false;
@@ -990,7 +1160,10 @@ export function hookGlobalErrors() {
     // from the document to the window, so a window listener runs after every
     // document listener whenever it was added. pagehide fires at the window
     // itself, so that one is wired at `load`, after app.js has wired its own.
-    window.addEventListener('visibilitychange', () => { if (window.document.visibilityState === 'hidden') beaconReports(); });
+    window.addEventListener('visibilitychange', () => {
+      if (window.document.visibilityState === 'hidden') { endStretch(); beaconReports(); }
+      else visibleSince = Date.now();
+    });
     const wirePagehide = () => { window.addEventListener('pagehide', () => { beaconReports(); }); };
     if (window.document.readyState === 'complete') wirePagehide();
     else window.addEventListener('load', wirePagehide, { once: true });
@@ -1055,6 +1228,7 @@ export async function diagnostics() {
     reports: reportKey() ? (reportsOn() ? 'on' : 'off') : 'not set up',
     reportsWaiting: pendingReports(),
     reportsHeldBack: sessionDropped,
+    usage: usageCounts(), // this page's usage, by event — counts only (v108)
     at: new Date().toISOString(),
     errors: recent(),
   });

@@ -8,6 +8,7 @@ import * as state from './state.js';
 import * as crewStore from './crew.js';
 import { loadJSON as loadJSONShared, saveLS, removeLS } from './util.js';
 import { loadFestival, FESTIVALS } from './festivals.js';
+import { track } from './errlog.js';
 
 const LS_AUTH = 'fn_spotify_auth_v1';       // {clientId, access_token, refresh_token, expires_at}
 const LS_LIBMAP = 'fn_spotify_libmap_v1';   // {clientId, userId, fetchedAt, artists: {lowerName: {songs, followed}}}
@@ -79,6 +80,7 @@ const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 export async function connect() {
+  track('spotify', { action: 'connect_start' });
   const clientId = state.spotifyClientId();
   if (!clientId) throw new Error('This crew has no Spotify Client ID set yet.');
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
@@ -293,7 +295,19 @@ const api = (path) => call(path);
 // `statsFor` records crew-visible spotifyStats under that member name — the
 // 07-12 rebuild dropped this write and nobody's connection was visible to
 // their crew (verified live 2026-07-13).
-export async function scanLibrary(onProgress, { festNames = null } = {}) {
+// Usage (v108): the scan's start and how it ended — never what it found.
+export async function scanLibrary(onProgress, opts = {}) {
+  track('spotify', { action: 'scan_start' });
+  try {
+    const out = await scanLibraryOnce(onProgress, opts);
+    track('spotify', { action: 'scan_done' });
+    return out;
+  } catch (e) {
+    track('spotify', { action: 'scan_fail' });
+    throw e;
+  }
+}
+async function scanLibraryOnce(onProgress, { festNames = null } = {}) {
   const me = await api('/me');
   const artists = {}; // lowerName -> {songs, followed}
   // Liked-track URIs for FEST artists only (capped) — what lets a playlist
@@ -680,6 +694,7 @@ async function pushTracks(playlistId, uris) {
 // those — never mid-run — and the next Add new picks finishes it (Sol's
 // round 3 on v103).
 export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 3, collaborative = false, onProgress }) {
+  track('spotify', { action: 'playlist_make' });
   const { uris, found, misses, topless, unsearched, busy, byArtist } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
   if (!uris.length) {
     // Nothing came back at all. Spotify being busy (or down) is not the same
@@ -731,6 +746,7 @@ export function playlistArtistsFromPicks(picks, { me = null, skip = new Set() } 
 // computed against the crew doc's recorded artist list (not Spotify's items —
 // cheaper, and resilient to manual playlist edits).
 export async function addArtistsToPlaylist({ playlistId, artistNames, tracksPerArtist = 3, onProgress }) {
+  track('spotify', { action: 'playlist_make' });
   if (!artistNames.length) return { added: 0, misses: 0, found: [], unsearched: [], topless: [] };
   const { uris, found, misses, topless, unsearched } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
   if (!uris.length) return { added: 0, misses, found, unsearched, topless };

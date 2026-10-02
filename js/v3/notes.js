@@ -35,6 +35,7 @@ import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, handNow
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_SURFACE } from './motion.js';
 import { router } from './router.js';
 import { loadJSON, saveLS, getLS } from '../util.js';
+import { track } from '../errlog.js';
 
 // MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
 // STANDING, and four places are standable: the festival, a date, a section on
@@ -185,6 +186,14 @@ function avatarFor(name, size = 20, font = 8.5) {
 }
 
 // ---- write helpers (the tombstone model, NT-3) --------------------------------------
+// Usage (v108): which door and how long, in words from a list — never the note.
+function noteTarget(scope, target) {
+  return scope === 'day' ? (String(target || '').includes('|') ? 'section' : 'date') : scope;
+}
+function noteLen(text) {
+  const n = String(text || '').length;
+  return n < 40 ? 'short' : n < 200 ? 'medium' : 'long';
+}
 // Returns the new note's id so the caller can let it arrive (grow in) rather
 // than simply be there on the next repaint.
 function addNote(ctx, scope, target, text, re = null) {
@@ -193,6 +202,7 @@ function addNote(ctx, scope, target, text, re = null) {
   const note = re ? { author: ctx.meName, ts, text, re } : { author: ctx.meName, ts, text };
   const id = model.makeNoteId(ctx.meName, ts);
   state.recordNote(ctx.fid, scope, target, id, note);
+  track('note_write', { target: noteTarget(scope, target), kind: re ? 'reply' : 'new', len: noteLen(text) });
   return id;
 }
 
@@ -201,12 +211,14 @@ function editNote(ctx, scope, target, note, newText) {
   const next = { author: note.author, ts: note.ts, text: newText };
   if (note.re) next.re = note.re;
   state.recordNote(ctx.fid, scope, target, note.id, next);
+  track('note_write', { target: noteTarget(scope, target), kind: 'edit', len: noteLen(newText) });
 }
 
 function deleteNote(ctx, scope, target, note) {
   const gone = { author: note.author, ts: note.ts, text: '', deleted: true };
   if (note.re) gone.re = note.re;
   state.recordNote(ctx.fid, scope, target, note.id, gone);
+  track('note_write', { target: noteTarget(scope, target), kind: 'delete' });
 }
 
 // ---- the small motion vocabulary ----------------------------------------------------

@@ -36,6 +36,7 @@
 import { GROW_MS, OUT_MS, REFRESH_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { planDays, planHead, planText, rowsKey, stopKey, PLAN_NAME } from './plan-rows.js';
 import { measureFoot } from './foot.js';
+import { track } from '../errlog.js';
 
 const ID = 'plan';
 const OPEN_AT = 1 / 3;       // released past a third of the way, it opens (and short of two thirds, an open plan closes)
@@ -775,8 +776,9 @@ function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 // `night`: a later night the plan opens on (a Share's link for it, app.js
 // openPlanForLink — the plan-days build: a link opens on the day its words
 // were about). See glideTo.
-export function openPlan({ instant = false, focus = false, night = null } = {}) {
+export function openPlan({ instant = false, focus = false, night = null, via = 'peek' } = {}) {
   if (!el || mode === 'gone' || leaving) return;
+  if (mode !== 'open') track('plan_open', { via });
   settleTo(1, { instant });
   if (night) glideTo(night);
   if (focus) grab.focus({ preventScroll: true });
@@ -1071,6 +1073,7 @@ function motions() {
 // clock both read.
 async function sharePlan() {
   if (mode !== 'open' || !data) return;
+  track('share', { kind: 'plan' });
   if (data.repaint) {
     forced = true;
     try { data.repaint(); } finally { forced = false; }

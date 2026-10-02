@@ -12,7 +12,7 @@ import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
-import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild } from '../errlog.js';
+import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild, track } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, gearIcon, lineGlyph } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
@@ -142,6 +142,7 @@ function currentFestCard(ctx, actions) {
   const share = el('button', 'flex: 1; font-size: 12px; padding: 9px;', 'Share invite');
   share.className = 'btn-tonal';
   share.addEventListener('click', async () => {
+    track('share', { kind: 'invite' });
     // The invite carries the fest being shared (FLOW-1): &f= on the link for
     // this invite, meta.inviteFestId in the doc for links already out there.
     // Never a stand-in shown for this open (v107): the festival this phone means.
@@ -567,6 +568,7 @@ function crewSection(ctx, actions) {
       const mCopy = el('button', 'font-size: 11.5px; padding: 8px 13px; flex: none;', `Copy ${name}’s link`);
       mCopy.className = 'btn-tonal';
       mCopy.addEventListener('click', async () => {
+        track('share', { kind: 'member_link' });
         try { await navigator.clipboard.writeText(mLink); mCopy.textContent = 'Copied ✓'; setTimeout(() => { memberLinkHost.textContent = ''; }, 1500); }
         catch { mBox.select(); }
       });
@@ -607,6 +609,7 @@ function crewSection(ctx, actions) {
   const copyBtn = el('button', 'font-size: 11.5px; padding: 8px 13px; flex: none;', 'Copy');
   copyBtn.className = 'btn-tonal';
   copyBtn.addEventListener('click', async () => {
+    track('share', { kind: 'copy_link' });
     try { await navigator.clipboard.writeText(link); copyBtn.textContent = 'Copied ✓'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1800); }
     catch { linkBox.select(); }
   });
@@ -821,20 +824,22 @@ export function renderSettings(root, ctx, actions) {
   list.appendChild(linkRow('How it works', () => openSub('sub:how')));
   const s = appSettings();
   list.appendChild(toggleRow('Low power', 'no animation · sync every 5 min', s.lowPower, (on) => {
+    track('setting', { setting: 'low_power', on });
     saveAppSettings({ ...appSettings(), lowPower: on });
     actions.onLowPower(on);
   }));
   list.appendChild(toggleRow('Stay offline', 'stop sync attempts until I turn this off', s.stayOffline, (on) => {
+    track('setting', { setting: 'stay_offline', on });
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
-  // Crash reports (v88, Kevin 2026-09-24: on by default, the line beside it
-  // says what goes, name included). This phone's choice alone — it lives in
-  // this device's settings, never the crew doc. Off drops whatever was
-  // waiting, and nothing leaves after that. A build with no report key
-  // sends nothing, so it offers nothing to switch.
+  // Crash reports and usage (v88; usage since v108, Kevin 2026-10-01): on by
+  // default, the line beside it says what goes, name included. This phone's
+  // choice alone — it lives in this device's settings, never the crew doc.
+  // Off drops whatever was waiting, and nothing leaves after that. A build
+  // with no report key sends nothing, so it offers nothing to switch.
   if (reportKey()) {
-    list.appendChild(toggleRow('Send crash reports to Kevin', 'with your name and phone type · never notes or crew links', reportsOn(), (on) => {
+    list.appendChild(toggleRow('Send crash reports and usage to Kevin', 'with your name, phone type and what you tap · never notes or crew links', reportsOn(), (on) => {
       saveAppSettings({ ...appSettings(), crashReports: on });
       if (!on) clearReports();
     }));
@@ -1092,6 +1097,7 @@ export function updateRow(envOf = updateEnv) {
       return;
     }
     running = true;
+    track('new_build', { action: 'update_checked' });
     try { await checkForUpdate(env, show); } catch { show({ state: 'unreachable', page: last.page }); } finally { running = false; }
   });
   return row;
@@ -1183,6 +1189,7 @@ function requestAccessRow(rerenderDrill) {
     const email = input.value.trim();
     if (!email.includes('@')) { status.textContent = 'That doesn’t look like an email.'; return; }
     send.disabled = true;
+    track('spotify', { action: 'access_request' });
     try {
       const res = await fetch('/api/access', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },

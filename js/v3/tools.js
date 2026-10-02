@@ -7,6 +7,7 @@ import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
 import { loadFolded } from './filters.js';
 import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf } from './events.js';
 import { BY_TIME, sectionLayoutOf, timeBandsOf } from './events.js'; // the list by time (v94)
+import { track } from '../errlog.js';
 
 // The header's own gear (index.html, #gear-btn), for anywhere else Settings
 // is named: the show menu's Settings row and How it works' last row (v93). A
@@ -183,6 +184,7 @@ export function openExportLikes(host, ctx, onBack) {
   const copy = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Copy to clipboard');
   copy.className = 'btn-tonal';
   copy.addEventListener('click', async () => {
+    track('share', { kind: 'export' });
     try { await navigator.clipboard.writeText(ta.value); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy to clipboard'; }, 1500); }
     catch { ta.select(); }
   });
@@ -426,6 +428,7 @@ export function openDayImage(host, ctx, onBack) {
         a.download = `${slug(fest.name)}${day ? `-${slug(dayLabel)}` : ''}.png`;
         a.href = canvas.toDataURL('image/png');
         a.click();
+        track('share', { kind: 'day_image' });
         status.textContent = 'Saved — check your downloads or share sheet.';
       } catch (e) {
         status.textContent = String(e.message).includes('html2canvas')

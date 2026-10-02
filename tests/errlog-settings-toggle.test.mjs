@@ -1,4 +1,5 @@
-// "Send crash reports to Kevin" (v88, Kevin 2026-09-24): one toggle in
+// "Send crash reports and usage to Kevin" (v88 for crash reports, Kevin
+// 2026-09-24; usage joined in v108, Kevin 2026-10-01): one toggle in
 // Settings → App, on by default, with a line beside it saying what goes —
 // your name included. It is this phone's choice alone: it lives in the
 // device's own settings and never in the crew doc (AGENTS.md: mute/hide and
@@ -18,7 +19,7 @@ const { FID, INDEX, FEST, crewDoc, heldNetwork, cachesHolding, within, SCREENS }
 
 const TOKEN = 'reporttoggle_0123456789ab'; // a made-up crew, never a real link
 const KEY = 'phc_testkeyForFestivalNavigatorCI01';
-const LABEL = 'Send crash reports to Kevin';
+const LABEL = 'Send crash reports and usage to Kevin';
 
 globalThis.caches = cachesHolding({ '/data/festivals/index.json': INDEX, [`/data/festivals/${FID}.json`]: FEST });
 const net = heldNetwork();
@@ -37,6 +38,8 @@ test.after(() => { shell.close(); delete globalThis.caches; mock.timers.reset();
 const { $, dom } = shell;
 const errlog = await import('../js/errlog.js'); // the SAME instances app.js holds
 const state = await import('../js/state.js');
+// Errors waiting (usage, v108, shares the queue and lands two seconds after a boot).
+const errorsWaiting = () => JSON.parse(globalThis.localStorage.getItem('fn_telemetry_q_v1') || '[]').filter((x) => x.k === 'error').length;
 const settingsSaved = () => JSON.parse(globalThis.localStorage.getItem('fn_settings_v1') || '{}');
 const toggle = () => $('settings-root').querySelector(`button[role="switch"][aria-label="${LABEL}"]`);
 const openSettings = async () => { $('gear-btn').click(); await settle(10); };
@@ -45,7 +48,7 @@ const closeSettings = async () => { $('settings-root').querySelector('.back-btn'
 test('the toggle sits with the other device switches, on by default, saying what goes', async () => {
   assert.notEqual(await within(1500, () => SCREENS.filter((id) => $(id).style.display !== 'none').includes('screen-app')), null, 'the wall');
   errlog.record('error', new TypeError('before the switch'));
-  assert.equal(errlog.pendingReports(), 1);
+  assert.equal(errorsWaiting(), 1);
   await openSettings();
   const t = toggle();
   assert.ok(t, 'the toggle is there');
@@ -53,6 +56,7 @@ test('the toggle sits with the other device switches, on by default, saying what
   const row = t.closest('.list-row');
   assert.equal(row.querySelector('.row-title').textContent, LABEL);
   assert.match(row.querySelector('.row-sub').textContent, /your name/, 'the line beside it says the name goes');
+  assert.match(row.querySelector('.row-sub').textContent, /what you tap/, 'and that taps go too');
   assert.match(row.querySelector('.row-sub').textContent, /never notes or crew links/);
   const rows = [...$('settings-root').querySelectorAll('button[role="switch"]')].map((b) => b.getAttribute('aria-label'));
   assert.deepEqual(rows, ['Low power', 'Stay offline', LABEL], 'the same component as its neighbours, right after them');
@@ -79,7 +83,7 @@ test('back on, and it survives closing Settings', async () => {
   await openSettings();
   assert.equal(toggle().getAttribute('aria-checked'), 'true');
   errlog.record('error', new TypeError('on again'));
-  assert.equal(errlog.pendingReports(), 1);
+  assert.equal(errorsWaiting(), 1);
   assert.equal(net.calls.filter((c) => c.includes('/fn-i/')).length, 0, 'nothing was sent: no sync has succeeded');
 });
 
