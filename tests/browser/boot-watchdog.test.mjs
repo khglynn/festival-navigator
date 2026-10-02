@@ -159,7 +159,10 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       status: 200, contentType: 'text/javascript; charset=utf-8', body: 'export const stale = true;\n',
     }));
     try {
-      await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 10000 });
+      // The link error's own fast path (1.5 s), not the 10 s net — which
+      // shows Try again too, so Try again alone proves nothing (v107 review).
+      await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 6000 });
+      assert.match(await page.textContent('#error-msg'), /didn’t finish loading/);
       await page.waitForTimeout(1500);
       assert.equal(navs(), 1);
       assert.ok(await visible(page, 'error-retry'));

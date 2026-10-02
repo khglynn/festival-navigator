@@ -247,9 +247,15 @@ test('every track() call names an allowlisted event, and every allowlisted event
   for (const f of jsFiles(join(ROOT, 'js'))) {
     const raw = readFileSync(f, 'utf8');
     const isErrlog = f.endsWith(join('js', 'errlog.js'));
-    if (!isErrlog && !/import\s*\{[^}]*\btrack\b[^}]*\}\s*from\s*'[./]*errlog\.js'/.test(raw)) continue;
+    const imports = /import\s*\{[^}]*\btrack\b[^}]*\}\s*from\s*'[./]*errlog\.js'/.test(raw);
     // code only: comments and the definition say track( too
     const src = raw.replace(/^\s*\/\/.*$/gm, '').replace(/function track\(/g, '');
+    // A call with no import is a ReferenceError at the tap it rides on —
+    // track()'s own try never gets the chance to swallow it.
+    if (!isErrlog && !imports) {
+      assert.doesNotMatch(src, /(?<![\w.(])track\(\s*'/, `${f} calls track() without importing it`);
+      continue;
+    }
     // a call, not a word inside a string (Spotify's `fields=items(track(uri))`)
     for (const hit of src.matchAll(/(?<![\w.(])track\(\s*'([a-z_]+)'/g)) calls.add(hit[1]);
     assert.doesNotMatch(src, /(?<![\w.(])track\(\s*[^'\s)]/, `${f}: track() takes a literal event name`);

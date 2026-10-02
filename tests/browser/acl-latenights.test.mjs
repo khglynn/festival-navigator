@@ -197,8 +197,20 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
       const seen = [];
       for (const [label, at, want] of TONIGHT) {
         await tick(page, at);
-        const on = await lit(page);
-        const { tab, peekNow } = await nowShows(page, desk);
+        // A loaded runner paints the peek's NOW a beat after the ring (WebKit
+        // 390 on CI, run 36942832772: the 12:00 AM ring was out, the peek's tag
+        // not yet). Read until the page agrees with itself — never longer
+        // than 3 s — then judge what it settled on.
+        let on;
+        let tab;
+        let peekNow;
+        for (const until = Date.now() + 3000; ;) {
+          on = await lit(page);
+          ({ tab, peekNow } = await nowShows(page, desk));
+          const agreed = JSON.stringify(on) === JSON.stringify(want) && (tab || peekNow) === want.length > 0 && !(tab && peekNow);
+          if (agreed || Date.now() > until) break;
+          await sleep(50);
+        }
         seen.push(`${label}: ${on.join(', ') || '-'} | NOW ${tab ? 'tab' : peekNow ? 'peek' : 'none'}`);
         assert.deepEqual(on, want, seen.join('\n'));
         assert.equal(tab || peekNow, want.length > 0, `NOW is there only while something is on:\n${seen.join('\n')}`);

@@ -1663,7 +1663,8 @@ function planAnswer(date) {
     // On a stand-in there is no link to send: the words are about a festival
     // the crew never chose, and a plan link opens the one it did (v107).
     linkOf: state.isShownForNow() ? null : (id) => planLink(((plan.nights || []).find((n) => n.id === id) || peek.night).iso),
-    opens: plan.group ? opensForHighlight() : opensLine(),
+    // And with no link, the foot promises nothing a link would open on.
+    opens: state.isShownForNow() ? '' : plan.group ? opensForHighlight() : opensLine(),
     // The Share's first step: this paint again at the tap's minute, so the
     // words come from the rows on screen (plan-shelf.js sharePlan).
     repaint: () => paintPlan(),
