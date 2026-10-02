@@ -7,7 +7,7 @@ how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v108, from `main`** (PR #78, merged 2026-10-02 7:38 AM PT) on fest /
+- **v108, from `main`** (PR #78, merged 2026-10-02 7:39 AM PT) on fest /
   festival / crew.kevinhg.com, all three serving festival-nav-v108 /
   01887faf: usage through errlog.js's one door — `track()` with an
   allowlist of 22 events (no free text, no tokens, no artist or note text),
