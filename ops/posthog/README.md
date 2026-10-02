@@ -15,7 +15,9 @@ through the Slack integration 269583: "Fest → New error (Slack)"
 `01a0dc4b-3d7f-0000-61fd-e4e3772ff5fd` and "Fest → Came back (Slack)"
 `01a0dc4b-3f7d-0000-2c11-33da43f78cc6`. Both passed a real test invocation
 (`mock_async_functions: false` — the default `true` only simulates the Slack
-post) on the real SyntaxError issue. The Eachie function is not installed.
+post) on the real SyntaxError issue. The Eachie function is not installed. **Updated 2026-10-01 with v107** (both
+functions now version 3): `boot:offline` gets the red "App won't open" heading
+and its own meaning line, and `festival:stand-in` gets a meaning line.
 
 The error events' details live under `props.exception_props.*` (only name,
 description, first_seen, severity, fingerprint, exception_timestamp and

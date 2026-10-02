@@ -2,6 +2,39 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-01 — v107: opening on bad signal, the day before ACL
+
+Kevin on his phone, a cloud session, friends already using the app for ACL
+(Oct 2–4, 9–11). PostHog showed two live failures; both are fixed in v107
+(PR #76). Rows, reviews and follow-ups 42–46: the LEDGER.
+
+- **The iPhone fatal.** A returning guest's ACL file had never reached the
+  worker's data cache: a first visit fetches it before the worker claims the
+  page. On a weak network the fetch failed. The old CORE-12 fallback then
+  saved Portola (the catalog default) as the phone's festival and fetched it
+  over the same dead network, uncaught. Now a festival the phone already
+  holds stands in for one open and is never saved, queued or shared. With
+  nothing held there is a calm screen that retries by itself, and the first
+  visit's festival is fetched through the worker once it claims the page.
+- **The Android black page.** One module of app.js's graph never arrived on
+  a first visit, so app.js never ran and the page had nothing to tap. Now an
+  inline watchdog in index.html, running before the modules, shows Try again
+  (plus one automatic second try where the worker serves the page), and the
+  worker's first claim reloads an app that never started.
+- **Lessons.** (1) A fallback that fetches is not a fallback on a dead
+  network; the only safe fallback is what the phone already holds. (2) A
+  "safety net" around the app must prove it can tell a broken app from an
+  older working one: the first draft of the 10 s net would have covered
+  every returning phone's first open after the release (caught by the
+  Claude review with skeptics). It must also count only the app's own
+  errors (vendor, extension and cross-origin errors are not the app's).
+  (3) A temporary state (the stand-in festival) leaks through every path
+  that reads the "current" value: links, share text, the address bar, the
+  saved copy. List the readers before shipping one; four rounds found them
+  one at a time. (4) The cloud session can't reach the production hosts
+  (CONNECT 403), but the Vercel MCP's fetch can, which is enough to verify
+  all three.
+
 ## 2026-09-26 — Portola Saturday: v92 to v103 in one day
 
 Kevin at Portola on his phone; one coordinator session released, builders
