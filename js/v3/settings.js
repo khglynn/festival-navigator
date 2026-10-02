@@ -144,13 +144,14 @@ function currentFestCard(ctx, actions) {
   share.addEventListener('click', async () => {
     // The invite carries the fest being shared (FLOW-1): &f= on the link for
     // this invite, meta.inviteFestId in the doc for links already out there.
-    const fid = state.activeFestivalId;
+    // Never a stand-in shown for this open (v107): the festival this phone means.
+    const fid = state.festivalForLinks();
     // The link carries this phone's view (v92, SD1) — the line under the
     // invite link below says which.
     const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), fid);
     // A guest shares the link it holds, and writes nothing into the crew
     // until it joins (v92): the invite-festival stamp is a member's.
-    if (ctx.meName && (state.crewDoc.meta || {}).inviteFestId !== fid) {
+    if (ctx.meName && fid && !state.isShownForNow() && (state.crewDoc.meta || {}).inviteFestId !== fid) {
       state.recordInviteFest(fid);
       actions.afterBulk(); // schedules the sync push
     }
@@ -159,7 +160,7 @@ function currentFestCard(ctx, actions) {
       catch { share.textContent = 'See the link below'; setTimeout(() => { share.textContent = 'Share invite'; }, 2500); }
     };
     try {
-      if (navigator.share) await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link });
+      if (navigator.share) await navigator.share({ title: 'Festival Navigator', text: crew.inviteText(state.festivalNameForLinks()), url: link });
       else await copyFallback();
     } catch (e) {
       // A dismissed share sheet is a choice; anything else falls back to the

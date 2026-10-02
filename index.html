@@ -42,7 +42,7 @@
     <!-- This page's own build, the same number as the worker's CACHE_VERSION
          — written by node scripts/sw-stamp.mjs, never by hand. A crash report
          from a page no worker controls names its build from here. -->
-    <meta name="fn-build" content="v106">
+    <meta name="fn-build" content="v107">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -296,7 +296,7 @@
     <div id="screen-error" class="entry-screen" style="display:none">
       <div class="center-col">
         <div class="brand" style="font-size: clamp(34px, 4.5vw, 46px);">WELL, THAT<br><span class="pulse-text">WASN&rsquo;T THE PLAN</span></div>
-        <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
+        <div id="error-msg" style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
           The app hit an error while loading. Your picks are safe on this device.</div>
         <button id="error-retry" class="btn-tonal" style="font-size: 14px; padding: 12px 24px; align-self: center;">Try again</button>
         <button id="error-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your crews</button>
@@ -310,6 +310,109 @@
     <div id="now-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/vendor/html2canvas.min.js" defer></script>
+    <!-- The page's own net for an app that never starts (2026-10-01). A file
+         of app.js's graph that never arrives (one lost on a weak signal, on a
+         first visit nothing is cached yet), hangs, or arrives and cannot link
+         to the rest (a stale copy beside new ones), leaves app.js unrun: no
+         loader, no error screen, a black page with nothing to tap. Classic
+         and inline on purpose — it must run when no module can — and BEFORE
+         the module scripts, so it is listening when they fail. It sends
+         nothing (errlog.js records these itself and is the only door out); it
+         only gives the person a way forward.
+         - A page the worker serves gets one automatic second try (its shell
+           comes from the worker's cache, so a dead network cannot replace
+           this page with the browser's own error page). The loop guard is
+           the navigation's own type — never storage, which can throw — and
+           without one there is no automatic try at all.
+         - A page no worker serves yet (a first visit) shows the error screen
+           with Try again at once, and the worker's first claim reloads it
+           from the whole snapshot it just installed (the glue below).
+         - Nothing at all after 10 s (a download that hangs rather than
+           fails): the same screen, worded as still loading; a slow app that
+           then arrives takes the screen over as usual. -->
+    <script>
+      (function () {
+        var done = false;
+        var sawError = false;
+        // The app is running once app.js says so, or once its script's load
+        // fires with no error seen first — the proof an OLDER app.js gives too
+        // (none says __fnAppRan): a returning phone's first open after a
+        // release runs the old worker's cached app under this new page, and
+        // must be left alone (v107 review).
+        function ran() { return !!(window.__fnAppRan || window.__fnAppLoaded); }
+        function stayingOffline() {
+          try { return JSON.parse(localStorage.getItem('fn_settings_v1') || '{}').stayOffline === true; } catch (e) { return false; }
+        }
+        function servedByWorker() {
+          try { return !!(navigator.serviceWorker && navigator.serviceWorker.controller); } catch (e) { return false; }
+        }
+        function secondTryAllowed() {
+          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
+          var nav = null;
+          try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) { nav = null; }
+          if (!nav || nav.type !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
+          return navigator.onLine !== false && !stayingOffline();
+        }
+        function panel(words) {
+          var screen = document.getElementById('screen-error');
+          if (!screen) return;
+          var msg = document.getElementById('error-msg');
+          if (msg) msg.textContent = words;
+          var home = document.getElementById('error-home');
+          if (home) home.style.display = 'none'; // it needs the app that has not started
+          var retry = document.getElementById('error-retry');
+          if (retry) retry.onclick = function () { location.reload(); };
+          screen.style.display = '';
+        }
+        function stuck() {
+          if (done || ran()) return;
+          done = true;
+          window.__fnAppFailed = true; // the worker's first claim reloads this page (below)
+          if (secondTryAllowed()) { location.reload(); return; }
+          panel('The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.');
+        }
+        function isApp(t) {
+          return !!t && t.tagName === 'SCRIPT' && t.type === 'module' && /\/js\/v3\/app\.js(?:[?#]|$)/.test(t.src || '');
+        }
+        // A file in app.js's graph that never arrived: the browser fires
+        // error on the entry script, whichever file it was.
+        window.addEventListener('error', function (e) { if (isApp(e.target)) stuck(); }, true);
+        // One that arrived but could not link, or threw as it loaded: an error
+        // on the window first, then the entry script's load with the app
+        // unrun. An element's load never reaches the window, so the document
+        // listens. And in case an engine fires no load after a link error
+        // (Chromium 141 does not), a module-shaped SyntaxError — an import
+        // that cannot be found — checks again a moment later. Any other
+        // error is left to the 10 s net: it may not be the app's at all.
+        window.addEventListener('error', function (e) {
+          if (e.target && e.target !== window) return;
+          // Only the app's own errors count: one thrown from its files, or a
+          // module that cannot link (which an engine may file under the page,
+          // or nothing). A file that is not the app's — a vendor script, an
+          // extension, another origin — never counts, whatever its words; nor
+          // does a cross-origin "Script error." with no file at all.
+          var f = String((e && e.filename) || '');
+          var own = f.indexOf(location.origin + '/js/') === 0;
+          if (f && !own && f.split('#')[0] !== location.href.split('#')[0]) return;
+          var m = String((e && e.message) || '');
+          var syntax = /SyntaxError/.test(m) || !!(e.error && e.error.name === 'SyntaxError');
+          var linking = syntax && /import|export|module|binding/i.test(m);
+          if (!linking && !own) return;
+          sawError = true;
+          if (linking) setTimeout(stuck, 1500);
+        });
+        document.addEventListener('load', function (e) {
+          if (!isApp(e.target)) return;
+          if (sawError) setTimeout(stuck, 0);
+          else window.__fnAppLoaded = true;
+        }, true);
+        setTimeout(function () {
+          if (done || ran()) return;
+          window.__fnAppFailed = true; // still nothing: the worker's first claim may reload it from its snapshot
+          panel('Still loading \u2014 the signal\u2019s weak. Keep this open, or try again.');
+        }, 10000);
+      })();
+    </script>
     <!-- The crash journal hooks in from a module script of its OWN, before
          app.js: a module that fails to parse (syntax an older Safari doesn't
          know) stops every module in app.js's graph from running, errlog.js
@@ -356,8 +459,11 @@
           if (pending && quiet()) { pending = false; location.reload(); }
         }
         sw.addEventListener('controllerchange', function () {
-          // The first worker to claim a page serves the build it already runs.
-          if (!hadController) { hadController = true; return; }
+          // The first worker to claim a page serves the build it already runs —
+          // unless the app never started on this page (the watchdog above):
+          // the worker that just claimed it holds a whole snapshot, so a
+          // reload now opens from it (2026-10-01).
+          if (!hadController) { hadController = true; if (!window.__fnAppFailed || window.__fnAppRan || window.__fnAppLoaded) return; }
           if (pending) return;
           pending = true;
           settle();

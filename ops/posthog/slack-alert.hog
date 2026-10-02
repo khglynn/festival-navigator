@@ -175,6 +175,8 @@ fun messageMeaning(text) {
 // unmatched message: no guess.
 let KIND_MEANINGS := {
   'boot': 'The app couldn’t open on this phone. Serious — tell Claude.',
+  'boot:offline': 'A friend couldn’t open their festival: it couldn’t be reached (usually no signal, sometimes the server), and this phone hadn’t saved it yet. The app shows a calm screen and opens it by itself as soon as it can. Worth a look if it repeats.',
+  'festival:stand-in': 'A festival’s schedule file came back broken or missing — not a signal problem — so the phone showed another festival it had saved instead. Serious if it repeats: tell Claude.',
   'boot:superseded': 'The app failed to open once, but a newer version took over first — nobody saw a broken screen. Not urgent unless it keeps happening.',
   'module-load': 'Part of the app didn’t load, usually right after a new release. Often fixes itself on reopen; tell Claude if it keeps happening.',
   'error': 'Something broke while using the app. Worth a look, especially if it repeats.',
@@ -194,7 +196,7 @@ if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_re
   let reopened := kind == '$error_tracking_issue_reopened'
   let spiking := kind == '$error_tracking_issue_spiking'
   let kindValue := props.exception_props?.kind ?? props.kind
-  let boot := kindValue == 'boot'
+  let boot := kindValue == 'boot' or kindValue == 'boot:offline'
   let icon := spiking ? '📈' : (reopened ? '🔁' : (boot ? '🔴' : '🟠'))
   let verb := spiking ? 'Spiking' : (reopened ? 'Back again' : (boot ? 'App won’t open' : 'New error'))
   let name := clip(props.name ?? props.exception_props?.$exception_types?.[1] ?? props.$exception_types?.[1] ?? 'Error', 110)
@@ -211,7 +213,7 @@ if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_re
   let isFestAlert := (app == 'Fest') or notEmpty(props.exception_props)
   let meaning := null
   if (isFestAlert) {
-    meaning := kindValue == 'boot' ? KIND_MEANINGS.boot : (messageMeaning(props.description) ?? KIND_MEANINGS[kindValue])
+    meaning := boot ? KIND_MEANINGS[kindValue] : (messageMeaning(props.description) ?? KIND_MEANINGS[kindValue])
   }
   let meaningLine := empty(meaning) ? null : concat('What it means: ', meaning)
   let bodyText := joinPresent([clip(props.description, 280), meaningLine, topFrame(props), countLine], '\n')

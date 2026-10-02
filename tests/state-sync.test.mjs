@@ -56,3 +56,42 @@ test('a crew rename repaints', () => {
   renamed.meta.name = 'The Crew, Renamed';
   assert.equal(state.applyRemoteDoc(renamed), true);
 });
+
+test('a second stand-in before anything is chosen keeps the first wish: links still name it', () => {
+  // v107 review, round 3 (Sol): showFestivalForNow captured the active
+  // festival every call, so a second stand-in recorded the first stand-in as
+  // the wish and invite links named a festival nobody chose.
+  FESTIVAL_INDEX.push({ id: 'held-a', status: 'scheduled' }, { id: 'held-b', status: 'scheduled' });
+  state.activateCrew(TOKEN, base(), null, { festival: 'sync-fest' });
+  assert.equal(state.festivalForLinks(), 'sync-fest');
+  state.showFestivalForNow('held-a');
+  state.showFestivalForNow('held-b');
+  assert.equal(state.activeFestivalId, 'held-b');
+  assert.equal(state.isShownForNow(), true);
+  assert.equal(state.festivalForLinks(), 'sync-fest', 'the festival the person asked for');
+  state.setActiveFestivalId('held-b');
+  assert.equal(state.festivalForLinks(), 'held-b', 'a festival chosen is no longer a stand-in');
+});
+
+test('a stand-in festival the crew really has keeps its row on disk, even with nothing picked in it', () => {
+  // Copilot's review of v107: the save stripped any empty row for the
+  // stand-in, so a crew that had the festival (nothing picked yet) lost it
+  // from this phone's copy, and Your crews stopped listing it. Only the row
+  // made to render the stand-in comes off.
+  FESTIVAL_INDEX.push({ id: 'held-real', status: 'scheduled' }, { id: 'held-made', status: 'scheduled' });
+  const doc = base();
+  doc.festivals['held-real'] = { selections: {} };
+  state.activateCrew(TOKEN, doc, null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-real');
+  state.persist();
+  let saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(saved.festivals['held-real'], 'the crew’s own row stays');
+
+  state.activateCrew(TOKEN, base(), null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-made');
+  assert.ok(state.crewDoc.festivals['held-made'], 'rendered');
+  state.persist();
+  saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(!saved.festivals['held-made'], 'the row made to render it stays off the disk');
+  assert.ok(saved.festivals['sync-fest']);
+});

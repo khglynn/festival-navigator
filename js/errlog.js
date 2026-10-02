@@ -708,7 +708,9 @@ function isNoise(d) {
 }
 
 const UNHANDLED = ['error', 'promise', 'module-load'];
-const LEVEL = { boot: 'fatal', 'module-load': 'fatal', 'zoom-close-after-click': 'warning' };
+// `boot:offline` is fatal too: a friend who cannot see their festival is
+// locked out, whatever the cause (no signal and no copy on the phone yet).
+const LEVEL = { boot: 'fatal', 'boot:offline': 'fatal', 'module-load': 'fatal', 'zoom-close-after-click': 'warning' };
 // A readable issue name where the error's own type says little
 // (slack-alert-design.md §5.3). PostHog uses it only on the event that opens
 // an issue, for the issue list and the Slack headline. Never for `boot`: the
@@ -717,6 +719,8 @@ const ISSUE_NAMES = {
   'zoom-close-after-click': 'Zoom closed right after a click',
   'sync:blocked': 'Server refused a sync',
   'module-load': 'App code didn’t load',
+  'boot:offline': 'Festival unreachable and not on the phone yet',
+  'festival:stand-in': 'A festival file is broken or missing',
 };
 // The words each engine uses for "the request never got an answer".
 const NETWORK_FAILURE = /^(?:Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?|The network connection was lost\.?|The Internet connection appears to be offline\.?)$/;
