@@ -29,6 +29,16 @@ follow-ups: the LEDGER.
   a flake on main since Sep 26" (LEDGER 40) was a real bug: the welcome
   card left only on its animation's finish, so a page whose timeline never
   ticked kept the card up and the plan under it, for good.
+- **Read it: "Festival health"** (PostHog dashboard 2163278, pinned).
+  Fifteen charts in DESIGN §2g's order — errors by build, phones by build,
+  opens, how opens begin (landing = the find-your-crew question), time to
+  the wall warm vs cold, the warm-open hit rate and its misses, sync health,
+  what people use, picks by level, notes by door, Spotify, time in the app,
+  day views, phones by engine and OS. The sync rule (DESIGN §2f rule 4)
+  is an hourly alert, "Fest: 3+ phones can't sync", posting to the Slack
+  channel the error alerts use. First read, 9:55 AM PT: two phones, both
+  joiners opening a crew link (warm open missed on `no_member`, by design);
+  no v107 or v108 errors; two phones still on v106 in the last day.
 
 ## 2026-10-01 — v107: opening on bad signal, the day before ACL
 

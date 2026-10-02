@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-02 9:50 AM PT (v108 live, usage arriving) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-02 9:55 AM PT (v108 live, Festival health built) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -18,19 +18,17 @@ how we got here belongs in DEVLOG.md.
   `backup-2026-10-02-pre-v108`. v107 (Oct 1): opening on bad signal.
   Rows, reviews, rollback targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
-  (`ops/posthog/`), triggered by error-tracking issues only — usage never
-  reaches Slack.
+  (`ops/posthog/`), triggered by error-tracking issues only, and one usage
+  rule: 3+ phones red on sync in an hour ("Fest: 3+ phones can't sync").
+- **Read it:** the pinned PostHog dashboard "Festival health" (2163278):
+  errors and phones by build, opens, speed, sync, features, devices.
 
-## Now: the "Festival health" dashboard (PostHog)
+## Now: watch ACL weekend 1 on "Festival health"
 
-v108's usage is arriving (first events 8:12 AM PT; two phones by 9:41 AM
-PT), so the dashboard is being built. It covers opens per day (`app_open`
-where `page_load` is true), warm-open hit rate and miss reasons, first paint
-warm vs cold, sync health, picks, NOW, notes, the plan, Spotify, devices,
-and `landing_view` by crews (how often an open
-finds no crew — the find-your-crew question; three ideas offered to Kevin,
-no answer yet). Plus the "3+ phones can't sync" alert. DESIGN §2g in
-`claude-plans/2026-09-24-analytics/`.
+Built 2026-10-02 (DESIGN §2g). Look after each festival day: errors by
+build, a stale build still in use, red sync, and how often an open lands
+with no crew (`landing` in "How opens begin" — the find-your-crew question;
+three ideas offered to Kevin, no answer yet).
 
 ## Next: the iOS app
 

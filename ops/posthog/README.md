@@ -19,6 +19,14 @@ post) on the real SyntaxError issue. The Eachie function is not installed. **Upd
 functions now version 3): `boot:offline` gets the red "App won't open" heading
 and its own meaning line, and `festival:stand-in` gets a meaning line.
 
+**Added 2026-10-02 (v108's usage):** the insight alert "Fest: 3+ phones
+can't sync" (`01a0fd87-a5c1-0000-e19b-71a64395726f`, hourly, on insight
+`HrANAuJE` in the "Festival health" dashboard, fires above 2) posts to the
+same channel through PostHog's own alert-to-Slack destination
+(`01a0fd87-c63c-0000-a560-83c62ffbb09a`), not through `slack-alert.hog`.
+Rollback: disable the alert in PostHog (Alerts), or delete that
+destination.
+
 The error events' details live under `props.exception_props.*` (only name,
 description, first_seen, severity, fingerprint, exception_timestamp and
 status are top-level), so the script reads `exception_props.X` first and
