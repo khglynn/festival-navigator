@@ -80,6 +80,10 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  // What the page fetched, by path (the faked clock empties the page's own
+  // resource timing, so the test listens from outside).
+  const fetched = [];
+  page.on('requestfinished', (r) => { try { fetched.push(new URL(r.url()).pathname); } catch { /* not a URL */ } });
   await page.clock.setFixedTime(now);
   await page.goto(`${server.origin}/#g=${CREW}&f=${fid}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
@@ -130,7 +134,7 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     await sleep(250);
     return at.artist;
   };
-  return { ctx, page, errors, posts, phone, bar, press, outside, width };
+  return { ctx, page, errors, posts, phone, bar, press, outside, width, fetched };
 }
 
 const wrapSel = (bar) => `#${bar}-you-wrap`;
@@ -404,11 +408,20 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // sits below.
   for (const [w, h] of [[320, 568], [390, 844]]) {
     test(`${name} ${w}×${h}: the Invite sheet's QR is square, inside the sheet, drawn, and scans to the link; Copy and Share still work; the name field scrolls into reach`, { skip }, async () => {
-      const { ctx, page, errors, posts, press } = await openApp(get(), { width: w, height: h });
+      const { ctx, page, errors, posts, press, fetched } = await openApp(get(), { width: w, height: h });
       try {
         if (name === 'Chromium') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: server.origin });
-        // Warmed after the wall painted (app.js warmQr): the sheet arrives
-        // with its QR already drawn, never a blank tile filled in later.
+        // Warmed after the wall painted (app.js warmQr): nobody has asked for
+        // the QR, and its module comes in all the same, when the page is idle
+        // — on a loaded runner later than a fixed beat after the wall (a full
+        // parallel run, 2026-10-02: the sheet beat it), so the test waits for
+        // that fetch. A sheet opened after it arrives with its QR already
+        // drawn, never a blank tile filled in later.
+        for (let t = 0; !fetched.includes('/vendor/uqr.mjs'); t += 50) {
+          assert.ok(t < 8000, `the QR module was never warmed: ${fetched.filter((f) => /\.m?js$/.test(f)).slice(-5).join(', ')}`);
+          await sleep(50);
+        }
+        await sleep(150); // fetched, then evaluated: the import's own promise settles a task or two later
         await page.evaluate(() => {
           window.__qrAtOpen = null;
           new MutationObserver((list, obs) => {
