@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-02 7:45 AM PT (v108 live) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-02 9:50 AM PT (v108 live, usage arriving) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -21,11 +21,13 @@ how we got here belongs in DEVLOG.md.
   (`ops/posthog/`), triggered by error-tracking issues only — usage never
   reaches Slack.
 
-## Next: the "Festival health" dashboard (PostHog, once v108's events flow)
+## Now: the "Festival health" dashboard (PostHog)
 
-Opens per day (`app_open` where `page_load` is true), warm-open hit rate
-and miss reasons, first paint warm vs cold, sync health, picks, NOW, notes,
-the plan, Spotify, devices, and `landing_view` by crews (how often an open
+v108's usage is arriving (first events 8:12 AM PT; two phones by 9:41 AM
+PT), so the dashboard is being built. It covers opens per day (`app_open`
+where `page_load` is true), warm-open hit rate and miss reasons, first paint
+warm vs cold, sync health, picks, NOW, notes, the plan, Spotify, devices,
+and `landing_view` by crews (how often an open
 finds no crew — the find-your-crew question; three ideas offered to Kevin,
 no answer yet). Plus the "3+ phones can't sync" alert. DESIGN §2g in
 `claude-plans/2026-09-24-analytics/`.

@@ -717,8 +717,13 @@ test('the menu gained Zed in place, and a crew-mate who left is gone from it and
   await settle(10);
   assert.deepEqual(filters.loadPeopleFilter(FID), ['Zed', 'Cy']);
   await closeMenu();
-  // Cy leaves (another phone removes her); the next paint prunes her.
-  state.applyRemoteDoc(deepMerge(state.crewDoc, { people: { Cy: { removed: true } } }));
+  // Cy leaves (another phone removes her); the next paint prunes her. She
+  // leaves on the SERVER and arrives by the ordered poll: a local-only apply
+  // was undone whenever the shell's 25 s poll landed here and brought her
+  // back from the server (CI run 37021952091, under the Tokyo pass's load).
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Cy: { removed: true } } });
+  sync.afterServerWrite();
+  await until(() => state.people().Cy && state.people().Cy.removed, 'Cy out, brought by the poll');
   $('dock-you').click(); // the menu reads the crew afresh as it opens
   await settle(10);
   assert.equal(row('Cy'), undefined, 'no row for someone who left');
