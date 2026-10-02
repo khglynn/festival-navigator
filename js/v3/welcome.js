@@ -244,5 +244,12 @@ export function dismissWelcome({ instant = false, ctx = null } = {}) {
     [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }],
     { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' },
   );
-  out.onfinish = () => box.remove();
+  // Gone however the animation ends — finished, cancelled, or never ticked
+  // (a backgrounded or throttled page): the plan rises only when the card
+  // has left the screen, so a card the timeline forgot held it down for good
+  // (LEDGER 40, WebKit on loaded CI; the join shelf's own net, join-shelf.js).
+  const gone = () => { if (box.isConnected) box.remove(); };
+  out.onfinish = gone;
+  out.oncancel = gone;
+  setTimeout(gone, OUT_MS * 3 + 50);
 }
