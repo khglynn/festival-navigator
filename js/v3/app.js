@@ -3428,16 +3428,18 @@ function shareView() {
   const list = ctx.view === LIST;
   return show || list ? { show, label: show ? showLabel(rooms, folded) : null, list } : null;
 }
+// Handed to someone, so on the canonical host from any production one
+// (crew.js shareLink); the address bar's own link is wallUrl's.
 function inviteLink(meName = null) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), meName, view ? view.show : null, view && view.list ? LIST : null);
+  return crew.shareLink(state.getCrewToken(), state.festivalForLinks(), meName, view ? view.show : null, view && view.list ? LIST : null);
 }
 // The open plan's Share: the same link and view, opening on Our picks for
 // the night the words are about (`&plan=<date>`, read once at boot). It says
 // no one's name (no `&me=`).
 function planLink(night) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
+  return crew.shareLink(state.getCrewToken(), state.festivalForLinks(), null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
