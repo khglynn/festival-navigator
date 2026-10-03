@@ -647,6 +647,16 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
             const a = own.call(this, frames, opts);
             if (this.classList && this.classList.contains('inv-qr') && !window.__fold) {
               const f = window.__fold = { at: document.timeline.currentTime, ready: null, fin: null, gone: null, anim: a };
+              try {
+                const sheet = document.querySelector('.invite-sheet');
+                const d = opts && typeof opts === 'object' ? opts.duration : opts;
+                const before = [sheet.getBoundingClientRect().top, sheet.querySelector('.inv-link').getBoundingClientRect().top];
+                a.pause();
+                f.seek = [0, 0.2, 0.4, 0.5, 0.6, 0.7, 0.9, 1].map((q) => { a.currentTime = d * q; return [q, Math.round(sheet.getBoundingClientRect().top), Math.round(sheet.querySelector('.inv-link').getBoundingClientRect().top), Math.round(parseFloat(getComputedStyle(this).height))]; });
+                f.seekBefore = before.map(Math.round);
+                a.currentTime = 0;
+                a.play();
+              } catch (e) { f.seekError = String(e); }
               a.ready.then(() => { f.ready = [document.timeline.currentTime, a.startTime]; });
               a.finished.then(() => { f.fin = document.timeline.currentTime; }, () => { f.fin = 'cancel@' + document.timeline.currentTime; });
             }
@@ -679,7 +689,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           const f = window.__fold || {};
           const at = f.at || 0;
           const tr = window.__tr.filter((r) => r[0] >= at - 40 && r[0] <= (f.gone || at) + 60).map((r) => [r[0] - Math.round(at), ...r.slice(1)]);
-          return { at: Math.round(at), ready: f.ready && f.ready.map((x) => Math.round(x - at)), fin: typeof f.fin === 'number' ? Math.round(f.fin - at) : f.fin, gone: f.gone ? Math.round(f.gone - at) : null, tr };
+          return { at: Math.round(at), seekBefore: f.seekBefore, seek: f.seek, seekError: f.seekError, ready: f.ready && f.ready.map((x) => Math.round(x - at)), fin: typeof f.fin === 'number' ? Math.round(f.fin - at) : f.fin, gone: f.gone ? Math.round(f.gone - at) : null, n: tr.length };
         });
         console.log(`DIAGFOLD run ${run} hogs=${hogs.length} ` + JSON.stringify(out));
       } catch (e) {
