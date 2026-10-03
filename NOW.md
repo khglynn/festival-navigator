@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-02 6:48 PM PT (v108 live; PR #80, the Invite QR, in CI) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-02 7:14 PM PT (v108 live; PR #80, the Invite QR, v111 in CI) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -23,7 +23,7 @@ how we got here belongs in DEVLOG.md.
 - **Read it:** the pinned PostHog dashboard "Festival health" (2163278):
   errors and phones by build, opens, speed, sync, features, devices.
 
-## Now: PR #80, the Invite QR (draft, v110) — not before Kevin's OK
+## Now: PR #80, the Invite QR (draft, v111) — not before Kevin's OK
 
 Find your crew, slice 1 (`claude-plans/2026-10-02-find-your-crew.md`): a QR
 on top of the Invite sheet for the crew link (never "My link", the master

@@ -3703,8 +3703,11 @@ function warmQr() {
   setTimeout(go, 1500);
 }
 // A module this late is not coming soon (the festival files' own budget):
-// the tile folds away and the link stands alone. The module may still land
-// for the next sheet; a request that fails at last is recorded then.
+// the tile folds away and the link stands alone. A slow one may still land
+// for the next sheet; a request that fails at last is recorded then. A
+// FAILED import is not retried on this page — engines keep a failed module
+// in the page's module map, so later sheets fail at once and show the link
+// alone until the app next loads (the review of 116ab8e).
 const QR_WAIT_MS = 4000;
 const QR_FOLD_MS = 260; // the tile's way out: it fades, then its room closes
 function inviteQr(link) {
@@ -3744,11 +3747,14 @@ function inviteQr(link) {
     try { gap = parseFloat(window.getComputedStyle(fig.parentNode).rowGap) || 0; } catch { /* keep 12 */ }
     const h = fig.offsetHeight; // laid out, not scaled
     fig.style.overflow = 'hidden';
-    const a = fig.animate([
-      { opacity: 1, height: `${h}px`, marginBottom: '0px' },
-      { opacity: 0, height: `${h}px`, marginBottom: '0px', offset: 0.35 },
-      { opacity: 0, height: '0px', marginBottom: `${-gap}px` },
-    ], { duration: QR_FOLD_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    let a;
+    try {
+      a = fig.animate([
+        { opacity: 1, height: `${h}px`, marginBottom: '0px' },
+        { opacity: 0, height: `${h}px`, marginBottom: '0px', offset: 0.35 },
+        { opacity: 0, height: '0px', marginBottom: `${-gap}px` },
+      ], { duration: QR_FOLD_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    } catch { fig.remove(); return; } // an engine that refuses the fold still loses the tile
     const done = () => fig.remove();
     a.onfinish = done;
     a.oncancel = done;

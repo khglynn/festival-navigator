@@ -185,7 +185,7 @@ test('the matrix is ECC M: a smudge that defeats ECC L still reads', async () =>
 // ---- what qrPng draws --------------------------------------------------------------
 // A canvas that paints fillRect into an RGBA buffer, so what qrPng DRAWS is
 // decoded, not just the matrix it started from.
-function fakeCanvasDoc({ context = true, tokens = {} } = {}) {
+function fakeCanvasDoc({ context = true, tokens = {}, readback = 'drawn' } = {}) {
   const made = [];
   const doc = {
     documentElement: {},
@@ -208,6 +208,18 @@ function fakeCanvasDoc({ context = true, tokens = {} } = {}) {
                 const i = (yy * c.width + xx) * 4;
                 c.rgba[i] = rgb[0]; c.rgba[i + 1] = rgb[1]; c.rgba[i + 2] = rgb[2]; c.rgba[i + 3] = 255;
               }
+            },
+            // What a page reads back: what was drawn, or — a browser that
+            // blocks canvas readback — opaque white, or a refusal.
+            getImageData(x, y, w, h) {
+              c.reads = (c.reads || 0) + 1;
+              if (readback === 'refused') throw new Error('SecurityError');
+              const data = new Uint8ClampedArray(w * h * 4);
+              for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+                const o = (yy * w + xx) * 4, i = ((y + yy) * c.width + (x + xx)) * 4;
+                for (let k = 0; k < 4; k++) data[o + k] = readback === 'blank' ? 255 : c.rgba[i + k];
+              }
+              return { data, width: w, height: h };
             },
           };
         },
@@ -279,6 +291,24 @@ test('qrPng at a fractional pixel ratio (an Android’s 2.625): whole device pix
   assert.ok(Math.abs(out.cssPx * 2.625 - canvas.width) < 1e-9, `${out.cssPx} CSS px is ${canvas.width} device px`);
   assert.ok(out.cssPx <= 150.4);
   assert.equal(decode({ data: canvas.rgba, width: canvas.width, height: canvas.height }), link);
+});
+
+test('qrPng checks what the canvas reads back: one that hands back white (readback blocked) throws, so the sheet never shows a blank code', () => {
+  // Drawn as usual: the corner module reads back dark, and the PNG is handed over.
+  const drawn = fakeCanvasDoc();
+  const ok = withPage(drawn, () => qrPng(SHAPES.festival, 160));
+  assert.equal(ok.src, 'data:image/png;fake');
+  assert.ok(drawn.made[0].reads >= 1, 'the drawing is read back before it is handed over');
+  // Firefox's resistFingerprinting, Tor, CanvasBlocker: white comes back.
+  const blank = fakeCanvasDoc({ readback: 'blank' });
+  assert.throws(() => withPage(blank, () => qrPng(SHAPES.festival, 160)), (e) => {
+    assert.match(String(e && e.message), /reads back blank/);
+    assert.doesNotMatch(String(e && e.message), new RegExp(TOKEN), 'the error never carries the link');
+    return true;
+  });
+  // A readback refused outright judges nothing: the image is shown as drawn.
+  const refused = fakeCanvasDoc({ readback: 'refused' });
+  assert.equal(withPage(refused, () => qrPng(SHAPES.festival, 160)).src, 'data:image/png;fake');
 });
 
 test('qrPng throws where there is no 2D canvas (jsdom, a locked-down browser) — the sheet then takes the QR away', () => {

@@ -131,6 +131,12 @@ let qrCanvas = true;
           canvas.rgba.set([...rgb, 255], i);
         }
       },
+      // What qr.js reads back to be sure the drawing is really there.
+      getImageData(x, y, w, h) {
+        const data = new Uint8ClampedArray(w * h * 4);
+        if (canvas.rgba) for (let yy = 0; yy < h; yy++) data.set(canvas.rgba.subarray(((y + yy) * canvas.width + x) * 4, ((y + yy) * canvas.width + x + w) * 4), yy * w * 4);
+        return { data, width: w, height: h };
+      },
     };
     return new Proxy(pen, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })) });
   };
@@ -536,6 +542,39 @@ test('a phone that cannot draw the QR loses only the QR: the link stands alone, 
     // Closed whatever happened above, so one red stays one red: the tests
     // after this one each wait for the history to settle (the review of
     // 1b80842: a failure here once failed the twelve after it).
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
+});
+
+// The fold is a Web Animation; an engine that refuses it (throws from
+// animate) must still lose the tile — `gone` is already set by then, so a
+// throw there once left a dim empty square on the sheet for good (the
+// review of 116ab8e). The image's error, after the tile has been on screen
+// for a frame, takes the animated way out. jsdom paints no frames, so this
+// test lends the page a frame clock (a timer) while the sheet opens.
+test('a QR whose image fails after it was seen still leaves when the fold animation cannot run', async () => {
+  const proto = window.HTMLElement.prototype;
+  const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+  const was = proto.animate;
+  const hadFrames = 'requestAnimationFrame' in window;
+  if (!hadFrames) window.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
+  try {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    const qr = sheet.querySelector('.inv-qr');
+    assert.ok(qr, 'the QR is on the sheet');
+    await new Promise((r) => window.requestAnimationFrame(() => r())); // seen: it leaves by folding
+    if (!hadFrames) delete window.requestAnimationFrame;
+    proto.animate = function animate() { throw new Error('animate refused'); };
+    qr.querySelector('img').dispatchEvent(new window.Event('error'));
+    assert.equal(sheet.querySelector('.inv-qr'), null, 'the tile is gone, not stuck');
+    assert.equal(sheet.querySelector('.inv-sub').nextElementSibling, sheet.querySelector('.inv-link'), 'and the link stands where it always was');
+  } finally {
+    if (had) proto.animate = was; else delete proto.animate;
+    if (!hadFrames) delete window.requestAnimationFrame;
     const open = document.querySelector('#artist-sheet.invite-sheet');
     if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
   }

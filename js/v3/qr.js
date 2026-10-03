@@ -73,5 +73,20 @@ export function qrPng(text, room) {
       x = end;
     }
   }
+  if (!readsBack(ctx, scale)) throw new Error('qr: the canvas reads back blank');
   return { src: canvas.toDataURL('image/png'), px, cssPx: px / ratio };
+}
+// A canvas can draw and still hand back a blank image: a browser that
+// blocks canvas readback (Firefox's resistFingerprinting, Tor, the
+// CanvasBlocker extension) gives toDataURL a white square, and the sheet
+// showed it as a code under "Point a phone camera here" (the review of
+// 116ab8e). The top-left finder's corner module, just inside the quiet zone,
+// is dark in every QR: it must read back dark. Where reading back is refused
+// outright there is nothing to judge, and the image is shown as drawn.
+function readsBack(ctx, scale) {
+  if (typeof ctx.getImageData !== 'function') return true;
+  let d = null;
+  try { d = ctx.getImageData(4 * scale + Math.floor(scale / 2), 4 * scale + Math.floor(scale / 2), 1, 1).data; } catch { return true; }
+  if (!d || !(d.length >= 4)) return true;
+  return d[3] > 127 && d[0] + d[1] + d[2] < 3 * 128;
 }
