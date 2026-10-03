@@ -412,6 +412,18 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     return !!tile && getComputedStyle(tile).opacity === '1';
   }, null, { timeout: 4000, polling: 'raf' }).catch(() => {});
 
+  // The sheet itself at rest: its entrance (v3.css sheetIn, scale .98 -> 1
+  // over .15 s) finished. motionDone can look before WebKit has created that
+  // animation, and a read inside it measured the tile at 175.9 of its 176px
+  // (CI run 37085409915). Waits for the state: no transform left, fully
+  // opaque.
+  const sheetStill = (page) => page.waitForFunction(() => {
+    const s = document.querySelector('.invite-sheet');
+    if (!s) return false;
+    const cs = getComputedStyle(s);
+    return cs.transform === 'none' && cs.opacity === '1';
+  }, null, { timeout: 4000, polling: 'raf' });
+
   // The Invite sheet's QR (find your crew, slice 1): what a camera sees is
   // the link the box prints. Read off a screenshot of the tile — the pixels
   // the screen shows, not the data the page drew — at the small phone and
@@ -593,6 +605,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await press('#dock-you');
       await press('#dock-you-wrap .hl-pop [data-act="invite"]');
       await motionDone(page, { within: '.invite-sheet' });
+      await sheetStill(page);
       const before = await qrRead(page);
       assert.equal(before.drawn, false, 'the module is held: nothing drawn yet');
       assert.ok(before.tile && Math.abs(before.tile[0] - before.tile[1]) < 0.5 && before.tile[0] > 100, `square from the first frame: ${before.tile}`);
@@ -626,6 +639,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       await press('#dock-you');
       await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await sheetStill(page);
       const before = await qrRead(page);
       // Every frame from here: where the sheet's top and the link box stand.
       await page.evaluate(() => {
