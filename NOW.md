@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-02 7:14 PM PT (v108 live; PR #80, the Invite QR, v111 in CI) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-02 8:15 PM PT (v108 live; PR #80, the Invite QR, v111 green and reviewed) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -23,17 +23,20 @@ how we got here belongs in DEVLOG.md.
 - **Read it:** the pinned PostHog dashboard "Festival health" (2163278):
   errors and phones by build, opens, speed, sync, features, devices.
 
-## Now: PR #80, the Invite QR (draft, v111) — not before Kevin's OK
+## Now: PR #80, the Invite QR (draft, v111) — waits on Kevin
 
 Find your crew, slice 1 (`claude-plans/2026-10-02-find-your-crew.md`): a QR
 on top of the Invite sheet for the crew link (never "My link", the master
-key), and share links that say fest.kevinhg.com. Next, in order: CI green on
-the head (WebKit included) → an independent review on that head, its real
-findings fixed → a real-iPhone check (Camera scans it off a phone and a
-laptop, long-press Save, the fold when a QR never comes) → Kevin's OK (no
-production deploy during weekend 1 without it) → merge, verify all three
-hosts. Meanwhile, after each festival day, read "Festival health": errors by
-build, a stale build in use, red sync, opens that land with no crew.
+key), and share links that say fest.kevinhg.com. CI is green on the head
+(WebKit included), and the independent review says ship (two optional nits
+left for the next code push: one QUIET constant for the border qr.js names
+twice; a named failure for now-jump's pulse wait). Still Kevin's: a
+real-iPhone check (Camera scans it off a phone and a laptop, long-press
+Save; clear the preview's site data first), then his OK (no production
+deploy during weekend 1 without it) → merge, verify all three hosts. The
+throwaway branch `diag/qr-fold-webkit` needs deleting on GitHub (the
+session's proxy refuses deletes). After each festival day, read "Festival
+health": errors by build, a stale build, red sync, opens with no crew.
 
 ## Next: the iOS app
 
