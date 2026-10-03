@@ -314,7 +314,8 @@ test('windows: every ACL night — both weekends (an unprinted closer glows to t
   const late = plan.places.filter((p) => p.roomKeys.includes('Late nights')).flatMap((p) => p.acts);
   assert.equal(late.length, 66);
   // Untagged sets twice, then W1's and W2's own (the W1 Saturday re-time of
-  // 2026-10-03 split ten untagged sets and took three off: 49/42/42 then).
+  // 2026-10-03 split nine untagged sets, kept Fakemink's for W2 only and
+  // took three off W1: 49/42/42 then).
   assert.equal(n, 39 * 2 + 50 + 52 + 66, 'every grid set on both weekends and every Late night, compared');
   // Fcukers on Oct 10: Devil May Care posts 11:45 PM (doors 10), close 2 AM.
   const card = root.querySelector('.day-block[data-day="Late nights"] .room[data-iso="2026-10-10"] .card[data-artist="Fcukers"]');

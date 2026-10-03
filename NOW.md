@@ -30,9 +30,10 @@ build, a stale build still in use, red sync, and how often an open lands
 with no crew (`landing` in "How opens begin" — the find-your-crew question;
 three ideas offered to Kevin, no answer yet).
 
-**ACL data, 2026-10-03:** mud delayed Saturday's doors to 2 PM; W1 Saturday
+**ACL, 2026-10-03 (v113):** mud delayed Saturday's doors to 2 PM; W1 Saturday
 is re-timed from ACL's revised poster (Left Lucid, Fightmaster, Fakemink
-cancelled on W1; LeTrainiump added). Still to re-read against the newer
+cancelled on W1; LeTrainiump added), and a cancelled card now folds with
+its finished room (it held Saturday on the wall till 5 AM). Still to re-read against the newer
 posters on aclfestival.com/schedule: W1 Sunday (v10.02-B) and all of W2
 (Sat/Sun 9.30, Fri 10.01) — the file's W2 and Sunday are the Aug 27 posters.
 

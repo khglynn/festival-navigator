@@ -1775,8 +1775,9 @@ export function nightMinutes(iso, clock) {
 //     is not while Aftershock (3–10 AM) plays;
 //   · a CARD is over when its night is, or when it has a window and the clock
 //     on that night has reached its end. A card with no window (no clock, a
-//     cancelled act) is over only when its night is. Before the night (days
-//     < 0) nothing is.
+//     cancelled act) is over only when its night is — except that a
+//     cancelled card goes with its room once every timed card in the room is
+//     over (roomPast, 2026-10-03). Before the night (days < 0) nothing is.
 // `windows`: [{ from, to } | null] per card, in the night's minutes.
 export function pastOf(iso, windows, clock) {
   const none = { nightOver: false, over: windows.map(() => false) };
@@ -1806,6 +1807,17 @@ function roomPast(room, date) {
     list.forEach((c, i) => overs.set(c, over[i]));
   }
   if (cards.some((c) => !overs.has(c))) return null;
+  // A cancelled card has no window, and on its own host (the stack under the
+  // grid) its night ends only at the 5 AM rollover — so ACL's Saturday, every
+  // set done at 10 PM, stayed on the wall till 5 AM for its three cancelled
+  // cards, and the 11 PM open landed on it instead of tonight's Late nights
+  // (2026-10-03). Nobody needs directions to a cancelled set: once every timed
+  // card in its room is over, it is too. An untimed card that is NOT cancelled
+  // (a party with no clock) still waits for its night.
+  const timed = cards.filter((c) => windowOf(c));
+  if (timed.length && timed.every((c) => overs.get(c))) {
+    for (const c of cards) if (c.classList.contains('cancelled') && !windowOf(c)) overs.set(c, true);
+  }
   return { cards, overs, all: cards.every((c) => overs.get(c)) };
 }
 // The door: one quiet line, the section micro-label with the app's caret and
