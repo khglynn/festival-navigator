@@ -313,7 +313,9 @@ test('windows: every ACL night — both weekends (an unprinted closer glows to t
   // the plan holds — and checkWindows found each one's card, window for window.
   const late = plan.places.filter((p) => p.roomKeys.includes('Late nights')).flatMap((p) => p.acts);
   assert.equal(late.length, 66);
-  assert.equal(n, 49 * 2 + 42 * 2 + 66, 'every grid set on both weekends and every Late night, compared');
+  // Untagged sets twice, then W1's and W2's own (the W1 Saturday re-time of
+  // 2026-10-03 split ten untagged sets and took three off: 49/42/42 then).
+  assert.equal(n, 39 * 2 + 50 + 52 + 66, 'every grid set on both weekends and every Late night, compared');
   // Fcukers on Oct 10: Devil May Care posts 11:45 PM (doors 10), close 2 AM.
   const card = root.querySelector('.day-block[data-day="Late nights"] .room[data-iso="2026-10-10"] .card[data-artist="Fcukers"]');
   assert.deepEqual([Number(card.dataset.nowFrom), Number(card.dataset.nowTo)], [M(23, 45), M(26)]);
@@ -395,7 +397,7 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
 test('ACL: no two grid places of one weekend overlap on one stage (the prototype had 41)', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
   const sets = plan.places.filter((p) => p.kind === 'set');
-  assert.equal(sets.length, 49 * 2 + 42 * 2, 'untagged sets on both weekends, tagged ones on theirs');
+  assert.equal(sets.length, 39 * 2 + 50 + 52, 'untagged sets on both weekends, tagged ones on theirs');
   let overlaps = 0;
   for (const n of plan.nights) {
     const here = sets.filter((p) => p.nightId === n.id);
