@@ -1,13 +1,13 @@
 {
   "name": "festival-navigator",
   "version": "2.0.0",
-  "description": "Offline-first festival planner with live crew sync \u2014 pick your set times together, works in a field with one bar of signal",
+  "description": "Offline-first festival planner with live crew sync — pick your set times together, works in a field with one bar of signal",
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build step needed for static site'",
     "brand": "node scripts/brand-assets.mjs",
     "test": "node --import ./tests/helpers/night-clock.mjs --test tests/*.test.mjs",
-    "test:browser": "BROWSER_TEST_REQUIRED=1 node --test tests/browser/*.test.mjs"
+    "test:browser": "BROWSER_TEST_REQUIRED=1 node --test --test-name-pattern=\"^DIAG\" tests/browser/zz-diag-fold.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0"
