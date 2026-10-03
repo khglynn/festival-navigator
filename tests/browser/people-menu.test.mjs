@@ -455,7 +455,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         });
         assert.deepEqual(geo.order, ['inv-qr', 'inv-link'], 'the QR on top of the link');
         assert.ok(Math.abs(geo.img.w - geo.img.h) < 0.5 && Math.abs(geo.tile.w - geo.tile.h) < 0.5, `square: tile ${geo.tile.w}×${geo.tile.h}, image ${geo.img.w}×${geo.img.h}`);
-        assert.ok(geo.tile.w >= 150 && geo.tile.w <= 176, `the tile is min(176px, 52vw): ${geo.tile.w}`);
+        const tileW = Math.min(h <= 640 ? 132 : 176, 0.52 * w); // v3.css: smaller on a short screen
+        assert.ok(Math.abs(geo.tile.w - tileW) < 0.5, `the tile is min(${h <= 640 ? 132 : 176}px, 52vw): ${geo.tile.w}`);
         assert.ok(geo.tile.l >= geo.sheet.l && geo.tile.r <= geo.sheet.r && geo.tile.t >= geo.sheet.t && geo.tile.b <= Math.min(geo.sheet.b, h), `inside the sheet and on screen: ${JSON.stringify(geo)}`);
         assert.ok(Math.abs((geo.tile.l + geo.tile.r) / 2 - (geo.sheet.l + geo.sheet.r) / 2) < 1, 'centred');
         assert.ok(geo.natural[0] > 0 && geo.natural[0] === geo.natural[1], `drawn, square: ${geo.natural}`);
@@ -504,6 +505,39 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         await page.keyboard.type('Zed');
         assert.equal(await page.locator(field).inputValue(), 'Zed', 'and it takes a name');
         assert.equal(posts.length, 0, 'nothing sent yet');
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+
+  // The sheet's main action stays on screen at open on the smallest phone,
+  // with the line a shared view adds (the review of 1b80842: at 320×568 a
+  // Show filter + List put Share 26px below the sheet's 72vh fold — 18 of
+  // its 44px showing). The tile gives way on a short screen instead.
+  for (const mode of ['List', 'a room off + List']) {
+    test(`${name} 320×568, ${mode}: Share and Done are on screen when the Invite sheet opens`, { skip }, async () => {
+      const { ctx, page, errors, press } = await openApp(get(), { width: 320, height: 568 });
+      try {
+        await press('#dock-fest-link');
+        if (mode !== 'List') await press('#dock-fest-wrap .sort-pop [data-room]');
+        await press('#dock-fest-wrap .sort-pop .view-row [data-view="list"]');
+        await press('#dock-fest-link'); // the Show menu closes on its own door
+        await page.waitForFunction(() => ![...document.querySelectorAll('.sort-pop')].some((p) => getComputedStyle(p).display !== 'none'), null, { timeout: 4000 }).catch(() => {});
+        await press('#dock-you');
+        await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+        await page.waitForSelector('.invite-sheet .inv-qr img.in', { timeout: 4000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        const at = await page.evaluate(() => {
+          const sheet = document.querySelector('.invite-sheet');
+          const s = sheet.getBoundingClientRect();
+          const box = (sel) => { const b = sheet.querySelector(sel).getBoundingClientRect(); return { t: b.top, b: b.bottom }; };
+          const tile = sheet.querySelector('.inv-qr-tile').getBoundingClientRect();
+          return { top: Math.max(s.top, 0), bottom: Math.min(s.bottom, innerHeight), scrolled: sheet.scrollTop, sub: sheet.querySelector('.inv-sub').textContent, share: box('.inv-share'), done: box('.inv-done'), tile: [tile.width, tile.height] };
+        });
+        assert.match(at.sub, mode === 'List' ? /as a list/ : / \+ .*, as a list/, `the sheet says which view the link opens on: ${at.sub}`);
+        assert.equal(at.scrolled, 0, 'at open, unscrolled');
+        for (const k of ['share', 'done']) assert.ok(at[k].t >= at.top && at[k].b <= at.bottom + 0.5, `${k} wholly on screen at open: ${JSON.stringify(at)}`);
+        assert.ok(Math.abs(at.tile[0] - at.tile[1]) < 0.5, `the tile still square: ${at.tile}`);
         assert.deepEqual(errors, []);
       } finally { await ctx.close(); }
     });

@@ -3669,7 +3669,7 @@ function inviteLinkRow(link, label) {
 // cannot be drawn takes its figure with it and the link stands alone, as it
 // always did; the record says so in the error's own words, never with the
 // link in them.
-const QR_ROOM_PX = 168; // the room at its widest — the 176px tile less its 4px white margin — where the page cannot be measured
+const QR_ROOM_PX = 176; // the room at its widest — the whole 176px tile — where the page cannot be measured
 // The room the tile gives the image, in CSS px, measured on the page: the
 // tile is min(176px, 52vw), smaller on a short screen (v3.css), and an
 // <img> not yet drawn fills its room exactly. A computed width, never a

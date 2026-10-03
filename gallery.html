@@ -349,7 +349,7 @@ for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) 
   const img = sheet.querySelector('.inv-qr img');
   img.addEventListener('load', () => img.classList.add('in'), { once: true });
   // Drawn to the room its tile gives it and shown at its own pixels, as app.js does.
-  const { src, cssPx } = qrPng(link, parseFloat(getComputedStyle(img).width) || 168);
+  const { src, cssPx } = qrPng(link, parseFloat(getComputedStyle(img).width) || 176);
   img.style.width = `${cssPx}px`;
   img.src = src;
 }

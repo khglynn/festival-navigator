@@ -490,16 +490,24 @@ html { touch-action: manipulation; }
  * that instant under Low power and Reduce Motion. The caption spans the
  * sheet, so at 320 it is two lines, not four under a 166px tile. */
 .invite-sheet .inv-qr { margin: 0; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-/* The image carries its own 4-module quiet zone (qr.js), so the tile's white
- * margin is a thin 4px; app.js draws the image to the room inside it and
- * shows it at its own pixels, centred — never stretched to fill the tile
- * (a 1.1× stretch made the modules alternate 7 and 8 pixels). Until it is
- * drawn, the <img> fills that room, which is what app.js measures. */
-.invite-sheet .inv-qr-tile { width: min(176px, 52vw); aspect-ratio: 1; box-sizing: border-box; padding: 4px;
+/* The image carries its own 4-module quiet zone (qr.js), so the tile needs no
+ * white margin of its own; app.js draws the image to the tile's room and
+ * shows it at its own pixels, centred — never stretched to fill the tile (a
+ * 1.1× stretch made the modules alternate 7 and 8 pixels). Until it is
+ * drawn, the <img> fills that room, which is what app.js measures. Its
+ * corners round with the tile's: they are quiet zone, never code. */
+.invite-sheet .inv-qr-tile { width: min(176px, 52vw); aspect-ratio: 1; box-sizing: border-box;
                              display: flex; align-items: center; justify-content: center;
                              background: var(--text-primary); border-radius: var(--r-card); }
 .invite-sheet .inv-qr img { display: block; flex: none; width: 100%; max-width: 100%; aspect-ratio: 1; image-rendering: pixelated;
+                            border-radius: var(--r-card);
                             -webkit-touch-callout: default; opacity: 0; transition: opacity .2s ease-out; }
+/* A short screen (a 320×568 phone, any phone on its side): the tile gives
+ * way, so Share stays on screen at open under the line a shared view adds —
+ * at 166px it put Share 26px below the sheet's 72vh fold (the review of
+ * 1b80842). The code keeps 4–5 device pixels a module at 2x, and a
+ * screenshot of the longest shared-view link still decodes. */
+@media (max-height: 640px) { .invite-sheet .inv-qr-tile { width: min(132px, 52vw); } }
 .invite-sheet .inv-qr img.in { opacity: 1; }
 .invite-sheet .inv-qr figcaption { color: var(--text-tertiary); font-size: 11.5px; line-height: 1.45;
                                    text-align: center; text-wrap: balance; max-width: 36ch; }
