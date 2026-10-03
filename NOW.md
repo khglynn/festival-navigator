@@ -1,22 +1,22 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-03 PM (ACL Sat W1 re-timed; v108 live) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-03 4:20 PM PT (v113 live: ACL Sat W1 re-timed) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v108, from `main`** (PR #78, merged 2026-10-02 7:39 AM PT) on fest /
-  festival / crew.kevinhg.com, all three serving festival-nav-v108 /
-  01887faf: usage through errlog.js's one door — `track()` with an
-  allowlist of 22 events (no free text, no tokens, no artist or note text),
-  on the error queue (usage evicted first, errors first in every send),
-  "Send crash reports and usage to Kevin" in Settings; the welcome card
-  now leaves however its animation ends (LEDGER 40). Rollback: Vercel
-  dpl_ixKdnSxze9Jz6DPZ9XVG8yYgNUgT (v107 + docs); Neon
-  `backup-2026-10-02-pre-v108`. v107 (Oct 1): opening on bad signal.
-  Rows, reviews, rollback targets: the LEDGER.
+- **v113, from `main`** (PR #81, merged 2026-10-03 4:17 PM PT) on fest /
+  festival / crew.kevinhg.com, all three serving festival-nav-v113 /
+  07aea7f0: ACL's W1 Saturday re-timed from the revised poster after the
+  mud delay (Left Lucid, Fightmaster, Fakemink cancelled on W1; picks
+  kept), and a cancelled card folds with its finished room (wall.js
+  `roomPast`), so the 11 PM open lands on Late nights. Numbered v113:
+  PR #80's previews used v109–v112, so #80 re-stamps above it. Rollback:
+  Vercel dpl_8apj1YNu9gYg3B4gvj5BL5e6aB86 (v108 + docs). v108 (Oct 2):
+  usage through errlog.js's one door. Rows, reviews, rollback targets:
+  the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), triggered by error-tracking issues only, and one usage
   rule: 3+ phones red on sync in an hour ("Fest: 3+ phones can't sync").
