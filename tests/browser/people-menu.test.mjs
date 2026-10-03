@@ -416,7 +416,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         // — on a loaded runner later than a fixed beat after the wall (a full
         // parallel run, 2026-10-02: the sheet beat it), so the test waits for
         // that fetch. A sheet opened after it arrives with its QR already
-        // drawn, never a blank tile filled in later.
+        // drawn, never a blank tile filled in later: drawn the moment the
+        // sheet is on the page (its tile measured there), in a microtask
+        // queued before this observer's, so before any frame is painted.
         for (let t = 0; !fetched.includes('/vendor/uqr.mjs'); t += 50) {
           assert.ok(t < 8000, `the QR module was never warmed: ${fetched.filter((f) => /\.m?js$/.test(f)).slice(-5).join(', ')}`);
           await sleep(50);
@@ -434,7 +436,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         });
         await press('#dock-you');
         await press('#dock-you-wrap .hl-pop [data-act="invite"]');
-        assert.equal(await page.evaluate(() => window.__qrAtOpen), 'data:image/png;base64,', 'drawn before the sheet was on the page');
+        assert.equal(await page.evaluate(() => window.__qrAtOpen), 'data:image/png;base64,', 'drawn before the sheet was ever painted');
         await page.waitForSelector('.invite-sheet .inv-qr img.in', { timeout: 4000 });
         await motionDone(page, { within: '.invite-sheet' });
         const link = await page.locator('.invite-sheet .inv-link input').inputValue();
@@ -457,7 +459,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         assert.ok(geo.tile.l >= geo.sheet.l && geo.tile.r <= geo.sheet.r && geo.tile.t >= geo.sheet.t && geo.tile.b <= Math.min(geo.sheet.b, h), `inside the sheet and on screen: ${JSON.stringify(geo)}`);
         assert.ok(Math.abs((geo.tile.l + geo.tile.r) / 2 - (geo.sheet.l + geo.sheet.r) / 2) < 1, 'centred');
         assert.ok(geo.natural[0] > 0 && geo.natural[0] === geo.natural[1], `drawn, square: ${geo.natural}`);
-        assert.ok(geo.natural[0] >= geo.img.w * 1.5, `drawn at the screen's pixel ratio, not blown up: ${geo.natural[0]}px for ${geo.img.w} CSS px at 2x`);
+        // Shown at its own pixels: one image pixel to one screen pixel at 2x.
+        // A bitmap stretched over its room by even 1.1× makes its modules
+        // alternate 7 and 8 pixels with image-rendering: pixelated (the walk
+        // of 1b80842: 287 drawn, 320 shown); `>= 1.5×` let that through.
+        assert.ok(Math.abs(geo.natural[0] - geo.img.w * 2) < 0.01, `shown at its own pixels at 2x: ${geo.natural[0]}px drawn, ${geo.img.w} CSS px shown`);
+        assert.ok(Math.abs((geo.img.l + geo.img.r) / 2 - (geo.tile.l + geo.tile.r) / 2) < 0.5 && Math.abs((geo.img.t + geo.img.b) / 2 - (geo.tile.t + geo.tile.b) / 2) < 0.5, `centred in its tile: ${JSON.stringify([geo.img, geo.tile])}`);
         assert.equal(geo.opacity, '1', 'faded in and still');
         assert.equal(geo.tileBg, 'rgb(255, 255, 255)', 'a white tile: --text-primary, never the fest accent');
         if (geo.callout !== null) assert.equal(geo.callout, 'default', 'a long-press keeps the OS’s Save Image');
@@ -466,6 +473,10 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const px = jpeg.decode(shot, { useTArray: true });
         const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
         assert.equal(hit && hit.data, link, 'the screenshot scans to exactly the link in the box');
+        // Whole device pixels a module: version v is 17 + 4v modules, inside
+        // the 4-module quiet zone the bitmap carries.
+        const modules = 17 + 4 * hit.version + 8;
+        assert.equal(geo.natural[0] % modules, 0, `whole pixels a module: ${geo.natural[0]} for ${modules} modules`);
         // Copy and Share, with real input, as before the QR.
         await press('.invite-sheet .inv-copy');
         if (name === 'Chromium') {

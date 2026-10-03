@@ -3663,10 +3663,25 @@ function inviteLinkRow(link, label) {
 // when the image lands. The module is warmed after the wall paints (warmQr),
 // so the QR is almost always drawn at once; one drawn late fades in, opacity
 // only (the tokens' kill rules make it instant under Low power and Reduce
-// Motion). A QR that cannot be drawn takes its figure with it and the link
-// stands alone, as it always did; the record says so in the error's own
-// words, never with the link in them.
-const QR_CSS_PX = 160; // the image at its widest: the 176px tile less its 8px white margin
+// Motion). It is drawn to the room its tile really has on this screen, and
+// shown at its own pixels in the middle of it (qr.js qrPng): whole device
+// pixels a module, never a bitmap stretched to fill the tile. A QR that
+// cannot be drawn takes its figure with it and the link stands alone, as it
+// always did; the record says so in the error's own words, never with the
+// link in them.
+const QR_ROOM_PX = 168; // the room at its widest — the 176px tile less its 4px white margin — where the page cannot be measured
+// The room the tile gives the image, in CSS px, measured on the page: the
+// tile is min(176px, 52vw), smaller on a short screen (v3.css), and an
+// <img> not yet drawn fills its room exactly. A computed width, never a
+// bounding box: the sheet's way in scales it.
+function qrRoom(img) {
+  try {
+    const v = window.getComputedStyle(img).width; // a used length on a page; '100%' or '' off one
+    const w = /px$/.test(v) ? parseFloat(v) : 0;
+    if (w > 0) return w;
+  } catch { /* not on a page */ }
+  return QR_ROOM_PX;
+}
 let qrModule = null;
 let qrLoading = null;
 // js/v3/qr.js, only ever through import(): its vendored encoder is the one
@@ -3707,10 +3722,20 @@ function inviteQr(link) {
   };
   img.addEventListener('load', () => img.classList.add('in'), { once: true });
   img.addEventListener('error', () => fail(new Error('qr: the image did not load')), { once: true });
-  const draw = (qr) => { img.src = qr.qrPng(link, QR_CSS_PX); };
+  const draw = (qr) => {
+    const { src, cssPx } = qr.qrPng(link, qrRoom(img));
+    img.style.width = `${cssPx}px`;
+    img.src = src;
+  };
   if (qrModule) {
-    // Drawn before the sheet is on the page: a failure leaves nothing to take away.
-    try { draw(qrModule); } catch (e) { record('invite:qr', e); return document.createDocumentFragment(); }
+    // Drawn the moment the sheet is on the page, so its tile can be measured:
+    // openInvite puts it there before this microtask runs, and the browser
+    // paints no frame in between. A failure takes the figure away before
+    // anyone has seen it.
+    queueMicrotask(() => {
+      if (gone) return;
+      try { draw(qrModule); } catch (e) { gone = true; fig.remove(); record('invite:qr', e); }
+    });
     return fig;
   }
   loadQr().then((qr) => { if (!gone) draw(qr); }).catch(fail);

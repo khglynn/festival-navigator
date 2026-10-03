@@ -82,6 +82,13 @@ function rgbaOf(matrix, scale = 4, dark = [12, 10, 20], light = [255, 255, 255])
   }
   return { data: out, width: px, height: px };
 }
+// The k-th ring of modules in from the edge (0 is the outermost).
+const QUIET = 4;
+function ring(m, k) {
+  const out = [];
+  for (let i = k; i < m.size - k; i++) out.push(m.data[k][i], m.data[m.size - 1 - k][i], m.data[i][k], m.data[i][m.size - 1 - k]);
+  return out;
+}
 const decode = ({ data, width, height }) => {
   const hit = jsQR(data, width, height, { inversionAttempts: 'dontInvert' });
   return hit ? hit.data : null;
@@ -132,14 +139,28 @@ for (const [shape, link] of Object.entries(SHAPES)) {
     const m = qrMatrix(link);
     assert.equal(m.data.length, m.size);
     assert.ok(m.data.every((row) => row.length === m.size), 'a square grid');
-    // ECC M, a 2-module border: version v is 17 + 4v modules, plus 4.
-    assert.equal((m.size - 4 - 17) % 4, 0, `a QR size with its 2-module border: ${m.size}`);
+    // The quiet zone the QR spec asks for — four light modules all round —
+    // is in the bitmap itself: a saved or copied PNG carries no tile around
+    // it (the walk of 1b80842). Version v is 17 + 4v modules inside it.
+    for (let k = 0; k < QUIET; k++) assert.ok(ring(m, k).every((dark) => !dark), `ring ${k} from the edge is quiet: ${m.size}`);
+    assert.ok(ring(m, QUIET).some(Boolean), 'the code itself starts at the fifth ring');
+    const version = (m.size - 2 * QUIET - 17) / 4;
+    assert.ok(Number.isInteger(version) && version >= 1, `a QR size inside a ${QUIET}-module quiet zone: ${m.size}`);
     assert.equal(decode(rgbaOf(m)), link);
-    // Small enough to scan off a phone at the sheet's 160 CSS px: version 10
-    // (61 modules with the border) still gives every module 2.6 px.
-    assert.ok(m.size <= 61, `${m.size} modules — the link grew past what the tile can show crisply`);
+    // Small enough to scan off a phone in the sheet's smallest tile (124 CSS
+    // px inside its margin on a short screen): version 10, 65 modules with
+    // the quiet zone, still gets 3 device pixels a module at 2x.
+    assert.ok(m.size <= 65, `${m.size} modules — the link grew past what the tile can show crisply`);
   });
 }
+
+// One exact size, so the error correction and the quiet zone are both
+// pinned (a parity check let border 0, border 4 and ECC Q all through, the
+// review of 1b80842): the festival link is version 5 at ECC M — 37 modules
+// — inside the 4-module quiet zone. ECC L would be smaller, Q larger.
+test('the festival link is version 5 at ECC M inside a 4-module quiet zone: 45 modules', () => {
+  assert.equal(qrMatrix(SHAPES.festival).size, 45, `${SHAPES.festival} (${SHAPES.festival.length} characters)`);
+});
 
 // The same smudge on both: four module rows wiped across half the code,
 // clear of the three finder patterns a scanner needs whole. It is real
@@ -157,7 +178,7 @@ function smudged(matrix) {
 test('the matrix is ECC M: a smudge that defeats ECC L still reads', async () => {
   const { encode } = await import('../vendor/uqr.mjs');
   const link = SHAPES.festival;
-  assert.equal(decode(smudged(encode(link, { ecc: 'L', border: 2 }))), null, 'the smudge is real damage');
+  assert.equal(decode(smudged(encode(link, { ecc: 'L', border: QUIET }))), null, 'the smudge is real damage');
   assert.equal(decode(smudged(qrMatrix(link))), link);
 });
 
@@ -212,14 +233,20 @@ function withPage(page, fn) {
 test('qrPng draws the link with whole-pixel modules at the screen’s pixel ratio, and what it draws decodes to the link', () => {
   const link = SHAPES['the longest show list, as a list'];
   const page = fakeCanvasDoc({ tokens: { '--page': ' #0C0A14', '--text-primary': ' #FFFFFF' } });
-  const url = withPage(page, () => qrPng(link, 160));
-  assert.equal(url, 'data:image/png;fake', 'a PNG data URL');
+  const out = withPage(page, () => qrPng(link, 160));
+  assert.equal(out.src, 'data:image/png;fake', 'a PNG data URL');
   const [canvas] = page.made;
   const { size } = qrMatrix(link);
   const scale = canvas.width / size;
   assert.ok(Number.isInteger(scale) && scale >= 1, `whole pixels per module (${canvas.width} / ${size})`);
   assert.equal(scale, Math.floor((160 * 2) / size), 'as many as fit 160 CSS px at 2x');
   assert.equal(canvas.height, canvas.width, 'square');
+  // And the size to SHOW it at: its own pixels, one to each screen pixel —
+  // a bitmap stretched to fill the room would make its modules alternate
+  // 7 and 8 pixels (the walk of 1b80842), whatever it was drawn at.
+  assert.equal(out.px, canvas.width, 'the bitmap’s side');
+  assert.equal(out.cssPx, canvas.width / 2, 'shown at its own pixels at 2x');
+  assert.ok(out.cssPx <= 160, 'and never wider than the room it was given');
   assert.equal(decode({ data: canvas.rgba, width: canvas.width, height: canvas.height }), link);
   // Dark on light, from the tokens: the page's own near-black on white.
   assert.deepEqual([...new Set(canvas.fills.map((f) => f.style.toUpperCase()))].sort(), ['#0C0A14', '#FFFFFF']);
@@ -232,10 +259,25 @@ test('qrPng falls back to the literal colours when the tokens cannot be read, an
   const page = fakeCanvasDoc();
   page.win.devicePixelRatio = undefined;
   page.win.getComputedStyle = () => { throw new Error('no styles here'); };
-  withPage(page, () => qrPng(link, 160));
+  const out = withPage(page, () => qrPng(link, 160));
   const [canvas] = page.made;
   assert.equal(canvas.width / qrMatrix(link).size, Math.floor(160 / qrMatrix(link).size));
+  assert.equal(out.cssPx, canvas.width, 'at 1x, shown at its pixels');
   assert.deepEqual([...new Set(canvas.fills.map((f) => f.style.toUpperCase()))].sort(), ['#0C0A14', '#FFFFFF']);
+  assert.equal(decode({ data: canvas.rgba, width: canvas.width, height: canvas.height }), link);
+});
+
+test('qrPng at a fractional pixel ratio (an Android’s 2.625): whole device pixels a module, shown at exactly those pixels', () => {
+  const link = SHAPES.festival;
+  const page = fakeCanvasDoc();
+  page.win.devicePixelRatio = 2.625;
+  const out = withPage(page, () => qrPng(link, 150.4));
+  const [canvas] = page.made;
+  const { size } = qrMatrix(link);
+  assert.equal(canvas.width % size, 0, 'whole pixels per module');
+  assert.equal(canvas.width / size, Math.floor((150.4 * 2.625) / size), 'as many as fit');
+  assert.ok(Math.abs(out.cssPx * 2.625 - canvas.width) < 1e-9, `${out.cssPx} CSS px is ${canvas.width} device px`);
+  assert.ok(out.cssPx <= 150.4);
   assert.equal(decode({ data: canvas.rgba, width: canvas.width, height: canvas.height }), link);
 });
 

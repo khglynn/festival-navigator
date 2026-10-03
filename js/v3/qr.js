@@ -13,11 +13,12 @@
 import { encode } from '../../vendor/uqr.mjs';
 
 // The module grid for `text`: ECC level M (15% of it can be smudged, glared
-// or cropped and it still reads) and a 2-module quiet border; the sheet's
-// white tile adds the rest of the margin a scanner wants. `data[y][x]` is
-// true for a dark module; `size` counts the border.
+// or cropped and it still reads) inside the 4-module quiet zone the QR spec
+// asks for — in the bitmap itself, because a long-press Save or a right-click
+// Copy takes the image without the sheet's white tile around it.
+// `data[y][x]` is true for a dark module; `size` counts the quiet zone.
 export function qrMatrix(text) {
-  const { size, data } = encode(text, { ecc: 'M', border: 2 });
+  const { size, data } = encode(text, { ecc: 'M', border: 4 });
   return { size, data };
 }
 
@@ -33,19 +34,24 @@ function tokenColour(name, fallback) {
   } catch { return fallback; }
 }
 
-// A PNG data URL of `text` as a QR about `cssPx` CSS pixels square: whole
-// device pixels per module at this screen's pixel ratio (a blurred edge is
-// what makes a camera hesitate), the image shown with `image-rendering:
-// pixelated` so the browser never smooths it either. An <img>, not a canvas
-// on the page, so a long-press offers Save Image, a right-click Copy Image,
-// and a screenshot carries it like anything else on screen. Throws where
-// there is no 2D canvas (jsdom, a browser that refuses one): the caller
-// takes the QR away and the link below it stands alone, as it always did.
-export function qrPng(text, cssPx) {
+// `text` as a QR that fits `room` CSS pixels square, with whole device
+// pixels per module at this screen's pixel ratio (a blurred or uneven edge is
+// what makes a camera hesitate): `src`, a PNG data URL `px` pixels square,
+// and `cssPx`, the size to SHOW it at — its own pixels, one to each screen
+// pixel. Shown any larger, even stretched 1.1× to fill its room, the modules
+// alternate 7 and 8 pixels however crisply they were drawn (the walk of
+// 1b80842), so the caller sizes the image to `cssPx`, never to its room; it
+// is shown with `image-rendering: pixelated` all the same, for a page zoom.
+// An <img>, not a canvas on the page, so a long-press offers Save Image, a
+// right-click Copy Image, and a screenshot carries it like anything else on
+// screen. Throws where there is no 2D canvas (jsdom, a browser that refuses
+// one): the caller takes the QR away and the link below it stands alone, as
+// it always did.
+export function qrPng(text, room) {
   const { size, data } = qrMatrix(text);
   let ratio = 1;
   try { ratio = Number(window.devicePixelRatio) > 0 ? Number(window.devicePixelRatio) : 1; } catch { ratio = 1; }
-  const scale = Math.max(1, Math.floor((cssPx * ratio) / size));
+  const scale = Math.max(1, Math.floor((room * ratio) / size));
   const px = size * scale;
   const canvas = document.createElement('canvas');
   canvas.width = px;
@@ -67,5 +73,5 @@ export function qrPng(text, cssPx) {
       x = end;
     }
   }
-  return canvas.toDataURL('image/png');
+  return { src: canvas.toDataURL('image/png'), px, cssPx: px / ratio };
 }
