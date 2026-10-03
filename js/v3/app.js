@@ -3666,9 +3666,9 @@ function inviteLinkRow(link, label) {
 // Motion). It is drawn to the room its tile really has on this screen, and
 // shown at its own pixels in the middle of it (qr.js qrPng): whole device
 // pixels a module, never a bitmap stretched to fill the tile. A QR that
-// cannot be drawn takes its figure with it and the link stands alone, as it
-// always did; the record says so in the error's own words, never with the
-// link in them.
+// cannot be drawn, or has not come by its deadline, takes its tile with it
+// and the link stands alone, as it always did; a failure's record says so in
+// the error's own words, never with the link in them.
 const QR_ROOM_PX = 176; // the room at its widest — the whole 176px tile — where the page cannot be measured
 // The room the tile gives the image, in CSS px, measured on the page: the
 // tile is min(176px, 52vw), smaller on a short screen (v3.css), and an
@@ -3702,39 +3702,76 @@ function warmQr() {
   try { if (typeof window.requestIdleCallback === 'function') { window.requestIdleCallback(go, { timeout: 4000 }); return; } } catch { /* no idle callbacks */ }
   setTimeout(go, 1500);
 }
+// A module this late is not coming soon (the festival files' own budget):
+// the tile folds away and the link stands alone. The module may still land
+// for the next sheet; a request that fails at last is recorded then.
+const QR_WAIT_MS = 4000;
+const QR_FOLD_MS = 260; // the tile's way out: it fades, then its room closes
 function inviteQr(link) {
-  const fig = document.createElement('figure');
+  // A plain box, not a <figure>: a figure takes its name from its caption,
+  // and a screen reader heard the caption twice (the review of 1b80842). The
+  // image's alt says what it is; the caption says what scanning it does.
+  const fig = document.createElement('div');
   fig.className = 'inv-qr';
   const tile = document.createElement('div');
   tile.className = 'inv-qr-tile';
   const img = document.createElement('img');
   img.alt = INVITE_WORDS.qrAlt;
   tile.appendChild(img);
-  const caption = document.createElement('figcaption');
+  const caption = document.createElement('div');
+  caption.className = 'inv-qr-cap';
   caption.textContent = INVITE_WORDS.qrCaption;
   fig.append(tile, caption);
+  // Until the image is in (`.in`), the tile is a soft square that holds the
+  // room and promises nothing: no white code-shaped tile, no "point a phone
+  // camera here" over an empty square (v3.css).
   let gone = false;
-  const fail = (e) => {
+  let said = false;
+  let seen = false; // painted at least once: from then on it leaves by folding away
+  let deadline = null;
+  try { window.requestAnimationFrame(() => { seen = true; }); } catch { /* no frames here: never seen */ }
+  const report = (e) => { if (!said) { said = true; record('invite:qr', e); } };
+  // Out of the sheet: at once where nobody has seen it, or motion is off;
+  // otherwise it fades, then its room closes, gap and all, so the link
+  // travels up into its place — it went in one frame before, 230px (the
+  // walk of 1b80842).
+  const leave = () => {
     if (gone) return;
     gone = true;
-    fig.remove();
-    record('invite:qr', e);
+    clearTimeout(deadline);
+    if (!seen || !fig.isConnected || !canAnimate(fig, ctx)) { fig.remove(); return; }
+    let gap = 12; // the sheet's own gap (v3.css .sheet)
+    try { gap = parseFloat(window.getComputedStyle(fig.parentNode).rowGap) || 0; } catch { /* keep 12 */ }
+    const h = fig.offsetHeight; // laid out, not scaled
+    fig.style.overflow = 'hidden';
+    const a = fig.animate([
+      { opacity: 1, height: `${h}px`, marginBottom: '0px' },
+      { opacity: 0, height: `${h}px`, marginBottom: '0px', offset: 0.35 },
+      { opacity: 0, height: '0px', marginBottom: `${-gap}px` },
+    ], { duration: QR_FOLD_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    const done = () => fig.remove();
+    a.onfinish = done;
+    a.oncancel = done;
+    setTimeout(done, QR_FOLD_MS * 3 + 50); // a backgrounded tab must not hang it
   };
-  img.addEventListener('load', () => img.classList.add('in'), { once: true });
+  const fail = (e) => { report(e); leave(); };
+  img.addEventListener('load', () => { if (gone) return; clearTimeout(deadline); fig.classList.add('in'); }, { once: true });
   img.addEventListener('error', () => fail(new Error('qr: the image did not load')), { once: true });
   const draw = (qr) => {
     const { src, cssPx } = qr.qrPng(link, qrRoom(img));
     img.style.width = `${cssPx}px`;
     img.src = src;
   };
+  deadline = setTimeout(leave, QR_WAIT_MS); // slow is not an error: nothing recorded
   if (qrModule) {
     // Drawn the moment the sheet is on the page, so its tile can be measured:
     // openInvite puts it there before this microtask runs, and the browser
     // paints no frame in between. A failure takes the figure away before
-    // anyone has seen it.
-    queueMicrotask(() => {
+    // anyone has seen it. (A resolved promise's job, not queueMicrotask,
+    // which an old engine lacks: the same microtask queue either way.)
+    Promise.resolve().then(() => {
       if (gone) return;
-      try { draw(qrModule); } catch (e) { gone = true; fig.remove(); record('invite:qr', e); }
+      try { draw(qrModule); } catch (e) { fail(e); }
     });
     return fig;
   }

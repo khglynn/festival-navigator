@@ -400,11 +400,14 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   assert.ok(sheet.querySelector('.inv-link .inv-copy'), 'Copy beside it');
   // The QR is that very link: one link on the sheet, whichever way it leaves.
   const qr = sheet.querySelector('.inv-qr');
-  assert.equal(qr.tagName, 'FIGURE');
+  // Not a <figure>: a figure takes its name from its caption, and a screen
+  // reader read the caption twice (the review of 1b80842).
+  assert.equal(qr.tagName, 'DIV');
+  assert.equal(qr.querySelector('figure, figcaption'), null);
   assert.equal(qr.previousElementSibling, sheet.querySelector('.inv-sub'), 'right under the line that says what the link opens');
   const img = qr.querySelector('img');
   assert.equal(img.alt, 'QR code for the crew link');
-  assert.equal(qr.querySelector('figcaption').textContent, 'Point a phone camera here to join. Anyone who scans it is in.', 'and it says what scanning it does');
+  assert.equal(qr.querySelector('.inv-qr-cap').textContent, 'Point a phone camera here to join. Anyone who scans it is in.', 'and it says what scanning it does');
   await until(() => img.getAttribute('src'), 'the QR drawn');
   assert.equal(scanned(img), link.value, 'scanned, it is exactly the link in the box');
   assert.equal(qr.querySelectorAll('button').length, 0, 'no Save button: a long-press, a right-click or a screenshot keeps it');
@@ -506,6 +509,12 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   await sheetClosed();
 });
 
+// In this file the module is already loaded by now (the + Invite test drew
+// a QR), so this is the warm path: drawn in a microtask the moment the sheet
+// is on the page, refused, and taken away before a frame. The late paths —
+// the module refused, held past its deadline, failing at last — are the
+// browser contract's (tests/browser/people-menu.test.mjs), where a request
+// can really be held or aborted.
 test('a phone that cannot draw the QR loses only the QR: the link stands alone, and the record names no link', async () => {
   qrCanvas = false;
   try {
@@ -522,9 +531,14 @@ test('a phone that cannot draw the QR loses only the QR: the link stands alone, 
     // stack is file paths (jsdom's own long names can read token-shaped to
     // the scrubber, so a mark there would prove nothing either way).
     assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
-    sheet.querySelector('.inv-done').click();
-    await sheetClosed();
-  } finally { qrCanvas = true; }
+  } finally {
+    qrCanvas = true;
+    // Closed whatever happened above, so one red stays one red: the tests
+    // after this one each wait for the history to settle (the review of
+    // 1b80842: a failure here once failed the twelve after it).
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
 });
 
 // One add per crew, whatever the sheets do (Sol's re-review of 1b678c0: the

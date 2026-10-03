@@ -40,7 +40,7 @@ const docFor = () => ({
 // draws it — a stand-in for Linux and Android, whose Inter and Anton are wider
 // than a Mac's (CI put the 320 pill at one disc where the Mac fit two,
 // 2026-09-26). now-jump's trick, aimed at the same dock.
-async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT, reducedMotion = 'no-preference' } = {}) {
+async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT, reducedMotion = 'no-preference', routes = null } = {}) {
   const touch = width < 720;
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block', reducedMotion });
   await lateStarts(ctx);
@@ -77,6 +77,7 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     return r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) });
   });
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 204, body: '' }));
+  if (routes) await routes(ctx); // a test's own: a module held or refused from the first request
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -437,7 +438,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         await press('#dock-you');
         await press('#dock-you-wrap .hl-pop [data-act="invite"]');
         assert.equal(await page.evaluate(() => window.__qrAtOpen), 'data:image/png;base64,', 'drawn before the sheet was ever painted');
-        await page.waitForSelector('.invite-sheet .inv-qr img.in', { timeout: 4000 });
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
         await motionDone(page, { within: '.invite-sheet' });
         const link = await page.locator('.invite-sheet .inv-link input').inputValue();
         const geo = await page.evaluate(() => {
@@ -448,9 +449,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           const st = getComputedStyle(img);
           return {
             sheet: box(sheet), tile: box(tile), img: box(img),
-            natural: [img.naturalWidth, img.naturalHeight], opacity: st.opacity, rendering: st.imageRendering,
+            natural: [img.naturalWidth, img.naturalHeight], opacity: getComputedStyle(tile).opacity, rendering: st.imageRendering,
             callout: st.webkitTouchCallout || null, tileBg: getComputedStyle(tile).backgroundColor,
-            order: [...sheet.children].map((n) => n.className).filter((c) => /inv-(qr|link)\b/.test(c)),
+            order: [...sheet.children].map((n) => n.classList[0]).filter((c) => /^inv-(qr|link)$/.test(c)),
           };
         });
         assert.deepEqual(geo.order, ['inv-qr', 'inv-link'], 'the QR on top of the link');
@@ -466,9 +467,14 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         // of 1b80842: 287 drawn, 320 shown); `>= 1.5×` let that through.
         assert.ok(Math.abs(geo.natural[0] - geo.img.w * 2) < 0.01, `shown at its own pixels at 2x: ${geo.natural[0]}px drawn, ${geo.img.w} CSS px shown`);
         assert.ok(Math.abs((geo.img.l + geo.img.r) / 2 - (geo.tile.l + geo.tile.r) / 2) < 0.5 && Math.abs((geo.img.t + geo.img.b) / 2 - (geo.tile.t + geo.tile.b) / 2) < 0.5, `centred in its tile: ${JSON.stringify([geo.img, geo.tile])}`);
-        assert.equal(geo.opacity, '1', 'faded in and still');
+        assert.equal(geo.opacity, '1', 'faded in with its tile, and still');
         assert.equal(geo.tileBg, 'rgb(255, 255, 255)', 'a white tile: --text-primary, never the fest accent');
         if (geo.callout !== null) assert.equal(geo.callout, 'default', 'a long-press keeps the OS’s Save Image');
+        // A screen reader hears the image by its alt and the caption once (a
+        // <figure> took its name from its caption, so it was read twice).
+        const aria = await page.locator('.invite-sheet .inv-qr').ariaSnapshot();
+        assert.equal(aria.split('Point a phone camera here').length - 1, 1, `the caption read once: ${aria}`);
+        assert.match(aria, /img "QR code for the crew link"/, aria);
         // What a camera sees: the tile as the screen shows it, decoded.
         const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
         const px = jpeg.decode(shot, { useTArray: true });
@@ -525,7 +531,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         await page.waitForFunction(() => ![...document.querySelectorAll('.sort-pop')].some((p) => getComputedStyle(p).display !== 'none'), null, { timeout: 4000 }).catch(() => {});
         await press('#dock-you');
         await press('#dock-you-wrap .hl-pop [data-act="invite"]');
-        await page.waitForSelector('.invite-sheet .inv-qr img.in', { timeout: 4000 });
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
         await motionDone(page, { within: '.invite-sheet' });
         const at = await page.evaluate(() => {
           const sheet = document.querySelector('.invite-sheet');
@@ -543,20 +549,144 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     });
   }
 
+  // The QR's late paths (the reviews of 1b80842): its module comes over the
+  // network whenever the worker has not precached it yet — a first visit's
+  // Create on weak signal is the share moment's cold path. Held, the tile is
+  // a square from the first frame that promises nothing (no "point a camera
+  // here" before there is a code) and nothing moves when the code lands;
+  // never coming, the tile folds away after its deadline — travelling, not
+  // gone in one frame; refused, the sheet loses only its QR, and the record
+  // says so without the link.
+  const qrRead = (page) => page.evaluate(() => {
+    const sheet = document.querySelector('.invite-sheet');
+    const top = (sel) => sheet.querySelector(sel).getBoundingClientRect().top;
+    const fig = sheet.querySelector('.inv-qr');
+    const tile = fig && fig.querySelector('.inv-qr-tile');
+    const cap = fig && fig.querySelector('.inv-qr-cap');
+    const t = tile && tile.getBoundingClientRect();
+    return {
+      sheet: sheet.getBoundingClientRect().top, sub: top('.inv-sub'), link: top('.inv-link'),
+      tile: t ? [t.width, t.height] : null, tileOpacity: tile ? getComputedStyle(tile).opacity : null,
+      cap: cap ? getComputedStyle(cap).visibility : null, ready: !!fig && fig.classList.contains('in'),
+      drawn: !!fig && !!fig.querySelector('img').getAttribute('src'),
+      next: sheet.querySelector('.inv-sub').nextElementSibling.className,
+    };
+  });
+  const qrRecords = (page) => page.evaluate(() => import('/js/errlog.js').then((m) => m.recent().filter((e) => e.kind === 'invite:qr')));
+
+  test(`${name} 390, the QR module held: the tile is square from the first frame and says nothing until there is a code; nothing moves when it lands`, { skip }, async () => {
+    let release = () => {};
+    const held = new Promise((r) => { release = r; });
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', async (r) => { await held; await r.continue().catch(() => {}); }) });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await motionDone(page, { within: '.invite-sheet' });
+      const before = await qrRead(page);
+      assert.equal(before.drawn, false, 'the module is held: nothing drawn yet');
+      assert.ok(before.tile && Math.abs(before.tile[0] - before.tile[1]) < 0.5 && before.tile[0] > 100, `square from the first frame: ${before.tile}`);
+      assert.equal(before.cap, 'hidden', 'no "point a phone camera here" before there is a code to point it at');
+      assert.ok(Number(before.tileOpacity) < 0.5, `a soft placeholder, not a white square promising a code: ${before.tileOpacity}`);
+      await sleep(1500);
+      assert.equal((await qrRead(page)).tile !== null, true, 'still waiting, inside its deadline');
+      release();
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      const after = await qrRead(page);
+      for (const k of ['sheet', 'sub', 'link']) assert.ok(Math.abs(after[k] - before[k]) < 0.5, `${k} did not move when the QR landed: ${before[k]} → ${after[k]}`);
+      assert.deepEqual(after.tile, before.tile, 'the tile kept its size');
+      assert.equal(after.cap, 'visible', 'with the code, the words');
+      assert.equal(after.tileOpacity, '1', 'and the tile whole');
+      const link = await page.locator('.invite-sheet .inv-link input').inputValue();
+      const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
+      const px = jpeg.decode(shot, { useTArray: true });
+      const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
+      assert.equal(hit && hit.data, link, 'it scans to the link');
+      assert.deepEqual(await qrRecords(page), [], 'slow is not an error');
+      assert.deepEqual(errors, []);
+    } finally { release(); await ctx.close(); }
+  });
+
+  test(`${name} 390, the QR module never comes: past its deadline the tile folds away, travelling, and the link stands alone`, { skip }, async () => {
+    let release = () => {};
+    const held = new Promise((r) => { release = r; });
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', async (r) => { await held; await r.abort().catch(() => {}); }) });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      const before = await qrRead(page);
+      // Every frame from here: where the sheet's top and the link box stand.
+      await page.evaluate(() => {
+        window.__qrTrack = [];
+        const tick = () => {
+          const sheet = document.querySelector('.invite-sheet');
+          if (!sheet) return;
+          window.__qrTrack.push({ sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top, qr: !!sheet.querySelector('.inv-qr') });
+          if (window.__qrTrack.length < 3000) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet .inv-qr'), null, { timeout: 9000 });
+      await sleep(250);
+      const after = await qrRead(page);
+      assert.equal(after.next, 'inv-link', 'the link right under the line, where it always was');
+      const track = await page.evaluate(() => window.__qrTrack);
+      // The sheet is bottom-anchored: its top comes down, or — when it is
+      // full and scrolls — the link comes up. Whatever moved, travelled.
+      const moved = ['sheet', 'link'].filter((k) => Math.abs(after[k] - before[k]) > 1);
+      assert.ok(moved.some((k) => Math.abs(after[k] - before[k]) > 40), `the tile's room closed: ${JSON.stringify([before, after])}`);
+      for (const k of moved) {
+        const from = before[k];
+        const to = after[k];
+        const between = track.filter((f) => Math.min(from, to) + 1 < f[k] && f[k] < Math.max(from, to) - 1).length;
+        assert.ok(between >= 2, `${k} travelled — seen on its way in ${between} frames, not jumped ${Math.round(to - from)}px in one`);
+      }
+      assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
+      // The request fails at last: that IS recorded, once, and nothing comes back.
+      release();
+      await page.waitForFunction(() => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000 });
+      const said = await qrRecords(page);
+      assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
+      assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+      assert.equal(await page.locator('.invite-sheet .inv-qr').count(), 0, 'and no QR comes back');
+      assert.deepEqual(errors, []);
+    } finally { release(); await ctx.close(); }
+  });
+
+  test(`${name} 390, the QR module refused from the start: the sheet loses only its QR, and the record names no link`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', (r) => r.abort()) });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet .inv-qr'), null, { timeout: 6000 });
+      const at = await qrRead(page);
+      assert.equal(at.next, 'inv-link', 'the link right under the line, where it always was');
+      await press('.invite-sheet .inv-share');
+      assert.equal((await page.evaluate(() => window.__shared)).length, 1, 'Share still shares');
+      const said = await qrRecords(page);
+      assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
+      assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   test(`${name} 390, Reduce Motion: the QR is there at once — no fade to wait for`, { skip }, async () => {
     const { ctx, page, errors, press } = await openApp(get(), { width: 390, reducedMotion: 'reduce' });
     try {
       await press('#dock-you');
       await press('#dock-you-wrap .hl-pop [data-act="invite"]');
       // The moment the image has loaded, it is whole: no transition runs.
-      await page.waitForFunction(() => { const i = document.querySelector('.invite-sheet .inv-qr img'); return !!i && i.complete && i.naturalWidth > 0 && i.classList.contains('in'); }, null, { timeout: 4000 });
+      await page.waitForFunction(() => { const i = document.querySelector('.invite-sheet .inv-qr img'); return !!i && i.complete && i.naturalWidth > 0 && i.closest('.inv-qr').classList.contains('in'); }, null, { timeout: 4000 });
       const st = await page.evaluate(() => {
-        const img = document.querySelector('.invite-sheet .inv-qr img');
-        return { opacity: getComputedStyle(img).opacity, transition: getComputedStyle(img).transitionDuration, moving: img.getAnimations().length };
+        const fig = document.querySelector('.invite-sheet .inv-qr');
+        const tile = fig.querySelector('.inv-qr-tile');
+        const cap = fig.querySelector('.inv-qr-cap');
+        return { opacity: getComputedStyle(tile).opacity, cap: getComputedStyle(cap).opacity, transition: [getComputedStyle(tile).transitionDuration, getComputedStyle(cap).transitionDuration], moving: fig.getAnimations({ subtree: true }).length };
       });
       assert.equal(st.opacity, '1', 'visible without waiting');
+      assert.equal(st.cap, '1', 'and its words');
       assert.equal(st.moving, 0, 'nothing moving on it');
-      assert.match(st.transition, /^0s/, 'the tokens’ kill rule holds the fade at nothing');
+      for (const t of st.transition) assert.match(t, /^0s/, 'the tokens’ kill rule holds the fade at nothing');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
