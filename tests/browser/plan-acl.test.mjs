@@ -163,21 +163,21 @@ async function linesInNight(page, text, night) {
 // ORIGIN.
 const SHARE_GOLDEN = [
   { night: '2026-09-29', wd: 'TUE', share: 'Share today’s picks', text: [
-    "Our crew's main picks for Sep 29 ACL Music Festival, now till end of day",
+    "Our crew's main picks for Sep 29 ACL, now till end of day",
     '',
     'Mohawk Austin for Fcukers @ ~8:45pm',
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-09-29',
   ].join('\n') },
   { night: '2026-10-01', wd: 'THU', share: 'Share Thu Oct 1’s picks', text: [
-    "Our crew's main picks for Oct 1 ACL Music Festival",
+    "Our crew's main picks for Oct 1 ACL",
     '',
     "Stubb's for Jess Williamson and Brandon Flowers @ ~8:30pm",
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-01',
   ].join('\n') },
   { night: '2026-10-02', wd: 'FRI', share: 'Share Fri Oct 2’s picks', text: [
-    "Our crew's main picks for Oct 2 ACL Music Festival",
+    "Our crew's main picks for Oct 2 ACL",
     '',
     'Miller Lite for Faouzia @ 1:45pm',
     'Miller Lite for Paris Paloma @ 3:15pm',
@@ -188,7 +188,7 @@ const SHARE_GOLDEN = [
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-02',
   ].join('\n') },
   { night: '2026-10-03', wd: 'SAT', share: 'Share Sat Oct 3’s picks', text: [
-    "Our crew's main picks for Oct 3 ACL Music Festival",
+    "Our crew's main picks for Oct 3 ACL",
     '',
     'Miller Lite for Arcy Drive @ 3:15pm',
     'Beatbox for Ryan Beatty @ 3:30pm',
@@ -197,7 +197,7 @@ const SHARE_GOLDEN = [
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-03',
   ].join('\n') },
   { night: '2026-10-04', wd: 'SUN', share: 'Share Sun Oct 4’s picks', text: [
-    "Our crew's main picks for Oct 4 ACL Music Festival",
+    "Our crew's main picks for Oct 4 ACL",
     '',
     "Tito's for Fcukers @ 6:30pm",
     'T-Mobile for The xx @ 8:30pm',
@@ -206,14 +206,14 @@ const SHARE_GOLDEN = [
   ].join('\n') },
   { night: '2026-10-05', wd: 'MON', share: 'Nothing to share Monday', text: null },
   { night: '2026-10-08', wd: 'THU', share: 'Share Thu Oct 8’s picks', text: [
-    "Our crew's main picks for Oct 8 ACL Music Festival",
+    "Our crew's main picks for Oct 8 ACL",
     '',
     'Brushy Street Commons for Arcy Drive @ ~8:45pm',
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-08',
   ].join('\n') },
   { night: '2026-10-09', wd: 'FRI', share: 'Share Fri Oct 9’s picks', text: [
-    "Our crew's main picks for Oct 9 ACL Music Festival",
+    "Our crew's main picks for Oct 9 ACL",
     '',
     'American Express for Faouzia @ 2:45pm',
     'Miller Lite for Paris Paloma @ 5:15pm',
@@ -224,7 +224,7 @@ const SHARE_GOLDEN = [
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-09',
   ].join('\n') },
   { night: '2026-10-10', wd: 'SAT', share: 'Share Sat Oct 10’s picks', text: [
-    "Our crew's main picks for Oct 10 ACL Music Festival",
+    "Our crew's main picks for Oct 10 ACL",
     '',
     'Beatbox for Arcy Drive @ 3:30pm',
     'Beatbox for Ryan Beatty @ 5:30pm',
@@ -234,7 +234,7 @@ const SHARE_GOLDEN = [
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-10',
   ].join('\n') },
   { night: '2026-10-11', wd: 'SUN', share: 'Share Sun Oct 11’s picks', text: [
-    "Our crew's main picks for Oct 11 ACL Music Festival",
+    "Our crew's main picks for Oct 11 ACL",
     '',
     "Tito's for Fcukers @ 6:30pm",
     'T-Mobile for The xx @ 8:30pm',

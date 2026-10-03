@@ -226,7 +226,7 @@ test('everything hidden: the wall says so and says where the switch is — Porto
   assert.equal(n.querySelectorAll('button, a').length, 0, 'no button of its own — the fest name is the door');
 
   const a = render('acl-2026', { folded: [weekendRoom('W1'), weekendRoom('W2'), 'Late nights'] });
-  assert.equal(visibleText(noticeOf(a.root), 'on-phone'), 'Everything’s hidden. Tap ACL MUSIC FESTIVAL \'26 below to bring parts back.');
+  assert.equal(visibleText(noticeOf(a.root), 'on-phone'), 'Everything’s hidden. Tap ACL \'26 below to bring parts back.');
   assert.equal(a.root.querySelectorAll('.day-block').length, 0);
 
   // Anything still visible is not "everything hidden".

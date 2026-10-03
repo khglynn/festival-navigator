@@ -1956,8 +1956,8 @@ function thinByPeople(root, ctx) {
     for (const kid of [...room.children]) if (kid !== head) kid.remove();
     room.classList.add('quiet');
     // The words are what this line is for, so they never give way: the date
-    // the head leads with stays in its sub (which ellipsizes first — ACL's
-    // "SAT ACL MUSIC FESTIVAL  OCT 3 · WEEKEND 1" fills a phone), the room's
+    // the head leads with stays in its sub (which ellipsizes first — a long
+    // head and its "OCT 3 · WEEKEND 1" can fill a phone), the room's
     // own place goes (there is nothing there to find), and the words sit in
     // their own span after it (v3.css `.quiet-words`).
     const sub = head.querySelector('.sub');

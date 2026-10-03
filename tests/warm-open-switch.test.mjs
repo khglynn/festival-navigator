@@ -47,7 +47,7 @@ async function switchTo(name, id) {
 
 test('warm open on Portola, then over to ACL before Portola’s live file answers', async () => {
   assert.notEqual(await within(1500, () => shown().includes('screen-app')), null);
-  await switchTo(/^ACL MUSIC FESTIVAL/, 'acl-2026');
+  await switchTo(/^ACL\b/, 'acl-2026');
   assert.equal(state.activeFestivalId, 'acl-2026');
 });
 

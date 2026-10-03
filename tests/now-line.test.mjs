@@ -287,7 +287,7 @@ test('the day-of open counts a Late nights date as today; a grid day today still
     sat.querySelector('.day-block[data-iso="2026-10-03"]').getBoundingClientRect = () => ({ top: 3000 });
     sat.querySelector('.room[data-iso="2026-10-03"]').getBoundingClientRect = () => ({ top: 9000 });
     assert.equal(scrollToNowLine(sat, opts(ct('2026-10-03T09:00:00'))), 'day');
-    assert.equal(calls.at(-1), 3000, 'SAT ACL MUSIC FESTIVAL, the festival itself');
+    assert.equal(calls.at(-1), 3000, 'SAT ACL, the festival itself');
     sat.remove();
 
     // Late nights hidden: tonight has nothing to land on, and the shell falls

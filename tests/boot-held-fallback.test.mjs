@@ -59,7 +59,7 @@ test('a festival this phone holds stands in for this open only — saved choice 
   await settleUntil(() => shown().length > 0, { timeout: 4000 });
   assert.deepEqual(shown(), ['screen-app'], `a wall, not ${JSON.stringify(shown())}: ${JSON.stringify(journal())}`);
   assert.equal(state.activeFestivalId, 'portola-2026');
-  assert.match($('toast-root').textContent, /Couldn’t reach ACL Music Festival — showing Portola for now/);
+  assert.match($('toast-root').textContent, /Couldn’t reach ACL — showing Portola for now/);
   assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), FID, 'this phone still means ACL');
   assert.ok(!asked.includes('/data/festivals/portola-2026.json'), 'read from the copy, never fetched');
   assert.ok(!journal().some((e) => e.kind === 'boot' || e.kind === 'boot:offline' || e.kind === 'festival:stand-in'), 'nothing broke: no signal is not a fault');
