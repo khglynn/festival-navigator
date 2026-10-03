@@ -212,6 +212,83 @@ test('no sliver whenever a place without one exists, and NOW whole wherever it f
   }
 });
 
+// ---- the air between the tabs (v112) ------------------------------------------------------
+// ACL's name went from ACL MUSIC FESTIVAL to ACL (Kevin, 2026-10-03), the
+// dock's row grew, and at 375 and 390 its start — NOW, FRI 2, SAT 3, the
+// row's resting place while you stand in Saturday — ended half way through
+// SUN 4 (CI, Linux Chromium: SUN 4 33 of 47 at 390, 17 of 47 at 375). No
+// resting place fixes that: NOW must stay whole, so the row cannot move. The
+// gaps can: before the row leaves a sliver, the air between its tabs gives,
+// down to --gap-min or up to --gap-max, as little as clears it — the cut tab
+// comes in whole, or goes out to a hint inside the fade. A row with no sliver
+// at its own gap keeps it, so a gap moves only where one would be.
+const ACL = [['NOW', 43], ['FRI 2', 39], ['SAT 3', 46], ['SUN 4', 47], ['FRI 9', 39], ['SAT 10', 48], ['SUN 11', 48], ['LATE', 43]]; // Linux Chromium (CI), the last four estimated
+const lay = (tabs, gap) => { let x = 0; return tabs.map(([n, w]) => { const it = { n, x, w }; x += w + gap; return it; }); };
+const geoAt = (tabs, gap, width, active, now = 0) => {
+  const items = lay(tabs, gap);
+  const end = items.at(-1).x + items.at(-1).w;
+  return { items, width, max: Math.max(0, end - width), fade: 18, active, now };
+};
+const sliversAt = (g, L) => g.items.filter((it) => { const s2 = seen(it, L, g.width); return s2 > 6 && it.w - s2 > 6; }).map((it) => `${it.n} ${Math.round(seen(it, L, g.width))}/${it.w}`);
+const wall = await import('../js/v3/wall.js');
+const fitGap = (tabs, width, active, now = 0) => {
+  assert.equal(typeof wall.restingGap, 'function', 'wall.js has a rule for the air between the tabs');
+  const g = wall.restingGap({ ...geoAt(tabs, 24, width, active, now), gap: 24, gapMin: 15, gapMax: 30 });
+  const geo = geoAt(tabs, g, width, active, now);
+  return { g, geo, L: restingLeft(geo) };
+};
+
+for (const [width, label] of [[232, '390'], [216, '375']]) {
+  test(`ACL at ${label} on Linux (CI): standing in SAT 3, the row would end in a sliver of SUN 4 — its gaps give instead, and NOW stays whole`, () => {
+    const old = geoAt(ACL, 24, width, 2);
+    assert.ok(sliversAt(old, restingLeft(old)).length, 'at the 24px gap no resting place is clean (the bug)');
+    const { g, geo, L } = fitGap(ACL, width, 2);
+    assert.ok(g >= 15 && g <= 30 && g !== 24, `the gap moved, within its bounds: ${g}`);
+    assert.deepEqual(sliversAt(geo, L), [], `no sliver at ${g}px`);
+    assert.ok(seen(geo.items[2], L, width) >= 46 - 1, 'SAT 3 whole');
+    assert.ok(seen(geo.items[0], L, width) >= 43 - 1, 'NOW whole');
+  });
+}
+
+test('ACL at 430 (this machine\'s Linux Chromium): FRI 9 would show 13 of 38 past SUN 4 — the gaps give, as little as clears it', () => {
+  const tabs = [['NOW', 41], ['FRI 2', 38], ['SAT 3', 44], ['SUN 4', 46], ['FRI 9', 38], ['SAT 10', 47], ['SUN 11', 47], ['LATE', 42]];
+  const old = geoAt(tabs, 24, 278, 2);
+  assert.deepEqual(sliversAt(old, restingLeft(old)), ['FRI 9 13/38']);
+  const { g, geo, L } = fitGap(tabs, 278, 2);
+  assert.deepEqual(sliversAt(geo, L), [], `no sliver at ${g}px`);
+  // Pushing FRI 9 out takes ~2px a gap; pulling it in whole takes ~6.
+  assert.ok(g > 24 && g <= 27, `the nearest clean gap, not the first one found: ${g}`);
+});
+
+test('a row with no sliver at its own gap keeps it — every Portola row from 90 to 290px, every day', () => {
+  const tabs = LIVE.map((n) => [n, W[n]]);
+  for (let width = 90; width <= 290; width += 1) {
+    for (let active = 1; active < tabs.length; active += 1) {
+      const geo = geoAt(tabs, 24, width, active);
+      if (!(geo.max > 0.5) || sliversAt(geo, restingLeft(geo)).length) continue;
+      assert.equal(wall.restingGap({ ...geo, gap: 24, gapMin: 15, gapMax: 30 }), 24, `@${width}, ${tabs[active][0]}`);
+    }
+  }
+});
+
+test('wherever some gap in bounds rests clean, the chosen one does, with the day you are in and NOW as whole — ACL, every dock row from 90 to 300px, every day', () => {
+  for (let width = 90; width <= 300; width += 1) {
+    for (let active = 1; active < ACL.length; active += 1) {
+      const { g, geo, L } = fitGap(ACL, width, active);
+      const tier = (gg, LL) => [gg.active, gg.now].map((i) => Number(seen(gg.items[i], LL, gg.width) >= gg.items[i].w - 1)).join('');
+      const base = geoAt(ACL, 24, width, active);
+      const at24 = restingLeft(base);
+      assert.ok(tier(geo, L) >= tier(base, at24), `@${width} ${ACL[active][0]}: the gap never costs the day you are in or NOW (${g}px)`);
+      if (!sliversAt(geo, L).length) continue;
+      for (let gg = 15; gg <= 30; gg += 0.5) {
+        const other = geoAt(ACL, gg, width, active);
+        const LL = restingLeft(other);
+        assert.ok(sliversAt(other, LL).length || tier(other, LL) < tier(geo, L), `@${width} ${ACL[active][0]}: ${g}px rests with a sliver (${sliversAt(geo, L)}), though ${gg}px rests clean`);
+      }
+    }
+  }
+});
+
 // ---- the shell: where NOW lives -------------------------------------------------------------
 test('something live: NOW is the row\'s first item — the dock and the rail alike', () => {
   for (const door of ['dock', 'rail']) {

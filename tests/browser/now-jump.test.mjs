@@ -975,10 +975,14 @@ for (const [fest, width, height, now, shows] of [
   ['portola-2026', 390, 844, SAT_1030, ['THU', 'FRI', 'SAT', 'SUN']],
   ['portola-2026', 375, 667, SAT_1030, ['THU', 'FRI', 'SAT']],
   ['portola-2026', 320, 640, SAT_1030, ['FRI', 'SAT', 'SUN']],
+  // ACL's frames went with its long name (ACL MUSIC FESTIVAL → ACL,
+  // 2026-10-03): the row is wider at every width now, and where it rests is
+  // the contract alone until a Mac re-measures them (Linux cannot stand in:
+  // narrowing its glyphs by the 0.7px misses Portola's frames at 390 and 375).
   ['acl-2026', 430, 932, ACL_SAT, null],
-  ['acl-2026', 390, 844, ACL_SAT, ['SAT3', 'SUN4']],
-  ['acl-2026', 375, 667, ACL_SAT, ['FRI2', 'SAT3']],
-  ['acl-2026', 320, 640, ACL_SAT, ['SAT3']], // beside ACL's long name, room for the day you are in and no more
+  ['acl-2026', 390, 844, ACL_SAT, null],
+  ['acl-2026', 375, 667, ACL_SAT, null],
+  ['acl-2026', 320, 640, ACL_SAT, null],
 ]) for (const wide of LINUX ? [null] : [null, '0.7px']) {
   // Each case twice: as this engine draws, and with every dock glyph 0.7px
   // wider — which reproduces CI's Linux rows to the pixel. With wider glyphs
@@ -1019,6 +1023,58 @@ for (const [fest, width, height, now, shows] of [
     } finally { await ctx.close(); }
   });
 }
+
+// The air between the tabs gives where a resting row would leave a sliver
+// (wall.js restingGap, v112): at 375 ACL's Saturday rests on a tighter row
+// than its Sunday (this engine: SUN 4 came in whole; CI's Linux: it went
+// out), so the day change moves the gap — and a tab never jumps for it. Each
+// tab that moved starts its slide where it was (its layout's move undone
+// by a transform) and ends where it is laid out now; the glide's scroll is
+// the row's own. Proven from the slide itself, not by counting frames
+// (WebKit on Linux paints animations in coarse steps — AGENTS.md).
+test('ACL at 375: a day change that moves the air between the tabs slides them there — no tab jumps', { skip }, async () => {
+  const { ctx, page } = await openApp({ fest: 'acl-2026', width: 375, height: 667, now: ACL_SAT });
+  try {
+    await restedOn(page, 'Saturday|W1');
+    const before = await page.evaluate(() => {
+      window.__gapSlides = [];
+      const orig = Element.prototype.animate;
+      Element.prototype.animate = function animate(...args) {
+        const a = orig.apply(this, args);
+        queueMicrotask(() => { if (a.id === 'day-row-gap') window.__gapSlides.push({ el: this, a, at: this.offsetLeft }); });
+        return a;
+      };
+      const row = document.getElementById('dock-days');
+      return { gap: getComputedStyle(row).columnGap, lefts: [...row.children].filter((t) => !t.hidden).map((t) => t.offsetLeft) };
+    });
+    await page.locator('#dock-days .day-tab[data-day="Sunday|W1"]').tap();
+    await restedOn(page, 'Sunday|W1');
+    const r = await page.evaluate((was) => {
+      const row = document.getElementById('dock-days');
+      const tabs = [...row.children].filter((t) => !t.hidden);
+      const slides = window.__gapSlides.map(({ el, a, at }) => {
+        const m = /translateX\((-?[\d.]+)px\)/.exec(a.effect.getKeyframes()[0].transform || '');
+        return { i: tabs.indexOf(el), dx: m ? Number(m[1]) : NaN, at, end: a.effect.getKeyframes().at(-1).transform, ms: a.effect.getTiming().duration };
+      });
+      return { gap: getComputedStyle(row).columnGap, lefts: tabs.map((t) => t.offsetLeft), slides, was };
+    }, before);
+    const said = JSON.stringify(r);
+    assert.notEqual(r.gap, before.gap, `the gap moved between Saturday and Sunday (else this checks nothing): ${said}`);
+    const moved = r.lefts.map((x, i) => [i, before.lefts[i] - x]).filter(([, d]) => Math.abs(d) >= 1);
+    assert.ok(moved.length, `tabs moved: ${said}`);
+    for (const [i, d] of moved) {
+      const sl = r.slides.filter((x) => x.i === i);
+      assert.equal(sl.length, 1, `tab ${i} moved ${d}px and slid there, once: ${said}`);
+      // Within a pixel and a half: layout offsets are whole pixels before and
+      // after the move (each rounds its fraction of a 19.5px gap), and the
+      // day lit before the row rests (SUN 4 takes the active look) is the app's
+      // snapshot, not this one.
+      assert.ok(Math.abs(sl[0].dx - d) <= 1.5, `tab ${i}'s slide starts where it was (${sl[0].dx} for ${d}): ${said}`);
+      assert.equal(sl[0].end, 'none', 'and ends where it is laid out');
+      assert.ok(sl[0].ms > 0 && sl[0].ms <= 400, 'a quick slide');
+    }
+  } finally { await ctx.close(); }
+});
 
 // The 44px floor, for NOW in the row (review, 2026-09-25): the day row
 // scrolls sideways, and a scroller clips hit-testing too, so the tabs'
