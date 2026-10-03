@@ -56,6 +56,7 @@ test('a second Portola crew is created: the share moment comes up — and the of
   assert.match(sheet().textContent, /ONE LINK MAKES IT A CREW/);
   assert.equal(sheet().querySelector('.grabber'), null, 'no grabber on it (Kevin, 2026-09-26): its ✕, Later and the dimmed wall close it');
   assert.equal(sheet().firstElementChild.querySelector('.sheet-title')?.textContent, 'ONE LINK MAKES IT A CREW', 'its title row leads');
+  assert.ok(sheet().querySelector('.inv-qr + .inv-link'), 'the new crew’s QR on top of its link: the moment a crew is made is the moment to show it');
   await settle(150);
   assert.equal(offer(), null, 'the offer waits: never both at once');
 });

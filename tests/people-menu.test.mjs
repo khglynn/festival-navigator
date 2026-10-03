@@ -27,6 +27,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
 import { deepMerge } from '../js/merge.js';
+import jsQR from 'jsqr';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -103,6 +104,57 @@ const state = await import('../js/state.js'); // the SAME instances app.js holds
 const crew = await import('../js/crew.js');
 const filters = await import('../js/v3/filters.js');
 const sync = await import('../js/sync.js');
+const errlog = await import('../js/errlog.js');
+
+// The canvas the Invite sheet's QR is drawn on (js/v3/qr.js). jsdom has
+// none; the rig's stand-in draws nothing. This one paints each solid
+// fillRect into pixels and hands back a data URL naming them, so a test
+// decodes what the sheet DREW and holds it against the link it prints.
+// Everything else (the favicon's gradient, its paths) stays a no-op.
+// `qrCanvas = false` takes the 2D context away from every canvas but the
+// favicon's 32px one: a browser that refuses a canvas.
+const drawn = new Map();
+let qrCanvas = true;
+{
+  const proto = window.HTMLCanvasElement.prototype;
+  proto.getContext = function getContext() {
+    if (!qrCanvas && this.width !== 32) return null;
+    const canvas = this;
+    const pen = {
+      fillStyle: '#000000',
+      fillRect(x, y, w, h) {
+        if (typeof this.fillStyle !== 'string' || !/^#[0-9a-f]{6}$/i.test(this.fillStyle)) return;
+        if (!canvas.rgba) canvas.rgba = new Uint8ClampedArray(canvas.width * canvas.height * 4);
+        const rgb = [1, 3, 5].map((i) => parseInt(this.fillStyle.slice(i, i + 2), 16));
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
+          const i = (yy * canvas.width + xx) * 4;
+          canvas.rgba.set([...rgb, 255], i);
+        }
+      },
+      // What qr.js reads back to be sure the drawing is really there.
+      getImageData(x, y, w, h) {
+        const data = new Uint8ClampedArray(w * h * 4);
+        if (canvas.rgba) for (let yy = 0; yy < h; yy++) data.set(canvas.rgba.subarray(((y + yy) * canvas.width + x) * 4, ((y + yy) * canvas.width + x + w) * 4), yy * w * 4);
+        return { data, width: w, height: h };
+      },
+    };
+    return new Proxy(pen, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })) });
+  };
+  proto.toDataURL = function toDataURL() {
+    if (!this.rgba) return 'data:image/png;base64,';
+    const id = `qr${drawn.size}`;
+    drawn.set(id, { data: this.rgba, width: this.width, height: this.height });
+    return `data:image/png;base64,${id}`;
+  };
+}
+// The text a drawn QR <img> holds, read back the way a camera would.
+function scanned(img) {
+  const id = (img.getAttribute('src') || '').split(',')[1];
+  const px = drawn.get(id);
+  if (!px) return null;
+  const hit = jsQR(px.data, px.width, px.height, { inversionAttempts: 'dontInvert' });
+  return hit ? hit.data : null;
+}
 
 const pop = () => document.querySelector('#dock-you-wrap .hl-pop');
 const isOpen = () => !!pop() && pop().style.display !== 'none';
@@ -344,13 +396,27 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
   assert.ok(sheet, 'the Invite sheet');
   assert.equal(sheet.querySelector('.sheet-title').textContent, 'INVITE SOMEONE');
-  const order = [...sheet.children].map((n) => (n.classList.contains('inv-link') ? 'link'
-    : n.querySelector && n.querySelector('.inv-name') ? 'name'
-      : n.querySelector && n.querySelector('.inv-others') ? 'others' : null)).filter(Boolean);
-  assert.deepEqual(order, ['link', 'name', 'others'], 'Kevin’s order');
+  const order = [...sheet.children].map((n) => (n.classList.contains('inv-qr') ? 'qr'
+    : n.classList.contains('inv-link') ? 'link'
+      : n.querySelector && n.querySelector('.inv-name') ? 'name'
+        : n.querySelector && n.querySelector('.inv-others') ? 'others' : null)).filter(Boolean);
+  assert.deepEqual(order, ['qr', 'link', 'name', 'others'], 'Kevin’s order, the QR on top of the link (find your crew, slice 1)');
   const link = sheet.querySelector('.inv-link input');
   assert.match(link.value, new RegExp(`#g=${CREW}`), 'the crew link, visible');
   assert.ok(sheet.querySelector('.inv-link .inv-copy'), 'Copy beside it');
+  // The QR is that very link: one link on the sheet, whichever way it leaves.
+  const qr = sheet.querySelector('.inv-qr');
+  // Not a <figure>: a figure takes its name from its caption, and a screen
+  // reader read the caption twice (the review of 1b80842).
+  assert.equal(qr.tagName, 'DIV');
+  assert.equal(qr.querySelector('figure, figcaption'), null);
+  assert.equal(qr.previousElementSibling, sheet.querySelector('.inv-sub'), 'right under the line that says what the link opens');
+  const img = qr.querySelector('img');
+  assert.equal(img.alt, 'QR code for the crew link');
+  assert.equal(qr.querySelector('.inv-qr-cap').textContent, 'Point a phone camera here to join. Anyone who scans it is in.', 'and it says what scanning it does');
+  await until(() => img.getAttribute('src'), 'the QR drawn');
+  assert.equal(scanned(img), link.value, 'scanned, it is exactly the link in the box');
+  assert.equal(qr.querySelectorAll('button').length, 0, 'no Save button: a long-press, a right-click or a screenshot keeps it');
   assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
   assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
@@ -378,6 +444,7 @@ test('Or add a friend: server-first, and it ends on their own link, for if they 
   const done = document.querySelector('#artist-sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
+  assert.equal(done.querySelector('.inv-qr'), null, 'and no QR: whoever scanned a QR of Zed’s link would be told it is theirs');
   assert.equal(done.querySelector('.inv-sub').textContent, 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
   // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
   await until(() => state.people().Zed, 'Zed, brought by the poll');
@@ -446,6 +513,71 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   assert.equal(state.people().Kat, undefined);
   sheet.querySelector('.inv-done').click();
   await sheetClosed();
+});
+
+// In this file the module is already loaded by now (the + Invite test drew
+// a QR), so this is the warm path: drawn in a microtask the moment the sheet
+// is on the page, refused, and taken away before a frame. The late paths —
+// the module refused, held past its deadline, failing at last — are the
+// browser contract's (tests/browser/people-menu.test.mjs), where a request
+// can really be held or aborted.
+test('a phone that cannot draw the QR loses only the QR: the link stands alone, and the record names no link', async () => {
+  qrCanvas = false;
+  try {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    assert.equal(sheet.querySelector('.inv-qr'), null, 'no QR, and no empty tile where it would have been');
+    assert.equal(sheet.querySelector('.inv-sub').nextElementSibling, sheet.querySelector('.inv-link'), 'the link where it always was');
+    const said = errlog.recent().filter((e) => e.kind === 'invite:qr');
+    assert.equal(said.length, 1, 'recorded once');
+    assert.equal(said[0].msg, 'qr: no 2d canvas', 'in the error’s own words');
+    // The words are the error's own, so nothing was scrubbed out of them; the
+    // stack is file paths (jsdom's own long names can read token-shaped to
+    // the scrubber, so a mark there would prove nothing either way).
+    assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+  } finally {
+    qrCanvas = true;
+    // Closed whatever happened above, so one red stays one red: the tests
+    // after this one each wait for the history to settle (the review of
+    // 1b80842: a failure here once failed the twelve after it).
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
+});
+
+// The fold is a Web Animation; an engine that refuses it (throws from
+// animate) must still lose the tile — `gone` is already set by then, so a
+// throw there once left a dim empty square on the sheet for good (the
+// review of 116ab8e). The image's error, after the tile has been on screen
+// for a frame, takes the animated way out. jsdom paints no frames, so this
+// test lends the page a frame clock (a timer) while the sheet opens.
+test('a QR whose image fails after it was seen still leaves when the fold animation cannot run', async () => {
+  const proto = window.HTMLElement.prototype;
+  const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+  const was = proto.animate;
+  const hadFrames = 'requestAnimationFrame' in window;
+  if (!hadFrames) window.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
+  try {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    const qr = sheet.querySelector('.inv-qr');
+    assert.ok(qr, 'the QR is on the sheet');
+    await new Promise((r) => window.requestAnimationFrame(() => r())); // seen: it leaves by folding
+    if (!hadFrames) delete window.requestAnimationFrame;
+    proto.animate = function animate() { throw new Error('animate refused'); };
+    qr.querySelector('img').dispatchEvent(new window.Event('error'));
+    assert.equal(sheet.querySelector('.inv-qr'), null, 'the tile is gone, not stuck');
+    assert.equal(sheet.querySelector('.inv-sub').nextElementSibling, sheet.querySelector('.inv-link'), 'and the link stands where it always was');
+  } finally {
+    if (had) proto.animate = was; else delete proto.animate;
+    if (!hadFrames) delete window.requestAnimationFrame;
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
 });
 
 // One add per crew, whatever the sheets do (Sol's re-review of 1b678c0: the

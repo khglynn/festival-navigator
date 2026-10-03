@@ -10,6 +10,7 @@
 // boot path turned that into the fatal screen instead of a from-link,
 // memory-only session (gate find, 2026-08-23).
 import { loadJSON, saveLS, getLS, removeLS, timeoutSignal, errorText } from './util.js';
+import { hostKind } from './errlog.js';
 
 const K = {
   crews: 'fn_crews_v3',            // [{token, name}]
@@ -88,7 +89,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // (`meName`) additionally carries WHO it's for: someone added on another
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
-export function crewLink(token, festId, meName, show = null, view = null, { plan = null } = {}) {
+export function crewLink(token, festId, meName, show = null, view = null, { plan = null, origin = null } = {}) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
   //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
@@ -115,7 +116,8 @@ export function crewLink(token, festId, meName, show = null, view = null, { plan
   // logs and referrer headers, and a crew token IS that crew's data
   // (CLAUDE.md, with teeth). A festival id is public catalogue information; a
   // token is not. A crew-wide link with no festival keeps the plain `/#g=`.
-  const base = ok ? `${location.origin}/f/${festId}` : `${location.origin}/`;
+  const at = origin || location.origin; // shareLink names the canonical host; the address bar never does
+  const base = ok ? `${at}/f/${festId}` : `${at}/`;
   const f = ok ? `&f=${festId}` : '';
   const m = meName ? `&me=${encodeURIComponent(meName)}` : '';
   // The sharer's view (v92): which rooms the link opens on, as slugs
@@ -140,6 +142,30 @@ export function crewLink(token, festId, meName, show = null, view = null, { plan
 
 const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
 const PLAN_NIGHT_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Where the links this app HANDS OUT point (Kevin, 2026-10-02: yes to
+// "every link the app builds says fest.kevinhg.com" — find your crew,
+// question 2). The app answers on three production hosts, fest., festival.
+// and crew.kevinhg.com; a link made on any of them names the canonical one,
+// index.html's fn-canonical-host meta (read the way spotify.js reads it, the
+// literal its fallback), so a chat, a QR and a pasted link all say one
+// address. Anywhere else — a preview, staging, localhost, a fork — keeps its
+// own origin: a test build's link must open that test build. Only for links
+// handed to someone (shareLink): the address bar's own link (app.js wallUrl,
+// boot's replaceState) stays crewLink on this page's origin, because
+// history refuses a URL on another one.
+const PROD_HOSTS = ['fest', 'festival', 'crew']; // errlog.js hostKind's names for them
+const HOST_NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i;
+export function shareOrigin() {
+  if (!PROD_HOSTS.includes(hostKind())) return location.origin;
+  let host = '';
+  try { host = String((typeof document !== 'undefined' && document.querySelector('meta[name="fn-canonical-host"]')?.content) || '').trim(); } catch { host = ''; }
+  return `https://${HOST_NAME_RE.test(host) ? host : 'fest.kevinhg.com'}`;
+}
+// crewLink, on the address a link handed to someone should say.
+export function shareLink(token, festId, meName, show = null, view = null, opts = {}) {
+  return crewLink(token, festId, meName, show, view, { ...opts, origin: shareOrigin() });
+}
 
 // The one line an invite carries beside its link (v92): the chat bubble says
 // what this is before anyone opens it — the cheapest fix for "it's not clear

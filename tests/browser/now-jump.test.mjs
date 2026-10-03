@@ -1192,19 +1192,24 @@ for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
       assert.ok(rest.row.max > 30, `the row scrolls by its lead space (${rest.row.max}px)`);
       assert.ok(rest.card.right > rest.row.right + 30, `at rest his card runs off its row: ${JSON.stringify(rest)}`);
       await watchRows(page);
+      await page.evaluate(() => { window.__pulses = []; });
       await tapNow(page, door);
-      // Judge the card at rest, not mid-pulse: NOW's pulse scales the card it
-      // lands on for ~460 ms, and a scaled card reads ~3px wider on each side.
-      // tapNow waits for the scrolling to stop; on a longer wall (the
-      // 2026-09-25 Folsom data) the pulse can still be running then.
+      // Judge the row at rest, after NOW's pulse: it scales the card it lands
+      // on (460 ms, twice), and a scaled card widens its row's scroll — 38px
+      // at rest, 42 at the pulse's height (Chromium, sampled per frame). The
+      // pulse has to have run and finished: "unscaled on this frame" is not
+      // "done" — the pulse starts at scale 1 and passes through it between
+      // its two beats, and WebKit's scroll width trails the frame (CI on
+      // 1d97bde and 116ab8e: "38 of 42", "38 of 41", the card already whole).
       await page.waitForFunction((sel) => {
         const c = [...document.querySelector(sel).querySelectorAll('.card')].find((x) => x.dataset.artist === 'Milli Meng');
-        return Math.abs(c.getBoundingClientRect().width - c.offsetWidth) < 0.5;
-      }, AFTERS_ROW, { timeout: 3000 });
+        return window.__pulses.some((p) => p.dataset.artist === 'Milli Meng')
+          && !window.__pulses.some((p) => window.__pulsing(p)) && !window.__pulsing(c);
+      }, AFTERS_ROW, { timeout: 4000, polling: 'raf' });
       const v = await rowView(page);
       assert.ok(v.card.left >= v.row.left - 0.5 && v.card.right <= v.row.right + 0.5, `the card is whole inside its row: ${JSON.stringify(v)}`);
       assert.ok(v.card.right <= v.innerWidth, 'and on the screen');
-      assert.ok(Math.abs(v.row.scrollLeft - v.row.max) <= 1, `just enough: the far end of the row (${v.row.scrollLeft} of ${v.row.max})`);
+      assert.ok(Math.abs(v.row.scrollLeft - v.row.max) <= 1, `just enough: the far end of the row (${v.row.scrollLeft} of ${v.row.max}): ${JSON.stringify(v)}`);
       assert.ok(v.card.top >= 0 && v.card.bottom <= v.dockTop, `and in view top to bottom: ${JSON.stringify(v)}`);
       assert.deepEqual(await page.evaluate(() => window.__rowScrolls.map((a) => a.behavior)), ['smooth'], 'one slide, and a glide');
       // Again, already whole: the row is not asked to move.

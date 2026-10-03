@@ -3428,16 +3428,18 @@ function shareView() {
   const list = ctx.view === LIST;
   return show || list ? { show, label: show ? showLabel(rooms, folded) : null, list } : null;
 }
+// Handed to someone, so on the canonical host from any production one
+// (crew.js shareLink); the address bar's own link is wallUrl's.
 function inviteLink(meName = null) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), meName, view ? view.show : null, view && view.list ? LIST : null);
+  return crew.shareLink(state.getCrewToken(), state.festivalForLinks(), meName, view ? view.show : null, view && view.list ? LIST : null);
 }
 // The open plan's Share: the same link and view, opening on Our picks for
 // the night the words are about (`&plan=<date>`, read once at boot). It says
 // no one's name (no `&me=`).
 function planLink(night) {
   const view = shareView();
-  return crew.crewLink(state.getCrewToken(), state.festivalForLinks(), null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
+  return crew.shareLink(state.getCrewToken(), state.festivalForLinks(), null, view ? view.show : null, view && view.list ? LIST : null, { plan: night });
 }
 // "Opens on Portola + Afters, as a list — what you’re showing now." — the
 // rooms, the view, or both; nothing when the link opens on everything as a board.
@@ -3622,6 +3624,10 @@ const INVITE_WORDS = {
   // yet (tests/share-copy.test.mjs holds the two together).
   claim: (who) => `If ${who} ever wants to pick, send this link. Opening it makes the picks theirs.`,
   notYet: (who) => `The crew sees ${who} once this phone is online again.`,
+  // The QR (find your crew, slice 1): what scanning it does, said plainly —
+  // the link is the crew's whole credential, and so is a photo of the QR.
+  qrAlt: 'QR code for the crew link',
+  qrCaption: 'Point a phone camera here to join. Anyone who scans it is in.',
 };
 
 function inviteLinkRow(link, label) {
@@ -3641,6 +3647,142 @@ function inviteLinkRow(link, label) {
   });
   row.append(box, copy);
   return row;
+}
+// The crew link as a QR, on top of the box that prints it (find your crew,
+// slice 1 — Kevin, 2026-10-02: "just use the existing path of inviting
+// people… and just put on top of it a QR code and people can take a
+// screenshot or whatever"). It draws exactly the link in the box, so the
+// sheet carries one link whichever way it leaves: a camera, Copy, Share.
+// Never a personal (&me=) link — a QR of Drew's tells whoever scans it "this
+// is yours" — so the IS IN state has none; Drew scans the crew's and taps his
+// own name. No Save button: a long-press on the image (Save to Photos), a
+// right-click, or a screenshot keeps it, and a button would push "Or add a
+// friend" further below the sheet's fold.
+//
+// The tile is square from the sheet's first frame, so nothing under it moves
+// when the image lands. The module is warmed after the wall paints (warmQr),
+// so the QR is almost always drawn at once; one drawn late fades in, opacity
+// only (the tokens' kill rules make it instant under Low power and Reduce
+// Motion). It is drawn to the room its tile really has on this screen, and
+// shown at its own pixels in the middle of it (qr.js qrPng): whole device
+// pixels a module, never a bitmap stretched to fill the tile. A QR that
+// cannot be drawn, or has not come by its deadline, takes its tile with it
+// and the link stands alone, as it always did; a failure's record says so in
+// the error's own words, never with the link in them.
+const QR_ROOM_PX = 176; // the room at its widest — the whole 176px tile — where the page cannot be measured
+// The room the tile gives the image, in CSS px, measured on the page: the
+// tile is min(176px, 52vw), smaller on a short screen (v3.css), and an
+// <img> not yet drawn fills its room exactly. A computed width, never a
+// bounding box: the sheet's way in scales it.
+function qrRoom(img) {
+  try {
+    const v = window.getComputedStyle(img).width; // a used length on a page; '100%' or '' off one
+    const w = /px$/.test(v) ? parseFloat(v) : 0;
+    if (w > 0) return w;
+  } catch { /* not on a page */ }
+  return QR_ROOM_PX;
+}
+let qrModule = null;
+let qrLoading = null;
+// js/v3/qr.js, only ever through import(): its vendored encoder is the one
+// file here an old engine might not parse, and that must cost the sheet its
+// QR, never the app its boot (a static import would put it in app.js's graph).
+function loadQr() {
+  if (qrModule) return Promise.resolve(qrModule);
+  if (!qrLoading) {
+    qrLoading = import('./qr.js').then((m) => { qrModule = m; return m; }, (e) => { qrLoading = null; throw e; });
+  }
+  return qrLoading;
+}
+// After the wall paints, when the phone is idle: a sheet opened later finds
+// the encoder loaded. A failure here is the sheet's to report, if it opens.
+function warmQr() {
+  if (qrModule || qrLoading) return;
+  const go = () => { loadQr().catch(() => {}); };
+  try { if (typeof window.requestIdleCallback === 'function') { window.requestIdleCallback(go, { timeout: 4000 }); return; } } catch { /* no idle callbacks */ }
+  setTimeout(go, 1500);
+}
+// A module this late is not coming soon (the festival files' own budget):
+// the tile folds away and the link stands alone. A slow one may still land
+// for the next sheet; a request that fails at last is recorded then. A
+// FAILED import is not retried on this page — engines keep a failed module
+// in the page's module map, so later sheets fail at once and show the link
+// alone until the app next loads (the review of 116ab8e).
+const QR_WAIT_MS = 4000;
+const QR_FOLD_MS = 260; // the tile's way out: it fades, then its room closes
+function inviteQr(link) {
+  // A plain box, not a <figure>: a figure takes its name from its caption,
+  // and a screen reader heard the caption twice (the review of 1b80842). The
+  // image's alt says what it is; the caption says what scanning it does.
+  const fig = document.createElement('div');
+  fig.className = 'inv-qr';
+  const tile = document.createElement('div');
+  tile.className = 'inv-qr-tile';
+  const img = document.createElement('img');
+  img.alt = INVITE_WORDS.qrAlt;
+  tile.appendChild(img);
+  const caption = document.createElement('div');
+  caption.className = 'inv-qr-cap';
+  caption.textContent = INVITE_WORDS.qrCaption;
+  fig.append(tile, caption);
+  // Until the image is in (`.in`), the tile is a soft square that holds the
+  // room and promises nothing: no white code-shaped tile, no "point a phone
+  // camera here" over an empty square (v3.css).
+  let gone = false;
+  let said = false;
+  let seen = false; // painted at least once: from then on it leaves by folding away
+  let deadline = null;
+  try { window.requestAnimationFrame(() => { seen = true; }); } catch { /* no frames here: never seen */ }
+  const report = (e) => { if (!said) { said = true; record('invite:qr', e); } };
+  // Out of the sheet: at once where nobody has seen it, or motion is off;
+  // otherwise it fades, then its room closes, gap and all, so the link
+  // travels up into its place — it went in one frame before, 230px (the
+  // walk of 1b80842).
+  const leave = () => {
+    if (gone) return;
+    gone = true;
+    clearTimeout(deadline);
+    if (!seen || !fig.isConnected || !canAnimate(fig, ctx)) { fig.remove(); return; }
+    let gap = 12; // the sheet's own gap (v3.css .sheet)
+    try { gap = parseFloat(window.getComputedStyle(fig.parentNode).rowGap) || 0; } catch { /* keep 12 */ }
+    const h = fig.offsetHeight; // laid out, not scaled
+    fig.style.overflow = 'hidden';
+    let a;
+    try {
+      a = fig.animate([
+        { opacity: 1, height: `${h}px`, marginBottom: '0px' },
+        { opacity: 0, height: `${h}px`, marginBottom: '0px', offset: 0.35 },
+        { opacity: 0, height: '0px', marginBottom: `${-gap}px` },
+      ], { duration: QR_FOLD_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    } catch { fig.remove(); return; } // an engine that refuses the fold still loses the tile
+    const done = () => fig.remove();
+    a.onfinish = done;
+    a.oncancel = done;
+    setTimeout(done, QR_FOLD_MS * 3 + 50); // a backgrounded tab must not hang it
+  };
+  const fail = (e) => { report(e); leave(); };
+  img.addEventListener('load', () => { if (gone) return; clearTimeout(deadline); fig.classList.add('in'); }, { once: true });
+  img.addEventListener('error', () => fail(new Error('qr: the image did not load')), { once: true });
+  const draw = (qr) => {
+    const { src, cssPx } = qr.qrPng(link, qrRoom(img));
+    img.style.width = `${cssPx}px`;
+    img.src = src;
+  };
+  deadline = setTimeout(leave, QR_WAIT_MS); // slow is not an error: nothing recorded
+  if (qrModule) {
+    // Drawn the moment the sheet is on the page, so its tile can be measured:
+    // openInvite puts it there before this microtask runs, and the browser
+    // paints no frame in between. A failure takes the figure away before
+    // anyone has seen it. (A resolved promise's job, not queueMicrotask,
+    // which an old engine lacks: the same microtask queue either way.)
+    Promise.resolve().then(() => {
+      if (gone) return;
+      try { draw(qrModule); } catch (e) { fail(e); }
+    });
+    return fig;
+  }
+  loadQr().then((qr) => { if (!gone) draw(qr); }).catch(fail);
+  return fig;
 }
 function sheetDismiss(word) {
   const b = document.createElement('button');
@@ -3687,7 +3829,7 @@ function openInvite({ moment = false } = {}) {
     actions.appendChild(shareBtn);
   }
   actions.appendChild(sheetDismiss(moment ? 'Later' : 'Done'));
-  sheet.append(sub, inviteLinkRow(link, 'Crew invite link'), actions); // chrome (title + ✕) is already on
+  sheet.append(sub, inviteQr(link), inviteLinkRow(link, 'Crew invite link'), actions); // chrome (title + ✕) is already on
   dialogize(sheet, moment ? 'Share your crew link' : 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
   if (!member) return;
@@ -4937,6 +5079,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   renderYou();
   repaintWall();
   noteFirstPaint(!!warm);
+  warmQr(); // the Invite sheet's QR, ready before anyone asks for it
   // Once per boot (and per switch, in Settings): a join, a claim or Create
   // coming back through here is the same festival still on screen.
   if (festViewPending) {

@@ -149,7 +149,7 @@ function currentFestCard(ctx, actions) {
     const fid = state.festivalForLinks();
     // The link carries this phone's view (v92, SD1) — the line under the
     // invite link below says which.
-    const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), fid);
+    const link = actions.inviteLink ? actions.inviteLink() : crew.shareLink(state.getCrewToken(), fid);
     // A guest shares the link it holds, and writes nothing into the crew
     // until it joins (v92): the invite-festival stamp is a member's.
     if (ctx.meName && fid && !state.isShownForNow() && (state.crewDoc.meta || {}).inviteFestId !== fid) {
@@ -557,7 +557,7 @@ function crewSection(ctx, actions) {
     chip.style.padding = '4px 11px';
     chip.addEventListener('click', () => {
       memberLinkHost.textContent = '';
-      const mLink = actions.inviteLink ? actions.inviteLink(name) : crew.crewLink(state.getCrewToken(), state.activeFestivalId, name);
+      const mLink = actions.inviteLink ? actions.inviteLink(name) : crew.shareLink(state.getCrewToken(), state.activeFestivalId, name);
       const mRow = el('div', 'display: flex; gap: 8px; align-items: center;');
       const mBox = el('input');
       mBox.readOnly = true;
@@ -598,7 +598,7 @@ function crewSection(ctx, actions) {
 
   // The invite link, always visible (FLOW-12): share sheets fail silently,
   // a printed URL never does.
-  const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), state.activeFestivalId);
+  const link = actions.inviteLink ? actions.inviteLink() : crew.shareLink(state.getCrewToken(), state.activeFestivalId);
   const linkRowEl = el('div', 'display: flex; gap: 8px; align-items: center;');
   const linkBox = el('input');
   linkBox.readOnly = true;

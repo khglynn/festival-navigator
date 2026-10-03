@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
 import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 import { pillWidth } from '../../js/v3/people-menu.js';
+import jpeg from 'jpeg-js';
+import jsQR from 'jsqr';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -38,9 +40,9 @@ const docFor = () => ({
 // draws it — a stand-in for Linux and Android, whose Inter and Anton are wider
 // than a Mac's (CI put the 320 pill at one disc where the Mac fit two,
 // 2026-09-26). now-jump's trick, aimed at the same dock.
-async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT } = {}) {
+async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT, reducedMotion = 'no-preference', routes = null } = {}) {
   const touch = width < 720;
-  const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' });
+  const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block', reducedMotion });
   await lateStarts(ctx);
   const doc = docFor();
   if (fid !== FID) doc.festivals[fid] = { selections: { Turnstile: { Ben: 2, Cy: 3 } } };
@@ -75,9 +77,14 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     return r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) });
   });
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 204, body: '' }));
+  if (routes) await routes(ctx); // a test's own: a module held or refused from the first request
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  // What the page fetched, by path (the faked clock empties the page's own
+  // resource timing, so the test listens from outside).
+  const fetched = [];
+  page.on('requestfinished', (r) => { try { fetched.push(new URL(r.url()).pathname); } catch { /* not a URL */ } });
   await page.clock.setFixedTime(now);
   await page.goto(`${server.origin}/#g=${CREW}&f=${fid}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
@@ -128,7 +135,7 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     await sleep(250);
     return at.artist;
   };
-  return { ctx, page, errors, posts, phone, bar, press, outside, width };
+  return { ctx, page, errors, posts, phone, bar, press, outside, width, fetched };
 }
 
 const wrapSel = (bar) => `#${bar}-you-wrap`;
@@ -391,6 +398,391 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 3000 });
       await press('#dock-you');
       assert.equal(await page.locator('#dock-you-wrap .hl-pop [data-person="Zed"]').count(), 1, 'and Zed is in the menu');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The QR's fade has finished: wait for the state, not the motion's
+  // bookkeeping. On Linux WebKit the fade had not been created yet when
+  // motionDone first looked, so it passed and the tile read 0.22 (CI run
+  // 37078125450). A fade that never finishes still fails the opacity
+  // assertion that follows, after this deadline.
+  const qrShown = (page) => page.waitForFunction(() => {
+    const tile = document.querySelector('.invite-sheet .inv-qr-tile');
+    return !!tile && getComputedStyle(tile).opacity === '1';
+  }, null, { timeout: 4000, polling: 'raf' }).catch(() => {});
+
+  // The sheet itself at rest: its entrance (v3.css sheetIn, scale .98 -> 1
+  // over .15 s) finished. motionDone can look before WebKit has created that
+  // animation, and a read inside it measured the tile at 175.9 of its 176px
+  // (CI run 37085409915). Waits for the state: no transform left, fully
+  // opaque.
+  const sheetStill = (page) => page.waitForFunction(() => {
+    const s = document.querySelector('.invite-sheet');
+    if (!s) return false;
+    const cs = getComputedStyle(s);
+    return cs.transform === 'none' && cs.opacity === '1';
+  }, null, { timeout: 4000, polling: 'raf' });
+
+  // The Invite sheet's QR (find your crew, slice 1): what a camera sees is
+  // the link the box prints. Read off a screenshot of the tile — the pixels
+  // the screen shows, not the data the page drew — at the small phone and
+  // the common one, where the sheet's 72vh cap is a fold the name field
+  // sits below.
+  for (const [w, h] of [[320, 568], [390, 844]]) {
+    test(`${name} ${w}×${h}: the Invite sheet's QR is square, inside the sheet, drawn, and scans to the link; Copy and Share still work; the name field scrolls into reach`, { skip }, async () => {
+      const { ctx, page, errors, posts, press, fetched } = await openApp(get(), { width: w, height: h });
+      try {
+        if (name === 'Chromium') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: server.origin });
+        // Warmed after the wall painted (app.js warmQr): nobody has asked for
+        // the QR, and its module comes in all the same, when the page is idle
+        // — on a loaded runner later than a fixed beat after the wall (a full
+        // parallel run, 2026-10-02: the sheet beat it), so the test waits for
+        // that fetch. A sheet opened after it arrives with its QR already
+        // drawn, never a blank tile filled in later: drawn the moment the
+        // sheet is on the page (its tile measured there), in a microtask
+        // queued before this observer's, so before any frame is painted.
+        for (let t = 0; !fetched.includes('/vendor/uqr.mjs'); t += 50) {
+          assert.ok(t < 8000, `the QR module was never warmed: ${fetched.filter((f) => /\.m?js$/.test(f)).slice(-5).join(', ')}`);
+          await sleep(50);
+        }
+        await sleep(150); // fetched, then evaluated: the import's own promise settles a task or two later
+        await page.evaluate(() => {
+          window.__qrAtOpen = null;
+          new MutationObserver((list, obs) => {
+            const sheet = document.querySelector('.invite-sheet');
+            if (!sheet) return;
+            const img = sheet.querySelector('.inv-qr img');
+            window.__qrAtOpen = img ? (img.getAttribute('src') || '').slice(0, 22) : 'no figure';
+            obs.disconnect();
+          }).observe(document.body, { childList: true });
+        });
+        await press('#dock-you');
+        await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+        assert.equal(await page.evaluate(() => window.__qrAtOpen), 'data:image/png;base64,', 'drawn before the sheet was ever painted');
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        await qrShown(page);
+        const link = await page.locator('.invite-sheet .inv-link input').inputValue();
+        const geo = await page.evaluate(() => {
+          const box = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
+          const sheet = document.querySelector('.invite-sheet');
+          const tile = sheet.querySelector('.inv-qr-tile');
+          const img = tile.querySelector('img');
+          const st = getComputedStyle(img);
+          return {
+            sheet: box(sheet), tile: box(tile), img: box(img),
+            natural: [img.naturalWidth, img.naturalHeight], opacity: getComputedStyle(tile).opacity, rendering: st.imageRendering,
+            callout: st.webkitTouchCallout || null, tileBg: getComputedStyle(tile).backgroundColor,
+            order: [...sheet.children].map((n) => n.classList[0]).filter((c) => /^inv-(qr|link)$/.test(c)),
+          };
+        });
+        assert.deepEqual(geo.order, ['inv-qr', 'inv-link'], 'the QR on top of the link');
+        assert.ok(Math.abs(geo.img.w - geo.img.h) < 0.5 && Math.abs(geo.tile.w - geo.tile.h) < 0.5, `square: tile ${geo.tile.w}×${geo.tile.h}, image ${geo.img.w}×${geo.img.h}`);
+        const tileW = Math.min(h <= 640 ? 132 : 176, 0.52 * w); // v3.css: smaller on a short screen
+        assert.ok(Math.abs(geo.tile.w - tileW) < 0.5, `the tile is min(${h <= 640 ? 132 : 176}px, 52vw): ${geo.tile.w}`);
+        assert.ok(geo.tile.l >= geo.sheet.l && geo.tile.r <= geo.sheet.r && geo.tile.t >= geo.sheet.t && geo.tile.b <= Math.min(geo.sheet.b, h), `inside the sheet and on screen: ${JSON.stringify(geo)}`);
+        assert.ok(Math.abs((geo.tile.l + geo.tile.r) / 2 - (geo.sheet.l + geo.sheet.r) / 2) < 1, 'centred');
+        assert.ok(geo.natural[0] > 0 && geo.natural[0] === geo.natural[1], `drawn, square: ${geo.natural}`);
+        // Shown at its own pixels: one image pixel to one screen pixel at 2x.
+        // A bitmap stretched over its room by even 1.1× makes its modules
+        // alternate 7 and 8 pixels with image-rendering: pixelated (the walk
+        // of 1b80842: 287 drawn, 320 shown); `>= 1.5×` let that through.
+        assert.ok(Math.abs(geo.natural[0] - geo.img.w * 2) < 0.01, `shown at its own pixels at 2x: ${geo.natural[0]}px drawn, ${geo.img.w} CSS px shown`);
+        assert.ok(Math.abs((geo.img.l + geo.img.r) / 2 - (geo.tile.l + geo.tile.r) / 2) < 0.5 && Math.abs((geo.img.t + geo.img.b) / 2 - (geo.tile.t + geo.tile.b) / 2) < 0.5, `centred in its tile: ${JSON.stringify([geo.img, geo.tile])}`);
+        assert.equal(geo.opacity, '1', 'faded in with its tile, and still');
+        assert.equal(geo.tileBg, 'rgb(255, 255, 255)', 'a white tile: --text-primary, never the fest accent');
+        if (geo.callout !== null) assert.equal(geo.callout, 'default', 'a long-press keeps the OS’s Save Image');
+        // A screen reader hears the image by its alt and the caption once (a
+        // <figure> took its name from its caption, so it was read twice).
+        const aria = await page.locator('.invite-sheet .inv-qr').ariaSnapshot();
+        assert.equal(aria.split('Point a phone camera here').length - 1, 1, `the caption read once: ${aria}`);
+        assert.match(aria, /img "QR code for the crew link"/, aria);
+        // What a camera sees: the tile as the screen shows it, decoded.
+        const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
+        const px = jpeg.decode(shot, { useTArray: true });
+        const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
+        assert.equal(hit && hit.data, link, 'the screenshot scans to exactly the link in the box');
+        // Whole device pixels a module: version v is 17 + 4v modules, inside
+        // the 4-module quiet zone the bitmap carries.
+        const modules = 17 + 4 * hit.version + 8;
+        assert.equal(geo.natural[0] % modules, 0, `whole pixels a module: ${geo.natural[0]} for ${modules} modules`);
+        // Copy and Share, with real input, as before the QR.
+        await press('.invite-sheet .inv-copy');
+        if (name === 'Chromium') {
+          assert.equal(await page.locator('.invite-sheet .inv-copy').textContent(), 'Copied ✓');
+          assert.equal(await page.evaluate(() => navigator.clipboard.readText()), link, 'the link on the clipboard');
+        }
+        await press('.invite-sheet .inv-share');
+        const shared = await page.evaluate(() => window.__shared);
+        assert.equal(shared.length, 1, 'the share sheet was asked');
+        assert.equal(shared[0].url, link, 'with the crew link');
+        // Below the QR, the name field: the sheet scrolls to it (a wheel over
+        // the sheet, the way a laptop's trackpad or a phone's drag moves it),
+        // and it takes a name.
+        const field = '.invite-sheet .inv-name input';
+        const inReach = () => page.evaluate((sel) => {
+          const f = document.querySelector(sel).getBoundingClientRect();
+          const sh = document.querySelector('.invite-sheet').getBoundingClientRect();
+          return f.top >= sh.top && f.bottom <= Math.min(sh.bottom, innerHeight);
+        }, field);
+        const c = await page.locator('.invite-sheet').boundingBox();
+        await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
+        for (let i = 0; i < 8 && !(await inReach()); i++) { await page.mouse.wheel(0, 160); await sleep(120); }
+        assert.ok(await inReach(), 'the name field is on screen inside the sheet');
+        await press(field);
+        await page.keyboard.type('Zed');
+        assert.equal(await page.locator(field).inputValue(), 'Zed', 'and it takes a name');
+        assert.equal(posts.length, 0, 'nothing sent yet');
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+
+  // The sheet's main action stays on screen at open on the smallest phone,
+  // with the line a shared view adds (the review of 1b80842: at 320×568 a
+  // Show filter + List put Share 26px below the sheet's 72vh fold — 18 of
+  // its 44px showing). The tile gives way on a short screen instead.
+  for (const mode of ['List', 'a room off + List']) {
+    test(`${name} 320×568, ${mode}: Share and Done are on screen when the Invite sheet opens`, { skip }, async () => {
+      const { ctx, page, errors, press } = await openApp(get(), { width: 320, height: 568 });
+      try {
+        await press('#dock-fest-link');
+        if (mode !== 'List') await press('#dock-fest-wrap .sort-pop [data-room]');
+        await press('#dock-fest-wrap .sort-pop .view-row [data-view="list"]');
+        await press('#dock-fest-link'); // the Show menu closes on its own door
+        await page.waitForFunction(() => ![...document.querySelectorAll('.sort-pop')].some((p) => getComputedStyle(p).display !== 'none'), null, { timeout: 4000 }).catch(() => {});
+        await press('#dock-you');
+        await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        const at = await page.evaluate(() => {
+          const sheet = document.querySelector('.invite-sheet');
+          const s = sheet.getBoundingClientRect();
+          const box = (sel) => { const b = sheet.querySelector(sel).getBoundingClientRect(); return { t: b.top, b: b.bottom }; };
+          const tile = sheet.querySelector('.inv-qr-tile').getBoundingClientRect();
+          return { top: Math.max(s.top, 0), bottom: Math.min(s.bottom, innerHeight), scrolled: sheet.scrollTop, sub: sheet.querySelector('.inv-sub').textContent, share: box('.inv-share'), done: box('.inv-done'), tile: [tile.width, tile.height] };
+        });
+        assert.match(at.sub, mode === 'List' ? /as a list/ : / \+ .*, as a list/, `the sheet says which view the link opens on: ${at.sub}`);
+        assert.equal(at.scrolled, 0, 'at open, unscrolled');
+        for (const k of ['share', 'done']) assert.ok(at[k].t >= at.top && at[k].b <= at.bottom + 0.5, `${k} wholly on screen at open: ${JSON.stringify(at)}`);
+        assert.ok(Math.abs(at.tile[0] - at.tile[1]) < 0.5, `the tile still square: ${at.tile}`);
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+
+  // The QR's late paths (the reviews of 1b80842): its module comes over the
+  // network whenever the worker has not precached it yet — a first visit's
+  // Create on weak signal is the share moment's cold path. Held, the tile is
+  // a square from the first frame that promises nothing (no "point a camera
+  // here" before there is a code) and nothing moves when the code lands;
+  // never coming, the tile folds away after its deadline — travelling, not
+  // gone in one frame; refused, the sheet loses only its QR, and the record
+  // says so without the link.
+  const qrRead = (page) => page.evaluate(() => {
+    const sheet = document.querySelector('.invite-sheet');
+    const top = (sel) => sheet.querySelector(sel).getBoundingClientRect().top;
+    const fig = sheet.querySelector('.inv-qr');
+    const tile = fig && fig.querySelector('.inv-qr-tile');
+    const cap = fig && fig.querySelector('.inv-qr-cap');
+    const t = tile && tile.getBoundingClientRect();
+    return {
+      sheet: sheet.getBoundingClientRect().top, sub: top('.inv-sub'), link: top('.inv-link'),
+      tile: t ? [t.width, t.height] : null, tileOpacity: tile ? getComputedStyle(tile).opacity : null,
+      cap: cap ? getComputedStyle(cap).visibility : null, ready: !!fig && fig.classList.contains('in'),
+      drawn: !!fig && !!fig.querySelector('img').getAttribute('src'),
+      next: sheet.querySelector('.inv-sub').nextElementSibling.className,
+    };
+  });
+  const qrRecords = (page) => page.evaluate(() => import('/js/errlog.js').then((m) => m.recent().filter((e) => e.kind === 'invite:qr')));
+
+  test(`${name} 390, the QR module held: the tile is square from the first frame and says nothing until there is a code; nothing moves when it lands`, { skip }, async () => {
+    let release = () => {};
+    const held = new Promise((r) => { release = r; });
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', async (r) => { await held; await r.continue().catch(() => {}); }) });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await motionDone(page, { within: '.invite-sheet' });
+      await sheetStill(page);
+      const before = await qrRead(page);
+      assert.equal(before.drawn, false, 'the module is held: nothing drawn yet');
+      assert.ok(before.tile && Math.abs(before.tile[0] - before.tile[1]) < 0.5 && before.tile[0] > 100, `square from the first frame: ${before.tile}`);
+      assert.equal(before.cap, 'hidden', 'no "point a phone camera here" before there is a code to point it at');
+      assert.ok(Number(before.tileOpacity) < 0.5, `a soft placeholder, not a white square promising a code: ${before.tileOpacity}`);
+      await sleep(1500);
+      assert.equal((await qrRead(page)).tile !== null, true, 'still waiting, inside its deadline');
+      release();
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await qrShown(page);
+      const after = await qrRead(page);
+      for (const k of ['sheet', 'sub', 'link']) assert.ok(Math.abs(after[k] - before[k]) < 0.5, `${k} did not move when the QR landed: ${before[k]} → ${after[k]}`);
+      assert.deepEqual(after.tile, before.tile, 'the tile kept its size');
+      assert.equal(after.cap, 'visible', 'with the code, the words');
+      assert.equal(after.tileOpacity, '1', 'and the tile whole');
+      const link = await page.locator('.invite-sheet .inv-link input').inputValue();
+      const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
+      const px = jpeg.decode(shot, { useTArray: true });
+      const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
+      assert.equal(hit && hit.data, link, 'it scans to the link');
+      assert.deepEqual(await qrRecords(page), [], 'slow is not an error');
+      assert.deepEqual(errors, []);
+    } finally { release(); await ctx.close(); }
+  });
+
+  test(`${name} 390, the QR module never comes: past its deadline the tile folds away, travelling, and the link stands alone`, { skip }, async (t) => {
+    let release = () => {};
+    const held = new Promise((r) => { release = r; });
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', async (r) => { await held; await r.abort().catch(() => {}); }) });
+    try {
+      // The fold itself, on the animation's own clock (document.timeline;
+      // the page's Date is pinned): when the tile's animation began, how
+      // long it was asked to run, what it animates, and when the tile left
+      // the page. animate() keeps its receiver (WebIDL).
+      //
+      // And where things stand along it, by SEEKING the fold — paused, its
+      // clock set to points along the way, the layout read at each, then
+      // played from the start as the app asked. Painted frames cannot show
+      // the travel everywhere: CI's Linux WebKit applies animated styles in
+      // coarse steps, not per frame (diag run 37089577730: the fold read
+      // 0ms for 368ms of painted frames, then finished in one step; under
+      // load the height never changed before the tile left), so a test
+      // counting frames failed a fold that was there. The seek is the same
+      // in every engine.
+      await page.evaluate(() => {
+        window.__qrFold = null;
+        window.__qrGoneAt = null;
+        const own = Element.prototype.animate;
+        Element.prototype.animate = function (frames, opts) {
+          const a = own.call(this, frames, opts);
+          if (this.classList && this.classList.contains('inv-qr') && !window.__qrFold) {
+            const duration = opts && typeof opts === 'object' ? opts.duration : opts;
+            const fold = window.__qrFold = { at: document.timeline.currentTime, duration, frames: JSON.stringify(frames), seek: null };
+            try {
+              const sheet = document.querySelector('.invite-sheet');
+              a.pause();
+              fold.seek = [0.2, 0.4, 0.5, 0.6, 0.7].map((p) => {
+                a.currentTime = duration * p;
+                return { p, sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top };
+              });
+              a.currentTime = 0;
+              a.play();
+            } catch (e) { fold.seek = String(e); }
+          }
+          return a;
+        };
+        new MutationObserver((list, obs) => {
+          if (window.__qrFold && !document.querySelector('.invite-sheet .inv-qr')) { window.__qrGoneAt = document.timeline.currentTime; obs.disconnect(); }
+        }).observe(document.body, { childList: true, subtree: true });
+      });
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await sheetStill(page);
+      const before = await qrRead(page);
+      // Every frame from here: where the sheet's top and the link box stand.
+      await page.evaluate(() => {
+        window.__qrTrack = [];
+        const tick = () => {
+          const sheet = document.querySelector('.invite-sheet');
+          if (!sheet) return;
+          window.__qrTrack.push({ t: document.timeline.currentTime, sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top, qr: !!sheet.querySelector('.inv-qr') });
+          if (window.__qrTrack.length < 3000) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet .inv-qr'), null, { timeout: 9000 });
+      await sleep(250);
+      const after = await qrRead(page);
+      assert.equal(after.next, 'inv-link', 'the link right under the line, where it always was');
+      const track = await page.evaluate(() => window.__qrTrack);
+      // The sheet is bottom-anchored: its top comes down, or — when it is
+      // full and scrolls — the link comes up. Whatever moved, travelled.
+      const moved = ['sheet', 'link'].filter((k) => Math.abs(after[k] - before[k]) > 1);
+      assert.ok(moved.some((k) => Math.abs(after[k] - before[k]) > 40), `the tile's room closed: ${JSON.stringify([before, after])}`);
+      // It folded: one animation on the tile, its height to nothing over
+      // the whole QR_FOLD_MS, and the tile left only once that had run.
+      const fold = await page.evaluate(() => ({ ...window.__qrFold, goneAt: window.__qrGoneAt }));
+      assert.ok(fold && fold.at != null, 'the tile left by an animation, not a remove');
+      assert.ok(fold.duration >= 200, `a fold long enough to see: ${fold.duration}ms`);
+      assert.match(fold.frames, /"height":"\d+(\.\d+)?px"[^]*"height":"0px"/, `its room closes, from its height to 0: ${fold.frames}`);
+      assert.ok(fold.goneAt != null && fold.goneAt - fold.at >= fold.duration * 0.9, `gone only after the fold ran: ${Math.round(fold.goneAt - fold.at)}ms of ${fold.duration}`);
+      // It fades first, then its room closes, so what stood below travels
+      // into place: still at 20% of the fold, then partway at every point
+      // from 40% to 70%, each further along than the last — a fold, never
+      // a fade and then a jump.
+      assert.ok(Array.isArray(fold.seek), `the fold could be sought: ${fold.seek}`);
+      for (const k of moved) {
+        const from = before[k];
+        const to = after[k];
+        const dir = Math.sign(to - from);
+        const [still, ...along] = fold.seek;
+        assert.ok(Math.abs(still[k] - from) <= 1, `${k} holds still while the tile fades (20%): ${JSON.stringify(fold.seek)}`);
+        for (const at of along) assert.ok(Math.min(from, to) + 1 < at[k] && at[k] < Math.max(from, to) - 1, `${k} partway at ${at.p * 100}% of the fold, not jumped ${Math.round(to - from)}px: ${JSON.stringify(fold.seek)}`);
+        for (let i = 1; i < along.length; i++) assert.ok((along[i][k] - along[i - 1][k]) * dir > 0, `${k} further along at each step: ${JSON.stringify(fold.seek)}`);
+      }
+      // Where the engine applies an animation every frame (Chromium), the
+      // painted frames show the travel too, never one jump between two.
+      // CI's Linux WebKit steps its animated styles coarsely (above), so
+      // there the seek stands alone.
+      const during = track.filter((f) => f.t > fold.at && f.t < fold.goneAt);
+      if (name === 'Chromium' && during.length >= 3) {
+        for (const k of moved) {
+          const from = before[k];
+          const to = after[k];
+          const between = track.filter((f) => Math.min(from, to) + 1 < f[k] && f[k] < Math.max(from, to) - 1).length;
+          assert.ok(between >= 2, `${k} travelled — seen on its way in ${between} of ${during.length} frames painted during the fold, not jumped ${Math.round(to - from)}px in one`);
+        }
+      } else {
+        t.diagnostic(`${name}: ${during.length} frames painted during the ${fold.duration}ms fold; the travel is proven by seeking the fold, not by frames`);
+      }
+      assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
+      // The request fails at last: that IS recorded, once, and nothing comes back.
+      release();
+      await page.waitForFunction(() => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000 });
+      const said = await qrRecords(page);
+      assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
+      assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+      assert.equal(await page.locator('.invite-sheet .inv-qr').count(), 0, 'and no QR comes back');
+      assert.deepEqual(errors, []);
+    } finally { release(); await ctx.close(); }
+  });
+
+  test(`${name} 390, the QR module refused from the start: the sheet loses only its QR, and the record names no link`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', (r) => r.abort()) });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet .inv-qr'), null, { timeout: 6000 });
+      const at = await qrRead(page);
+      assert.equal(at.next, 'inv-link', 'the link right under the line, where it always was');
+      await press('.invite-sheet .inv-share');
+      assert.equal((await page.evaluate(() => window.__shared)).length, 1, 'Share still shares');
+      const said = await qrRecords(page);
+      assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
+      assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  test(`${name} 390, Reduce Motion: the QR is there at once — no fade to wait for`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, reducedMotion: 'reduce' });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      // The moment the image has loaded, it is whole: no transition runs.
+      await page.waitForFunction(() => { const i = document.querySelector('.invite-sheet .inv-qr img'); return !!i && i.complete && i.naturalWidth > 0 && i.closest('.inv-qr').classList.contains('in'); }, null, { timeout: 4000 });
+      const st = await page.evaluate(() => {
+        const fig = document.querySelector('.invite-sheet .inv-qr');
+        const tile = fig.querySelector('.inv-qr-tile');
+        const cap = fig.querySelector('.inv-qr-cap');
+        return { opacity: getComputedStyle(tile).opacity, cap: getComputedStyle(cap).opacity, transition: [getComputedStyle(tile).transitionDuration, getComputedStyle(cap).transitionDuration], moving: fig.getAnimations({ subtree: true }).length };
+      });
+      assert.equal(st.opacity, '1', 'visible without waiting');
+      assert.equal(st.cap, '1', 'and its words');
+      assert.equal(st.moving, 0, 'nothing moving on it');
+      for (const t of st.transition) assert.match(t, /^0s/, 'the tokens’ kill rule holds the fade at nothing');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

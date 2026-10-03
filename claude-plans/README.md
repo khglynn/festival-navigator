@@ -44,6 +44,14 @@ live in `archive/`.
 - `2026-08-29-notes-desktop-canvas/`: renders production walls in jsdom for a
   design canvas.
 
+## Building now
+
+- `2026-10-02-find-your-crew.md`: finding your crew again on a new phone or
+  browser — a QR on the Invite sheet (slice 1, built on `feat/invite-qr`),
+  a quiet home-screen row in Settings (slice 2), four words from the crew's
+  key typed at fest.kevinhg.com (slice 3). Slices 2–3 wait on Kevin's
+  answers to its Part A.
+
 ## Banked, not built
 
 - `2026-09-29-native-apps-stack.md`: iOS + Android — Capacitor around the
