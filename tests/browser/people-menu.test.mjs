@@ -402,6 +402,16 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The QR's fade has finished: wait for the state, not the motion's
+  // bookkeeping. On Linux WebKit the fade had not been created yet when
+  // motionDone first looked, so it passed and the tile read 0.22 (CI run
+  // 37078125450). A fade that never finishes still fails the opacity
+  // assertion that follows, after this deadline.
+  const qrShown = (page) => page.waitForFunction(() => {
+    const tile = document.querySelector('.invite-sheet .inv-qr-tile');
+    return !!tile && getComputedStyle(tile).opacity === '1';
+  }, null, { timeout: 4000, polling: 'raf' }).catch(() => {});
+
   // The Invite sheet's QR (find your crew, slice 1): what a camera sees is
   // the link the box prints. Read off a screenshot of the tile — the pixels
   // the screen shows, not the data the page drew — at the small phone and
@@ -440,6 +450,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         assert.equal(await page.evaluate(() => window.__qrAtOpen), 'data:image/png;base64,', 'drawn before the sheet was ever painted');
         await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
         await motionDone(page, { within: '.invite-sheet' });
+        await qrShown(page);
         const link = await page.locator('.invite-sheet .inv-link input').inputValue();
         const geo = await page.evaluate(() => {
           const box = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
@@ -592,6 +603,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       release();
       await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
       await motionDone(page, { within: '.invite-sheet' });
+      await qrShown(page);
       const after = await qrRead(page);
       for (const k of ['sheet', 'sub', 'link']) assert.ok(Math.abs(after[k] - before[k]) < 0.5, `${k} did not move when the QR landed: ${before[k]} → ${after[k]}`);
       assert.deepEqual(after.tile, before.tile, 'the tile kept its size');
