@@ -57,6 +57,10 @@ test('a second Portola crew is created: the share moment comes up — and the of
   assert.equal(sheet().querySelector('.grabber'), null, 'no grabber on it (Kevin, 2026-09-26): its ✕, Later and the dimmed wall close it');
   assert.equal(sheet().firstElementChild.querySelector('.sheet-title')?.textContent, 'ONE LINK MAKES IT A CREW', 'its title row leads');
   assert.ok(sheet().querySelector('.inv-qr + .inv-link'), 'the new crew’s QR on top of its link: the moment a crew is made is the moment to show it');
+  // The maker is a member: the same one quiet row as + Invite someone's
+  // (2026-10-03), and nothing of its next step on this one.
+  assert.equal(sheet().querySelector('.inv-friend .inv-friend-name')?.textContent, 'Pick for a friend', 'the moment has the friend row');
+  assert.equal(sheet().querySelector('.inv-name').closest('.inv-step').hidden, true, 'its name field waits on the next step');
   await settle(150);
   assert.equal(offer(), null, 'the offer waits: never both at once');
 });

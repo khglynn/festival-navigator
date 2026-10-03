@@ -4,7 +4,8 @@
 // drift from the other:
 //   - "crew link" brings people in; "My link" brings YOU back;
 //   - the unclaimed-member line in Settings says exactly what the
-//     Invite sheet says when you add someone by name — and since 2026-09-26
+//     Invite sheet says when you add someone by name (on its friend step
+//     since 2026-10-03, whose own line ends on the same words) — and since 2026-09-26
 //     it says the link is for IF they ever want to pick (Kevin: adding a
 //     friend by name is "a note for us that they're going there", often the
 //     end state, not a wait until they join);
@@ -42,8 +43,15 @@ test('My link is a master key: its hint still says keep it to yourself, and why'
 });
 
 test('the short versions are the ones on screen', () => {
-  assert.match(APP, /byName: 'Or add a friend',/, 'a peer of the link, not a step on the way to it');
-  assert.match(APP, /'You pick for them; the crew sees where they’re going\.'/, 'complete as it stands');
+  // Picking for a friend (Kevin, 2026-10-03: "pick for your friend (they can
+  // join anytime later) << probs tighter copy"): one quiet row under the
+  // link, and a step of its own that says what it does — in the claim
+  // line's own words, "makes the picks theirs".
+  assert.match(APP, /friend: 'Pick for a friend',/, 'the row');
+  assert.match(APP, /friendSub: 'They can join anytime',/, 'and its second line, Kevin’s words, tightened');
+  assert.match(APP, /friendTitle: 'PICK FOR A FRIEND',/, 'the step is named for the row that opens it');
+  assert.match(APP, /'You pick for them, so the crew sees where they’re going\. Whenever they want to pick, their own link makes the picks theirs\.'/, 'complete as it stands, and the link an if-ever');
+  assert.doesNotMatch(APP, /Or add a friend/, 'the old section’s label is gone with the section');
   assert.doesNotMatch(APP, /until they open their link/, 'no waiting room');
   assert.match(INDEX, /Add your fests, then your people\.<br>Got a link\? Just open it\./);
   assert.match(SETTINGS, /’s in\. This link still gets them back in\./);

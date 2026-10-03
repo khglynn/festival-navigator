@@ -15,7 +15,9 @@
 //
 //   Pick as someone else is the join shelf in a member's words, two taps
 //   (a name, then "I'm Ben"), and the Invite sheet reads crew link first,
-//   then a name, then the people from your other fests.
+//   with one quiet row under it — Pick for a friend — that moves the same
+//   sheet to its next step: the crew, a name, the people from your other
+//   fests (Kevin, 2026-10-03).
 //
 // Guests (the + opens the same menu, ending in Join the crew) are
 // tests/first-open-guest.test.mjs; the real-browser contract with real input
@@ -388,7 +390,33 @@ test('Pick as someone else never switches to someone removed while the shelf was
   await settle(10);
 });
 
-test('+ Invite someone: one sheet — the crew link first (Copy), then a name, then the people from your other fests', async () => {
+// Kevin's two steps (2026-10-03: "change the 'pick for a friend' section to
+// be a bit cleaner and more subtle since this shelf is so busy now… And then
+// the next step shows our people / add name shelf"). The link's step keeps
+// the line, the QR, the link and Share; under them a member has ONE quiet
+// row, and the name field, the crew and your other fests are the next step
+// of the same sheet.
+const stepOf = (sheet, sel) => sheet.querySelector(sel).closest('.inv-step');
+const linkStep = (sheet) => stepOf(sheet, '.inv-link');
+const friendStep = (sheet) => stepOf(sheet, '.inv-name');
+const partsOf = (step) => [...step.children].map((n) => (n.classList.contains('inv-qr') ? 'qr'
+  : n.classList.contains('inv-link') ? 'link'
+    : n.classList.contains('inv-actions') ? 'actions'
+      : n.classList.contains('inv-friend') ? 'friend'
+        : n.classList.contains('inv-name') ? 'name'
+          : n.classList.contains('inv-status') ? 'status'
+            : n.querySelector && n.querySelector('.inv-people') ? 'people'
+              : n.querySelector && n.querySelector('.inv-others') ? 'others'
+                : n.classList.contains('inv-sub') ? 'line' : n.className));
+// The row, tapped: the same sheet moves to the friend step (no history entry).
+function toFriend(sheet) {
+  sheet.querySelector('.inv-friend').click();
+  assert.equal(friendStep(sheet).hidden, false, 'the friend step is up');
+  assert.equal(linkStep(sheet).hidden, true, 'and the link’s step has gone');
+  return sheet;
+}
+
+test('+ Invite someone: one sheet — the line, the QR on top of the crew link (Copy), Share; under them ONE quiet row, Pick for a friend', async () => {
   await openMenu();
   action('invite').click();
   await settle(20);
@@ -396,11 +424,9 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
   assert.ok(sheet, 'the Invite sheet');
   assert.equal(sheet.querySelector('.sheet-title').textContent, 'INVITE SOMEONE');
-  const order = [...sheet.children].map((n) => (n.classList.contains('inv-qr') ? 'qr'
-    : n.classList.contains('inv-link') ? 'link'
-      : n.querySelector && n.querySelector('.inv-name') ? 'name'
-        : n.querySelector && n.querySelector('.inv-others') ? 'others' : null)).filter(Boolean);
-  assert.deepEqual(order, ['qr', 'link', 'name', 'others'], 'Kevin’s order, the QR on top of the link (find your crew, slice 1)');
+  const step = linkStep(sheet);
+  assert.equal(step.hidden, false, 'the link’s step is the one up');
+  assert.deepEqual(partsOf(step), ['line', 'qr', 'link', 'actions', 'friend'], 'the QR on top of the link (slice 1), Share, then the one row');
   const link = sheet.querySelector('.inv-link input');
   assert.match(link.value, new RegExp(`#g=${CREW}`), 'the crew link, visible');
   assert.ok(sheet.querySelector('.inv-link .inv-copy'), 'Copy beside it');
@@ -417,18 +443,61 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   await until(() => img.getAttribute('src'), 'the QR drawn');
   assert.equal(scanned(img), link.value, 'scanned, it is exactly the link in the box');
   assert.equal(qr.querySelectorAll('button').length, 0, 'no Save button: a long-press, a right-click or a screenshot keeps it');
-  assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
-  assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
-  // Adding by name is a whole thing on its own (Kevin, 2026-09-26: "a note for
-  // us that they're going there") — a peer of the link, not a wait until they join.
-  const byName = sheet.querySelector('.inv-name').parentElement;
-  assert.equal(byName.querySelector('.micro-label').textContent, 'Or add a friend');
-  assert.equal(byName.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
+  // The row: a real button (the 44px floor), its words, a chevron — and
+  // nothing else of the friend step on this one: no label, no field, no chips.
+  const row = sheet.querySelector('.inv-friend');
+  assert.equal(row.tagName, 'BUTTON', 'a button, so the touch floor comes with it');
+  assert.equal(row.querySelector('.inv-friend-name').textContent, 'Pick for a friend');
+  assert.equal(row.querySelector('.inv-friend-sub').textContent, 'They can join anytime');
+  assert.equal(row.querySelector('.inv-friend-chev').getAttribute('aria-hidden'), 'true', 'the chevron is a picture, not words');
+  assert.equal(step.querySelector('.micro-label, .inv-name, .inv-others, .inv-people'), null, 'the busy parts moved to the next step');
+  assert.equal(friendStep(sheet).hidden, true, 'the friend step waits behind the row');
+  assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
+  assert.equal(sheet.querySelector('.sheet-back').hidden, true, 'no ‹ on the first step');
 });
 
-test('Or add a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
+test('Pick for a friend: the same sheet moves on — its title, a ‹ back, the line, the crew already in, the name field focused, your other fests; no history entry', async () => {
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const entries = window.history.length;
+  const at = JSON.stringify(window.history.state);
+  toFriend(sheet);
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'PICK FOR A FRIEND');
+  const step = friendStep(sheet);
+  assert.deepEqual(partsOf(step), ['line', 'people', 'name', 'status', 'others'], 'what it does, who is in, the name, its word, your other fests');
+  assert.equal(step.querySelector('.inv-sub').textContent, 'You pick for them, so the crew sees where they’re going. Whenever they want to pick, their own link makes the picks theirs.');
+  // Our people, in their own colours, read-only: a roster, not a control.
+  const chips = [...step.querySelectorAll('.inv-people .person-chip')];
+  assert.deepEqual(chips.map((c) => c.textContent), ['Ana', 'Ben', 'Cy'], 'the crew, in its order');
+  for (const c of chips) {
+    assert.equal(c.tagName, 'SPAN', `${c.textContent}: read-only, so not a button`);
+    assert.ok(c.classList.contains('static'), `${c.textContent}: wears no pointer`);
+    assert.match(c.style.background, /hsl|rgb/, `${c.textContent}: in their colour`);
+  }
+  assert.deepEqual(chips.filter((c) => c.classList.contains('you')).map((c) => c.textContent), ['Ana'], 'you, marked as Settings marks you');
+  assert.equal(step.querySelector('.inv-people').previousElementSibling.textContent, 'Already in');
+  assert.deepEqual([...step.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
+  assert.equal(document.activeElement, step.querySelector('.inv-name input'), 'the name field takes the focus: it is what this step is for');
+  const back = sheet.querySelector('.sheet-back');
+  assert.equal(back.hidden, false, 'a ‹ back to the link');
+  assert.equal(back.tagName, 'BUTTON');
+  assert.equal(back.getAttribute('aria-label'), 'Back to the crew link');
+  assert.equal(back.nextElementSibling, sheet.querySelector('.sheet-title'), 'before the title, as Settings’ ‹ is');
+  assert.equal(window.history.length, entries, 'no history entry: Back still closes the whole sheet');
+  assert.equal(JSON.stringify(window.history.state), at);
+  // ‹ goes back to the link's step, focus on the row that left it.
+  back.click();
+  assert.equal(linkStep(sheet).hidden, false, 'the link again');
+  assert.equal(friendStep(sheet).hidden, true);
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'INVITE SOMEONE');
+  assert.equal(back.hidden, true, 'and the ‹ goes with the step');
+  assert.equal(document.activeElement, sheet.querySelector('.inv-friend'), 'focus back on the row it left from');
+  assert.equal(window.history.length, entries, 'still no entry');
+  assert.equal(JSON.stringify(window.history.state), at);
+});
+
+test('Pick for a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   input.value = 'ben';
   sheet.querySelector('.inv-add').click();
@@ -456,7 +525,7 @@ test('one add at a time: a chip, then Enter, then another chip while the first i
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   const chip = (n) => [...sheet.querySelectorAll('.inv-others button')].find((b) => b.textContent === `+ ${n}`);
   const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).length;
@@ -489,7 +558,7 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew'));
   const before = posts().length;
@@ -513,6 +582,26 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   assert.equal(state.people().Kat, undefined);
   sheet.querySelector('.inv-done').click();
   await sheetClosed();
+});
+
+// The friend step is a step of the sheet, not a layer of its own (AGENTS.md:
+// "Browser history is shared state" — no entry, so nothing new for Back to
+// get wrong): from it, every way out closes the whole sheet, as from the link.
+test('from the friend step, Back, Escape, the ✕ and the dimmed wall each close the whole sheet — as they do from the link', async () => {
+  for (const [how, out] of [
+    ['Back', () => window.history.back()],
+    ['Escape', () => escape()],
+    ['the ✕', () => document.querySelector('#artist-sheet .sheet-close').click()],
+    ['the dimmed wall', () => document.getElementById('sheet-backdrop').click()],
+  ]) {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    toFriend(document.querySelector('#artist-sheet.invite-sheet'));
+    out();
+    await sheetClosed();
+    assert.equal(document.querySelector('.invite-sheet'), null, `${how}: the whole sheet is down, not just its step`);
+  }
 });
 
 // In this file the module is already loaded by now (the + Invite test drew
@@ -589,7 +678,7 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   holdPosts = true;
   sheet.querySelector('.inv-name input').value = 'Mo';
   sheet.querySelector('.inv-add').click();
@@ -601,7 +690,10 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   action('invite').click();
   await settle(20);
   sheet = document.querySelector('#artist-sheet.invite-sheet');
-  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'the new sheet says what is out');
+  assert.equal(linkStep(sheet).hidden, false, 'a reopened sheet opens on the link, as every Invite does');
+  assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'Adding Mo…', 'its row says what is out');
+  toFriend(sheet);
+  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'and so does the step behind it');
   assert.equal(sheet.querySelector('.inv-add').disabled, true, 'and waits for it');
   assert.equal(sheet.querySelector('.inv-name input').readOnly, true);
   assert.ok([...sheet.querySelectorAll('.inv-others button')].every((b) => b.disabled));
@@ -624,6 +716,8 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   action('invite').click();
   await settle(20);
   sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'They can join anytime', 'nothing out: the row says its own words');
+  toFriend(sheet);
   assert.equal(sheet.querySelector('.inv-add').disabled, false, 'nothing out: the entries are live again');
   sheet.querySelector('.inv-name input').value = 'Nia';
   sheet.querySelector('.inv-add').click();
@@ -643,7 +737,7 @@ const addNamed = async (name, { holdAnswer = false } = {}) => {
   await openMenu();
   action('invite').click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   if (holdAnswer) holdPosts = true;
   sheet.querySelector('.inv-name input').value = name;
   sheet.querySelector('.inv-add').click();
@@ -801,7 +895,7 @@ test('bringing back a removed member: a reopened sheet before the poll lands sti
   await openMenu();
   action('invite').click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   sheet.querySelector('.inv-name input').value = 'Mo';
   sheet.querySelector('.inv-add').click();
   await settle(20);
@@ -871,7 +965,7 @@ test('closing the Invite sheet after an add hands focus back to + Invite someone
   opener.focus();
   opener.click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   sheet.querySelector('.inv-name input').value = 'Yan';
   sheet.querySelector('.inv-add').click();
   await until(() => /YAN IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Yan’s answer');

@@ -472,7 +472,19 @@ html { touch-action: manipulation; }
 }
 /* The Invite sheet (2026-09-26): one sheet, crew link first, then a name,
  * then the people from your other fests (app.js openInvite). The looks are
- * the two sheets' it replaced, moved out of inline styles. */
+ * the two sheets' it replaced, moved out of inline styles. Two steps since
+ * 2026-10-03: the link's, and — behind one quiet row — the friend step's. */
+/* A step is a column with the sheet's own gap, so a step reads as the sheet
+ * did before it had steps. While the steps swap, the leaving one stands
+ * lifted where it was (app.js stepSwapper) and the sheet holds its scroll on
+ * both axes — !important, over the keys' inline overflow (notes.js rideKeys). */
+.invite-sheet .inv-step { display: flex; flex-direction: column; gap: 12px; flex: none; }
+.invite-sheet .inv-step[hidden] { display: none; }
+.invite-sheet.stepping { overflow: hidden !important; }
+/* …and the step that arrives takes no taps while it moves, nor for a double
+ * tap's window after (app.js STEP_SETTLE_MS): the second half of a tap on
+ * the row once landed on the friend step's "+ Drew" and added Drew. */
+.invite-sheet.stepping .inv-step, .invite-sheet .inv-step.settling { pointer-events: none; }
 /* pretty: no one-word last line at 320 ("going.", "needed."); a plain wrap where unsupported. */
 .invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; text-wrap: pretty; }
 .invite-sheet .inv-link, .invite-sheet .inv-name { display: flex; gap: 8px; align-items: center; }
@@ -524,12 +536,29 @@ html { touch-action: manipulation; }
 .invite-sheet .inv-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; }
 .invite-sheet .inv-done { font-size: 12px; padding: 11px 16px; }
-/* The sections after the link: a hairline above each, the label, then its part. */
-.invite-sheet .inv-section { display: flex; flex-direction: column; gap: 7px;
-                             border-top: 1px solid var(--hairline); padding-top: 12px; margin-top: 2px; }
+/* Pick for a friend (Kevin, 2026-10-03: "cleaner and more subtle since this
+ * shelf is so busy now"): ONE quiet, full-width row under Share — a hairline
+ * box, its two lines left and a chevron right, never a tonal pill beside
+ * Share. A button, so the 44px floor holds it on a phone. */
+.invite-sheet .inv-friend { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+                            background: transparent; border: 1px solid var(--border-card); border-radius: var(--r-row);
+                            padding: 9px 12px 9px 14px; color: inherit; font-family: var(--font-ui); text-align: left; cursor: pointer;
+                            -webkit-tap-highlight-color: transparent; } /* the step moving is the answer; a press darkens it instead */
+.invite-sheet .inv-friend:active { background: var(--card); }
+.invite-sheet .inv-friend-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.invite-sheet .inv-friend-name { color: var(--text-body); font-size: 13px; font-weight: 700; }
+.invite-sheet .inv-friend-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
+.invite-sheet .inv-friend-chev { color: var(--text-tertiary); font-size: 20px; line-height: 1; flex: none; margin-top: -2px; }
+@media (hover: hover) and (pointer: fine) { .invite-sheet .inv-friend:hover { background: var(--card); } }
+/* The friend step's groups: a label, then its part. Our people are Settings'
+ * roster chip at Settings' size (settings.js crewSection). */
+.invite-sheet .inv-group { display: flex; flex-direction: column; gap: 7px; }
+.invite-sheet .inv-people { display: flex; flex-wrap: wrap; gap: 5px; }
+.invite-sheet .inv-people .person-chip { font-size: 11px; padding: 4px 11px; }
 .invite-sheet .inv-name input { flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input);
                                 border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px;
                                 font-family: var(--font-ui); }
+.invite-sheet .inv-name input:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line, as on the join shelf */
 .invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; }
 .invite-sheet .inv-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
 .invite-sheet .inv-status:empty { display: none; }
@@ -733,10 +762,15 @@ button.room-head { cursor: pointer; }
  * panel wanted exactly this button and got a bare browser one). Unscoped now;
  * .sheet-card below still overrides its placement and colour. Every existing
  * .sheet-close sits inside a .sheet, so nothing in the app renders differently. */
-.sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+.sheet-close, .sheet-back { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
                background: var(--card); border: 1px solid var(--border-card);
                color: var(--text-secondary); font-size: 12px; cursor: pointer;
                display: inline-flex; align-items: center; justify-content: center; }
+/* A step's ‹ back (the Invite sheet's friend step, 2026-10-03): the ✕'s twin
+ * at the head's other end. Its glyph sits high in the line, so it is drawn
+ * larger and nudged down to centre in the disc. */
+.sheet-back { font-size: 19px; line-height: 1; padding: 0 1px 3px 0; -webkit-tap-highlight-color: transparent; }
+.sheet-back[hidden] { display: none; }
 .note-action { background: none; border: none; padding: 0; cursor: pointer;
                color: var(--text-tertiary); font-size: 10px; font-weight: 700;
                text-decoration: underline; text-underline-offset: 2px; }
@@ -866,7 +900,7 @@ button.room-head { cursor: pointer; }
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
   .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
-  .back-btn, .gear-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close, .sheet-back,
   button.avatar,
   .plan-grab,   /* Our plan's grabber: the whole peek is its target (plan-shelf.js) */
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
@@ -876,7 +910,7 @@ button.room-head { cursor: pointer; }
   }
   .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
-  .back-btn, .gear-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close, .sheet-back,
   button.avatar {
     position: relative;
   }
@@ -900,7 +934,7 @@ button.room-head { cursor: pointer; }
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
    * THEM a hit area would steal taps from the pick underneath. */
   .back-btn::after, .gear-btn::after, .fest-link::after,
-  .sheet-close::after, .chip-notes::after, button.avatar::after {
+  .sheet-close::after, .sheet-back::after, .chip-notes::after, button.avatar::after {
     content: ''; position: absolute; inset: -14px -12px;
   }
 

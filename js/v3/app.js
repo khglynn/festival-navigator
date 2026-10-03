@@ -15,7 +15,7 @@ import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow, gearIcon, lineGlyph } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel, rideKeys } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
@@ -3595,6 +3595,16 @@ function openImport() {
 // thing twice: the share moment ("ONE LINK MAKES IT A CREW", after create)
 // and add-someone ("INVITE SOMEONE").
 //
+// Two steps since 2026-10-03 (Kevin: "change the 'pick for a friend' section
+// to be a bit cleaner and more subtle since this shelf is so busy now… And
+// then the next step shows our people / add name shelf"): the link's step is
+// the line, the QR, the link and Share, with ONE quiet row under them for a
+// member; the row moves the same sheet to the friend step — the crew already
+// in, the name field, your other fests. A step, not a layer: no history
+// entry, so Back, Escape, the ✕ and the dimmed wall close the whole sheet as
+// they always did (AGENTS.md, "Browser history is shared state"), and the
+// step's own ‹ goes back to the link.
+//
 // The link is VISIBLE — share sheets fail silently, a printed URL never does
 // (FLOW-12). `moment`: opened by the making of a crew, the sheet keeps that
 // moment's title and its "Later". A guest (Settings can open the link) sees
@@ -3616,8 +3626,17 @@ const INVITE_WORDS = {
   momentTitle: 'ONE LINK MAKES IT A CREW',
   opens: (crewName) => `Opens straight into ${crewName}. No accounts needed.`,
   share: 'Share the link',
-  byName: 'Or add a friend',
-  byNameSub: 'You pick for them; the crew sees where they’re going.',
+  // Picking for a friend (Kevin, 2026-10-03: "pick for your friend (they can
+  // join anytime later) << probs tighter copy"): the row's two lines, then
+  // its step — named for the row — and the step's one line, which ends on
+  // the claim line's own words (below), "makes the picks theirs".
+  friend: 'Pick for a friend',
+  friendSub: 'They can join anytime',
+  friendTitle: 'PICK FOR A FRIEND',
+  friendLine: 'You pick for them, so the crew sees where they’re going. Whenever they want to pick, their own link makes the picks theirs.',
+  inCrew: 'Already in',
+  back: 'Back to the crew link',
+  adding: (who) => `Adding ${who}…`,
   field: 'Their name',
   others: 'From your other fests',
   // Settings → Crew says the same sentence for a friend with no link opened
@@ -3656,8 +3675,8 @@ function inviteLinkRow(link, label) {
 // Never a personal (&me=) link — a QR of Drew's tells whoever scans it "this
 // is yours" — so the IS IN state has none; Drew scans the crew's and taps his
 // own name. No Save button: a long-press on the image (Save to Photos), a
-// right-click, or a screenshot keeps it, and a button would push "Or add a
-// friend" further below the sheet's fold.
+// right-click, or a screenshot keeps it, and a button would push the friend
+// row further below the sheet's fold.
 //
 // The tile is square from the sheet's first frame, so nothing under it moves
 // when the image lands. The module is warmed after the wall paints (warmQr),
@@ -3792,6 +3811,125 @@ function sheetDismiss(word) {
   return b;
 }
 
+// ---- one sheet, two steps (the Invite sheet's link and its friend step, 2026-10-03) ----
+// A step change is a small event (AGENTS.md, "How this app moves"): the step
+// that leaves stays where it stands, lifted out of the sheet's flow, and
+// travels a little toward where it is going as it fades — quick and plain;
+// the step that arrives comes in from the other side, its parts a beat
+// apart, on the arrival curve; the sheet's height travels from the one to
+// the other. The title crosses the same way, and the ‹ arrives or leaves
+// with the friend step. Transforms and opacity, and the sheet's own height
+// (a fixed sheet: nothing behind it lays out again). Instant under Low Power
+// and Reduce Motion, and wherever an engine refuses the motion. Nothing here
+// touches history: a step is not a layer.
+const STEP_SHIFT = 24; // px a step travels sideways on its way out or in
+// A double tap's second half lands on the step that just arrived — at 390
+// the friend step's "+ Drew" sits where the row's words were, and a bounced
+// thumb added Drew to the crew (the walk of this build, 2026-10-03). So the
+// arriving step takes no taps while it moves (.stepping) nor for this long
+// after the swap, motion or none (.settling, v3.css).
+const STEP_SETTLE_MS = 350;
+function stepSwapper(sheet, title, back) {
+  let flight = null; // the swap still moving: land() puts it at rest at once
+  let settled = 0;
+  const swap = ({ from, to, forward, scrollTo = 0, text }) => {
+    if (flight) flight.land();
+    from.classList.remove('settling');
+    to.classList.add('settling');
+    clearTimeout(settled);
+    settled = setTimeout(() => to.classList.remove('settling'), STEP_SETTLE_MS);
+    const leaving = forward ? [from] : [from, back]; // the ‹ belongs to the friend step
+    const still = () => {
+      for (const n of leaving) n.hidden = true;
+      to.hidden = false;
+      back.hidden = !forward;
+      title.textContent = text;
+      sheet.scrollTop = scrollTo;
+    };
+    if (!sheet.isConnected || !canAnimate(sheet, ctx)) { still(); return; }
+    // Every read before a single write: the sheet's height, and where each
+    // leaving part stands on the screen (offsets are the sheet's: it is
+    // fixed, so it is their containing block; transforms do not move them).
+    const cs = window.getComputedStyle(sheet);
+    const h0 = parseFloat(cs.height);
+    const spot = (n) => ({ top: n.offsetTop - sheet.scrollTop, left: n.offsetLeft, width: n.offsetWidth });
+    const spots = leaving.map(spot);
+    const titleSpot = spot(title);
+    const ghost = title.cloneNode(true); // the old title, crossing out while the new one comes in
+    ghost.setAttribute('aria-hidden', 'true');
+    const parked = [...leaving, ghost];
+    const moving = [];
+    let landed = false;
+    // At rest: the leaving parts hidden and put back in the flow, the ghost
+    // gone. Brought early (a second swap, an add's answer), whatever is
+    // still moving stops where it would have ended.
+    const land = () => {
+      if (landed) return;
+      landed = true;
+      if (flight && flight.land === land) flight = null;
+      clearTimeout(timer);
+      for (const a of moving) { try { a.cancel(); } catch { /* finished */ } }
+      ghost.remove();
+      for (const n of leaving) {
+        n.hidden = true;
+        n.inert = false;
+        n.removeAttribute('aria-hidden');
+        for (const k of ['position', 'top', 'left', 'width', 'margin', 'pointerEvents']) n.style[k] = '';
+      }
+      sheet.classList.remove('stepping');
+    };
+    flight = { land };
+    const timer = setTimeout(land, GROW_MS * 3 + 50); // a backgrounded tab must not hang it
+    // The writes. The leaving parts are lifted where they stood; the new
+    // step takes the flow, at its own scroll (the friend step's top; the
+    // link's step where it was left).
+    sheet.classList.add('stepping');
+    for (const n of leaving) {
+      n.inert = true; // on its way out it is no longer a control
+      n.setAttribute('aria-hidden', 'true');
+      Object.assign(n.style, { position: 'absolute', margin: '0', pointerEvents: 'none' });
+    }
+    Object.assign(ghost.style, { position: 'absolute', margin: '0', pointerEvents: 'none', whiteSpace: 'nowrap' });
+    sheet.appendChild(ghost);
+    to.hidden = false;
+    if (forward) back.hidden = false; // going back, the ‹ is lifted with its step and hidden when it lands
+    title.textContent = text;
+    sheet.scrollTop = scrollTo;
+    [...leaving, ghost].forEach((n, i) => {
+      const at = n === ghost ? titleSpot : spots[i];
+      Object.assign(n.style, { top: `${at.top + sheet.scrollTop}px`, left: `${at.left}px`, width: `${at.width}px` });
+    });
+    const h1 = parseFloat(window.getComputedStyle(sheet).height);
+    const dir = forward ? 1 : -1;
+    try {
+      if (Math.abs(h1 - h0) >= 1) {
+        moving.push(sheet.animate([{ height: `${h0}px` }, { height: `${h1}px` }], { duration: GROW_MS, easing: EASE_SURFACE }));
+      }
+      for (const n of parked) {
+        moving.push(n.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-dir * STEP_SHIFT}px)` }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }));
+      }
+      // The arrivals, once the leaving step has gone (two steps' words
+      // crossing read as a smear on the walk, 2026-10-03): the title (and
+      // the ‹, coming in with its step) first, then the step's parts, a beat
+      // apart.
+      const arriving = [[title, forward ? back : null], ...[...to.children].filter((n) => !n.hidden).map((n) => [n])];
+      arriving.forEach((group, i) => {
+        for (const n of group.filter(Boolean)) {
+          moving.push(n.animate([{ opacity: 0, transform: `translateX(${dir * STEP_SHIFT}px)` }, { opacity: 1, transform: 'none' }],
+            { duration: CASCADE_MS, delay: OUT_MS + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+        }
+      });
+    } catch { land(); return; } // an engine that refuses the motion still lands the step
+    // At rest once everything has: the height travelled, the leaving parts
+    // gone, the last arrival in. Until then the sheet holds its scroll on
+    // both axes (.stepping): an arrival on its way in from the side would
+    // otherwise lend the sheet a sideways scroll for a moment.
+    Promise.all(moving.map((a) => a.finished)).then(land, land);
+  };
+  swap.land = () => { if (flight) flight.land(); };
+  return swap;
+}
+
 function openInvite({ moment = false } = {}) {
   rememberOpener();
   closeSheet();
@@ -3805,9 +3943,12 @@ function openInvite({ moment = false } = {}) {
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
   // The shared chrome from notes.js — the title and a real ✕ (no grabber
   // since 2026-09-26: the ✕, Escape, Back and the dimmed wall close it).
-  sheetChrome(sheet, moment ? INVITE_WORDS.momentTitle : INVITE_WORDS.title);
+  const linkTitle = moment ? INVITE_WORDS.momentTitle : INVITE_WORDS.title;
+  const head = sheetChrome(sheet, linkTitle);
 
   // 1. The crew link: anyone who opens it is in.
+  const linkStep = document.createElement('div');
+  linkStep.className = 'inv-step';
   const sub = document.createElement('div');
   sub.className = 'inv-sub';
   sub.textContent = INVITE_WORDS.opens(state.crewName());
@@ -3829,28 +3970,72 @@ function openInvite({ moment = false } = {}) {
     actions.appendChild(shareBtn);
   }
   actions.appendChild(sheetDismiss(moment ? 'Later' : 'Done'));
-  sheet.append(sub, inviteQr(link), inviteLinkRow(link, 'Crew invite link'), actions); // chrome (title + ✕) is already on
+  linkStep.append(sub, inviteQr(link), inviteLinkRow(link, 'Crew invite link'), actions);
+  sheet.append(linkStep); // chrome (title + ✕) is already on
   dialogize(sheet, moment ? 'Share your crew link' : 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
   if (!member) return;
+  // The friend step's field takes the keys: the sheet stands on them.
+  rideKeys(sheet);
 
-  // 2. A name: a friend the crew picks for — one who may never open the app
-  // (Kevin's Folsom friends: "just a note for us that they're going there"),
-  // a shared phone, a friend not on their phone. Complete as it stands.
-  // Server-first like the join screen (FLOW-5), so the people cap answers
-  // here; offline falls back to the local doc + sync. Success mints the
-  // per-person claim link (&me=), for if they ever want it: opening it lands
-  // them on their circle with every pick already theirs. Not focused on open:
-  // the keyboard would cover the link, which comes first.
+  // 2. Pick for a friend — one who may never open the app (Kevin's Folsom
+  // friends: "just a note for us that they're going there"), a shared phone,
+  // a friend not on their phone. ONE quiet row under the link: a hairline
+  // box, its words and a chevron, never a tonal pill beside Share. A button,
+  // so the 44px floor comes with it.
+  const friendRow = document.createElement('button');
+  friendRow.type = 'button';
+  friendRow.className = 'inv-friend';
+  const friendText = document.createElement('span');
+  friendText.className = 'inv-friend-text';
+  const friendName = document.createElement('span');
+  friendName.className = 'inv-friend-name';
+  friendName.textContent = INVITE_WORDS.friend;
+  const friendSub = document.createElement('span');
+  friendSub.className = 'inv-friend-sub';
+  friendSub.textContent = INVITE_WORDS.friendSub;
+  friendText.append(friendName, ' ', friendSub); // the space: one name read aloud, never "friendThey"
+  const chev = document.createElement('span');
+  chev.className = 'inv-friend-chev';
+  chev.setAttribute('aria-hidden', 'true');
+  chev.textContent = '›';
+  friendRow.append(friendText, chev);
+  linkStep.appendChild(friendRow);
+
+  // Its step: what it does, who is already in, a name, your other fests.
+  // Complete as it stands. Server-first like the join screen (FLOW-5), so
+  // the people cap answers here; offline falls back to the local doc + sync.
+  // Success mints the per-person claim link (&me=), for if they ever want
+  // it: opening it lands them on their circle with every pick already
+  // theirs. The name field takes the focus when the step opens — it is what
+  // the step is for — and never on the link's step, where the keys would
+  // cover the link.
   const token = state.getCrewToken();
-  const byName = document.createElement('div');
-  byName.className = 'inv-section';
-  const byLabel = document.createElement('div');
-  byLabel.className = 'micro-label';
-  byLabel.textContent = INVITE_WORDS.byName;
-  const bySub = document.createElement('div');
-  bySub.className = 'inv-sub';
-  bySub.textContent = INVITE_WORDS.byNameSub;
+  const friendStep = document.createElement('div');
+  friendStep.className = 'inv-step';
+  friendStep.hidden = true;
+  const line = document.createElement('div');
+  line.className = 'inv-sub';
+  line.textContent = INVITE_WORDS.friendLine;
+  // Our people, read-only, in their own colours — Settings' roster chip
+  // (settings.js) — so you see who is in before you type a name.
+  const ours = document.createElement('div');
+  ours.className = 'inv-group';
+  const oursLabel = document.createElement('div');
+  oursLabel.className = 'micro-label';
+  oursLabel.textContent = INVITE_WORDS.inCrew;
+  const people = document.createElement('div');
+  people.className = 'inv-people';
+  for (const [name, p] of state.activePeople()) {
+    const chip = document.createElement('span');
+    chip.className = `person-chip static${name === ctx.meName ? ' you' : ''}`;
+    chip.textContent = name;
+    const ci = colorIndexOf(name, p);
+    chip.style.background = hslOf(ci, 0.5);
+    chip.style.border = `1px solid ${strokeOf(ci, name === ctx.meName)}`;
+    people.appendChild(chip);
+  }
+  ours.append(oursLabel, people);
   const row = document.createElement('div');
   row.className = 'inv-name';
   const input = document.createElement('input');
@@ -3867,8 +4052,7 @@ function openInvite({ moment = false } = {}) {
   const status = document.createElement('div');
   status.className = 'inv-status';
   status.setAttribute('aria-live', 'polite');
-  byName.append(byLabel, bySub, row, status);
-  sheet.appendChild(byName);
+  friendStep.append(line, ours, row, status);
   // 3. Recurring humans, one tap (fests × circles × you, decision 4): the
   // people from your OTHER fests — Drew doesn't get retyped a third time.
   const others = model.otherFestPeople(
@@ -3876,7 +4060,7 @@ function openInvite({ moment = false } = {}) {
   );
   if (others.length) {
     const pickWrap = document.createElement('div');
-    pickWrap.className = 'inv-section';
+    pickWrap.className = 'inv-group';
     const pickLabel = document.createElement('div');
     pickLabel.className = 'micro-label';
     pickLabel.textContent = INVITE_WORDS.others;
@@ -3890,10 +4074,38 @@ function openInvite({ moment = false } = {}) {
       chips.appendChild(chip);
     }
     pickWrap.append(pickLabel, chips);
-    sheet.appendChild(pickWrap);
+    friendStep.appendChild(pickWrap);
   }
+  sheet.appendChild(friendStep);
+
+  // Between the steps: the row in, the ‹ (before the title, as Settings'
+  // is) back out — no history entry either way.
+  const title = head.querySelector('.sheet-title');
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'sheet-back';
+  back.setAttribute('aria-label', INVITE_WORDS.back);
+  back.textContent = '‹';
+  back.hidden = true;
+  head.insertBefore(back, title);
+  const swap = stepSwapper(sheet, title, back);
+  let linkScroll = 0; // where the link's step was scrolled when it was left
+  friendRow.addEventListener('click', () => {
+    if (!friendStep.hidden) return;
+    linkScroll = sheet.scrollTop;
+    swap({ from: linkStep, to: friendStep, forward: true, text: INVITE_WORDS.friendTitle });
+    // In the tap itself: a phone raises its keys for a focus a gesture
+    // made, never for a later one.
+    input.focus({ preventScroll: true });
+  });
+  back.addEventListener('click', () => {
+    if (friendStep.hidden) return;
+    swap({ from: friendStep, to: linkStep, forward: false, scrollTo: linkScroll, text: linkTitle });
+    friendRow.focus({ preventScroll: true });
+  });
 
   const succeed = (canonical, offline = false) => {
+    swap.land(); // a step still moving comes to rest before the sheet is rebuilt
     sheet.textContent = '';
     // Re-chrome the success state too, or it loses the ✕ the moment it
     // becomes the thing you are actually looking at.
@@ -3926,8 +4138,8 @@ function openInvite({ moment = false } = {}) {
 
   // Every way in — the button, Enter, the chips — waits while this crew has
   // an add on its way (addInFlight, below: one per crew, for the page, not
-  // for this sheet), and a sheet opened while one is out says so and takes
-  // its answer when it lands.
+  // for this sheet), and a sheet opened while one is out says so — on its
+  // row as well as its step — and takes its answer when it lands.
   let waiting = false;
   const setWaiting = (on, who = '') => {
     waiting = on;
@@ -3935,7 +4147,8 @@ function openInvite({ moment = false } = {}) {
     input.readOnly = on; // not disabled: the field keeps its focus and the keyboard stays up
     for (const b of sheet.querySelectorAll('.inv-others button')) b.disabled = on;
     status.textContent = '';
-    if (on) status.appendChild(eqLoader(`Adding ${who}…`));
+    if (on) status.appendChild(eqLoader(INVITE_WORDS.adding(who)));
+    friendSub.textContent = on ? INVITE_WORDS.adding(who) : INVITE_WORDS.friendSub;
   };
   const follow = (add) => {
     setWaiting(true, add.canonical);
