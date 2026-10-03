@@ -632,11 +632,32 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { release(); await ctx.close(); }
   });
 
-  test(`${name} 390, the QR module never comes: past its deadline the tile folds away, travelling, and the link stands alone`, { skip }, async () => {
+  test(`${name} 390, the QR module never comes: past its deadline the tile folds away, travelling, and the link stands alone`, { skip }, async (t) => {
     let release = () => {};
     const held = new Promise((r) => { release = r; });
     const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: (c) => c.route('**/js/v3/qr.js', async (r) => { await held; await r.abort().catch(() => {}); }) });
     try {
+      // The fold itself, on the animation's own clock (document.timeline;
+      // the page's Date is pinned): when the tile's animation began, how
+      // long it was asked to run, what it animates, and when the tile left
+      // the page. A loaded runner can paint no frame at all inside the
+      // 170ms the room takes to close (CI run 37085890359, WebKit: 0 frames
+      // between, a 228px "jump"), so the frames alone cannot tell a fold
+      // from a jump; these can. animate() keeps its receiver (WebIDL).
+      await page.evaluate(() => {
+        window.__qrFold = null;
+        window.__qrGoneAt = null;
+        const own = Element.prototype.animate;
+        Element.prototype.animate = function (frames, opts) {
+          if (this.classList && this.classList.contains('inv-qr') && !window.__qrFold) {
+            window.__qrFold = { at: document.timeline.currentTime, duration: opts && typeof opts === 'object' ? opts.duration : opts, frames: JSON.stringify(frames) };
+          }
+          return own.call(this, frames, opts);
+        };
+        new MutationObserver((list, obs) => {
+          if (window.__qrFold && !document.querySelector('.invite-sheet .inv-qr')) { window.__qrGoneAt = document.timeline.currentTime; obs.disconnect(); }
+        }).observe(document.body, { childList: true, subtree: true });
+      });
       await press('#dock-you');
       await press('#dock-you-wrap .hl-pop [data-act="invite"]');
       await sheetStill(page);
@@ -647,7 +668,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const tick = () => {
           const sheet = document.querySelector('.invite-sheet');
           if (!sheet) return;
-          window.__qrTrack.push({ sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top, qr: !!sheet.querySelector('.inv-qr') });
+          window.__qrTrack.push({ t: document.timeline.currentTime, sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top, qr: !!sheet.querySelector('.inv-qr') });
           if (window.__qrTrack.length < 3000) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
@@ -661,11 +682,25 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // full and scrolls — the link comes up. Whatever moved, travelled.
       const moved = ['sheet', 'link'].filter((k) => Math.abs(after[k] - before[k]) > 1);
       assert.ok(moved.some((k) => Math.abs(after[k] - before[k]) > 40), `the tile's room closed: ${JSON.stringify([before, after])}`);
-      for (const k of moved) {
-        const from = before[k];
-        const to = after[k];
-        const between = track.filter((f) => Math.min(from, to) + 1 < f[k] && f[k] < Math.max(from, to) - 1).length;
-        assert.ok(between >= 2, `${k} travelled — seen on its way in ${between} frames, not jumped ${Math.round(to - from)}px in one`);
+      // It folded: one animation on the tile, its height to nothing over
+      // the whole QR_FOLD_MS, and the tile left only once that had run.
+      const fold = await page.evaluate(() => ({ ...window.__qrFold, goneAt: window.__qrGoneAt }));
+      assert.ok(fold && fold.at != null, 'the tile left by an animation, not a remove');
+      assert.ok(fold.duration >= 200, `a fold long enough to see: ${fold.duration}ms`);
+      assert.match(fold.frames, /"height":"\d+(\.\d+)?px"[^]*"height":"0px"/, `its room closes, from its height to 0: ${fold.frames}`);
+      assert.ok(fold.goneAt != null && fold.goneAt - fold.at >= fold.duration * 0.9, `gone only after the fold ran: ${Math.round(fold.goneAt - fold.at)}ms of ${fold.duration}`);
+      // And where the runner painted frames while it closed, something was
+      // seen on its way — never one jump between two painted frames.
+      const during = track.filter((f) => f.t > fold.at && f.t < fold.goneAt);
+      if (during.length >= 3) {
+        for (const k of moved) {
+          const from = before[k];
+          const to = after[k];
+          const between = track.filter((f) => Math.min(from, to) + 1 < f[k] && f[k] < Math.max(from, to) - 1).length;
+          assert.ok(between >= 2, `${k} travelled — seen on its way in ${between} of ${during.length} frames painted during the fold, not jumped ${Math.round(to - from)}px in one`);
+        }
+      } else {
+        t.diagnostic(`only ${during.length} frames painted during the ${fold.duration}ms fold on this runner: the travel is proven by the animation, not the frames`);
       }
       assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
       // The request fails at last: that IS recorded, once, and nothing comes back.
