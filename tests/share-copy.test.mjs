@@ -45,13 +45,14 @@ test('My link is a master key: its hint still says keep it to yourself, and why'
 test('the short versions are the ones on screen', () => {
   // Picking for a friend (Kevin, 2026-10-03: "pick for your friend (they can
   // join anytime later) << probs tighter copy"): one quiet row under the
-  // link, and a step of its own that says what it does — in the claim
-  // line's own words, "makes the picks theirs".
+  // link, and a step of its own that keeps the section's words — Kevin, the
+  // same day: "I didn't think we'd change the copy on the pick a person or
+  // add name shelf". Only the "Or" went, with the link it followed.
   assert.match(APP, /friend: 'Pick for a friend',/, 'the row');
   assert.match(APP, /friendSub: 'They can join anytime',/, 'and its second line, Kevin’s words, tightened');
-  assert.match(APP, /friendTitle: 'PICK FOR A FRIEND',/, 'the step is named for the row that opens it');
-  assert.match(APP, /'You pick for them, so the crew sees where they’re going\. Whenever they want to pick, their own link makes the picks theirs\.'/, 'complete as it stands, and the link an if-ever');
-  assert.doesNotMatch(APP, /Or add a friend/, 'the old section’s label is gone with the section');
+  assert.match(APP, /friendTitle: 'ADD A FRIEND',/, 'the step keeps the section’s name');
+  assert.match(APP, /friendLine: 'You pick for them; the crew sees where they’re going\.',/, 'and its line, as it was');
+  assert.doesNotMatch(APP, /Or add a friend/, 'no "Or": the step follows nothing on its own screen');
   assert.doesNotMatch(APP, /until they open their link/, 'no waiting room');
   assert.match(INDEX, /Add your fests, then your people\.<br>Got a link\? Just open it\./);
   assert.match(SETTINGS, /’s in\. This link still gets them back in\./);

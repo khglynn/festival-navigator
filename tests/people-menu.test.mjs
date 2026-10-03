@@ -469,10 +469,10 @@ test('Pick for a friend: the same sheet moves on — its title, a ‹ back, the 
   const entries = window.history.length;
   const at = JSON.stringify(window.history.state);
   toFriend(sheet);
-  assert.equal(sheet.querySelector('.sheet-title').textContent, 'PICK FOR A FRIEND');
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'ADD A FRIEND');
   const step = friendStep(sheet);
   assert.deepEqual(partsOf(step), ['line', 'people', 'name', 'status', 'others'], 'what it does, who is in, the name, its word, your other fests');
-  assert.equal(step.querySelector('.inv-sub').textContent, 'You pick for them, so the crew sees where they’re going. Whenever they want to pick, their own link makes the picks theirs.');
+  assert.equal(step.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
   // Our people, in their own colours, read-only: a roster, not a control.
   const chips = [...step.querySelectorAll('.inv-people .person-chip')];
   assert.deepEqual(chips.map((c) => c.textContent), ['Ana', 'Ben', 'Cy'], 'the crew, in its order');

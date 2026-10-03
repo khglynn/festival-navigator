@@ -129,7 +129,7 @@ test('Invite someone: no grabber, and Back closes it — from its friend step to
   await settle(40);
   sheet().querySelector('.inv-friend').click();
   const f = noGrabber('Pick for a friend');
-  assert.equal(titleOf(f.firstElementChild), 'PICK FOR A FRIEND', 'the head is still the first child');
+  assert.equal(titleOf(f.firstElementChild), 'ADD A FRIEND', 'the head is still the first child');
   history.back();
   await gone();
 });

@@ -396,7 +396,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(await page.locator('.invite-sheet .inv-name input').isVisible(), false, 'no name field on the link’s step');
       const entries = await page.evaluate(() => history.length);
       await press('.invite-sheet .inv-friend');
-      await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'PICK FOR A FRIEND', null, { timeout: 3000 });
+      await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'ADD A FRIEND', null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       const up = await page.evaluate(() => ({
         focus: document.activeElement === document.querySelector('.invite-sheet .inv-name input'),
@@ -552,7 +552,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           await tapAt();
           await sleep(700);
           assert.equal(posts.length, 0, `a second tap ${gap} ms after the first added nobody (under it then: ${hit})`);
-          assert.equal(await page.locator('.invite-sheet .sheet-title').textContent(), 'PICK FOR A FRIEND', 'the friend step is up, and nothing else happened');
+          assert.equal(await page.locator('.invite-sheet .sheet-title').textContent(), 'ADD A FRIEND', 'the friend step is up, and nothing else happened');
           await press('.invite-sheet .sheet-back');
           await motionDone(page, { within: '.invite-sheet' });
           await sleep(400);
@@ -586,7 +586,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       });
       await press('.invite-sheet .inv-friend');
       const at = await page.evaluate(() => window.__atTap);
-      assert.deepEqual(at, { title: 'PICK FOR A FRIEND', moving: 0, stepping: false, link: 0, focus: true, titles: 1 }, 'instant, and whole');
+      assert.deepEqual(at, { title: 'ADD A FRIEND', moving: 0, stepping: false, link: 0, focus: true, titles: 1 }, 'instant, and whole');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -1242,7 +1242,8 @@ for (const wide of [null, '0.7px']) {
 
 // More room never yields fewer discs (the rule has no cliffs): four people
 // highlighted with NOW live, the phone widened step by step — Portola and
-// ACL's long name, at the Mac's glyph widths and at Linux's. Before the rule
+// ACL (a long name until 2026-10-03), at the Mac's glyph widths and at
+// Linux's. Before the rule
 // asked for NOW's room whenever NOW was live, ACL showed two discs at 320 and
 // one at 360. Each step is a real resize (the pill refits on it).
 for (const [fest, fid, now] of [['Portola', FID, SAT], ['ACL', 'acl-2026', new Date('2026-10-03T20:00:00-05:00')]]) {

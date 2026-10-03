@@ -3627,13 +3627,14 @@ const INVITE_WORDS = {
   opens: (crewName) => `Opens straight into ${crewName}. No accounts needed.`,
   share: 'Share the link',
   // Picking for a friend (Kevin, 2026-10-03: "pick for your friend (they can
-  // join anytime later) << probs tighter copy"): the row's two lines, then
-  // its step — named for the row — and the step's one line, which ends on
-  // the claim line's own words (below), "makes the picks theirs".
+  // join anytime later) << probs tighter copy"): the row's two lines are new;
+  // the step it opens keeps the words the section always had (Kevin, same
+  // day: "I didn't think we'd change the copy on the pick a person or add
+  // name shelf") — only its "Or" went, with the link it followed.
   friend: 'Pick for a friend',
   friendSub: 'They can join anytime',
-  friendTitle: 'PICK FOR A FRIEND',
-  friendLine: 'You pick for them, so the crew sees where they’re going. Whenever they want to pick, their own link makes the picks theirs.',
+  friendTitle: 'ADD A FRIEND',
+  friendLine: 'You pick for them; the crew sees where they’re going.',
   inCrew: 'Already in',
   back: 'Back to the crew link',
   adding: (who) => `Adding ${who}…`,

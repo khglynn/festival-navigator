@@ -63,12 +63,15 @@ from generated crew names; selection survives entering the name step.
 
 1. Wall → your avatar → **+ Invite someone** (a laptop's people row has the
    same + Invite someone; so does Settings → CREW) → ONE sheet (2026-09-26),
-   in Kevin's order: the crew link first (Copy / Share), then "Or add a
-   friend" (by name — "You pick for them; the crew sees where they're
-   going."), then one-tap chips under "From your other fests" (active people
-   from every other circle this device knows, deduped, minus you and existing
-   members). The sheet a new crew opens on is the same one, titled for the
-   moment.
+   in Kevin's order: the crew link first — its QR on top (v111), then Copy /
+   Share — and under it one quiet row, "Pick for a friend · They can join
+   anytime" (v112). The row moves the same sheet on to its second step, ADD
+   A FRIEND (by name — "You pick for them; the crew sees where they're
+   going."), with the crew already in, the name field, and one-tap chips
+   under "From your other fests" (active people from every other circle
+   this device knows, deduped, minus you and existing members); ‹ goes back
+   to the link, and Back closes the sheet. The sheet a new crew opens on is
+   the same one, titled for the moment.
 2. Adding by name is complete as it stands (2026-09-26): a friend the crew
    picks for may never open the app. Success ("MO IS IN") mints their claim
    link (&me=) for if they ever want to pick — opening it makes the picks
