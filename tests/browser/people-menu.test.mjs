@@ -640,19 +640,38 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // The fold itself, on the animation's own clock (document.timeline;
       // the page's Date is pinned): when the tile's animation began, how
       // long it was asked to run, what it animates, and when the tile left
-      // the page. A loaded runner can paint no frame at all inside the
-      // 170ms the room takes to close (CI run 37085890359, WebKit: 0 frames
-      // between, a 228px "jump"), so the frames alone cannot tell a fold
-      // from a jump; these can. animate() keeps its receiver (WebIDL).
+      // the page. animate() keeps its receiver (WebIDL).
+      //
+      // And where things stand along it, by SEEKING the fold — paused, its
+      // clock set to points along the way, the layout read at each, then
+      // played from the start as the app asked. Painted frames cannot show
+      // the travel everywhere: CI's Linux WebKit applies animated styles in
+      // coarse steps, not per frame (diag run 37089577730: the fold read
+      // 0ms for 368ms of painted frames, then finished in one step; under
+      // load the height never changed before the tile left), so a test
+      // counting frames failed a fold that was there. The seek is the same
+      // in every engine.
       await page.evaluate(() => {
         window.__qrFold = null;
         window.__qrGoneAt = null;
         const own = Element.prototype.animate;
         Element.prototype.animate = function (frames, opts) {
+          const a = own.call(this, frames, opts);
           if (this.classList && this.classList.contains('inv-qr') && !window.__qrFold) {
-            window.__qrFold = { at: document.timeline.currentTime, duration: opts && typeof opts === 'object' ? opts.duration : opts, frames: JSON.stringify(frames) };
+            const duration = opts && typeof opts === 'object' ? opts.duration : opts;
+            const fold = window.__qrFold = { at: document.timeline.currentTime, duration, frames: JSON.stringify(frames), seek: null };
+            try {
+              const sheet = document.querySelector('.invite-sheet');
+              a.pause();
+              fold.seek = [0.2, 0.4, 0.5, 0.6, 0.7].map((p) => {
+                a.currentTime = duration * p;
+                return { p, sheet: sheet.getBoundingClientRect().top, link: sheet.querySelector('.inv-link').getBoundingClientRect().top };
+              });
+              a.currentTime = 0;
+              a.play();
+            } catch (e) { fold.seek = String(e); }
           }
-          return own.call(this, frames, opts);
+          return a;
         };
         new MutationObserver((list, obs) => {
           if (window.__qrFold && !document.querySelector('.invite-sheet .inv-qr')) { window.__qrGoneAt = document.timeline.currentTime; obs.disconnect(); }
@@ -689,10 +708,26 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(fold.duration >= 200, `a fold long enough to see: ${fold.duration}ms`);
       assert.match(fold.frames, /"height":"\d+(\.\d+)?px"[^]*"height":"0px"/, `its room closes, from its height to 0: ${fold.frames}`);
       assert.ok(fold.goneAt != null && fold.goneAt - fold.at >= fold.duration * 0.9, `gone only after the fold ran: ${Math.round(fold.goneAt - fold.at)}ms of ${fold.duration}`);
-      // And where the runner painted frames while it closed, something was
-      // seen on its way — never one jump between two painted frames.
+      // It fades first, then its room closes, so what stood below travels
+      // into place: still at 20% of the fold, then partway at every point
+      // from 40% to 70%, each further along than the last — a fold, never
+      // a fade and then a jump.
+      assert.ok(Array.isArray(fold.seek), `the fold could be sought: ${fold.seek}`);
+      for (const k of moved) {
+        const from = before[k];
+        const to = after[k];
+        const dir = Math.sign(to - from);
+        const [still, ...along] = fold.seek;
+        assert.ok(Math.abs(still[k] - from) <= 1, `${k} holds still while the tile fades (20%): ${JSON.stringify(fold.seek)}`);
+        for (const at of along) assert.ok(Math.min(from, to) + 1 < at[k] && at[k] < Math.max(from, to) - 1, `${k} partway at ${at.p * 100}% of the fold, not jumped ${Math.round(to - from)}px: ${JSON.stringify(fold.seek)}`);
+        for (let i = 1; i < along.length; i++) assert.ok((along[i][k] - along[i - 1][k]) * dir > 0, `${k} further along at each step: ${JSON.stringify(fold.seek)}`);
+      }
+      // Where the engine applies an animation every frame (Chromium), the
+      // painted frames show the travel too, never one jump between two.
+      // CI's Linux WebKit steps its animated styles coarsely (above), so
+      // there the seek stands alone.
       const during = track.filter((f) => f.t > fold.at && f.t < fold.goneAt);
-      if (during.length >= 3) {
+      if (name === 'Chromium' && during.length >= 3) {
         for (const k of moved) {
           const from = before[k];
           const to = after[k];
@@ -700,7 +735,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           assert.ok(between >= 2, `${k} travelled — seen on its way in ${between} of ${during.length} frames painted during the fold, not jumped ${Math.round(to - from)}px in one`);
         }
       } else {
-        t.diagnostic(`only ${during.length} frames painted during the ${fold.duration}ms fold on this runner: the travel is proven by the animation, not the frames`);
+        t.diagnostic(`${name}: ${during.length} frames painted during the ${fold.duration}ms fold; the travel is proven by seeking the fold, not by frames`);
       }
       assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
       // The request fails at last: that IS recorded, once, and nothing comes back.
