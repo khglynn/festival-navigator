@@ -663,13 +663,18 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
             sheet: box(sheet), tile: box(tile), img: box(img),
             natural: [img.naturalWidth, img.naturalHeight], opacity: getComputedStyle(tile).opacity, rendering: st.imageRendering,
             callout: st.webkitTouchCallout || null, tileBg: getComputedStyle(tile).backgroundColor,
+            ghost: [getComputedStyle(tile, '::before').opacity, getComputedStyle(tile, '::after').opacity],
             order: [...sheet.querySelector('.inv-step').children].map((n) => n.classList[0]).filter((c) => /^inv-(qr|link)$/.test(c)),
           };
         });
         assert.deepEqual(geo.order, ['inv-qr', 'inv-link'], 'the QR on top of the link');
         assert.ok(Math.abs(geo.img.w - geo.img.h) < 0.5 && Math.abs(geo.tile.w - geo.tile.h) < 0.5, `square: tile ${geo.tile.w}×${geo.tile.h}, image ${geo.img.w}×${geo.img.h}`);
-        const tileW = Math.min(h <= 640 ? 132 : 176, 0.52 * w); // v3.css: smaller on a short screen
-        assert.ok(Math.abs(geo.tile.w - tileW) < 0.5, `the tile is min(${h <= 640 ? 132 : 176}px, 52vw): ${geo.tile.w}`);
+        // v3.css: 208px, 196 on a shorter screen, 132 on a short one (Share
+        // stays on screen at 320×568) — and never past about half the width.
+        const cap = h <= 640 ? 132 : h < 760 ? 196 : 208;
+        const vw = h <= 640 ? 0.52 : 0.54;
+        const tileW = Math.min(cap, vw * w);
+        assert.ok(Math.abs(geo.tile.w - tileW) < 0.5, `the tile is min(${cap}px, ${vw * 100}vw): ${geo.tile.w}`);
         assert.ok(geo.tile.l >= geo.sheet.l && geo.tile.r <= geo.sheet.r && geo.tile.t >= geo.sheet.t && geo.tile.b <= Math.min(geo.sheet.b, h), `inside the sheet and on screen: ${JSON.stringify(geo)}`);
         assert.ok(Math.abs((geo.tile.l + geo.tile.r) / 2 - (geo.sheet.l + geo.sheet.r) / 2) < 1, 'centred');
         assert.ok(geo.natural[0] > 0 && geo.natural[0] === geo.natural[1], `drawn, square: ${geo.natural}`);
@@ -680,7 +685,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         assert.ok(Math.abs(geo.natural[0] - geo.img.w * 2) < 0.01, `shown at its own pixels at 2x: ${geo.natural[0]}px drawn, ${geo.img.w} CSS px shown`);
         assert.ok(Math.abs((geo.img.l + geo.img.r) / 2 - (geo.tile.l + geo.tile.r) / 2) < 0.5 && Math.abs((geo.img.t + geo.img.b) / 2 - (geo.tile.t + geo.tile.b) / 2) < 0.5, `centred in its tile: ${JSON.stringify([geo.img, geo.tile])}`);
         assert.equal(geo.opacity, '1', 'faded in with its tile, and still');
-        assert.equal(geo.tileBg, 'rgb(255, 255, 255)', 'a white tile: --text-primary, never the fest accent');
+        // The card is the image (the aura, the panel, the code): the tile
+        // behind it carries no colour of its own to seam against its edge,
+        // and its placeholder has crossfaded away.
+        assert.equal(geo.tileBg, 'rgba(0, 0, 0, 0)', 'no tile colour: the card is the image');
+        assert.deepEqual(geo.ghost, ['0', '0'], 'the placeholder (a soft card, an empty window) faded out under the code');
         if (geo.callout !== null) assert.equal(geo.callout, 'default', 'a long-press keeps the OS’s Save Image');
         // A screen reader hears the image by its alt and the caption once (a
         // <figure> took its name from its caption, so it was read twice).
@@ -692,10 +701,15 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const px = jpeg.decode(shot, { useTArray: true });
         const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
         assert.equal(hit && hit.data, link, 'the screenshot scans to exactly the link in the box');
-        // Whole device pixels a module: version v is 17 + 4v modules, inside
-        // the 4-module quiet zone the bitmap carries.
+        // The card qr.js laid out for this tile (whole device pixels a
+        // module: version v is 17 + 4v modules, inside the 4-module quiet
+        // zone): exactly its width, and — where the tile grew (196, 208) to
+        // pay for the aura — never fewer pixels a module than v111's 176px
+        // tile gave the code.
         const modules = 17 + 4 * hit.version + 8;
-        assert.equal(geo.natural[0] % modules, 0, `whole pixels a module: ${geo.natural[0]} for ${modules} modules`);
+        const lay = await page.evaluate(([m, room]) => import('/js/v3/qr.js').then((q) => q.qrLayout(m, room, 2)), [modules, geo.tile.w]);
+        assert.equal(geo.natural[0], lay.w, `the card is qrLayout's: ${geo.natural[0]} for ${modules} modules in ${geo.tile.w}px (${JSON.stringify(lay)})`);
+        if (geo.tile.w >= 196) assert.ok(lay.s >= Math.floor((176 * 2) / modules), `no fewer pixels a module than v111: ${lay.s}`);
         // Copy and Share, with real input, as before the QR.
         await press('.invite-sheet .inv-copy');
         if (name === 'Chromium') {
@@ -716,6 +730,9 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           return f.height > 0 && f.top >= sh.top && f.bottom <= Math.min(sh.bottom, innerHeight);
         }, sel);
         const row = '.invite-sheet .inv-friend';
+        // On a common phone the whole step fits under the bigger card: the
+        // row is there at open, nothing to scroll.
+        if (h >= 800) assert.ok(await inReach(row), `at ${w}×${h} the friend row is on screen at open, unscrolled`);
         const c = await page.locator('.invite-sheet').boundingBox();
         await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
         for (let i = 0; i < 8 && !(await inReach(row)); i++) { await page.mouse.wheel(0, 160); await sleep(120); }
@@ -737,9 +754,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // with the line a shared view adds (the review of 1b80842: at 320×568 a
   // Show filter + List put Share 26px below the sheet's 72vh fold — 18 of
   // its 44px showing). The tile gives way on a short screen instead.
-  for (const mode of ['List', 'a room off + List']) {
-    test(`${name} 320×568, ${mode}: Share and Done are on screen when the Invite sheet opens`, { skip }, async () => {
-      const { ctx, page, errors, press } = await openApp(get(), { width: 320, height: 568 });
+  // 375×667 (an iPhone SE, the 196px tile) is the next-tightest screen, in
+  // its tightest mode.
+  for (const [w, h, mode] of [[320, 568, 'List'], [320, 568, 'a room off + List'], [375, 667, 'List']]) {
+    test(`${name} ${w}×${h}, ${mode}: Share and Done are on screen when the Invite sheet opens`, { skip }, async () => {
+      const { ctx, page, errors, press } = await openApp(get(), { width: w, height: h });
       try {
         await press('#dock-fest-link');
         if (mode !== 'List') await press('#dock-fest-wrap .sort-pop [data-room]');
@@ -798,6 +817,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     return {
       sheet: sheet.getBoundingClientRect().top, sub: top('.inv-sub'), link: top('.inv-link'),
       tile: t ? [t.width, t.height] : null, tileOpacity: tile ? getComputedStyle(tile).opacity : null,
+      ghost: tile ? getComputedStyle(tile, '::before').opacity : null,
       cap: cap ? getComputedStyle(cap).visibility : null, ready: !!fig && fig.classList.contains('in'),
       drawn: !!fig && !!fig.querySelector('img').getAttribute('src'),
       next: sheet.querySelector('.inv-sub').nextElementSibling.className,
@@ -819,6 +839,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(before.tile && Math.abs(before.tile[0] - before.tile[1]) < 0.5 && before.tile[0] > 100, `square from the first frame: ${before.tile}`);
       assert.equal(before.cap, 'hidden', 'no "point a phone camera here" before there is a code to point it at');
       assert.ok(Number(before.tileOpacity) < 0.5, `a soft placeholder, not a white square promising a code: ${before.tileOpacity}`);
+      assert.equal(before.ghost, '1', 'the placeholder is a soft version of the card (its aura, an empty window), whole until the code lands');
       await sleep(1500);
       assert.equal((await qrRead(page)).tile !== null, true, 'still waiting, inside its deadline');
       release();
@@ -830,6 +851,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(after.tile, before.tile, 'the tile kept its size');
       assert.equal(after.cap, 'visible', 'with the code, the words');
       assert.equal(after.tileOpacity, '1', 'and the tile whole');
+      assert.equal(after.ghost, '0', 'the placeholder crossfaded away under the card');
       const link = await page.locator('.invite-sheet .inv-link input').inputValue();
       const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
       const px = jpeg.decode(shot, { useTArray: true });

@@ -3678,21 +3678,26 @@ function inviteLinkRow(link, label) {
 // right-click, or a screenshot keeps it, and a button would push the friend
 // row further below the sheet's fold.
 //
-// The tile is square from the sheet's first frame, so nothing under it moves
-// when the image lands. The module is warmed after the wall paints (warmQr),
-// so the QR is almost always drawn at once; one drawn late fades in, opacity
-// only (the tokens' kill rules make it instant under Low power and Reduce
-// Motion). It is drawn to the room its tile really has on this screen, and
-// shown at its own pixels in the middle of it (qr.js qrPng): whole device
-// pixels a module, never a bitmap stretched to fill the tile. A QR that
-// cannot be drawn, or has not come by its deadline, takes its tile with it
-// and the link stands alone, as it always did; a failure's record says so in
-// the error's own words, never with the link in them.
-const QR_ROOM_PX = 176; // the room at its widest — the whole 176px tile — where the page cannot be measured
+// The QR is the app's own card (v112, qr.js): the hero's aura around a
+// light panel that holds the code in a deep brand ink. The tile is square
+// from the sheet's first frame, so nothing under it moves when the card
+// lands; until then it is a soft, still version of the card with an empty
+// window (v3.css). The module is warmed after the wall paints (warmQr), so
+// the QR is almost always drawn at once; one drawn late crossfades in,
+// opacity only (the tokens' kill rules make it instant under Low power and
+// Reduce Motion). It is drawn to the room its tile really has on this
+// screen, and shown at its own pixels in the middle of it (qr.js qrPng):
+// whole device pixels a module, never a bitmap stretched to fill the tile —
+// sized by its width alone, its height following from the image's own
+// ratio (a taller card, with slice 3's code line, needs nothing new here).
+// A QR that cannot be drawn, or has not come by its deadline, takes its tile
+// with it and the link stands alone, as it always did; a failure's record
+// says so in the error's own words, never with the link in them.
+const QR_ROOM_PX = 208; // the room at its widest — the whole 208px tile — where the page cannot be measured
 // The room the tile gives the image, in CSS px, measured on the page: the
-// tile is min(176px, 52vw), smaller on a short screen (v3.css), and an
-// <img> not yet drawn fills its room exactly. A computed width, never a
-// bounding box: the sheet's way in scales it.
+// tile is min(208px, 54vw), smaller on shorter screens (v3.css), and an
+// <img> not yet drawn fills its room's width exactly. A computed width,
+// never a bounding box: the sheet's way in scales it.
 function qrRoom(img) {
   try {
     const v = window.getComputedStyle(img).width; // a used length on a page; '100%' or '' off one
@@ -3744,9 +3749,9 @@ function inviteQr(link) {
   caption.className = 'inv-qr-cap';
   caption.textContent = INVITE_WORDS.qrCaption;
   fig.append(tile, caption);
-  // Until the image is in (`.in`), the tile is a soft square that holds the
-  // room and promises nothing: no white code-shaped tile, no "point a phone
-  // camera here" over an empty square (v3.css).
+  // Until the image is in (`.in`), the tile is a soft, still card with an
+  // empty window that holds the room and promises nothing: no modules, no
+  // white square, no "point a phone camera here" over an empty one (v3.css).
   let gone = false;
   let said = false;
   let seen = false; // painted at least once: from then on it leaves by folding away

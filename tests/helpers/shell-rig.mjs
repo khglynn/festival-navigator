@@ -61,8 +61,13 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   dom.window.scrollTo = () => {};
   // …nor scrollIntoView, which a day tab's jump calls on its day's block.
   dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
-  // jsdom has no canvas; the living favicon draws on one once a wall opens.
-  dom.window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => ({ addColorStop() {} }) });
+  // jsdom has no canvas; the living favicon draws on one once a wall opens,
+  // and the Invite sheet's QR puts its code down as image data (js/v3/qr.js).
+  // A canvas that draws nothing: every call a no-op, its image data the right
+  // shape (tests/people-menu.test.mjs has one that really paints).
+  dom.window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, {
+    get: (t, k) => (k === 'createImageData' ? (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }) : () => ({ addColorStop() {} })),
+  });
   dom.window.HTMLCanvasElement.prototype.toDataURL = () => 'data:image/png;base64,';
 
   const intervals = new Set();

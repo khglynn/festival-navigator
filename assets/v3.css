@@ -493,39 +493,59 @@ html { touch-action: manipulation; }
                                 font-size: 12px; font-family: var(--font-ui); }
 .invite-sheet .inv-copy { font-size: 12px; padding: 9px 15px; flex: none; }
 /* The crew link as a QR, on top of the box that prints it (find your crew,
- * slice 1; app.js inviteQr). A tile square from the sheet's first frame,
- * so nothing below moves when the image lands, white once it has; the modules are
- * --page on --text-primary (js/v3/qr.js), never the fest accent. The image
- * keeps the OS's own long-press (Save to Photos, Share) and a laptop's
- * right-click — callouts are off only on cards and controls — so there is
- * no Save button. The code fades in with its tile; the tokens' kill rules
- * make that instant under Low power and Reduce Motion. The caption spans the
- * sheet, so at 320 it is two lines, not four under a 166px tile. */
+ * slice 1; app.js inviteQr), as the app's own card since v112 (Kevin,
+ * 2026-10-03: "can we do something that looks cooler / is more branded?").
+ * The card is the image (js/v3/qr.js): the aura is the brand — the hero
+ * button's light and grain, from the same tokens — and the panel is the
+ * scanner's, dark ink on light, never the fest accent. The image keeps the
+ * OS's own long-press (Save to Photos, Share) and a laptop's right-click —
+ * callouts are off only on cards and controls — so there is no Save button;
+ * saved, it is the rounded card, transparent outside. The caption spans the
+ * sheet, so at 320 it is two lines, not four under the tile. */
 .invite-sheet .inv-qr { margin: 0; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-/* The image carries its own 4-module quiet zone (qr.js), so the tile needs no
- * white margin of its own; app.js draws the image to the tile's room and
- * shows it at its own pixels, centred — never stretched to fill the tile (a
- * 1.1× stretch made the modules alternate 7 and 8 pixels). Until it is
- * drawn, the <img> fills that room, which is what app.js measures. Its
- * corners round with the tile's: they are quiet zone, never code. */
-.invite-sheet .inv-qr-tile { width: min(176px, 52vw); aspect-ratio: 1; box-sizing: border-box;
+/* The tile holds the room from the sheet's first frame — square, so nothing
+ * below moves when the card lands — and has no colour of its own to seam
+ * against the card's edge. app.js draws the card to the tile's room (the
+ * <img>'s width before it is drawn) and shows it at its own pixels, centred:
+ * never stretched to fill (a 1.1× stretch made the modules alternate 7 and
+ * 8 pixels). 208px on a tall phone, where the growth over v111's 176 pays
+ * for the aura's frame and the code keeps every pixel a module it had;
+ * 196 on a shorter one (375×667); 132 on a short screen, last, below. */
+.invite-sheet .inv-qr-tile { position: relative; width: min(208px, 54vw); aspect-ratio: 1; box-sizing: border-box;
                              display: flex; align-items: center; justify-content: center;
-                             background: var(--text-primary); border-radius: var(--r-card);
-                             opacity: .12; transition: opacity .2s ease-out; }
-.invite-sheet .inv-qr img { display: block; flex: none; width: 100%; max-width: 100%; aspect-ratio: 1; image-rendering: pixelated;
-                            border-radius: var(--r-card); -webkit-touch-callout: default; visibility: hidden; }
-/* Until the code is in (app.js adds `.in` when the image has loaded), the
- * tile is a soft square that only holds the room, and the caption is not
- * there to promise a code: a slow module showed a bare white square under
- * "Point a phone camera here" for as long as it took (the review of 1b80842).
- * The caption's room is kept, so nothing moves when it arrives. */
+                             opacity: .4; transition: opacity .2s ease-out; }
+@media (max-height: 759px) { .invite-sheet .inv-qr-tile { width: min(196px, 54vw); } }
+/* Until the card is in (app.js adds `.in` when the image has loaded), the
+ * tile is a soft version of it: the aura, still, and an empty window where
+ * the panel will be — no modules, so it promises no code, and never a white
+ * square (a slow module once showed a bare white square under "Point a phone
+ * camera here", the review of 1b80842). The caption's room is kept, so
+ * nothing moves when it arrives. With the card, the two crossfade: the
+ * placeholder goes as the tile comes up, so a card a few pixels smaller
+ * than its tile (whole pixels a module) leaves no ring of it behind. The
+ * tokens' kill rules make that instant under Low power and Reduce Motion,
+ * where the card's grain is still there, baked into the image. */
+.invite-sheet .inv-qr-tile::before, .invite-sheet .inv-qr-tile::after {
+  content: ''; position: absolute; pointer-events: none; transition: opacity .2s ease-out; }
+.invite-sheet .inv-qr-tile::before {
+  inset: 0; border-radius: 9.4%;
+  background:
+    radial-gradient(68% 95% at -4% 20%, hsla(var(--aura-orange), 1) 0%, hsla(var(--aura-orange), .55) 55%, hsla(var(--aura-orange), 0) 100%),
+    radial-gradient(85% 58% at 50% 110%, hsla(var(--aura-magenta), .95) 0%, hsla(var(--aura-magenta), .5) 55%, hsla(var(--aura-magenta), 0) 100%),
+    radial-gradient(74% 92% at 104% 8%, hsla(var(--aura-blue), 1) 0%, hsla(var(--aura-blue), .55) 55%, hsla(var(--aura-blue), 0) 100%),
+    var(--aura-base); }
+.invite-sheet .inv-qr-tile::after { inset: 6%; border-radius: 3.9%; background: var(--qr-panel-ghost); }
+.invite-sheet .inv-qr img { position: relative; z-index: 1; display: block; flex: none; width: 100%; max-width: 100%;
+                            image-rendering: pixelated; -webkit-touch-callout: default; visibility: hidden; }
 .invite-sheet .inv-qr.in .inv-qr-tile { opacity: 1; }
+.invite-sheet .inv-qr.in .inv-qr-tile::before, .invite-sheet .inv-qr.in .inv-qr-tile::after { opacity: 0; }
 .invite-sheet .inv-qr.in img { visibility: visible; }
 /* A short screen (a 320×568 phone, any phone on its side): the tile gives
  * way, so Share stays on screen at open under the line a shared view adds —
  * at 166px it put Share 26px below the sheet's 72vh fold (the review of
- * 1b80842). The code keeps 4–5 device pixels a module at 2x, and a
- * screenshot of the longest shared-view link still decodes. */
+ * 1b80842). There the code keeps every pixel a module v111 gave it and the
+ * aura lives on what is left (qr.js qrLayout), and a screenshot of the
+ * longest shared-view link still decodes. Last, so it wins. */
 @media (max-height: 640px) { .invite-sheet .inv-qr-tile { width: min(132px, 52vw); } }
 .invite-sheet .inv-qr-cap { color: var(--text-tertiary); font-size: 11.5px; line-height: 1.45;
                             text-align: center; text-wrap: balance; max-width: 36ch;

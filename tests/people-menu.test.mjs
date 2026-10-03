@@ -110,9 +110,11 @@ const errlog = await import('../js/errlog.js');
 
 // The canvas the Invite sheet's QR is drawn on (js/v3/qr.js). jsdom has
 // none; the rig's stand-in draws nothing. This one paints each solid
-// fillRect into pixels and hands back a data URL naming them, so a test
-// decodes what the sheet DREW and holds it against the link it prints.
-// Everything else (the favicon's gradient, its paths) stays a no-op.
+// fillRect (the card's aura base) and each putImageData (the code, painted
+// by the pixel) into pixels and hands back a data URL naming them, so a test
+// decodes what the sheet DREW — the code on the card's dark surround — and
+// holds it against the link it prints. Everything else (the aura's
+// gradients, the grain, paths, the favicon) stays a no-op.
 // `qrCanvas = false` takes the 2D context away from every canvas but the
 // favicon's 32px one: a browser that refuses a canvas.
 const drawn = new Map();
@@ -132,6 +134,11 @@ let qrCanvas = true;
           const i = (yy * canvas.width + xx) * 4;
           canvas.rgba.set([...rgb, 255], i);
         }
+      },
+      createImageData(w, h) { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; },
+      putImageData(img, x, y) {
+        if (!canvas.rgba) canvas.rgba = new Uint8ClampedArray(canvas.width * canvas.height * 4);
+        for (let r = 0; r < img.height; r++) canvas.rgba.set(img.data.subarray(r * img.width * 4, (r + 1) * img.width * 4), ((y + r) * canvas.width + x) * 4);
       },
       // What qr.js reads back to be sure the drawing is really there.
       getImageData(x, y, w, h) {
@@ -612,6 +619,11 @@ test('from the friend step, Back, Escape, the ✕ and the dimmed wall each close
 // can really be held or aborted.
 test('a phone that cannot draw the QR loses only the QR: the link stands alone, and the record names no link', async () => {
   qrCanvas = false;
+  // A phone that cannot draw never drew: this page has, so it asks at a
+  // pixel ratio it never drew at — qr.js keeps its last card in memory
+  // (a reopened sheet is instant), and that card is not this phone's.
+  const ratio = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+  Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: () => 3 });
   try {
     await openMenu();
     action('invite').click();
@@ -628,6 +640,7 @@ test('a phone that cannot draw the QR loses only the QR: the link stands alone, 
     assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
   } finally {
     qrCanvas = true;
+    if (ratio) Object.defineProperty(window, 'devicePixelRatio', ratio); else delete window.devicePixelRatio;
     // Closed whatever happened above, so one red stays one red: the tests
     // after this one each wait for the history to settle (the review of
     // 1b80842: a failure here once failed the twelve after it).

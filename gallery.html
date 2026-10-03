@@ -298,7 +298,7 @@
 </section>
 
 <section class="demo-sheet" id="invite-gallery">
-  <div class="g-label">The Invite sheet — a member, the friend step, a guest, the share moment · the QR drawn by js/v3/qr.js on a made-up link (find your crew, slice 1; two steps, 2026-10-03)</div>
+  <div class="g-label">The Invite sheet — a member, the friend step, a guest, the share moment, the QR still drawing · the QR is the aura card drawn by js/v3/qr.js on a made-up link (find your crew, slice 1; two steps and the branded card, v112, 2026-10-03)</div>
   <!-- The same markup app.js openInvite builds (sheetChrome's head with its
        hidden ‹, then the link's step: the line, the QR, the link, the
        actions, and a member's one quiet row; the friend step behind it).
@@ -343,6 +343,19 @@
       </div>
     </div>
     <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">The QR still drawing (its module held on weak signal): a soft, still card with an empty window — no modules, no caption — until the code lands and crossfades in</div>
+      <div class="sheet invite-sheet" data-path="/f/acl-2026" data-hash="&amp;f=acl-2026" data-held>
+        <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
+        <div class="inv-step">
+          <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.</div>
+          <div class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><div class="inv-qr-cap">Point a phone camera here to join. Anyone who scans it is in.</div></div>
+          <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
+          <div class="inv-actions"><button class="btn-tonal inv-share">Share the link</button><button class="btn-ghost inv-done">Done</button></div>
+          <button class="inv-friend" type="button"><span class="inv-friend-text"><span class="inv-friend-name">Pick for a friend</span> <span class="inv-friend-sub">They can join anytime</span></span><span class="inv-friend-chev" aria-hidden="true">›</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="col" style="gap: 6px; width: 358px;">
       <div class="zoom-state-cap">The share moment: a crew just made, its link the first thing to send — and the same row</div>
       <div class="sheet invite-sheet" data-path="/f/acl-2026" data-hash="&amp;f=acl-2026">
         <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">ONE LINK MAKES IT A CREW</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
@@ -373,10 +386,11 @@ for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) 
   if (!sheet.dataset.path) continue; // the friend step prints no crew link
   const link = `${location.origin}${sheet.dataset.path}#g=${EXAMPLE}${sheet.dataset.hash}`;
   sheet.querySelector('.inv-link input').value = link;
+  if ('held' in sheet.dataset) continue; // the QR still drawing: its image never comes
   const img = sheet.querySelector('.inv-qr img');
   img.addEventListener('load', () => img.closest('.inv-qr').classList.add('in'), { once: true });
   // Drawn to the room its tile gives it and shown at its own pixels, as app.js does.
-  const { src, cssPx } = qrPng(link, parseFloat(getComputedStyle(img).width) || 176);
+  const { src, cssPx } = qrPng(link, parseFloat(getComputedStyle(img).width) || 208);
   img.style.width = `${cssPx}px`;
   img.src = src;
 }
