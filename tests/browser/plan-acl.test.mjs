@@ -190,8 +190,8 @@ const SHARE_GOLDEN = [
   { night: '2026-10-03', wd: 'SAT', share: 'Share Sat Oct 3’s picks', text: [
     "Our crew's main picks for Oct 3 ACL Music Festival",
     '',
-    'Miller Lite for Arcy Drive @ 3:15pm',
-    'Beatbox for Ryan Beatty @ 3:30pm',
+    'Miller Lite for Arcy Drive @ 3:40pm',
+    'Beatbox for Ryan Beatty @ 5:50pm',
     'T-Mobile for Lorde @ 8:15pm',
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-03',

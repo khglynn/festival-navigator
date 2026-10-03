@@ -2,6 +2,39 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-03 — v113: ACL Saturday W1 re-timed after the mud delay
+
+Kevin: "There was a schedule change today for ACL… preserving people's
+saves." Two days of rain; ACL pushed Saturday's doors from noon to 2 PM and
+posted a revised Weekend One Saturday poster (V10.03-B) around 12:30 PM CT.
+
+- **Source.** The poster on aclfestival.com/schedule (the container can't
+  reach the CDN, so it was captured through a page screenshot, ~810 px).
+  Two independent readings plus a pixel check of every box against the hour
+  axis: 29 music sets, 0 disagreements.
+- **What moved.** Every set before 4 PM but Don West's went later; Night Tapes to Beatbox
+  4:25, Palace to Miller Lite 5:15, Snow Strippers to Beatbox 7:35, Ryan
+  Beatty to 5:50. Some of this predates the delay (fans noticed a Saturday
+  change days earlier) — the Aug 27 posters were stale on W1 Saturday.
+- **Cancelled on W1** (entries kept, picks kept): Left Lucid and Fightmaster
+  (KVUE), Fakemink (on no box; no announcement found, so the poster is the
+  source). Fakemink's W2 set stays. **New:** LeTrainiump (Beatbox 2:25, W1).
+- **W2 untouched**: each untagged set that moved on W1 is split, W2 byte for
+  byte as before. Pins updated: plan-acl's Saturday rows, plan-model's
+  set counts (49/42/42 → 39/50/52).
+- **One conflict on the poster**: Ryan Beatty prints 5:50–6:50 but is drawn
+  at ~5:25–6:25; entered as printed (fans asked ACL the same, no answer).
+- **Why it became a build (v113).** The browser suite caught it: a
+  cancelled card has no window, so on its own host (the stack under the
+  grid) it was over only at the 5 AM rollover. Saturday, done at 10 PM,
+  stayed on the wall for its three cancelled cards, and an 11:30 PM open
+  landed on it instead of tonight's Late nights. wall.js `roomPast`: once
+  every timed card in a room is over, its cancelled cards are too (an
+  untimed card that is not cancelled still waits for its night). Red first
+  in list-past.test. Numbered v113 because PR #80's previews used v109–v112.
+- **Not done**: W1 Sunday (v10.02-B) and W2 (9.30/10.01) posters are newer
+  than this file and were not re-read — the page only renders today's tab.
+
 ## 2026-10-02 — v108: usage, through the one door
 
 Kevin, 2026-10-01: "Let's not hold till after ACL for the full tracking —

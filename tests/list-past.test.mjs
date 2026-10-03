@@ -168,3 +168,28 @@ test('ACL on the second Friday: the first weekend waits behind one line, named b
   const over = [...root.querySelectorAll('.room[data-room="Late nights"]')].filter((r) => lineOf(r));
   assert.ok(over.length > 3, 'its dates that are over fold room by room in the List');
 });
+
+// ACL's Saturday, 2026-10-03: mud moved the day and three W1 acts were
+// called off. A cancelled card has no window, so on its own host it waited for
+// the 5 AM rollover — the whole Saturday stayed on the wall after the 10 PM
+// close, and the 11:30 PM open landed on it instead of tonight's Late nights.
+// Once every timed set in its room is over, a cancelled card is too.
+const CDT = (s) => new Date(`${s}-05:00`);
+const cancelledIn = (el) => [...el.querySelectorAll('.card.cancelled[data-artist]')].map((c) => c.dataset.artist).sort();
+test('ACL Saturday W1, 11:30 PM: every set is over, so its cancelled cards are too, and the day folds behind the line', () => {
+  const root = render(ACL, CDT('2026-10-03T23:30:00'), { view: 'board' });
+  assert.ok(!days(root).includes('Saturday|W1'), `Saturday W1 is over and folded: ${days(root).join(', ')}`);
+  assert.match(root.querySelector(':scope > .past-line').textContent, /^Earlier · FRI 2 · SAT 3$/);
+  assert.equal(days(root)[0], 'Sunday|W1', 'tomorrow leads; the open finds tonight\'s Late nights room by its date');
+  assert.ok(root.querySelector('.day-block .room[data-iso="2026-10-03"]'), 'tonight\'s Late nights room is on the wall');
+});
+
+test('ACL Saturday W1, 6 PM: what is over folds, the three cancelled cards stay while the day still plays', () => {
+  const root = render(ACL, CDT('2026-10-03T18:00:00'));
+  assert.ok(days(root).includes('Saturday|W1'));
+  const sat = room(root, 'Saturday|W1', ':fest');
+  assert.deepEqual(cancelledIn(sat), ['Fakemink', 'Fightmaster', 'Left Lucid'], 'still in the room, saying so');
+  assert.match(lineOf(sat).textContent, /^Earlier · \d+ sets$/, 'the sets that ended fold');
+  assert.ok(!names(sat).includes('LeTrainiump'), 'LeTrainiump (2:25–2:55) is over');
+  assert.ok(names(sat).includes('Ryan Beatty'), 'Ryan Beatty (5:50–6:50) is on');
+});
