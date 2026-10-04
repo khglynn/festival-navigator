@@ -172,7 +172,35 @@ export async function fontsIn(page) {
 // fixed beat fails here as it would on CI; one that waits for the motion
 // passes.
 export const LATE_MS = Number(process.env.LATE_ANIMATIONS_MS) || 0;
-export async function lateStarts(ctx, ms = LATE_MS) {
+// LATE_FINISH_MS is the other end of the same runner (2026-10-04): an
+// animation's `finished` promise and its onfinish land `ms` after it stops
+// running. Code that puts a thing at rest there (app.js stepSwapper's land,
+// which hides the leaving step and takes .stepping off) is still mid-way when
+// motionDone, which only asks whether anything is running, says it is done:
+// Linux WebKit read the link's step still up between the two (CI run
+// 37223242001). A test that waits for the state the app sets at rest passes
+// here; one that reads after motionDone alone fails as it would on CI.
+export const LATE_FINISH_MS = Number(process.env.LATE_FINISH_MS) || 0;
+export async function lateStarts(ctx, ms = LATE_MS, finish = LATE_FINISH_MS) {
+  if (finish) {
+    await ctx.addInitScript((lag) => {
+      const done = Object.getOwnPropertyDescriptor(Animation.prototype, 'finished');
+      if (done && done.get) {
+        Object.defineProperty(Animation.prototype, 'finished', {
+          configurable: true,
+          get() { return done.get.call(this).then((v) => new Promise((r) => setTimeout(() => r(v), lag))); },
+        });
+      }
+      const on = Object.getOwnPropertyDescriptor(Animation.prototype, 'onfinish');
+      if (on && on.set) {
+        Object.defineProperty(Animation.prototype, 'onfinish', {
+          configurable: true,
+          get() { return on.get.call(this); },
+          set(fn) { on.set.call(this, typeof fn === 'function' ? function lateFinish(e) { setTimeout(() => fn.call(this, e), lag); } : fn); },
+        });
+      }
+    }, finish);
+  }
   if (!ms) return;
   await ctx.addInitScript((lag) => {
     const animate = Element.prototype.animate;
