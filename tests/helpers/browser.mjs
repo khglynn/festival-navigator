@@ -77,6 +77,23 @@ export async function motionDone(page, { within = null, timeout = 6000 } = {}) {
   }, within, { timeout, polling: 'raf' });
 }
 
+// Wait until an ASYNC check in the page comes back truthy (a module's state
+// through import(), the Cache API), polling from here. page.waitForFunction
+// cannot do this: it calls its predicate synchronously and stops at the first
+// truthy result, and a Promise is truthy — `waitForFunction(async () =>
+// false)` returns in ~30ms with false (2026-10-04; the error journal read one
+// beat early on a busy Linux WebKit runner, CI run 37218538542).
+// tests/browser-waits.test.mjs keeps async predicates out of waitForFunction.
+export async function waitForAsync(page, check, arg, { timeout = 5000, every = 100, what = 'the page' } = {}) {
+  const end = Date.now() + timeout;
+  for (;;) {
+    const value = await page.evaluate(check, arg);
+    if (value) return value;
+    if (Date.now() >= end) throw new Error(`waitForAsync: ${what} not true within ${timeout}ms`);
+    await new Promise((r) => setTimeout(r, every));
+  }
+}
+
 // The page's fonts in, and one whole frame run between two animation-frame
 // callbacks: the page as a person sees it. A web font's arrival resizes boxes,
 // and the ResizeObservers that answer it (Our plan's refit) run in the next

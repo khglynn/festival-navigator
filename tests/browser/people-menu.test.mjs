@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER, waitForAsync } from '../helpers/browser.mjs';
 import { pillWidth } from '../../js/v3/people-menu.js';
 import jpeg from 'jpeg-js';
 import jsQR from 'jsqr';
@@ -1593,7 +1593,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
       // The request fails at last: that IS recorded, once, and nothing comes back.
       release();
-      await page.waitForFunction(() => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000 });
+      await waitForAsync(page, () => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000, what: 'the invite:qr record' });
       const said = await qrRecords(page);
       assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
       assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');

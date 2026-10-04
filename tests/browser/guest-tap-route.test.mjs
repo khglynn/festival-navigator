@@ -20,7 +20,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER, waitForAsync } from '../helpers/browser.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -166,7 +166,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await tap(page, centre(await page.locator('.join-shelf .js-go').boundingBox()));
       await page.waitForSelector('#welcome-card', { timeout: 10000 });
       await page.waitForFunction(() => document.getElementById('dock-you')?.textContent === 'A', null, { timeout: 5000 });
-      await page.waitForFunction(async () => ((await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections['Tove Lo'] || {}).Ana === 1, null, { timeout: 5000 });
+      await waitForAsync(page, async () => ((await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections['Tove Lo'] || {}).Ana === 1, null, { timeout: 5000, what: "Ana's pick of Tove Lo" });
       await sleep(600);
       assert.match(await page.locator('#welcome-card .bring-sub').textContent(), /Tap any artist, then \+ to add yours/, 'the just-joined welcome, in a member’s words');
       assert.deepEqual(await page.locator('#welcome-card .bring-actions button').allTextContents(), ['Got it']);
