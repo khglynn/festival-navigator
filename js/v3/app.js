@@ -5873,7 +5873,34 @@ export async function boot() {
 // Everything that renders identity/state repaints together — the dock avatar
 // was the one holdout showing a stale color (audit 1.5). The remote-change
 // path, and the warm open's fresh festival file takes it too.
-function repaintFromRemote() { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); }
+// A sheet whose step is still moving (stepSwapper: the Invite sheet's) holds
+// it: the add's own poll brings the new person straight back, and a whole
+// wall's repaint inside the step froze the sheet's height travel, then
+// dropped it 52px in one frame (the review of the v115 head). The wall is
+// behind the dimmed backdrop, so waiting for the step to land costs nothing
+// anyone sees; never longer than the swapper's own bound.
+let repaintHeld = false;
+function repaintFromRemote() {
+  const moving = document.querySelector('.sheet.stepping');
+  if (moving && typeof MutationObserver === 'function') {
+    if (repaintHeld) return;
+    repaintHeld = true;
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      watch.disconnect();
+      clearTimeout(cap);
+      repaintHeld = false;
+      repaintFromRemote();
+    };
+    const watch = new MutationObserver(() => { if (!moving.classList.contains('stepping')) go(); });
+    watch.observe(moving, { attributes: true, attributeFilter: ['class'] });
+    const cap = setTimeout(go, GROW_MS * 3 + 50);
+    return;
+  }
+  repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet();
+}
 
 // ---- wiring ----------------------------------------------------------------------
 export function init() {

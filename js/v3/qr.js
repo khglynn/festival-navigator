@@ -538,7 +538,15 @@ function fitLine(ctx, text, size, maxW) {
   const width = (t, p) => { ctx.font = `400 ${p}px ${DISPLAY_FACE}, sans-serif`; spaceOut(ctx, p); const m = ctx.measureText(t); return m && Number.isFinite(m.width) ? m.width : t.length * p * 0.5; };
   while (px > min && width(text, px) > maxW) px -= 2;
   let t = text;
-  while (t.length > 1 && width(t, px) > maxW) t = `${t.slice(0, -2).trimEnd()}…`;
+  if (width(t, px) > maxW) {
+    // Whole words go first, never half of one ("…NAME FOR T…" read as a typo:
+    // the review of the v115 head); only a single word too long for the card
+    // is cut where the width runs out.
+    const words = text.split(/\s+/);
+    while (words.length > 1 && width(`${words.join(' ')}…`, px) > maxW) words.pop();
+    t = `${words.join(' ')}…`;
+    while (t.length > 1 && width(t, px) > maxW) t = `${t.slice(0, -2).trimEnd()}…`;
+  }
   ctx.font = `400 ${px}px ${DISPLAY_FACE}, sans-serif`;
   spaceOut(ctx, px);
   return { text: t, px };

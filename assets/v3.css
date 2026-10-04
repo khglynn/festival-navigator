@@ -479,7 +479,11 @@ html { touch-action: manipulation; }
  * lifted where it was (app.js stepSwapper) and the sheet holds its scroll on
  * both axes — !important, over the keys' inline overflow (notes.js rideKeys). */
 .invite-sheet .inv-step { display: flex; flex-direction: column; gap: 12px; flex: none; }
-.invite-sheet .inv-step[hidden] { display: none; }
+/* !important: a step's own layout (the link step's two columns on a phone on
+ * its side, display: grid, as specific and later in the file) must never
+ * outrank its being hidden — it did, and both steps showed (the review of
+ * the v115 head). */
+.invite-sheet .inv-step[hidden] { display: none !important; }
 .invite-sheet.stepping { overflow: hidden !important; }
 /* …and the step that arrives takes no taps while it moves, nor for a double
  * tap's window after (app.js STEP_SETTLE_MS): the second half of a tap on

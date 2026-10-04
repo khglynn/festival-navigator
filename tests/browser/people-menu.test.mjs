@@ -798,9 +798,10 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // were once counted from the frame it was made in, and on a busy runner
       // the replay set off a frame or two later: "0 of 3"). A loaded runner
       // may paint none there: then the seek above stands alone, as the QR
-      // fold's does.
+      // fold's does. Mid-way is 10–70% of its time: the surface curve is
+      // ~93% of the way by 70% and ~98% by 83%, within a pixel of its end.
       assert.ok(r.swapAt, 'the height animation ran');
-      const mid = r.hs.filter(([at]) => at > r.swapAt[0] + 0.1 * r.swapAt[1] && at < r.swapAt[0] + 0.9 * r.swapAt[1]);
+      const mid = r.hs.filter(([at]) => at > r.swapAt[0] + 0.1 * r.swapAt[1] && at < r.swapAt[0] + 0.7 * r.swapAt[1]);
       if (name === 'Chromium' && mid.length) {
         for (const [at, h] of mid) assert.ok(lo + 1 < h && h < hi - 1, `the height on its way at ${Math.round(at - r.swapAt[0])}ms of ${r.swapAt[1]}: ${h} (${lo} → ${hi}) — not jumped ${Math.round(hi - lo)}px in one`);
       } else {
@@ -1265,6 +1266,23 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const px = jpeg.decode(shot, { useTArray: true });
         const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
         assert.equal(hit && hit.data, link, 'and it scans to the link');
+        // …and the friend row moves the sheet on: ADD A FRIEND alone, its
+        // field in the sheet (the review of the v115 head: on its side the
+        // link step's two-column grid outranked [hidden], so both steps
+        // showed, the friend step under the link's, its field off screen).
+        await press('.invite-sheet .inv-friend');
+        await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        const fr = await page.evaluate(() => {
+          const sheet = document.querySelector('.invite-sheet');
+          const s = sheet.getBoundingClientRect();
+          const f = sheet.querySelector('.inv-name input').getBoundingClientRect();
+          const shown = [...sheet.querySelectorAll('.inv-step')].filter((st) => getComputedStyle(st).display !== 'none').map((st) => (st.classList.contains('inv-link-step') ? 'link' : 'friend'));
+          return { shown, field: [f.top, f.bottom], sheet: [Math.max(s.top, 0), Math.min(s.bottom, innerHeight)], title: sheet.querySelector('.sheet-title').textContent };
+        });
+        assert.equal(fr.title, 'ADD A FRIEND');
+        assert.deepEqual(fr.shown, ['friend'], `the friend step alone: ${JSON.stringify(fr)}`);
+        assert.ok(fr.field[0] >= fr.sheet[0] && fr.field[1] <= fr.sheet[1] + 0.5, `its field in the sheet: ${JSON.stringify(fr)}`);
         // At 844 the day rail shows, and WebKit's "ResizeObserver loop" from
         // its observer is the known one (LEDGER follow-up 37: fix the rail's
         // observer, then drop every filter like this); errlog.js drops it too.
@@ -1272,6 +1290,40 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       } finally { await ctx.close(); }
     });
   }
+
+  // The add's own poll (sync.afterServerWrite, in the tick the answer's step
+  // begins) brings the new person straight back, and its wall repaint — every
+  // card behind the dimmed backdrop — once landed inside the step: the
+  // sheet's height travel froze, then dropped 52px in one frame (the review
+  // of the v115 head). The wall waits for the step to land, then repaints.
+  test(`${name} 390: the add's own poll never repaints the wall while the answer is arriving — the wall catches up once it has`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, others: true });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await press('.invite-sheet .inv-friend');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await page.keyboard.type('Zed');
+      await page.evaluate(() => {
+        window.__wall = [];
+        new MutationObserver((recs) => {
+          if (recs.some((r) => r.type === 'childList')) window.__wall.push(!!document.querySelector('.invite-sheet.stepping'));
+        }).observe(document.getElementById('wall-root'), { childList: true, subtree: true });
+      });
+      await press('.invite-sheet .inv-add');
+      await page.waitForFunction(() => /ZED IS IN/.test(document.querySelector('.invite-sheet .sheet-title')?.textContent || '') && !document.querySelector('.invite-sheet.stepping'), null, { timeout: 4000 });
+      // The poll's repaint, once the step is at rest (up to the swapper's own
+      // bound and a beat); a wall that repainted mid-step has nothing after.
+      await page.waitForFunction(() => window.__wall.some((stepping) => !stepping), null, { timeout: 3000 }).catch(() => {});
+      const wall = await page.evaluate(() => window.__wall);
+      assert.equal(wall.filter(Boolean).length, 0, `no wall repaint while the answer's step moved: ${JSON.stringify(wall)}`);
+      assert.ok(wall.length >= 1, `and the wall caught up once it had: ${JSON.stringify(wall)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
 
   // Closed while a step is still moving (Escape a beat after the friend
   // row, the review of the v115 head): the sheet leaves at the height it was

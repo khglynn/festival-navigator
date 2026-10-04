@@ -888,7 +888,7 @@ test('the saved card says whose it is — the crew’s name and the fest’s sho
 });
 
 test('a long crew name fits the card: it gives way in size first, then ends in an ellipsis — never past the frame', async () => {
-  for (const crewName of ['A crew whose name runs right across the card and on', 'Wilhelmina Featherstonhaugh’s Birthday Weekend Crew']) {
+  for (const crewName of ['A crew whose name runs right across the card and on', 'Wilhelmina Featherstonhaugh’s Birthday Weekend Crew', 'The Extremely Long Crew Name For Testing']) {
     const page = fakePage({ ratio: 2, tokens: PAGE_TOKENS });
     const out = await saveCard(page, SHAPES.festival, { ...WORDS, crew: crewName });
     const card = page.made.find((c) => c.encoded);
@@ -897,6 +897,14 @@ test('a long crew name fits the card: it gives way in size first, then ends in a
     const L = qrLayout(qrMatrix(SHAPES.festival).size, SAVE_CARD.room, SAVE_CARD.ratio);
     assert.ok(line.text.length * 0.5 * px <= out.px - 2 * (L.frame + L.d + L.e) + 0.5, `inside the card's margins: "${line.text}" at ${px}px in ${out.px}`);
     assert.ok(line.text === crewName.toUpperCase() || line.text.endsWith('…'), `whole, or ending in an ellipsis: ${line.text}`);
+    // Cut at a word, never through one (the review of the v115 head: "…NAME
+    // FOR T…" read as a typo): what stands before the ellipsis is the name's
+    // own first words, whole.
+    if (line.text.endsWith('…')) {
+      const kept = line.text.slice(0, -1);
+      const name = crewName.toUpperCase();
+      assert.ok(name.startsWith(kept) && /\s/.test(name[kept.length] || ' '), `cut at a word: "${line.text}" from "${name}"`);
+    }
   }
 });
 
