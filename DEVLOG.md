@@ -2,6 +2,39 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-03 (evening) — v114: ACL Sunday W1 re-timed for Oct 4
+
+Kevin asked what changed in the Oct 2 Sunday poster; the answer became
+tomorrow's data. Same method as Saturday, W1 only.
+
+- **Source.** ACL26-Schedule-Wk1-Sun_v10.02-B.webp from
+  aclfestival.com/schedule. The schedule page shows a scraper only the
+  current day's tab, so the poster was read through Yandex's image view,
+  with its OCR as a cross-check. Three independent readers agreed on all 35
+  boxes, and a poster skeptic and a data skeptic re-checked each
+  difference.
+- **What moved.** The T-Mobile / Miller Lite run from 4:30 moved about 10
+  minutes earlier: Audrey Hobert 4:30–5:20, Saint Motel 5:20–6:20, Geese
+  6:20–7:20, Parcels 7:20–8:35, The xx 8:35. Britton moved from Beatbox
+  2:00 to Snapchat 3:30–4:30. Flight by Nothing moved to W1 (Beatbox
+  2:00–2:45; the 9.30 admat bills it [W1], and Kevin Atwater has that slot
+  on W2).
+- **Replaced on W1** (entries kept and marked cancelled, picks kept):
+  - Rubio → Vinny Tovar (BMI 12:45; BMI's festival page, updated Sep 24).
+  - Paloma Morphy → girlsweetvoiced (Tito's 2:00; her US fall tour was
+    postponed).
+  - Keys are the artists' own names ("Vinny Tovar", although the poster
+    prints "VINNY"; "girlsweetvoiced" in the artist's lowercase).
+  - Paloma's W2 set stays until W2 is re-read.
+- **W2 untouched.** Each untagged set that moved is split, and W2 keeps its
+  old time byte for byte. A script guard asserts W2 is identical. Pins
+  updated: Oct 4's plan rows (The xx 8:35) and plan-model's set counts
+  (39/50/52 → 33/57/58).
+- **The build bump** (v114, data plus a stamp only) makes an open phone
+  reload into tonight's file instead of keeping Saturday's (follow-up 52).
+- **Not entered:** the Bonus Tracks column, as on Saturday. **Still to
+  re-read:** W2 Fri (10.01), Sat and Sun (9.30).
+
 ## 2026-10-03 — v113: ACL Saturday W1 re-timed after the mud delay
 
 Kevin: "There was a schedule change today for ACL… preserving people's

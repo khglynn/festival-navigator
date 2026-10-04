@@ -200,7 +200,7 @@ const SHARE_GOLDEN = [
     "Our crew's main picks for Oct 4 ACL Music Festival",
     '',
     "Tito's for Fcukers @ 6:30pm",
-    'T-Mobile for The xx @ 8:30pm',
+    'T-Mobile for The xx @ 8:35pm',
     '',
     'Full rundown: ORIGIN/f/acl-2026#g=TOKEN&f=acl-2026&plan=2026-10-04',
   ].join('\n') },
