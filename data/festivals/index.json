@@ -11,7 +11,7 @@
   },
   {
     "id": "acl-2026",
-    "name": "ACL Music Festival",
+    "name": "ACL",
     "year": "'26",
     "startsOn": "2026-10-02",
     "status": "scheduled",
@@ -31,7 +31,7 @@
   },
   {
     "id": "seismic-9",
-    "name": "Seismic Dance Event 9.0",
+    "name": "Seismic",
     "year": "'26",
     "startsOn": "2026-11-13",
     "status": "lineup",
@@ -81,7 +81,7 @@
   },
   {
     "id": "acl-2025",
-    "name": "ACL Music Festival",
+    "name": "ACL",
     "year": "'25",
     "startsOn": "2025-10-03",
     "status": "archived",

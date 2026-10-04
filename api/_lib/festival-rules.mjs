@@ -416,6 +416,26 @@ function checkLinks(fest, err) {
   });
 }
 
+// A festival's name is short and tight (Kevin, 2026-10-03: "For ACL we can
+// just say 'ACL' with the year not ACL music festival. Music festival is
+// implied lol. Pretty much all our fests should have short tight names"):
+// the name people say. The header shows it with the year beside it ("ACL
+// '26"), and it rides into the room heads, the Share's first line, the
+// toasts and the link previews. At most FEST_NAME_MAX characters, never
+// ending in "Festival". Held for the files we curate by
+// scripts/validate-festivals.mjs (CI), not by validateFestivalDoc below:
+// /api/festival-add candidates come named the way their sites name them,
+// and a rule there would refuse a festival rather than shorten its name.
+// A missing name is validateFestivalDoc's error, said once.
+export const FEST_NAME_MAX = 20;
+export function festNameProblems(name) {
+  if (typeof name !== 'string' || !name.trim()) return [];
+  const problems = [];
+  if (name.length > FEST_NAME_MAX) problems.push(`name ${JSON.stringify(name)} is ${name.length} chars — keep it to ${FEST_NAME_MAX}, the name people say ("ACL", "Seismic"); the year shows beside it`);
+  if (/\bfestival\s*$/i.test(name)) problems.push(`name ${JSON.stringify(name)} ends in "Festival" — it is implied; drop it`);
+  return problems;
+}
+
 // Validate one festival document. `filename` is optional (CI passes it to
 // enforce filename-matches-id; API candidates have no file).
 export function validateFestivalDoc(fest, { filename } = {}) {

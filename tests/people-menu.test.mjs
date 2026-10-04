@@ -15,7 +15,9 @@
 //
 //   Pick as someone else is the join shelf in a member's words, two taps
 //   (a name, then "I'm Ben"), and the Invite sheet reads crew link first,
-//   then a name, then the people from your other fests.
+//   with one quiet row under it — Pick for a friend — that moves the same
+//   sheet to its next step: the crew, a name, the people from your other
+//   fests (Kevin, 2026-10-03).
 //
 // Guests (the + opens the same menu, ending in Join the crew) are
 // tests/first-open-guest.test.mjs; the real-browser contract with real input
@@ -27,6 +29,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
 import { deepMerge } from '../js/merge.js';
+import jsQR from 'jsqr';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FID = 'portola-2026';
@@ -103,6 +106,64 @@ const state = await import('../js/state.js'); // the SAME instances app.js holds
 const crew = await import('../js/crew.js');
 const filters = await import('../js/v3/filters.js');
 const sync = await import('../js/sync.js');
+const errlog = await import('../js/errlog.js');
+
+// The canvas the Invite sheet's QR is drawn on (js/v3/qr.js). jsdom has
+// none; the rig's stand-in draws nothing. This one paints each solid
+// fillRect (the card's aura base) and each putImageData (the code, painted
+// by the pixel) into pixels and hands back a data URL naming them, so a test
+// decodes what the sheet DREW — the code on the card's dark surround — and
+// holds it against the link it prints. Everything else (the aura's
+// gradients, the grain, paths, the favicon) stays a no-op.
+// `qrCanvas = false` takes the 2D context away from every canvas but the
+// favicon's 32px one: a browser that refuses a canvas.
+const drawn = new Map();
+let qrCanvas = true;
+{
+  const proto = window.HTMLCanvasElement.prototype;
+  proto.getContext = function getContext() {
+    if (!qrCanvas && this.width !== 32) return null;
+    const canvas = this;
+    const pen = {
+      fillStyle: '#000000',
+      fillRect(x, y, w, h) {
+        if (typeof this.fillStyle !== 'string' || !/^#[0-9a-f]{6}$/i.test(this.fillStyle)) return;
+        if (!canvas.rgba) canvas.rgba = new Uint8ClampedArray(canvas.width * canvas.height * 4);
+        const rgb = [1, 3, 5].map((i) => parseInt(this.fillStyle.slice(i, i + 2), 16));
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
+          const i = (yy * canvas.width + xx) * 4;
+          canvas.rgba.set([...rgb, 255], i);
+        }
+      },
+      createImageData(w, h) { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; },
+      putImageData(img, x, y) {
+        if (!canvas.rgba) canvas.rgba = new Uint8ClampedArray(canvas.width * canvas.height * 4);
+        for (let r = 0; r < img.height; r++) canvas.rgba.set(img.data.subarray(r * img.width * 4, (r + 1) * img.width * 4), ((y + r) * canvas.width + x) * 4);
+      },
+      // What qr.js reads back to be sure the drawing is really there.
+      getImageData(x, y, w, h) {
+        const data = new Uint8ClampedArray(w * h * 4);
+        if (canvas.rgba) for (let yy = 0; yy < h; yy++) data.set(canvas.rgba.subarray(((y + yy) * canvas.width + x) * 4, ((y + yy) * canvas.width + x + w) * 4), yy * w * 4);
+        return { data, width: w, height: h };
+      },
+    };
+    return new Proxy(pen, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })) });
+  };
+  proto.toDataURL = function toDataURL() {
+    if (!this.rgba) return 'data:image/png;base64,';
+    const id = `qr${drawn.size}`;
+    drawn.set(id, { data: this.rgba, width: this.width, height: this.height });
+    return `data:image/png;base64,${id}`;
+  };
+}
+// The text a drawn QR <img> holds, read back the way a camera would.
+function scanned(img) {
+  const id = (img.getAttribute('src') || '').split(',')[1];
+  const px = drawn.get(id);
+  if (!px) return null;
+  const hit = jsQR(px.data, px.width, px.height, { inversionAttempts: 'dontInvert' });
+  return hit ? hit.data : null;
+}
 
 const pop = () => document.querySelector('#dock-you-wrap .hl-pop');
 const isOpen = () => !!pop() && pop().style.display !== 'none';
@@ -336,7 +397,33 @@ test('Pick as someone else never switches to someone removed while the shelf was
   await settle(10);
 });
 
-test('+ Invite someone: one sheet — the crew link first (Copy), then a name, then the people from your other fests', async () => {
+// Kevin's two steps (2026-10-03: "change the 'pick for a friend' section to
+// be a bit cleaner and more subtle since this shelf is so busy now… And then
+// the next step shows our people / add name shelf"). The link's step keeps
+// the line, the QR, the link and Share; under them a member has ONE quiet
+// row, and the name field, the crew and your other fests are the next step
+// of the same sheet.
+const stepOf = (sheet, sel) => sheet.querySelector(sel).closest('.inv-step');
+const linkStep = (sheet) => stepOf(sheet, '.inv-link');
+const friendStep = (sheet) => stepOf(sheet, '.inv-name');
+const partsOf = (step) => [...step.children].map((n) => (n.classList.contains('inv-qr') ? 'qr'
+  : n.classList.contains('inv-link') ? 'link'
+    : n.classList.contains('inv-actions') ? 'actions'
+      : n.classList.contains('inv-friend') ? 'friend'
+        : n.classList.contains('inv-name') ? 'name'
+          : n.classList.contains('inv-status') ? 'status'
+            : n.querySelector && n.querySelector('.inv-people') ? 'people'
+              : n.querySelector && n.querySelector('.inv-others') ? 'others'
+                : n.classList.contains('inv-sub') ? 'line' : n.className));
+// The row, tapped: the same sheet moves to the friend step (no history entry).
+function toFriend(sheet) {
+  sheet.querySelector('.inv-friend').click();
+  assert.equal(friendStep(sheet).hidden, false, 'the friend step is up');
+  assert.equal(linkStep(sheet).hidden, true, 'and the link’s step has gone');
+  return sheet;
+}
+
+test('+ Invite someone: one sheet — the line, the QR on top of the crew link (Copy), Share; under them ONE quiet row, Pick for a friend', async () => {
   await openMenu();
   action('invite').click();
   await settle(20);
@@ -344,25 +431,80 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
   assert.ok(sheet, 'the Invite sheet');
   assert.equal(sheet.querySelector('.sheet-title').textContent, 'INVITE SOMEONE');
-  const order = [...sheet.children].map((n) => (n.classList.contains('inv-link') ? 'link'
-    : n.querySelector && n.querySelector('.inv-name') ? 'name'
-      : n.querySelector && n.querySelector('.inv-others') ? 'others' : null)).filter(Boolean);
-  assert.deepEqual(order, ['link', 'name', 'others'], 'Kevin’s order');
+  const step = linkStep(sheet);
+  assert.equal(step.hidden, false, 'the link’s step is the one up');
+  assert.deepEqual(partsOf(step), ['line', 'qr', 'link', 'actions', 'friend'], 'the QR on top of the link (slice 1), Share, then the one row');
   const link = sheet.querySelector('.inv-link input');
   assert.match(link.value, new RegExp(`#g=${CREW}`), 'the crew link, visible');
   assert.ok(sheet.querySelector('.inv-link .inv-copy'), 'Copy beside it');
-  assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
-  assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
+  // The QR is that very link: one link on the sheet, whichever way it leaves.
+  const qr = sheet.querySelector('.inv-qr');
+  // Not a <figure>: a figure takes its name from its caption, and a screen
+  // reader read the caption twice (the review of 1b80842).
+  assert.equal(qr.tagName, 'DIV');
+  assert.equal(qr.querySelector('figure, figcaption'), null);
+  assert.equal(qr.previousElementSibling, sheet.querySelector('.inv-sub'), 'right under the line that says what the link opens');
+  const img = qr.querySelector('img');
+  assert.equal(img.alt, 'QR code for the crew link');
+  assert.equal(qr.querySelector('.inv-qr-cap').textContent, 'Point a phone camera here to join. Anyone who scans it is in.', 'and it says what scanning it does');
+  await until(() => img.getAttribute('src'), 'the QR drawn');
+  assert.equal(scanned(img), link.value, 'scanned, it is exactly the link in the box');
+  assert.equal(qr.querySelectorAll('button').length, 0, 'no Save button: a long-press, a right-click or a screenshot keeps it');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
-  // Adding by name is a whole thing on its own (Kevin, 2026-09-26: "a note for
-  // us that they're going there") — a peer of the link, not a wait until they join.
-  const byName = sheet.querySelector('.inv-name').parentElement;
-  assert.equal(byName.querySelector('.micro-label').textContent, 'Or add a friend');
-  assert.equal(byName.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
+  // The row: a real button (the 44px floor), its words, a chevron — and
+  // nothing else of the friend step on this one: no label, no field, no chips.
+  const row = sheet.querySelector('.inv-friend');
+  assert.equal(row.tagName, 'BUTTON', 'a button, so the touch floor comes with it');
+  assert.equal(row.querySelector('.inv-friend-name').textContent, 'Pick for a friend');
+  assert.equal(row.querySelector('.inv-friend-sub').textContent, 'They can join anytime');
+  assert.equal(row.querySelector('.inv-friend-chev').getAttribute('aria-hidden'), 'true', 'the chevron is a picture, not words');
+  assert.equal(step.querySelector('.micro-label, .inv-name, .inv-others, .inv-people'), null, 'the busy parts moved to the next step');
+  assert.equal(friendStep(sheet).hidden, true, 'the friend step waits behind the row');
+  assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
+  assert.equal(sheet.querySelector('.sheet-back').hidden, true, 'no ‹ on the first step');
 });
 
-test('Or add a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
+test('Pick for a friend: the same sheet moves on — its title, a ‹ back, the line, the crew already in, the name field focused, your other fests; no history entry', async () => {
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const entries = window.history.length;
+  const at = JSON.stringify(window.history.state);
+  toFriend(sheet);
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'ADD A FRIEND');
+  const step = friendStep(sheet);
+  assert.deepEqual(partsOf(step), ['line', 'people', 'name', 'status', 'others'], 'what it does, who is in, the name, its word, your other fests');
+  assert.equal(step.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
+  // Our people, in their own colours, read-only: a roster, not a control.
+  const chips = [...step.querySelectorAll('.inv-people .person-chip')];
+  assert.deepEqual(chips.map((c) => c.textContent), ['Ana', 'Ben', 'Cy'], 'the crew, in its order');
+  for (const c of chips) {
+    assert.equal(c.tagName, 'SPAN', `${c.textContent}: read-only, so not a button`);
+    assert.ok(c.classList.contains('static'), `${c.textContent}: wears no pointer`);
+    assert.match(c.style.background, /hsl|rgb/, `${c.textContent}: in their colour`);
+  }
+  assert.deepEqual(chips.filter((c) => c.classList.contains('you')).map((c) => c.textContent), ['Ana'], 'you, marked as Settings marks you');
+  assert.equal(step.querySelector('.inv-people').previousElementSibling.textContent, 'Already in');
+  assert.deepEqual([...step.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
+  assert.equal(document.activeElement, step.querySelector('.inv-name input'), 'the name field takes the focus: it is what this step is for');
+  const back = sheet.querySelector('.sheet-back');
+  assert.equal(back.hidden, false, 'a ‹ back to the link');
+  assert.equal(back.tagName, 'BUTTON');
+  assert.equal(back.getAttribute('aria-label'), 'Back to the crew link');
+  assert.equal(back.nextElementSibling, sheet.querySelector('.sheet-title'), 'before the title, as Settings’ ‹ is');
+  assert.equal(window.history.length, entries, 'no history entry: Back still closes the whole sheet');
+  assert.equal(JSON.stringify(window.history.state), at);
+  // ‹ goes back to the link's step, focus on the row that left it.
+  back.click();
+  assert.equal(linkStep(sheet).hidden, false, 'the link again');
+  assert.equal(friendStep(sheet).hidden, true);
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'INVITE SOMEONE');
+  assert.equal(back.hidden, true, 'and the ‹ goes with the step');
+  assert.equal(document.activeElement, sheet.querySelector('.inv-friend'), 'focus back on the row it left from');
+  assert.equal(window.history.length, entries, 'still no entry');
+  assert.equal(JSON.stringify(window.history.state), at);
+});
+
+test('Pick for a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   input.value = 'ben';
   sheet.querySelector('.inv-add').click();
@@ -376,8 +518,15 @@ test('Or add a friend: server-first, and it ends on their own link, for if they 
   assert.ok(post, 'the server hears it first');
   assert.ok(post.body.data.people.Zed, 'the person, by name');
   const done = document.querySelector('#artist-sheet');
+  assert.equal(done, sheet, 'the same sheet: its answer is a step of it, never a new sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
+  assert.equal(done.querySelector('.sheet-title .inv-nowrap').textContent, 'IS IN', '"IS IN" kept whole: never "IN" alone on a line');
+  assert.equal(done.querySelectorAll('.inv-step').length, 1, 'the answer alone: the friend step and the link’s have gone');
+  assert.equal(done.querySelector('.sheet-back').hidden, true, 'no ‹: nothing to go back to');
+  assert.ok(done.querySelector('.sheet-close'), 'the ✕ stays');
+  assert.equal(document.activeElement, done, 'the focus stays in the sheet as the field goes');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
+  assert.equal(done.querySelector('.inv-qr'), null, 'and no QR: whoever scanned a QR of Zed’s link would be told it is theirs');
   assert.equal(done.querySelector('.inv-sub').textContent, 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
   // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
   await until(() => state.people().Zed, 'Zed, brought by the poll');
@@ -389,7 +538,7 @@ test('one add at a time: a chip, then Enter, then another chip while the first i
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   const chip = (n) => [...sheet.querySelectorAll('.inv-others button')].find((b) => b.textContent === `+ ${n}`);
   const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).length;
@@ -422,7 +571,7 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   const input = sheet.querySelector('.inv-name input');
   const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew'));
   const before = posts().length;
@@ -448,6 +597,97 @@ test('one add at a time, the other way round: a typed name and Enter, then a chi
   await sheetClosed();
 });
 
+// The friend step is a step of the sheet, not a layer of its own (AGENTS.md:
+// "Browser history is shared state" — no entry, so nothing new for Back to
+// get wrong): from it, every way out closes the whole sheet, as from the link.
+test('from the friend step, Back, Escape, the ✕ and the dimmed wall each close the whole sheet — as they do from the link', async () => {
+  for (const [how, out] of [
+    ['Back', () => window.history.back()],
+    ['Escape', () => escape()],
+    ['the ✕', () => document.querySelector('#artist-sheet .sheet-close').click()],
+    ['the dimmed wall', () => document.getElementById('sheet-backdrop').click()],
+  ]) {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    toFriend(document.querySelector('#artist-sheet.invite-sheet'));
+    out();
+    await sheetClosed();
+    assert.equal(document.querySelector('.invite-sheet'), null, `${how}: the whole sheet is down, not just its step`);
+  }
+});
+
+// In this file the module is already loaded by now (the + Invite test drew
+// a QR), so this is the warm path: drawn in a microtask the moment the sheet
+// is on the page, refused, and taken away before a frame. The late paths —
+// the module refused, held past its deadline, failing at last — are the
+// browser contract's (tests/browser/people-menu.test.mjs), where a request
+// can really be held or aborted.
+test('a phone that cannot draw the QR loses only the QR: the link stands alone, and the record names no link', async () => {
+  qrCanvas = false;
+  // A phone that cannot draw never drew: this page has, so it asks at a
+  // pixel ratio it never drew at — qr.js keeps its last card in memory
+  // (a reopened sheet is instant), and that card is not this phone's.
+  const ratio = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+  Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: () => 3 });
+  try {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    assert.equal(sheet.querySelector('.inv-qr'), null, 'no QR, and no empty tile where it would have been');
+    assert.equal(sheet.querySelector('.inv-sub').nextElementSibling, sheet.querySelector('.inv-link'), 'the link where it always was');
+    const said = errlog.recent().filter((e) => e.kind === 'invite:qr');
+    assert.equal(said.length, 1, 'recorded once');
+    assert.equal(said[0].msg, 'qr: no 2d canvas', 'in the error’s own words');
+    // The words are the error's own, so nothing was scrubbed out of them; the
+    // stack is file paths (jsdom's own long names can read token-shaped to
+    // the scrubber, so a mark there would prove nothing either way).
+    assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
+  } finally {
+    qrCanvas = true;
+    if (ratio) Object.defineProperty(window, 'devicePixelRatio', ratio); else delete window.devicePixelRatio;
+    // Closed whatever happened above, so one red stays one red: the tests
+    // after this one each wait for the history to settle (the review of
+    // 1b80842: a failure here once failed the twelve after it).
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
+});
+
+// The fold is a Web Animation; an engine that refuses it (throws from
+// animate) must still lose the tile — `gone` is already set by then, so a
+// throw there once left a dim empty square on the sheet for good (the
+// review of 116ab8e). The image's error, after the tile has been on screen
+// for a frame, takes the animated way out. jsdom paints no frames, so this
+// test lends the page a frame clock (a timer) while the sheet opens.
+test('a QR whose image fails after it was seen still leaves when the fold animation cannot run', async () => {
+  const proto = window.HTMLElement.prototype;
+  const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+  const was = proto.animate;
+  const hadFrames = 'requestAnimationFrame' in window;
+  if (!hadFrames) window.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
+  try {
+    await openMenu();
+    action('invite').click();
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    const qr = sheet.querySelector('.inv-qr');
+    assert.ok(qr, 'the QR is on the sheet');
+    await new Promise((r) => window.requestAnimationFrame(() => r())); // seen: it leaves by folding
+    if (!hadFrames) delete window.requestAnimationFrame;
+    proto.animate = function animate() { throw new Error('animate refused'); };
+    qr.querySelector('img').dispatchEvent(new window.Event('error'));
+    assert.equal(sheet.querySelector('.inv-qr'), null, 'the tile is gone, not stuck');
+    assert.equal(sheet.querySelector('.inv-sub').nextElementSibling, sheet.querySelector('.inv-link'), 'and the link stands where it always was');
+  } finally {
+    if (had) proto.animate = was; else delete proto.animate;
+    if (!hadFrames) delete window.requestAnimationFrame;
+    const open = document.querySelector('#artist-sheet.invite-sheet');
+    if (open) { open.querySelector('.inv-done').click(); await sheetClosed(); }
+  }
+});
+
 // One add per crew, whatever the sheets do (Sol's re-review of 1b678c0: the
 // guard lived in the sheet, so close and reopen reset it, two POSTs went out,
 // and the older answer landing last dropped the newer person locally).
@@ -457,7 +697,7 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   await openMenu();
   action('invite').click();
   await settle(20);
-  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  let sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   holdPosts = true;
   sheet.querySelector('.inv-name input').value = 'Mo';
   sheet.querySelector('.inv-add').click();
@@ -469,7 +709,13 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   action('invite').click();
   await settle(20);
   sheet = document.querySelector('#artist-sheet.invite-sheet');
-  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'the new sheet says what is out');
+  assert.equal(linkStep(sheet).hidden, false, 'a reopened sheet opens on the link, as every Invite does');
+  assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'Adding Mo…', 'its row says what is out');
+  toFriend(sheet);
+  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'and so does the step behind it — to a screen reader, out of the flow');
+  assert.equal(sheet.querySelector('.inv-status').classList.contains('heard'), true);
+  assert.ok(sheet.querySelector('.inv-add .inv-add-wait .eq-loader'), 'the wait is on the Add button, its bars where its word was');
+  assert.equal(sheet.querySelector('.inv-add').getAttribute('aria-label'), 'Adding Mo…');
   assert.equal(sheet.querySelector('.inv-add').disabled, true, 'and waits for it');
   assert.equal(sheet.querySelector('.inv-name input').readOnly, true);
   assert.ok([...sheet.querySelectorAll('.inv-others button')].every((b) => b.disabled));
@@ -492,6 +738,8 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   action('invite').click();
   await settle(20);
   sheet = document.querySelector('#artist-sheet.invite-sheet');
+  assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'They can join anytime', 'nothing out: the row says its own words');
+  toFriend(sheet);
   assert.equal(sheet.querySelector('.inv-add').disabled, false, 'nothing out: the entries are live again');
   sheet.querySelector('.inv-name input').value = 'Nia';
   sheet.querySelector('.inv-add').click();
@@ -511,7 +759,7 @@ const addNamed = async (name, { holdAnswer = false } = {}) => {
   await openMenu();
   action('invite').click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   if (holdAnswer) holdPosts = true;
   sheet.querySelector('.inv-name input').value = name;
   sheet.querySelector('.inv-add').click();
@@ -568,7 +816,14 @@ test('a request that hangs is let go at its deadline: a plain word, and the entr
     assert.equal(sheet.querySelector('.inv-add').disabled, true, 'waiting');
     await until(() => !sheet.querySelector('.inv-add').disabled, 'the entries to come back');
     assert.equal(sheet.querySelector('.inv-status').textContent, 'Didn’t reach the crew — try again.');
+    assert.equal(sheet.querySelector('.inv-status').classList.contains('heard'), false, 'the plain word in its place, seen');
     assert.equal(sheet.querySelector('.inv-name input').readOnly, false);
+    // The wait went with it: Add says Add again, and the row behind the step
+    // says its own words (the review of v112: a row left saying "Adding Uma…"
+    // after a failed add passed every test).
+    assert.equal(sheet.querySelector('.inv-add').querySelector('.inv-add-wait'), null, 'no bars on Add');
+    assert.equal(sheet.querySelector('.inv-add').getAttribute('aria-label'), null);
+    assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'They can join anytime');
   } finally {
     AbortSignal.timeout = real;
     holdPosts = false;
@@ -669,7 +924,7 @@ test('bringing back a removed member: a reopened sheet before the poll lands sti
   await openMenu();
   action('invite').click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   sheet.querySelector('.inv-name input').value = 'Mo';
   sheet.querySelector('.inv-add').click();
   await settle(20);
@@ -739,7 +994,7 @@ test('closing the Invite sheet after an add hands focus back to + Invite someone
   opener.focus();
   opener.click();
   await settle(20);
-  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const sheet = toFriend(document.querySelector('#artist-sheet.invite-sheet'));
   sheet.querySelector('.inv-name input').value = 'Yan';
   sheet.querySelector('.inv-add').click();
   await until(() => /YAN IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Yan’s answer');

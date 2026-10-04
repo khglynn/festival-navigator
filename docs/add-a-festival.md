@@ -1,6 +1,7 @@
 # Adding a festival
 
-*Updated 2026-09-25 — a section can read by time (`layout: "by-time"` in its
+*Updated 2026-10-03 — a festival's `name` is short and tight: the name
+people say, never the poster's title (below). 2026-09-25 — a section can read by time (`layout: "by-time"` in its
 `dayMeta`, below) and a card can say its part of town (`area`). 2026-09-23 — a
 cancelled act keeps its entry and says so (`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
 `date`; one rule for guessed times; doors go in `doors`.*
@@ -27,6 +28,17 @@ Two files, one command:
 }
 ```
 
+   - `name`: **short and tight — the name people say** (Kevin, 2026-10-03:
+     "For ACL we can just say 'ACL' with the year not ACL music festival.
+     Music festival is implied lol"). `"ACL"`, not `"ACL Music Festival"`;
+     `"Seismic"`, not `"Seismic Dance Event 9.0"`. The year goes in `year`
+     (`"'26"`) and shows beside the name in the header, so it never goes in
+     the name. The name rides into the room heads (`SAT ACL`), the Share's
+     first line, the toasts and the link preview. The validator errors on a
+     name over 20 characters or one ending in "Festival", and on a file
+     whose name differs from its `index.json` entry's (the landing reads the
+     index, the wall the file). A name is display only — never a pick key —
+     so shortening one moves nobody's picks; re-render the preview (step 4).
    - `status`: `lineup` (no set times yet — app shows the sortable artist
      list), `scheduled` (full grid), or `archived` (past).
    - `artists[]` is always required (it feeds the list view). Optional per
@@ -81,7 +93,7 @@ Two files, one command:
      grid to split, so it shows both weekends on one wall with the W1/W2 tags
      on the cards. Give each `dayMeta` entry
      `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so each day's first head
-     (`FRI ACL MUSIC FESTIVAL  Oct 2 · Weekend 1`) shows that weekend's real
+     (`FRI ACL  Oct 2 · Weekend 1`) shows that weekend's real
      date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
      The two spellings never cross (`weekend` on a grid set, `weekends` on
@@ -114,7 +126,8 @@ Two files, one command:
      open lands on the right day. The validator rejects an unknown zone.
 
 2. **Add an entry to `data/festivals/index.json`** (keep it ordered by date,
-   archived last — the first non-archived entry is the default festival).
+   archived last — the first non-archived entry is the default festival),
+   its `name` the file's own, character for character.
    Every index entry needs `startsOn: "YYYY-MM-DD"` (the festival's first
    day) — it drives the landing's date sort and its "Sep '26" labels; the
    validator rejects entries without it.

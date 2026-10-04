@@ -75,7 +75,7 @@ test('8:20 PM: the Mohawk stop starts at Fcukers’ guessed ~8:45 — the row an
   const row = stopRow(peek.stop, { ctx, plan, tag: 'next' });
   assert.equal(row.querySelector('.plan-when .t').textContent, '~8:45 PM');
   assert.equal(text, [
-    'Our crew\'s main picks for Sep 29 ACL Music Festival, now till end of day',
+    'Our crew\'s main picks for Sep 29 ACL, now till end of day',
     '',
     'Mohawk Austin for Total Wife and Fcukers @ ~8:45pm',
     '',

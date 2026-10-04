@@ -472,7 +472,23 @@ html { touch-action: manipulation; }
 }
 /* The Invite sheet (2026-09-26): one sheet, crew link first, then a name,
  * then the people from your other fests (app.js openInvite). The looks are
- * the two sheets' it replaced, moved out of inline styles. */
+ * the two sheets' it replaced, moved out of inline styles. Two steps since
+ * 2026-10-03: the link's, and — behind one quiet row — the friend step's. */
+/* A step is a column with the sheet's own gap, so a step reads as the sheet
+ * did before it had steps. While the steps swap, the leaving one stands
+ * lifted where it was (app.js stepSwapper) and the sheet holds its scroll on
+ * both axes — !important, over the keys' inline overflow (notes.js rideKeys). */
+.invite-sheet .inv-step { display: flex; flex-direction: column; gap: 12px; flex: none; }
+/* !important: a step's own layout (the link step's two columns on a phone on
+ * its side, display: grid, as specific and later in the file) must never
+ * outrank its being hidden — it did, and both steps showed (the review of
+ * the v115 head). */
+.invite-sheet .inv-step[hidden] { display: none !important; }
+.invite-sheet.stepping { overflow: hidden !important; }
+/* …and the step that arrives takes no taps while it moves, nor for a double
+ * tap's window after (app.js STEP_SETTLE_MS): the second half of a tap on
+ * the row once landed on the friend step's "+ Drew" and added Drew. */
+.invite-sheet.stepping .inv-step, .invite-sheet .inv-step.settling { pointer-events: none; }
 /* pretty: no one-word last line at 320 ("going.", "needed."); a plain wrap where unsupported. */
 .invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; text-wrap: pretty; }
 .invite-sheet .inv-link, .invite-sheet .inv-name { display: flex; gap: 8px; align-items: center; }
@@ -480,20 +496,148 @@ html { touch-action: manipulation; }
                                 border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body);
                                 font-size: 12px; font-family: var(--font-ui); }
 .invite-sheet .inv-copy { font-size: 12px; padding: 9px 15px; flex: none; }
+/* The crew link as a QR, on top of the box that prints it (find your crew,
+ * slice 1; app.js inviteQr), as the app's own card since v112 (Kevin,
+ * 2026-10-03: "can we do something that looks cooler / is more branded?").
+ * The card is the image (js/v3/qr.js): the aura is the brand — the hero
+ * button's light and grain, from the same tokens — and the panel is the
+ * scanner's, dark ink on light, never the fest accent. The image keeps the
+ * OS's own long-press (Save to Photos, Share) and a laptop's right-click —
+ * callouts are off only on cards and controls — so there is no Save button;
+ * saved, it is the rounded card, transparent outside. The caption spans the
+ * sheet, so at 320 it is two lines, not four under the tile. */
+.invite-sheet .inv-qr { margin: 0; flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* The tile holds the room from the sheet's first frame — square, so nothing
+ * below moves when the card lands — and has no colour of its own to seam
+ * against the card's edge. app.js draws the card to the tile's room (the
+ * <img>'s width before it is drawn) and shows it at its own pixels, centred:
+ * never stretched to fill (a 1.1× stretch made the modules alternate 7 and
+ * 8 pixels). 208px on a tall phone, where the growth over v111's 176 pays
+ * for the aura's frame and the code keeps every pixel a module it had;
+ * 196 on a shorter one (375×667); 132 on a short screen, last, below. A
+ * narrow phone's 54vw (172.8 at 320) grew too little to pay for the frame,
+ * so there the code keeps every pixel it would have plain (qr.js qrLayout). */
+.invite-sheet .inv-qr-tile { position: relative; width: min(208px, 54vw); aspect-ratio: 1; box-sizing: border-box;
+                             display: flex; align-items: center; justify-content: center;
+                             opacity: .4; transition: opacity .2s ease-out; }
+@media (max-height: 759px) { .invite-sheet .inv-qr-tile { width: min(196px, 54vw); } }
+/* Until the card is in (app.js adds `.in` when the image has loaded), the
+ * tile is a soft version of it: the aura, still, and an empty window where
+ * the panel will be — no modules, so it promises no code, and never a white
+ * square (a slow module once showed a bare white square under "Point a phone
+ * camera here", the review of 1b80842). The caption's room is kept, so
+ * nothing moves when it arrives. With the card, the two crossfade: the
+ * placeholder goes as the tile comes up, so a card a few pixels smaller
+ * than its tile (whole pixels a module) leaves no ring of it behind. The
+ * tokens' kill rules make that instant under Low power and Reduce Motion,
+ * where the card's grain is still there, baked into the image. */
+.invite-sheet .inv-qr-tile::before, .invite-sheet .inv-qr-tile::after {
+  content: ''; position: absolute; pointer-events: none; transition: opacity .2s ease-out; }
+.invite-sheet .inv-qr-tile::before {
+  inset: 0; border-radius: 9.4%;
+  background:
+    radial-gradient(68% 95% at -4% 20%, hsla(var(--aura-orange), 1) 0%, hsla(var(--aura-orange), .55) 55%, hsla(var(--aura-orange), 0) 100%),
+    radial-gradient(85% 58% at 50% 110%, hsla(var(--aura-magenta), .95) 0%, hsla(var(--aura-magenta), .5) 55%, hsla(var(--aura-magenta), 0) 100%),
+    radial-gradient(74% 92% at 104% 8%, hsla(var(--aura-blue), 1) 0%, hsla(var(--aura-blue), .55) 55%, hsla(var(--aura-blue), 0) 100%),
+    var(--aura-base); }
+.invite-sheet .inv-qr-tile::after { inset: 6%; border-radius: 3.9%; background: var(--qr-panel-ghost); }
+.invite-sheet .inv-qr img { position: relative; z-index: 1; display: block; flex: none; width: 100%; max-width: 100%;
+                            image-rendering: pixelated; -webkit-touch-callout: default; visibility: hidden; }
+/* The card a long-press keeps (qr.js qrSaveCard, app.js offerKeep): drawn for
+ * keeping at one export size, the crew's and the fest's names in its band. It
+ * lies under the card on screen in the same box, never seen, and once it is
+ * in (.keep) the screen's card lets a press through to it — so Save to
+ * Photos, Save Image and Copy Image take it, and the screen keeps its own
+ * card, whole pixels a module. Capped both ways by the tile, so a tile that
+ * shrinks under it (a phone turned on its side) never shows it past the
+ * card on screen (the review of the v115 head). */
+.invite-sheet .inv-qr .inv-qr-keep { position: absolute; inset: 0; margin: auto; z-index: 0; max-height: 100%; object-fit: contain; image-rendering: auto; }
+.invite-sheet .inv-qr.keep img:not(.inv-qr-keep) { pointer-events: none; }
+.invite-sheet .inv-qr.in .inv-qr-tile { opacity: 1; }
+.invite-sheet .inv-qr.in .inv-qr-tile::before, .invite-sheet .inv-qr.in .inv-qr-tile::after { opacity: 0; }
+.invite-sheet .inv-qr.in img { visibility: visible; }
+/* A short screen (a 320×568 phone, any phone on its side): the tile gives
+ * way, so Share stays on screen at open under the line a shared view adds —
+ * at 166px it put Share 26px below the sheet's 72vh fold (the review of
+ * 1b80842). There the code keeps every pixel a module v111 gave it and the
+ * aura lives on what is left (qr.js qrLayout), and a screenshot of the
+ * longest shared-view link still decodes. Last, so it wins. The link's step
+ * draws its parts a little closer there, so the friend row under Share opens
+ * whole at 320×568, not cut in half by the sheet's edge (the review of
+ * v112) — and a phone on its side gets two columns, below. */
+@media (max-height: 640px) {
+  .invite-sheet .inv-qr-tile { width: min(132px, 52vw); }
+  .invite-sheet .inv-link-step { gap: 8px; }
+  .invite-sheet .inv-qr { gap: 6px; }
+}
+.invite-sheet .inv-qr-cap { color: var(--text-tertiary); font-size: 11.5px; line-height: 1.45;
+                            text-align: center; text-wrap: balance; max-width: 36ch;
+                            visibility: hidden; opacity: 0; transition: opacity .2s ease-out, visibility .2s; }
+.invite-sheet .inv-qr.in .inv-qr-cap { visibility: visible; opacity: 1; }
+/* A phone on its side (the review of v112: at 844×390 Share and Done opened
+ * below the dialog's edge, at 667×375 the sheet showed the link alone): the
+ * link's step in two columns — the QR and its words on the left, at the
+ * tile's width; the line, the link, Share and the friend row on the right —
+ * so it all opens on screen. Only where the QR is there to sit on the left
+ * (:has); an engine without :has keeps the one column. */
+@media (max-height: 480px) and (min-aspect-ratio: 4/3) {
+  .invite-sheet .inv-link-step:has(> .inv-qr) { display: grid; grid-template-columns: min-content minmax(0, 1fr);
+                                                column-gap: 18px; row-gap: 10px; align-items: start; align-content: start; }
+  .invite-sheet .inv-link-step:has(> .inv-qr) > * { grid-column: 2; }
+  .invite-sheet .inv-link-step > .inv-qr { grid-column: 1; grid-row: 1 / span 4; width: min-content; }
+  .invite-sheet .inv-link-step:not(:has(> .inv-friend)) > .inv-qr { grid-row: 1 / span 3; }
+  .invite-sheet .inv-link-step > .inv-qr .inv-qr-cap { max-width: none; }
+}
 /* Share fills the row; the quiet Done / Later sits at its end — alone on a
  * laptop with no share sheet, it stays small rather than span the sheet. */
 .invite-sheet .inv-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; }
+/* balance: a long name's "Share Wilhelmina Featherstonha’s link" breaks in
+ * two even lines at 320, never "link" alone (F5 of the review of v112). */
+.invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; text-wrap: balance; }
+/* The add's answer, "ZED IS IN": the phrase stays whole and the lines even,
+ * so a long name never leaves "IN" alone on a line of its own at 320. */
+.invite-sheet .sheet-title { text-wrap: balance; }
+.invite-sheet .inv-nowrap { white-space: nowrap; }
 .invite-sheet .inv-done { font-size: 12px; padding: 11px 16px; }
-/* The sections after the link: a hairline above each, the label, then its part. */
-.invite-sheet .inv-section { display: flex; flex-direction: column; gap: 7px;
-                             border-top: 1px solid var(--hairline); padding-top: 12px; margin-top: 2px; }
+/* Pick for a friend (Kevin, 2026-10-03: "cleaner and more subtle since this
+ * shelf is so busy now"): ONE quiet, full-width row under Share — a hairline
+ * box, its two lines left and a chevron right, never a tonal pill beside
+ * Share. A button, so the 44px floor holds it on a phone. */
+.invite-sheet .inv-friend { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+                            background: transparent; border: 1px solid var(--border-card); border-radius: var(--r-row);
+                            padding: 9px 12px 9px 14px; color: inherit; font-family: var(--font-ui); text-align: left; cursor: pointer;
+                            -webkit-tap-highlight-color: transparent; } /* the step moving is the answer; a press darkens it instead */
+.invite-sheet .inv-friend:active { background: var(--card); }
+.invite-sheet .inv-friend-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.invite-sheet .inv-friend-name { color: var(--text-body); font-size: 13px; font-weight: 700; }
+.invite-sheet .inv-friend-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
+.invite-sheet .inv-friend-chev { color: var(--text-tertiary); font-size: 20px; line-height: 1; flex: none; margin-top: -2px; }
+@media (hover: hover) and (pointer: fine) { .invite-sheet .inv-friend:hover { background: var(--card); } }
+/* …a little closer on a short screen, still over the 44px floor (above). */
+@media (max-height: 640px) {
+  .invite-sheet .inv-friend { padding-top: 6px; padding-bottom: 6px; }
+  .invite-sheet .inv-friend-text { gap: 1px; }
+}
+/* The friend step's groups: a label, then its part. Our people are Settings'
+ * roster chip at Settings' size (settings.js crewSection). */
+.invite-sheet .inv-group { display: flex; flex-direction: column; gap: 7px; }
+.invite-sheet .inv-people { display: flex; flex-wrap: wrap; gap: 5px; }
+.invite-sheet .inv-people .person-chip { font-size: 11px; padding: 4px 11px; }
 .invite-sheet .inv-name input { flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input);
                                 border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px;
                                 font-family: var(--font-ui); }
-.invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; }
+.invite-sheet .inv-name input:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line, as on the join shelf */
+.invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; position: relative; }
+/* While an add is out the button carries the wait (app.js setWaiting): its
+ * bars where its word was, the word keeping the width, so nothing on the
+ * sheet moves (the review of v112: a status line arriving under the field
+ * shoved the step 29px). The status line says it to a screen reader from out
+ * of the flow — no room, no gap — and takes its place again for a plain word. */
+.invite-sheet .inv-add.waiting .inv-add-word { visibility: hidden; }
+.invite-sheet .inv-add-wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .invite-sheet .inv-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
 .invite-sheet .inv-status:empty { display: none; }
+.invite-sheet .inv-status.heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .invite-sheet .inv-others { display: flex; flex-wrap: wrap; gap: 6px; }
 .invite-sheet .inv-others .btn-tonal { font-size: 12.5px; padding: 7px 13px; }
 /* A member's own chip on the Pick-as shelf says so (join-shelf.js `me`). */
@@ -579,8 +723,9 @@ button.room-head { cursor: pointer; }
  * SAT AFTERS's did from its date. */
 .room-head .sub:empty { display: none; }
 /* The hairline fades in over its first 12px: when a long head leaves it only a
- * few pixels (FRI ACL MUSIC FESTIVAL  OCT 2 · WEEKEND 1 · ZILKER PARK at 390),
- * a hard-edged stub read as a stray dot after the text. */
+ * few pixels (a long fest name with its OCT 2 · WEEKEND 1 · ZILKER PARK at
+ * 390 — ACL's old long name did, before 2026-10-03), a hard-edged stub read
+ * as a stray dot after the text. */
 .room-head .line { flex: 1 1 0; min-width: 0; height: 1px;
                    background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 
@@ -694,10 +839,15 @@ button.room-head { cursor: pointer; }
  * panel wanted exactly this button and got a bare browser one). Unscoped now;
  * .sheet-card below still overrides its placement and colour. Every existing
  * .sheet-close sits inside a .sheet, so nothing in the app renders differently. */
-.sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+.sheet-close, .sheet-back { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
                background: var(--card); border: 1px solid var(--border-card);
                color: var(--text-secondary); font-size: 12px; cursor: pointer;
                display: inline-flex; align-items: center; justify-content: center; }
+/* A step's ‹ back (the Invite sheet's friend step, 2026-10-03): the ✕'s twin
+ * at the head's other end. Its glyph sits high in the line, so it is drawn
+ * larger and nudged down to centre in the disc. */
+.sheet-back { font-size: 19px; line-height: 1; padding: 0 1px 3px 0; -webkit-tap-highlight-color: transparent; }
+.sheet-back[hidden] { display: none; }
 .note-action { background: none; border: none; padding: 0; cursor: pointer;
                color: var(--text-tertiary); font-size: 10px; font-weight: 700;
                text-decoration: underline; text-underline-offset: 2px; }
@@ -741,7 +891,10 @@ button.room-head { cursor: pointer; }
  * The first item is NOW (v103), hidden while nothing is live — and a hidden
  * NOW is still the row's :first-child, so the first day after it takes the
  * margin then. */
-.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 15px; gap: var(--gap); overflow-x: auto; }
+/* --gap-min / --gap-max: how far the air between the tabs may give — to fit a
+ * row that nearly fits, or to rest one that cannot without a sliver at an
+ * edge (wall.js restingGap). */
+.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 15px; --gap-max: 30px; gap: var(--gap); overflow-x: auto; }
 .dock .days > :first-child, .dock .days > .now-tab[hidden] + * { margin-left: auto; }
 .dock .days > :last-child { margin-right: auto; }
 /* More days than fit (ACL's seven on a 152px row): the row has always
@@ -827,7 +980,7 @@ button.room-head { cursor: pointer; }
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
   .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
-  .back-btn, .gear-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close, .sheet-back,
   button.avatar,
   .plan-grab,   /* Our plan's grabber: the whole peek is its target (plan-shelf.js) */
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
@@ -837,7 +990,7 @@ button.room-head { cursor: pointer; }
   }
   .person-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab, .now-tab,
-  .back-btn, .gear-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close, .sheet-back,
   button.avatar {
     position: relative;
   }
@@ -861,7 +1014,7 @@ button.room-head { cursor: pointer; }
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
    * THEM a hit area would steal taps from the pick underneath. */
   .back-btn::after, .gear-btn::after, .fest-link::after,
-  .sheet-close::after, .chip-notes::after, button.avatar::after {
+  .sheet-close::after, .sheet-back::after, .chip-notes::after, button.avatar::after {
     content: ''; position: absolute; inset: -14px -12px;
   }
 

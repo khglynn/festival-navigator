@@ -18,7 +18,7 @@ import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { BY_TIME, sectionLayoutOf, timeBandsOf, areaOf } from './events.js'; // the list by time (v94) — its own line, like isCancelled's
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
-import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
+import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
 import { isRunMember } from './events.js'; // the List (Phase 1): a run member's time line says its start
 import { searchFold } from '../fold.mjs'; // one fold for every search and the schedule import (2026-09-26)
@@ -1968,8 +1968,8 @@ function thinByPeople(root, ctx) {
     for (const kid of [...room.children]) if (kid !== head) kid.remove();
     room.classList.add('quiet');
     // The words are what this line is for, so they never give way: the date
-    // the head leads with stays in its sub (which ellipsizes first — ACL's
-    // "SAT ACL MUSIC FESTIVAL  OCT 3 · WEEKEND 1" fills a phone), the room's
+    // the head leads with stays in its sub (which ellipsizes first — a long
+    // head and its "OCT 3 · WEEKEND 1" can fill a phone), the room's
     // own place goes (there is nothing there to find), and the words sit in
     // their own span after it (v3.css `.quiet-words`).
     const sub = head.querySelector('.sub');
@@ -3014,8 +3014,18 @@ const EDGE_HINT = 6; // px: at most this much of a tab may show past an edge, or
 // sub-pixel width, which on Linux put ACL's SAT 3 1.3px short at 430 once NOW
 // led the row (CI, v103): no slack there.
 const WHOLE_SLACK = 1;
-export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1 }) {
-  if (!(max > 0.5) || !items.length) return 0;
+// Costs compare rule by rule: the first that differs decides.
+const costsLess = (a, b) => {
+  for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
+  return false;
+};
+export function restingLeft(geo) {
+  if (!(geo.max > 0.5) || !geo.items.length) return 0;
+  return restAt(geo).L;
+}
+// The rule itself: the resting place and what it costs, rule by rule. `hint`
+// is how much of a tab may show past an edge, or be cut at one.
+function restAt({ items, width, max, fade = 0, active = -1, now = -1 }, hint = EDGE_HINT) {
   // What the row centres on and keeps clear of the fades: the day you are in,
   // and NOW with it only where the two fit the row together. NOW is the
   // row's first item (v103), so on a narrow row it is often far from the day
@@ -3050,21 +3060,61 @@ export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1
     for (const it of items) {
       const seen = Math.max(0, Math.min(it.x + it.w, L + width) - Math.max(it.x, L));
       const cut = it.w - seen;
-      if (seen > EDGE_HINT && cut > EDGE_HINT) slivers += Math.min(seen, cut);
+      if (seen > hint && cut > hint) slivers += Math.min(seen, cut);
     }
     return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
-  };
-  const better = (a, b) => {
-    for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
-    return false;
   };
   let best = null;
   for (let s = 0, top = Math.ceil(max); s <= top; s++) {
     const L = Math.min(s, max);
     const c = cost(L);
-    if (!best || better(c, best.c)) best = { L, c };
+    if (!best || costsLess(c, best.c)) best = { L, c };
   }
-  return best.L;
+  return best;
+}
+
+// The air between the tabs (v112). ACL's name went from ACL MUSIC FESTIVAL to
+// ACL (Kevin, 2026-10-03), its dock row grew, and on a Saturday at 375 and
+// 390 the row's start — NOW whole, FRI 2, SAT 3 — ended half way through
+// SUN 4 (CI, Linux: 33 of 47 at 390, 17 of 47 at 375). No resting place
+// mends that, since NOW must stay whole and the row cannot move; the gaps
+// can. So before a row rests on a sliver, the air between its tabs gives —
+// down to --gap-min or up to --gap-max (v3.css), as little as clears it — and
+// the cut tab comes in whole or goes out to a hint inside the fade. A row
+// with no sliver at its own gap keeps it, so the gaps move only where a
+// sliver would be. Pure, like restingLeft: `items` are laid out at `gap`;
+// the answer is the gap to lay them out at.
+const GAP_STEP = 0.5;
+// The search keeps two pixels in hand on the sliver rule: layout puts every
+// tab on a whole pixel, so a tab that clears the rule by a fraction here can
+// miss it there. A gap that clears it only without them still beats a sliver.
+const GAP_HINT = EDGE_HINT - 2;
+export function restingGap({ items, width, fade = 0, active = -1, now = -1, gap, gapMin = gap, gapMax = gap }) {
+  if (!items.length || !(gap > 0)) return gap;
+  const at = (g) => {
+    const its = items.map((it, i) => ({ x: it.x + i * (g - gap), w: it.w }));
+    const end = Math.max(...its.map((it) => it.x + it.w));
+    return { items: its, width, max: Math.max(0, end - width), fade, active, now };
+  };
+  const cost = (g, hint) => {
+    const geo = at(g);
+    return geo.max > 0.5 ? restAt(geo, hint).c : [0, 0, 0, 0, 0];
+  };
+  if (cost(gap, EDGE_HINT)[2] === 0) return gap;
+  let best = null;
+  const lo = Math.min(gapMin, gap);
+  const hi = Math.max(gapMax, gap);
+  for (let k = 0, top = Math.floor((hi - lo) / GAP_STEP + 1e-9); k <= top; k += 1) {
+    const g = lo + k * GAP_STEP;
+    const loose = cost(g, EDGE_HINT);
+    const strict = cost(g, GAP_HINT);
+    // The day you are in, then NOW (rules 1-2, never traded for air); then
+    // clean with pixels in hand, then clean; then the nearest the row's own.
+    const key = [loose[0], loose[1], strict[2] > 0 ? 1 : 0, loose[2] > 0 ? 1 : 0, Math.abs(g - gap)];
+    if (!best || costsLess(key, best.key)) best = { g, key };
+  }
+  // Only a gap that clears the sliver is worth moving the air for.
+  return best && best.key[3] === 0 ? best.g : gap;
 }
 
 // The row as those numbers. NOW counts as the focus only while it is staying:
@@ -3128,8 +3178,19 @@ export function holdDayRowEdges(c, edges, settled) {
 // four days and NOW overflow a 430 dock by about 35px, and every scroll of
 // that row left some of THU at the edge (the Pro Max phones, the whole
 // weekend); four days overflow 375 by about 15px. Past what the gaps can
-// give, the row scrolls at its full gap.
+// give, the row scrolls — at its full gap, unless resting there would leave
+// a sliver (restingGap: then as little air as clears it, either way).
 function fitDayRowGap(c) {
+  // The base gap's layout is only read, never shown, but its scroll range can
+  // be shorter than the row's (a rested gap up to --gap-max), and the browser
+  // clamps the scroll to it at once and never gives it back: the row jumped
+  // before its glide (the review of the v115 head). It keeps its scroll; the
+  // browser clamps that only to the range the row really has.
+  const kept = c.scrollLeft;
+  fitDayRowGapAt(c);
+  if (Math.abs(c.scrollLeft - kept) > 0.5) c.scrollLeft = kept;
+}
+function fitDayRowGapAt(c) {
   c.style.removeProperty('--gap');
   // Only a row that really overflows at its full gap (the rail's row is as
   // wide as its tabs, so for it "over" would only ever be rounding — and
@@ -3147,20 +3208,57 @@ function fitDayRowGap(c) {
   // tab's invisible touch reach past the last box is not worth a gap. A
   // quarter pixel spare per gap for the text's fractions.
   const over = kids.reduce((w, k) => w + k.offsetWidth, 0) + n * gap - c.clientWidth;
-  if (over > 0 && over <= n * (gap - min)) c.style.setProperty('--gap', `${Math.max(min, gap - over / n - 0.25)}px`);
+  if (over > 0 && over <= n * (gap - min)) {
+    c.style.setProperty('--gap', `${Math.max(min, gap - over / n - 0.25)}px`);
+    return;
+  }
+  const most = parseFloat(css.getPropertyValue('--gap-max'));
+  const g = restingGap({ ...dayRowGeometry(c), gap, gapMin: min, gapMax: most > gap ? most : gap });
+  if (Math.abs(g - gap) > 0.01) c.style.setProperty('--gap', `${g}px`);
+}
+
+// A tab's slide to a new gap (restDayRow, below), cut short by the next
+// glide — a fling through the days — is carried on from where it got to, not
+// from where its tab is laid out: what it still had to travel, and it stops.
+const GAP_SLIDE = 'day-row-gap';
+function gapSlideAt(t) {
+  const ours = typeof t.getAnimations === 'function' ? t.getAnimations().filter((a) => a.id === GAP_SLIDE) : [];
+  if (!ours.length) return 0;
+  let tx = 0;
+  try { tx = new DOMMatrixReadOnly(window.getComputedStyle(t).transform).m41 || 0; } catch { tx = 0; }
+  ours.forEach((a) => a.cancel());
+  return tx;
 }
 
 // Bring a day row to rest. The ROW scrolls, never the page (it is not ours to
 // scroll). `behavior` is 'smooth' for the glide a day change earns and
 // 'auto' where the move is carried some other way (app.js slides the tabs
 // themselves when NOW comes or goes) or needs none (a rebuild, a late font).
+// A glide can move the air between the tabs as well (restingGap: SAT 3 at
+// 390 rests on a tighter row than SUN 4 does), and the tabs slide to their
+// new places with it rather than jump (a FLIP: layout positions, which a
+// transform never moves; the scroll is the glide's own).
 export function restDayRow(c, behavior = 'auto') {
   if (!c) return;
+  const was = behavior === 'smooth' ? rowTabs(c).map((t) => [t, t.offsetLeft + gapSlideAt(t)]) : null;
+  const s0 = c.scrollLeft;
   fitDayRowGap(c);
+  // A tighter gap can leave the row a shorter range than where it stood, and
+  // the browser clamps the scroll there before the glide sets off: the slide
+  // carries that too, so every tab starts where it was drawn.
+  const took = s0 - c.scrollLeft;
   const left = restingLeft(dayRowGeometry(c));
   if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
   else c.scrollLeft = left;
   markDayRow(c);
+  if (was) {
+    for (const [t, x] of was) {
+      const dx = x - t.offsetLeft - took;
+      if (Math.abs(dx) < 1 || !canAnimate(t)) continue;
+      const a = t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_SURFACE });
+      if (a) a.id = GAP_SLIDE;
+    }
+  }
 }
 // One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.

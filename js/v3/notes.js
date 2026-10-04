@@ -908,6 +908,16 @@ export function rideKeys(sheet) {
   return off;
 }
 let unride = () => {};
+// A sheet built outside this file (app.js's Invite sheet) rides the keys the
+// same way, and its ride ends where every sheet's does: leave() and
+// teardownSheet() stop it before the way out, so a sheet on its way out is
+// never fitted to the keys going down (the review of v112: the Invite sheet
+// kept its own undo and dropped it, and leaving, it jumped the keyboard's
+// height mid-exit).
+export function rideSheetKeys(sheet) {
+  unride();
+  unride = rideKeys(sheet);
+}
 function sweepLeaving() {
   for (const n of leavingSheets) n.remove();
   leavingSheets.clear();
@@ -941,7 +951,15 @@ function leave(sheet, backdrop) {
   // snapping up to the rest first (read the live values, then stop the rise).
   const liveT = window.getComputedStyle(sheet).transform;
   const liveO = Number.parseFloat(window.getComputedStyle(backdrop).opacity);
+  // …and a step change's height on its way (app.js stepSwapper) leaves at the
+  // height it was showing, never the next step's (the review of the v115
+  // head: 165px in one frame as the close began).
+  const growing = sheet.getAnimations().some((a) => {
+    try { return a.effect.getKeyframes().some((k) => 'height' in k); } catch { return false; }
+  });
+  const liveH = growing ? window.getComputedStyle(sheet).height : '';
   for (const a of [...sheet.getAnimations(), ...backdrop.getAnimations()]) { try { a.cancel(); } catch { /* finished */ } }
+  if (liveH) Object.assign(sheet.style, { height: liveH, overflow: 'hidden' });
   leavingSheets.add(sheet);
   leavingSheets.add(backdrop);
   let done = false;

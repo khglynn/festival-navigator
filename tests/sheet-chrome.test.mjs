@@ -113,7 +113,7 @@ test('a date\'s notes, opened by its room head: a tap on the dimmed wall closes 
   await gone();
 });
 
-test('Invite someone: no grabber, and Back closes it', async () => {
+test('Invite someone: no grabber, and Back closes it — from its friend step too, the whole sheet', async () => {
   const add = document.querySelector('.person-chip.add');
   assert.ok(add, 'the + Invite someone door');
   add.click();
@@ -122,12 +122,23 @@ test('Invite someone: no grabber, and Back closes it', async () => {
   assert.equal(titleOf(s.firstElementChild), 'INVITE SOMEONE');
   history.back();
   await gone();
+  // The friend step is a step of the sheet, not a layer (2026-10-03): its
+  // title leads the same head, and Back closes the sheet, not the step.
+  await settle(40);
+  document.querySelector('.person-chip.add').click();
+  await settle(40);
+  sheet().querySelector('.inv-friend').click();
+  const f = noGrabber('Pick for a friend');
+  assert.equal(titleOf(f.firstElementChild), 'ADD A FRIEND', 'the head is still the first child');
+  history.back();
+  await gone();
 });
 
 test('… IS IN, the invite\'s answer: re-chromed without a grabber, and its ✕ closes it', async () => {
   document.querySelector('.person-chip.add').click();
   await settle(40);
   const s = sheet();
+  s.querySelector('.inv-friend').click();
   const input = s.querySelector('input[aria-label="Their name"]');
   input.value = 'Sam';
   [...s.querySelectorAll('button')].find((b) => b.textContent === 'Add').click();

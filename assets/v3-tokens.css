@@ -59,6 +59,27 @@
   /* Grain (feTurbulence data-URI). Cards overlay at .3, heroes .4 */
   --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='2'/%3E%3C/filter%3E%3Crect%20width='140'%20height='140'%20filter='url(%23n)'%20opacity='0.6'/%3E%3C/svg%3E");
 
+  /* The aura: the hero button's light, and the Invite QR's card (js/v3/qr.js
+   * reads these, so the card wears the hero's own light from one source).
+   * The hues are HSL triples, used as hsla(var(--aura-blue), a) — the same
+   * idiom as rgba(var(--brand), a). Never --fest: the aura is the app's. */
+  --aura-base: #12101E;          /* the dark the lights glow in */
+  --aura-orange: 28, 100%, 60%;  /* down the hero's left */
+  --aura-magenta: 305, 85%, 65%; /* rising from its bottom */
+  --aura-blue: 221, 90%, 58%;    /* down its right */
+  /* The Invite QR: the panel is the scanner's — dark ink on light, the way
+   * every camera expects a code — and it IS the quiet zone. The ink runs
+   * deep violet to fuchsia in sRGB; every point of it 8:1 or more on the
+   * panel (the worst is the last stop: luminance is convex along an sRGB
+   * line). tests/qr.test.mjs holds qr.js's fallbacks to these. */
+  --qr-panel: #FFFCF8;                 /* barely warm: pure white read cold beside the orange */
+  --qr-ink-1: #3A1C96;                 /* deep violet, 11.49:1 on the panel */
+  --qr-ink-2: #64189C;                 /* deep purple, 9.54:1 */
+  --qr-ink-3: #8A1689;                 /* deep fuchsia, 8.03:1 — the floor */
+  --qr-rim: rgba(255, 255, 255, .16);  /* the hairline of light inside the card's edge */
+  --qr-seat: rgba(6, 4, 14, .55);      /* the shadow that seats the panel in the aura */
+  --qr-panel-ghost: rgba(255, 252, 248, .18); /* the placeholder's empty window (v3.css), never white */
+
   /* Radii */
   --r-card: 8px;
   --r-row: 10px;      /* rows + buttons */
@@ -223,10 +244,10 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 .hero-bg {
   position: absolute; inset: 0;
   background:
-    radial-gradient(45% 90% at 12% 25%, hsla(28, 100%, 60%, .95) 0%, hsla(28, 100%, 60%, .4) 55%, transparent 100%),
-    radial-gradient(40% 80% at 55% 95%, hsla(305, 85%, 65%, .9) 0%, hsla(305, 85%, 65%, .35) 55%, transparent 100%),
-    radial-gradient(50% 95% at 92% 10%, hsla(221, 90%, 58%, .95) 0%, hsla(221, 90%, 58%, .4) 55%, transparent 100%),
-    #12101E;
+    radial-gradient(45% 90% at 12% 25%, hsla(var(--aura-orange), .95) 0%, hsla(var(--aura-orange), .4) 55%, transparent 100%),
+    radial-gradient(40% 80% at 55% 95%, hsla(var(--aura-magenta), .9) 0%, hsla(var(--aura-magenta), .35) 55%, transparent 100%),
+    radial-gradient(50% 95% at 92% 10%, hsla(var(--aura-blue), .95) 0%, hsla(var(--aura-blue), .4) 55%, transparent 100%),
+    var(--aura-base);
   background-size: 220% 220%;
   /* gradShift only. A hueSpin 34s hue-rotate(360deg) used to ride on top, which
    * means the three stops above — chosen orange, pink, blue — were only ever on

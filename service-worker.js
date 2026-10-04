@@ -2,8 +2,8 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v114'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
-const ASSET_STAMP = '9f134cda'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const CACHE_VERSION = 'festival-nav-v115'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const ASSET_STAMP = 'ffa70e4b'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -67,6 +67,11 @@ const APP_CORE = [
   '/js/v3/plan-rows.js',
   '/js/v3/plan-shelf.js',
   '/js/v3/foot.js',
+  // The Invite sheet's QR (find your crew, slice 1): app.js loads it only
+  // through import(), but it is core, not an extra — an extra is best-effort,
+  // and a phone whose install skipped it would have no QR in a field.
+  '/js/v3/qr.js',
+  '/vendor/uqr.mjs',
   '/data/festivals/index.json',
 ];
 // Every module app.js imports (transitively) must be listed above, or an

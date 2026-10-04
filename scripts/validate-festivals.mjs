@@ -7,7 +7,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
+import { validateFestivalDoc, festNameProblems } from '../api/_lib/festival-rules.mjs';
 import { frozenKeyProblems, artistNamesOf, dayLabelsOf } from '../api/_lib/pick-keys.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,13 +47,16 @@ for (const file of files) {
   if (!listed) errors.push(`${file}: festival not listed in index.json`);
   // index.json repeats a few of the file's fields for the landing. Status is
   // behaviour there (ordering, the default festival, muting), so a drift is an
-  // error; name and accent are only looks. The display `dates` are free text
+  // error. So is the name since 2026-10-03: the landing and the share
+  // previews read index.json's, the wall reads the file's, and a short name
+  // in one with the old long one in the other is exactly the drift Kevin's
+  // "short tight names" pass would leave (festNameProblems, below, holds the
+  // index's). The accent is only looks. The display `dates` are free text
   // that already differ in punctuation, and nothing reads them as data.
   else {
     if (listed.status !== fest.status) errors.push(`${file}: status ${JSON.stringify(fest.status)} but index.json says ${JSON.stringify(listed.status)} — the landing reads index.json; change both`);
-    for (const k of ['name', 'accent']) {
-      if (listed[k] !== fest[k]) warnings.push(`${file}: ${k} ${JSON.stringify(fest[k])} but index.json says ${JSON.stringify(listed[k])}`);
-    }
+    if (listed.name !== fest.name) errors.push(`${file}: name ${JSON.stringify(fest.name)} but index.json says ${JSON.stringify(listed.name)} — the landing reads index.json, the wall the file; change both`);
+    if (listed.accent !== fest.accent) warnings.push(`${file}: accent ${JSON.stringify(fest.accent)} but index.json says ${JSON.stringify(listed.accent)}`);
   }
   const entry = frozen.festivals && frozen.festivals[fest.id];
   if (entry) {
@@ -75,6 +78,9 @@ for (const id of Object.keys((frozen.festivals) || {})) {
 for (const entry of index) {
   if (!files.includes(`${entry.id}.json`)) errors.push(`index.json: lists ${entry.id} but ${entry.id}.json missing`);
   for (const k of ['id', 'name', 'status']) if (!entry[k]) errors.push(`index.json: ${entry.id || '?'}: missing ${k}`);
+  // Short, tight names (api/_lib/festival-rules.mjs festNameProblems): held
+  // here once, on the index — each file's name must equal its entry's (above).
+  errors.push(...festNameProblems(entry.name).map((m) => `index.json: ${entry.id || '?'}: ${m}`));
   // startsOn drives the landing's date sort and its "Sep '26" labels —
   // free-text `dates` can't be sorted, so the ISO key is required, and it
   // must be a REAL calendar date (2026-99-99 sorts lexically and months

@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-03 6:25 PM PT (v114 live: ACL Sun W1 re-timed) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-04 12:45 AM PT (v114 live: ACL Sun W1 re-timed; PR #80 = v115, green, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -35,6 +35,24 @@ cancelled acts keep their entries and picks. Next: re-read all of W2 (Fri
 posters (LEDGER follow-up 51). The Sunday poster draws its 4:30 run about 5
 minutes later than it prints; entered as printed (follow-up 54).
 
+## Also: PR #80, the Invite sheet (draft, v115) — waits on Kevin
+
+Find your crew, slice 1 (`claude-plans/2026-10-02-find-your-crew.md`) and
+Kevin's Oct 3 asks: the crew link as a QR in the app's own look (the
+hero's aura, a light panel, deep brand ink — never "My link"), a card to
+keep when saved (crew and fest names, no link text), the friend part as
+one quiet row opening a step that keeps the section's old words, short
+fest names (ACL, Seismic; ids and URLs unchanged), share links on
+fest.kevinhg.com, and the dock row's gaps giving before it rests on a
+sliver. Main (through v114 and its docs) is merged in, so it stamps v115.
+CI was green on c424286 (WebKit included); the independent review of the
+head and its real-input walk are done, all seven confirmed findings fixed
+red-first. Kevin's: a real-iPhone check (Camera scans it; long-press Save
+keeps the card — the one thing not testable here; clear the preview's
+site data first), then his OK → merge, verify all three hosts serve
+festival-nav-v115. The branch `diag/qr-fold-webkit` needs deleting on
+GitHub.
+
 ## Next: the iOS app
 
 The plan is `claude-plans/2026-09-29-native-apps-stack.md` (Capacitor around
@@ -53,6 +71,11 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
 
+- Crew codes (find your crew, slice 3): a code he can type or a shuffled
+  three-word combo ("sunburnt two step"), fun over strength; needs a
+  DB-backed rate limit and a crew_codes table (additive). The v1 word list
+  went to him Oct 3 with three small calls; the build waits on his go.
+- Slice 2 (a quiet home-screen row in Settings) waits on his iPhone test.
 - Ray: the Sep 1 reply is still in Gmail drafts — send it now, or fold it
   into one email after ACL (its Pen card asks; the draft still says Discover
   "after ACL", now 2027).

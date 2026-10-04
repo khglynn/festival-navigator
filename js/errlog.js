@@ -347,7 +347,9 @@ function syncNow() {
 }
 
 // Which deployment the page is on, so Kevin's own testing can be filtered.
-function hostKind() {
+// crew.js shareOrigin asks it too: the three production hosts are named
+// here, once.
+export function hostKind() {
   let h = '';
   try { h = window.location.hostname; } catch { h = ''; }
   if (h === 'fest.kevinhg.com' || h === 'festival.kevinhg.com' || h === 'crew.kevinhg.com') return h.split('.')[0];

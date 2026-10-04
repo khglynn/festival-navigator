@@ -89,6 +89,7 @@ test('a pending add whose name matches a server person case-insensitively reconc
   document.querySelector('#dock-you-wrap .hl-pop [data-act="invite"]').click();
   await settle(20);
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  sheet.querySelector('.inv-friend').click(); // the name is the friend step's (2026-10-03)
   sheet.querySelector('.inv-name input').value = 'drew';
   sheet.querySelector('.inv-add').click();
   await settle(20);

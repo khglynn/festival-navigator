@@ -191,18 +191,47 @@ test('a name or day label a crew can pick that the freeze does not hold fails CI
   assert.match(line, /run node scripts\/freeze-pick-keys\.mjs guard-fest/);
 });
 
-test('index.json\'s status must match the file; a drifted name or accent only warns', () => {
+test('index.json\'s status and name must match the file; a drifted accent only warns', () => {
   const g = guardFest();
   g.index.status = 'scheduled';
   const r = validateWith(g);
   assert.equal(r.ok, false);
   assert.ok(lines(r.out, /❌.*status "lineup" but index\.json says "scheduled"/).length, r.out);
 
+  // The name is an error since 2026-10-03 (Kevin's "short tight names"): the
+  // landing and the link previews read index.json's, the wall the file's,
+  // and a rename done in one file only is the drift that pass would leave.
+  const n = guardFest();
+  n.index.name = 'Guard';
+  const named = validateWith(n);
+  assert.equal(named.ok, false, named.out);
+  assert.ok(lines(named.out, /❌.*name "Guard Fest" but index\.json says "Guard"/).length, named.out);
+
   const h = guardFest();
-  h.index.name = 'Guard Festival';
   h.index.accent = '9, 9, 9';
   const s = validateWith(h);
   assert.ok(s.ok, s.out);
-  assert.ok(lines(s.out, /⚠️.*name "Guard Fest" but index\.json says "Guard Festival"/).length, s.out);
   assert.ok(lines(s.out, /⚠️.*accent "1, 2, 3" but index\.json says "9, 9, 9"/).length, s.out);
+});
+
+// Short, tight names (api/_lib/festival-rules.mjs festNameProblems; the rule
+// and the names we ship are tests/fest-names.test.mjs): the one command a
+// data-editing session runs, and CI's, fails a name over 20 characters or
+// one ending in "Festival" — said once, on the index entry.
+test('a festival name over 20 characters, or one ending in "Festival", fails CI — in the file and index.json alike', () => {
+  const long = guardFest();
+  long.file.name = long.index.name = 'Guard Fest Dance Event 9.0';
+  const r = validateWith(long);
+  assert.equal(r.ok, false);
+  const [tooLong] = lines(r.out, /❌ index\.json: guard-fest: name "Guard Fest Dance Event 9\.0" is 26 chars/);
+  assert.ok(tooLong, r.out);
+  assert.match(tooLong, /keep it to 20/);
+
+  const fest = guardFest();
+  fest.file.name = fest.index.name = 'Guard Music Festival';
+  const f = validateWith(fest);
+  assert.equal(f.ok, false);
+  assert.ok(lines(f.out, /❌ index\.json: guard-fest: name "Guard Music Festival" ends in "Festival"/).length, f.out);
+
+  assert.ok(validateWith(guardFest()).ok, 'and "Guard Fest" itself passes: short, and "Fest" is not "Festival"');
 });
