@@ -399,6 +399,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const entries = await page.evaluate(() => history.length);
       await press('.invite-sheet .inv-friend');
       await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'ADD A FRIEND', null, { timeout: 3000 });
+      // At rest is when the step has landed (.stepping off: app.js stepSwapper
+      // hides the leaving step there), not when nothing is running — the land
+      // waits on the animations' finished promises, a frame or more after
+      // they stop running, and a busy WebKit runner read the link's step in
+      // between (CI run 37223242001).
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       const up = await page.evaluate(() => ({
         focus: document.activeElement === document.querySelector('.invite-sheet .inv-name input'),
@@ -413,11 +419,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // ‹ back to the link, and in again.
       await press('.invite-sheet .sheet-back');
       await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'INVITE SOMEONE', null, { timeout: 3000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       assert.equal(await page.locator('.invite-sheet .inv-link input').isVisible(), true, 'the link again');
       assert.equal(await page.evaluate(() => document.activeElement === document.querySelector('.invite-sheet .inv-friend')), true, 'focus on the row it left from');
       await press('.invite-sheet .inv-friend');
       await page.waitForFunction(() => document.activeElement === document.querySelector('.invite-sheet .inv-name input'), null, { timeout: 3000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       await page.keyboard.type('Zed'); // straight in: the field has the focus
       await press('.invite-sheet .inv-add');
