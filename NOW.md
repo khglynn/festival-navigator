@@ -50,7 +50,7 @@ Then paste this into a fresh session on that Mac:
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–58): the Linux day-row
+Festival-navigator loose ends (LEDGER follow-ups 38–59): the Linux day-row
 probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
@@ -82,7 +82,7 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Next, after the live lane
 
-0. Follow-ups: the LEDGER's list (1–58).
+0. Follow-ups: the LEDGER's list (1–59).
 1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
    only a start), the dock's FRI flash on open.
 2. After Portola: self-recovery when a phone boots stale cached modules
