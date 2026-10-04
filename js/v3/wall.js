@@ -3181,6 +3181,16 @@ export function holdDayRowEdges(c, edges, settled) {
 // give, the row scrolls — at its full gap, unless resting there would leave
 // a sliver (restingGap: then as little air as clears it, either way).
 function fitDayRowGap(c) {
+  // The base gap's layout is only read, never shown, but its scroll range can
+  // be shorter than the row's (a rested gap up to --gap-max), and the browser
+  // clamps the scroll to it at once and never gives it back: the row jumped
+  // before its glide (the review of the v115 head). It keeps its scroll; the
+  // browser clamps that only to the range the row really has.
+  const kept = c.scrollLeft;
+  fitDayRowGapAt(c);
+  if (Math.abs(c.scrollLeft - kept) > 0.5) c.scrollLeft = kept;
+}
+function fitDayRowGapAt(c) {
   c.style.removeProperty('--gap');
   // Only a row that really overflows at its full gap (the rail's row is as
   // wide as its tabs, so for it "over" would only ever be rounding — and
@@ -3231,14 +3241,19 @@ function gapSlideAt(t) {
 export function restDayRow(c, behavior = 'auto') {
   if (!c) return;
   const was = behavior === 'smooth' ? rowTabs(c).map((t) => [t, t.offsetLeft + gapSlideAt(t)]) : null;
+  const s0 = c.scrollLeft;
   fitDayRowGap(c);
+  // A tighter gap can leave the row a shorter range than where it stood, and
+  // the browser clamps the scroll there before the glide sets off: the slide
+  // carries that too, so every tab starts where it was drawn.
+  const took = s0 - c.scrollLeft;
   const left = restingLeft(dayRowGeometry(c));
   if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
   else c.scrollLeft = left;
   markDayRow(c);
   if (was) {
     for (const [t, x] of was) {
-      const dx = x - t.offsetLeft;
+      const dx = x - t.offsetLeft - took;
       if (Math.abs(dx) < 1 || !canAnimate(t)) continue;
       const a = t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_SURFACE });
       if (a) a.id = GAP_SLIDE;

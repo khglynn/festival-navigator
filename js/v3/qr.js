@@ -621,10 +621,35 @@ export async function qrSaveCard(text, words = {}) {
   await typeReady();
   const matrix = qrMatrix(text);
   const colours = tokenColours();
-  const { room, ratio, band } = SAVE_CARD;
   const doc = typeof document !== 'undefined' ? document : null;
   const key = JSON.stringify([text, words && words.crew, words && words.fest, words && words.year, colours]);
   if (savedKept && savedKept.doc === doc && savedKept.key === key) return { ...savedKept.out };
+  // Two asks at once (the review of the v115 head: a sheet's idle draw still
+  // encoding when a reopened sheet, or another crew's, asks): the same card
+  // is drawn once, and only the last asked replaces the card kept — a draw
+  // that finished late once revoked the URL the open sheet was holding.
+  const inFlight = keepDrawing.get(key);
+  if (inFlight && inFlight.doc === doc) return { ...(await inFlight.done) };
+  const gen = ++keepAsked;
+  const done = drawSaveCard(matrix, colours, words);
+  keepDrawing.set(key, { doc, done });
+  try {
+    const out = await done;
+    if (gen === keepAsked) {
+      if (savedKept && savedKept.out.src !== out.src && /^blob:/.test(savedKept.out.src)) {
+        try { URL.revokeObjectURL(savedKept.out.src); } catch { /* already gone */ }
+      }
+      savedKept = { doc, key, out };
+    }
+    return { ...out };
+  } finally {
+    if (keepDrawing.get(key) && keepDrawing.get(key).done === done) keepDrawing.delete(key);
+  }
+}
+const keepDrawing = new Map(); // key → { doc, done }: the card on its way
+let keepAsked = 0; // which ask was the last
+async function drawSaveCard(matrix, colours, words) {
+  const { room, ratio, band } = SAVE_CARD;
   const L = qrLayout(matrix.size, room, ratio);
   const W = L.w;
   const H = L.h + Math.round(band * ratio);
@@ -641,12 +666,7 @@ export async function qrSaveCard(text, words = {}) {
     canvas.width = 0;
     canvas.height = 0;
   }
-  const out = { src, px: W, h: H };
-  if (savedKept && savedKept.out.src !== src && /^blob:/.test(savedKept.out.src)) {
-    try { URL.revokeObjectURL(savedKept.out.src); } catch { /* already gone */ }
-  }
-  savedKept = { doc, key, out };
-  return { ...out };
+  return { src, px: W, h: H };
 }
 // A canvas can draw and still hand back a blank image: a browser that blocks
 // canvas readback (Firefox's resistFingerprinting, Tor, the CanvasBlocker

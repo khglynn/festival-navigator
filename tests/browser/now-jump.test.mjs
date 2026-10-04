@@ -1076,6 +1076,64 @@ test('ACL at 375: a day change that moves the air between the tabs slides them t
   } finally { await ctx.close(); }
 });
 
+// …and a day change whose new gap leaves the row a shorter scroll range than
+// where it stood (the review of the v115 head): the browser clamps the
+// scroll at once — on the base gap's transient layout too — and a FLIP that
+// undid only the layout's move let every tab jump the clamp, 8 to 47px in
+// one frame, before the glide set off. Each tab starts its slide where it
+// was last drawn: read the moment the rest begins (its first act takes the
+// gap off) and again once the rest has been set going, before any frame.
+const glideFrom = async (page, fromTab, toTab) => {
+  // A tab by its words as the row draws them ("SUN11": the day and its date in two spans).
+  const tab = async (name) => {
+    const i = await page.evaluate((n) => [...document.getElementById('dock-days').children].filter((t) => !t.hidden)
+      .findIndex((t) => t.textContent.replace(/\s+/g, '') === n), name);
+    assert.ok(i >= 0, `the row has ${name}`);
+    return page.locator('#dock-days > :not([hidden])').nth(i);
+  };
+  await (await tab(fromTab)).tap();
+  await sleep(900);
+  await page.evaluate(() => {
+    const row = document.getElementById('dock-days');
+    const lefts = () => [...row.children].filter((t) => !t.hidden).map((t) => t.getBoundingClientRect().left);
+    window.__glides = [];
+    let before = null;
+    const rp = CSSStyleDeclaration.prototype.removeProperty;
+    CSSStyleDeclaration.prototype.removeProperty = function removeProperty(name) {
+      if (name === '--gap' && this === row.style && !before) before = { lefts: lefts(), scroll: row.scrollLeft };
+      return rp.call(this, name);
+    };
+    const st = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function scrollTo(...args) {
+      const smooth = this === row && args[0] && args[0].behavior === 'smooth';
+      const out = st.apply(this, args);
+      if (smooth && before) {
+        const b = before;
+        before = null;
+        queueMicrotask(() => window.__glides.push({ before: b.lefts, after: lefts(), scroll: [b.scroll, row.scrollLeft], gap: getComputedStyle(row).columnGap }));
+      } else if (this === row) before = null;
+      return out;
+    };
+  });
+  await (await tab(toTab)).tap();
+  await sleep(900);
+  return page.evaluate(() => window.__glides);
+};
+for (const [width, height, from, to] of [[320, 640, 'SUN11', 'LATE'], [375, 667, 'LATE', 'SAT10']]) {
+  test(`ACL at ${width}: ${from} → ${to}, a glide onto a shorter scroll range — every tab starts from where it was drawn`, { skip }, async () => {
+    const { ctx, page } = await openApp({ fest: 'acl-2026', width, height, now: ACL_SAT });
+    try {
+      await restedOn(page, 'Saturday|W1');
+      const glides = await glideFrom(page, from, to);
+      assert.ok(glides.length >= 1, `the row glided: ${JSON.stringify(glides)}`);
+      for (const g of glides) {
+        const worst = Math.max(...g.after.map((x, i) => Math.abs(x - g.before[i])));
+        assert.ok(worst <= 1, `no tab jumps as the glide sets off (worst ${worst.toFixed(1)}px): ${JSON.stringify(g)}`);
+      }
+    } finally { await ctx.close(); }
+  });
+}
+
 // The 44px floor, for NOW in the row (review, 2026-09-25): the day row
 // scrolls sideways, and a scroller clips hit-testing too, so the tabs'
 // borrowed 14px above and below were cut at the row's edge and NOW answered

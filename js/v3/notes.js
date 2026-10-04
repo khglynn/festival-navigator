@@ -951,7 +951,15 @@ function leave(sheet, backdrop) {
   // snapping up to the rest first (read the live values, then stop the rise).
   const liveT = window.getComputedStyle(sheet).transform;
   const liveO = Number.parseFloat(window.getComputedStyle(backdrop).opacity);
+  // …and a step change's height on its way (app.js stepSwapper) leaves at the
+  // height it was showing, never the next step's (the review of the v115
+  // head: 165px in one frame as the close began).
+  const growing = sheet.getAnimations().some((a) => {
+    try { return a.effect.getKeyframes().some((k) => 'height' in k); } catch { return false; }
+  });
+  const liveH = growing ? window.getComputedStyle(sheet).height : '';
   for (const a of [...sheet.getAnimations(), ...backdrop.getAnimations()]) { try { a.cancel(); } catch { /* finished */ } }
+  if (liveH) Object.assign(sheet.style, { height: liveH, overflow: 'hidden' });
   leavingSheets.add(sheet);
   leavingSheets.add(backdrop);
   let done = false;

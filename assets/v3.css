@@ -544,8 +544,10 @@ html { touch-action: manipulation; }
  * lies under the card on screen in the same box, never seen, and once it is
  * in (.keep) the screen's card lets a press through to it — so Save to
  * Photos, Save Image and Copy Image take it, and the screen keeps its own
- * card, whole pixels a module. */
-.invite-sheet .inv-qr .inv-qr-keep { position: absolute; inset: 0; margin: auto; z-index: 0; object-fit: contain; image-rendering: auto; }
+ * card, whole pixels a module. Capped both ways by the tile, so a tile that
+ * shrinks under it (a phone turned on its side) never shows it past the
+ * card on screen (the review of the v115 head). */
+.invite-sheet .inv-qr .inv-qr-keep { position: absolute; inset: 0; margin: auto; z-index: 0; max-height: 100%; object-fit: contain; image-rendering: auto; }
 .invite-sheet .inv-qr.keep img:not(.inv-qr-keep) { pointer-events: none; }
 .invite-sheet .inv-qr.in .inv-qr-tile { opacity: 1; }
 .invite-sheet .inv-qr.in .inv-qr-tile::before, .invite-sheet .inv-qr.in .inv-qr-tile::after { opacity: 0; }

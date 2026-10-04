@@ -900,6 +900,43 @@ test('a long crew name fits the card: it gives way in size first, then ends in a
   }
 });
 
+// Two cards asked for at once (the review of the v115 head): a sheet's idle
+// draw still encoding when a reopened sheet, or another crew's, asks. The
+// same card asked twice is drawn once; and the card finished late never lets
+// go of (revokes) the one the sheet holds now — only the last asked replaces
+// the card kept.
+test('two cards drawn at once: the same card asked twice is one draw, and the one finished late never revokes the card the sheet holds now', async () => {
+  const page = fakePage({ ratio: 2, tokens: PAGE_TOKENS, blob: true });
+  const make = page.doc.createElement.bind(page.doc);
+  let n = 0;
+  page.doc.createElement = (tag) => {
+    const c = make(tag);
+    if (n++ === 0) { const tb = c.toBlob; c.toBlob = (done, type) => setTimeout(() => tb(done, type), 40); } // the first one encodes slowly (a busy phone)
+    return c;
+  };
+  const revoked = [];
+  const realRevoke = URL.revokeObjectURL;
+  URL.revokeObjectURL = (u) => { revoked.push(u); };
+  const saved = { document: globalThis.document, window: globalThis.window };
+  globalThis.document = page.doc;
+  globalThis.window = page.win;
+  try {
+    const first = qrSaveCard(SHAPES.festival, { ...WORDS, crew: 'First Crew' });
+    const again = qrSaveCard(SHAPES.festival, { ...WORDS, crew: 'First Crew' });
+    const second = qrSaveCard(SHAPES.festival, { ...WORDS, crew: 'Second Crew' });
+    const [a, a2, b] = await Promise.all([first, again, second]);
+    assert.equal(a2.src, a.src, 'the same card asked twice is one draw');
+    assert.equal(page.made.filter((c) => c.encoded).length, 2, 'two cards drawn, not three');
+    assert.equal(revoked.includes(b.src), false, `the card asked last is never let go by the one finished late: ${JSON.stringify(revoked)}`);
+    const later = await qrSaveCard(SHAPES.festival, { ...WORDS, crew: 'Second Crew' });
+    assert.equal(later.src, b.src, 'and it is the card kept');
+  } finally {
+    URL.revokeObjectURL = realRevoke;
+    globalThis.document = saved.document;
+    globalThis.window = saved.window;
+  }
+});
+
 test('the saved card encodes off the main thread where the engine can (a Blob, an object URL), and fails like the sheet’s card: blank read-back or no canvas reject, naming no link', async () => {
   const page = fakePage({ ratio: 2, tokens: PAGE_TOKENS, blob: true });
   const out = await saveCard(page, SHAPES.festival);

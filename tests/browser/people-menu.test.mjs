@@ -589,13 +589,24 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // while the step is still moving — and the sheet stands on it, the field in
   // view above it, whenever it rises (the review of v112: deleting the ride
   // passed every test). A scripted visualViewport stands in for iOS's keys.
+  // It keeps a log of who listens and who stops listening (with where from),
+  // so a ride that ends early names its own end when a test fails.
   const fakeKeys = (page) => page.evaluate(() => {
     const et = new EventTarget();
+    const log = [];
+    const t0 = performance.now();
+    const from = () => (new Error().stack || '').split('\n').slice(2, 6).map((l) => l.trim().replace(/^.*\/(js\/[^?:]+)[^:]*:(\d+).*$/, '$1:$2')).join(' < ');
+    let listening = 0;
     const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, pageLeft: 0, scale: 1, kb: 0,
       get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
-      addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+      addEventListener: (...a) => { if (a[0] === 'resize') { listening += 1; log.push(`+${Math.round(performance.now() - t0)} ${from()}`); } et.addEventListener(...a); },
+      removeEventListener: (...a) => { if (a[0] === 'resize') { listening -= 1; log.push(`-${Math.round(performance.now() - t0)} ${from()}`); } et.removeEventListener(...a); } };
     Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
-    window.__keys = (kb) => { vv.kb = kb; et.dispatchEvent(new Event('resize')); };
+    window.__keys = (kb) => { vv.kb = kb; log.push(`keys ${kb} at ${Math.round(performance.now() - t0)}, ${listening} listening`); et.dispatchEvent(new Event('resize')); };
+    window.__keysLog = () => {
+      const sh = document.querySelector('.invite-sheet');
+      return { log, inline: sh ? { bottom: sh.style.bottom, maxHeight: sh.style.maxHeight, overflowY: sh.style.overflowY } : null };
+    };
   });
   for (const raiseAt of [0, 120, 600]) {
     test(`${name} 390: the friend step with the keys up (raised ${raiseAt} ms after the tap) stands on them, its field in view`, { skip }, async () => {
@@ -619,7 +630,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           const f = s.querySelector('.inv-name input').getBoundingClientRect();
           return { sheet: [r.top, r.bottom], keysTop: innerHeight - 336, field: [f.top, f.bottom], focus: document.activeElement === s.querySelector('.inv-name input') };
         });
-        assert.ok(m.sheet[1] <= m.keysTop + 1, `the sheet stands on the keys: ${JSON.stringify(m)}`);
+        assert.ok(m.sheet[1] <= m.keysTop + 1, `the sheet stands on the keys: ${JSON.stringify(m)} — the ride: ${JSON.stringify(await page.evaluate(() => window.__keysLog()))}`);
         assert.ok(m.field[0] >= Math.max(0, m.sheet[0]) && m.field[1] <= m.keysTop, `the field shows above the keys: ${JSON.stringify(m)}`);
         assert.equal(m.focus, true, 'the field has the focus');
         assert.deepEqual(errors, []);
@@ -710,11 +721,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           // every engine, where painted frames do not), then played from the start.
           const sheet = document.querySelector('.invite-sheet');
           if (this === sheet && !window.__seek) {
-            window.__swapAt = [document.timeline.currentTime, opts.duration];
             a.pause();
             window.__seek = [0.25, 0.5, 0.75].map((p) => { a.currentTime = opts.duration * p; return sheet.getBoundingClientRect().height; });
             a.currentTime = 0;
             a.play();
+            // Where it really runs: the replay starts on a later frame than
+            // the one it was made in (a busy runner's frames are far apart).
+            a.ready.then(() => { window.__swapAt = [a.startTime, opts.duration]; });
           }
           return a;
         };
@@ -775,16 +788,19 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         assert.ok(p.a[0].delay >= r.outEnd, `${p.c} after the friend step has gone`);
       }
       assert.equal(r.focusIn, true, 'the focus stays in the sheet');
-      // Where the engine applies an animation every frame (Chromium), the
-      // painted frames show it on its way too, never one jump between two.
-      // (A loaded runner paints few frames in a 240ms swap: there the seek
-      // above stands alone, as the QR fold's does.)
-      const during = r.hs.filter(([at]) => at > r.swapAt[0] && at < r.swapAt[0] + r.swapAt[1]);
-      if (name === 'Chromium' && during.length >= 3) {
-        const between = r.hs.filter(([, h]) => lo + 1 < h && h < hi - 1).length;
-        assert.ok(between >= 2, `the height seen on its way in ${between} of ${during.length} frames painted during the swap, not jumped ${Math.round(hi - lo)}px in one`);
+      // Where the engine applies an animation every frame (Chromium), every
+      // frame painted in the middle of the replay shows the height on its way,
+      // never at either end. Timed from the replay's own start (the frames
+      // were once counted from the frame it was made in, and on a busy runner
+      // the replay set off a frame or two later: "0 of 3"). A loaded runner
+      // may paint none there: then the seek above stands alone, as the QR
+      // fold's does.
+      assert.ok(r.swapAt, 'the height animation ran');
+      const mid = r.hs.filter(([at]) => at > r.swapAt[0] + 0.1 * r.swapAt[1] && at < r.swapAt[0] + 0.9 * r.swapAt[1]);
+      if (name === 'Chromium' && mid.length) {
+        for (const [at, h] of mid) assert.ok(lo + 1 < h && h < hi - 1, `the height on its way at ${Math.round(at - r.swapAt[0])}ms of ${r.swapAt[1]}: ${h} (${lo} → ${hi}) — not jumped ${Math.round(hi - lo)}px in one`);
       } else {
-        t.diagnostic(`${name}: ${during.length} frames painted during the ${r.swapAt[1]}ms swap; the travel is proven by seeking it`);
+        t.diagnostic(`${name}: ${mid.length} frames painted mid-way through the ${r.swapAt[1]}ms swap; the travel is proven by seeking it`);
       }
       assert.deepEqual(errors, []);
     } finally { hold.release(); await ctx.close(); }
@@ -1245,10 +1261,90 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const px = jpeg.decode(shot, { useTArray: true });
         const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
         assert.equal(hit && hit.data, link, 'and it scans to the link');
-        assert.deepEqual(errors, []);
+        // At 844 the day rail shows, and WebKit's "ResizeObserver loop" from
+        // its observer is the known one (LEDGER follow-up 37: fix the rail's
+        // observer, then drop every filter like this); errlog.js drops it too.
+        assert.deepEqual(errors.filter((e) => !/^ResizeObserver loop/.test(e)), []);
       } finally { await ctx.close(); }
     });
   }
+
+  // Closed while a step is still moving (Escape a beat after the friend
+  // row, the review of the v115 head): the sheet leaves at the height it was
+  // showing. Its way out once cancelled the step's height on its way and
+  // dropped from the next step's — 165px in one frame.
+  test(`${name} 390: closed mid-step, the sheet leaves at the height it was showing — never the next step's in one frame`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, height: 844 });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await sheetStill(page);
+      await page.evaluate(() => {
+        const sheet = document.querySelector('.invite-sheet');
+        const heightOn = () => sheet.getAnimations().some((a) => { try { return a.effect.getKeyframes().some((k) => 'height' in k); } catch { return false; } });
+        // The step's height animation, held where it is when it starts, so
+        // the close always lands mid-way, however busy the machine.
+        const own = Element.prototype.animate;
+        Element.prototype.animate = function animate(frames, opts) {
+          const a = own.call(this, frames, opts);
+          if (this === sheet && Array.isArray(frames) && frames.some((f) => 'height' in f)) { a.pause(); a.currentTime = opts.duration / 2; }
+          return a;
+        };
+        window.addEventListener('keydown', (e) => {
+          if (e.key !== 'Escape' || window.__closed) return;
+          window.__closed = { before: parseFloat(getComputedStyle(sheet).height), moving: heightOn() };
+          setTimeout(() => { window.__closed.after = parseFloat(getComputedStyle(sheet).height); }, 0);
+        }, true);
+      });
+      const b = await page.locator('.invite-sheet .inv-friend').boundingBox();
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await page.waitForFunction(() => document.querySelector('.invite-sheet.stepping'), null, { timeout: 2000 });
+      await page.keyboard.press('Escape');
+      await page.waitForFunction(() => window.__closed && 'after' in window.__closed, null, { timeout: 2000 });
+      const c = await page.evaluate(() => window.__closed);
+      assert.equal(c.moving, true, `the close landed while the step's height was on its way: ${JSON.stringify(c)}`);
+      assert.ok(Math.abs(c.after - c.before) <= 1, `the sheet leaves at the height it showed: ${JSON.stringify(c)}`);
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 3000 });
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The card kept lies in the very box of the card on screen — and stays
+  // in it when the tile shrinks under it (the review of the v115 head: a
+  // phone turned on its side with the sheet open left the kept card's box
+  // as tall as it was, and a second QR and its PORTOLA '26 band showed above
+  // and below the card on screen).
+  test(`${name} 390, the sheet open, then the phone on its side: the card kept never shows past the card on screen`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, height: 844 });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.keep', { timeout: 6000 });
+      await page.setViewportSize({ width: 844, height: 390 });
+      await sleep(500);
+      await motionDone(page, { within: '.invite-sheet' });
+      const tileShot = async () => jpeg.decode(await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 }), { useTArray: true });
+      const box = await page.evaluate(() => {
+        const t = document.querySelector('.invite-sheet .inv-qr-tile').getBoundingClientRect();
+        const k = document.querySelector('.invite-sheet .inv-qr-keep').getBoundingClientRect();
+        return { tile: [t.top, t.bottom, t.left, t.right], keep: [k.top, k.bottom, k.left, k.right] };
+      });
+      assert.ok(box.keep[0] >= box.tile[0] - 0.5 && box.keep[1] <= box.tile[1] + 0.5 && box.keep[2] >= box.tile[2] - 0.5 && box.keep[3] <= box.tile[3] + 0.5, `the card kept stays inside the tile: ${JSON.stringify(box)}`);
+      await page.evaluate(() => { document.querySelector('.invite-sheet .inv-qr-keep').style.visibility = 'hidden'; });
+      const a = await tileShot();
+      await page.evaluate(() => { document.querySelector('.invite-sheet .inv-qr-keep').style.visibility = ''; });
+      const b = await tileShot();
+      // The screen's card, scaled down to the smaller tile, leaves its own
+      // edge a little see-through (11 of 765 at worst, here); a card kept
+      // showing past it is a second QR and its band (hundreds).
+      let worst = 0;
+      for (let i = 0; i < a.data.length; i += 4) worst = Math.max(worst, Math.abs(a.data[i] - b.data[i]) + Math.abs(a.data[i + 1] - b.data[i + 1]) + Math.abs(a.data[i + 2] - b.data[i + 2]));
+      assert.ok(worst <= 48, `showing it or not, the tile is the same picture (worst pixel ${worst} of 765)`);
+      assert.deepEqual(errors.filter((e) => !/^ResizeObserver loop/.test(e)), []);
+    } finally { await ctx.close(); }
+  });
 
   // The QR's late paths (the reviews of 1b80842): its module comes over the
   // network whenever the worker has not precached it yet — a first visit's
