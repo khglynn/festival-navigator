@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER, waitForAsync } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const server = await serveStatic(ROOT);
@@ -235,10 +235,10 @@ test('chromium, real worker: a first visit keeps its festival, and the next open
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 20000 });
     // Before v107 this stayed empty until a SECOND good open: the first fetch
     // left before the worker controlled the page.
-    await page.waitForFunction(async () => {
+    await waitForAsync(page, async () => {
       const c = await caches.open('festival-nav-data-v1');
       return !!(await c.match('/data/festivals/acl-2026.json'));
-    }, null, { timeout: 15000, polling: 250 });
+    }, null, { timeout: 15000, every: 250, what: 'acl-2026.json in the data cache' });
     assert.equal(navs, 1, 'the worker\u2019s first claim does not reload a page whose app started');
 
     // No signal now. A real document load (hop via about:blank: a hash-only
