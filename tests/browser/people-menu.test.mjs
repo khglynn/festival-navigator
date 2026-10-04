@@ -516,7 +516,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // where it was before the sheet.
       await page.goBack();
       await page.waitForFunction(() => !document.querySelector('#artist-sheet'), null, { timeout: 3000 });
-      await sleep(300);
+      // The sheet gives up its id at once and leaves the page when its leave
+      // animation ends (notes.js leave): wait for that, not a fixed beat — a
+      // busy Linux WebKit runner was still mid-leave 300ms on (CI run
+      // 37221010659). A step that stays behind still fails here, by name.
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 4000 }).catch(() => {});
       assert.equal(await page.locator('.invite-sheet').count(), 0, 'the whole sheet, not just its step');
       assert.equal(await page.evaluate(() => (history.state && (history.state.layers || []).length) || 0), 0, 'and no layer left behind');
       assert.deepEqual(errors, []);
