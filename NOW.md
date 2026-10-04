@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-03 6:23 PM PT (v113 live; v114 = ACL Sun W1 re-timed, merged; PR #80 = v115, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-03 8:19 PM PT (v113 live; v114 = ACL Sun W1 re-timed, merged; PR #80 = v115, green, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -54,10 +54,13 @@ keep when saved (crew and fest names, no link text), the friend part as
 one quiet row opening a step that keeps the section's old words, short
 fest names (ACL, Seismic; ids and URLs unchanged), share links on
 fest.kevinhg.com, and the dock row's gaps giving before it rests on a
-sliver. Main (v113, v114) is merged in, so it stamps v115. Kevin's: a
-real-iPhone check (Camera scans it; long-press Save keeps the card; clear
-the preview's site data first), then his OK → merge, verify all three
-hosts. The branch `diag/qr-fold-webkit` needs deleting on GitHub.
+sliver. Main (v113, v114) is merged in, so it stamps v115. CI is green on
+c424286 (WebKit included); the independent review of the head and its
+real-input walk are done, all seven confirmed findings fixed red-first.
+Kevin's: a real-iPhone check (Camera scans it; long-press Save keeps the
+card — the one thing not testable here; clear the preview's site data
+first), then his OK → merge, verify all three hosts. The branch
+`diag/qr-fold-webkit` needs deleting on GitHub.
 
 ## Next: the iOS app
 
