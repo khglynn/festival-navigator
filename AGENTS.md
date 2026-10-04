@@ -171,6 +171,18 @@ Non-inferable facts only (the code answers everything else — read it).
   log every input in a copy of the test, throttle the CPU (CDP
   `Emulation.setCPUThrottlingRate`) and bisect across builds on a quiet
   machine; another agent's browser run alongside gave false results.
+- **"Nothing is moving" is not "at rest"** (2026-10-04: four Linux WebKit
+  flakes in v115's tests in one day). The app settles things in an
+  animation's `finished`/`onfinish` and in page timers: a step lands and
+  takes `.stepping` off, a closing menu stops eating taps, a sheet leaves
+  the page. A busy runner delivers both late, so a test that reads after
+  `motionDone` or a fixed sleep reads in between. Wait for the state the
+  app sets at rest, never a beat. `lateStarts` in `tests/helpers/browser.mjs`
+  reproduces both on any machine: `LATE_ANIMATIONS_MS=700`, and
+  `LATE_FINISH_MS=200` (from about 350, stepSwapper's own backstop lands
+  first). And `page.waitForFunction` never waits on an async check (a
+  Promise is truthy): use `waitForAsync`. The suite fails on an async
+  predicate there.
 - **Browser history is shared state the app cannot fully own** (2026-09-26).
   Entries older builds wrote live on friends' phones, two visits to one URL
   are two real places, a native link bypasses the router, and "skip the

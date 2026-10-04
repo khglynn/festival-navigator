@@ -50,10 +50,30 @@ morning.
   event (`__keysUp`, a MutationObserver on the sheet leaving), not the
   clock. The day rail's known "ResizeObserver loop" notice (LEDGER 37) is
   filtered at 844, as elsewhere.
+- **After the merge, four more CI flakes, all in v115's own tests and all
+  the same mistake: reading before the app was at rest** (PR #87, tests
+  only).
+  - The QR "module never comes" test used an async `waitForFunction`.
+    Playwright takes its Promise as truthy, so the wait returned at once.
+    `waitForAsync` replaces it, and a source scan plus a runtime wrapper
+    now refuse the shape.
+  - Back's sheet was counted after a fixed 300 ms.
+  - The keys went down on a 20 ms page timer.
+  - The friend step was read after `motionDone`, while its land waited on
+    the animations' late `finished` promises.
+  - A new stand-in, `LATE_FINISH_MS`, reproduced that last one locally,
+    in Chromium.
+    Sweeping the suite with it found people-menu's `press()` tapping into a
+    closing menu whose footprint still ate taps.
+  - Each one now waits for the state the app sets, and the rule is in
+    AGENTS.md.
+  - Left as is: the warm-open test's 1 s jsdom budget under full-suite
+    load (LEDGER 59).
 - **Numbering:** the branch's previews used v109–v112 while v113 and v114
   shipped from main, so it merged main twice and stamped v115.
-- **Left as is** (LEDGER 55–58): a half-pixel QR card offset in Chromium,
-  the people menu's fold on a phone on its side, and Safari's missing
+- **Left as is** (LEDGER 55–58; 59 is a test budget): a half-pixel QR
+  card offset in Chromium, the people menu's fold on a phone on its side,
+  and Safari's missing
   `requestIdleCallback` (the card draws ~300 ms after the sheet opens),
   and the narrowest rows' Late-nights sliver.
 - **Not built, waiting on Kevin:** crew codes (slice 3; he wants

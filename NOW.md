@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-04 PM PT (v115 live and verified; two test-and-docs PRs in CI) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-04 12:16 PM PT (v115 live and verified; its tests read at rest now, #87) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -17,12 +17,6 @@ how we got here belongs in DEVLOG.md.
   before it rests on a cut-off tab. v114 (Oct 3): ACL's W1 Sunday re-timed. Rollback: Vercel
   dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Rows, reviews, rollback
   targets: the LEDGER.
-- **In flight (no app assets):** PR #87 (test harness: waitForFunction
-  refuses a Promise, waitForAsync, a LATE_FINISH_MS stand-in, and the v115
-  Invite-sheet tests that read before the app was at rest) and PR #86
-  (v115 docs, carrying the same test commits). Next: CI green on both
-  heads, then merge #87, then #86, and check the three hosts still serve
-  festival-nav-v115.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), triggered by error-tracking issues only, and one usage
   rule: 3+ phones red on sync in an hour ("Fest: 3+ phones can't sync").
