@@ -1,22 +1,20 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-03 8:19 PM PT (v113 live; v114 = ACL Sun W1 re-timed, merged; PR #80 = v115, green, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-04 12:45 AM PT (v114 live: ACL Sun W1 re-timed; PR #80 = v115, green, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v113, from `main`** (PR #81, merged 2026-10-03 4:17 PM PT) on fest /
-  festival / crew.kevinhg.com, all three serving festival-nav-v113 /
-  07aea7f0: ACL's W1 Saturday re-timed from the revised poster after the
-  mud delay (Left Lucid, Fightmaster, Fakemink cancelled on W1; picks
-  kept), and a cancelled card folds with its finished room (wall.js
-  `roomPast`), so the 11 PM open lands on Late nights. Numbered v113:
-  PR #80's previews used v109–v112, so #80 re-stamps above it. Rollback:
-  Vercel dpl_8apj1YNu9gYg3B4gvj5BL5e6aB86 (v108 + docs). v108 (Oct 2):
-  usage through errlog.js's one door. Rows, reviews, rollback targets:
-  the LEDGER.
+- **v114, from `main`** (PR #83, merged 2026-10-03 6:17 PM PT) on fest /
+  festival / crew.kevinhg.com, all three serving festival-nav-v114 /
+  9f134cda: ACL's W1 Sunday (Oct 4) re-timed from the Oct 2 poster, Rubio
+  and Paloma Morphy cancelled on W1 (picks kept). v113 (earlier today): W1
+  Saturday re-timed after the mud delay, and a cancelled card folds with
+  its finished room (wall.js `roomPast`). Rollback: Vercel
+  dpl_iQnzZt75roomsvH5hNPXaJqwhjqk (v113 + docs). Rows, reviews, rollback
+  targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), triggered by error-tracking issues only, and one usage
   rule: 3+ phones red on sync in an hour ("Fest: 3+ phones can't sync").
@@ -30,20 +28,12 @@ build, a stale build still in use, red sync, and how often an open lands
 with no crew (`landing` in "How opens begin" — the find-your-crew question;
 three ideas offered to Kevin, no answer yet).
 
-**ACL, 2026-10-03 (v113):** mud delayed Saturday's doors to 2 PM; W1 Saturday
-is re-timed from ACL's revised poster (Left Lucid, Fightmaster, Fakemink
-cancelled on W1; LeTrainiump added), and a cancelled card now folds with
-its finished room (it held Saturday on the wall till 5 AM).
-
-**In flight: v114, branch `data/acl-sun-w1`** — W1 Sunday (Oct 4) re-timed
-from the Oct 2 poster (v10.02-B): the T-Mobile / Miller Lite run from 4:30
-about 10 minutes earlier, Britton to Snapchat 3:30, Flight by Nothing to W1,
-Rubio → Vinny Tovar and Paloma Morphy → girlsweetvoiced (both cancelled on
-W1, picks kept); W2 byte for byte. Next step: unit and browser pins (The xx
-8:35, plan-model counts 247/181), `npm test`, a browser walk of Sunday W1,
-PR, CI, an independent review, merge, verify the three hosts serve
-festival-nav-v114. Still to re-read after that: all of W2 (Sat/Sun 9.30,
-Fri 10.01) — W2 in the file is the Aug 27 posters (LEDGER follow-up 51).
+**ACL, 2026-10-03:** W1 Saturday (v113, after the mud delay) and W1 Sunday
+(v114, the Oct 2 poster) are re-timed from ACL's revised posters; their
+cancelled acts keep their entries and picks. Next: re-read all of W2 (Fri
+10.01, Sat and Sun 9.30) before Oct 9 — W2 in the file is still the Aug 27
+posters (LEDGER follow-up 51). The Sunday poster draws its 4:30 run about 5
+minutes later than it prints; entered as printed (follow-up 54).
 
 ## Also: PR #80, the Invite sheet (draft, v115) — waits on Kevin
 
@@ -54,13 +44,14 @@ keep when saved (crew and fest names, no link text), the friend part as
 one quiet row opening a step that keeps the section's old words, short
 fest names (ACL, Seismic; ids and URLs unchanged), share links on
 fest.kevinhg.com, and the dock row's gaps giving before it rests on a
-sliver. Main (v113, v114) is merged in, so it stamps v115. CI is green on
-c424286 (WebKit included); the independent review of the head and its
-real-input walk are done, all seven confirmed findings fixed red-first.
-Kevin's: a real-iPhone check (Camera scans it; long-press Save keeps the
-card — the one thing not testable here; clear the preview's site data
-first), then his OK → merge, verify all three hosts. The branch
-`diag/qr-fold-webkit` needs deleting on GitHub.
+sliver. Main (through v114 and its docs) is merged in, so it stamps v115.
+CI was green on c424286 (WebKit included); the independent review of the
+head and its real-input walk are done, all seven confirmed findings fixed
+red-first. Kevin's: a real-iPhone check (Camera scans it; long-press Save
+keeps the card — the one thing not testable here; clear the preview's
+site data first), then his OK → merge, verify all three hosts serve
+festival-nav-v115. The branch `diag/qr-fold-webkit` needs deleting on
+GitHub.
 
 ## Next: the iOS app
 
@@ -75,7 +66,7 @@ Then paste this into a fresh session on that Mac:
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–53): the Linux day-row
+Festival-navigator loose ends (LEDGER follow-ups 38–54): the Linux day-row
 probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
@@ -99,7 +90,7 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Next, after the live lane
 
-0. Follow-ups: the LEDGER's list (1–53).
+0. Follow-ups: the LEDGER's list (1–54).
 1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
    only a start), the dock's FRI flash on open.
 2. After Portola: self-recovery when a phone boots stale cached modules
