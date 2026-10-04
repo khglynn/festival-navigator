@@ -15,6 +15,12 @@
 //     bytes qrPng puts on its canvas — every shape at every module size; the
 //     layout keeps every module pixel v111 gave the code; the colours are the
 //     tokens', and every ink pixel holds 8:1 on the panel;
+//   - the saved card (v112's review — Kevin: "bake that url / code into the
+//     downloadable image and make it sexy"): what a long-press Save keeps is
+//     its own render at one export size on every screen, whole pixels a
+//     module, the quiet zone kept, read back like the sheet's, carrying the
+//     crew's name and the fest's short name in the app's own type — never
+//     the link or any of its text (the code line stays reserved);
 //   - qrPng is honest about what it cannot do (no 2D canvas, no image data,
 //     a canvas that reads back blank: it throws, and the sheet takes the QR
 //     away), and it never logs or reports its text — the text is a crew
@@ -36,7 +42,7 @@ globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: 
 const crew = await import('../js/crew.js');
 const { roomsOf } = await import('../js/v3/wall.js');
 const { roomSlug } = await import('../js/v3/filters.js');
-const { qrMatrix, qrPng, qrLayout, codePixels, QR_COLOURS } = await import('../js/v3/qr.js');
+const { qrMatrix, qrPng, qrLayout, codePixels, QR_COLOURS, qrSaveCard, SAVE_CARD } = await import('../js/v3/qr.js');
 
 // A made-up token of the real shape (27 base64url characters, api/crew.js) —
 // never a real crew's.
@@ -432,25 +438,58 @@ test('qrLayout over 252 cases: whole device pixels, never past its room, the pan
   assert.deepEqual([...new Set(thin)], [132], 'a frame under 2 CSS px only ever on the smallest tile, where the code keeps every pixel');
 });
 
+// …and the rooms the sheet REALLY gives, not only its caps: the tile is
+// min(132px, 52vw) up to 640 tall, min(196px, 54vw) up to 759 and
+// min(208px, 54vw) from 760 (v3.css), so a phone 320–362 wide and taller than
+// 640 gives a room between the caps (172.8 at 320). v111's tile at the same
+// screen was min(132px, 52vw) up to 640 and min(176px, 52vw) above. Between
+// the caps the code once took a pixel a module less than v111 drew it with
+// (the review of v112: 320×693 at 2x drew 6 where v111 drew 7; a Galaxy Fold
+// cover, 344×882 at 2.625, 9 where it drew 10).
+const roomOn = (w, h) => (h <= 640 ? Math.min(132, 0.52 * w) : h < 760 ? Math.min(196, 0.54 * w) : Math.min(208, 0.54 * w));
+const v111RoomOn = (w, h) => (h <= 640 ? Math.min(132, 0.52 * w) : Math.min(176, 0.52 * w));
+test('qrLayout on every room a phone 320–430 wide gives, at every ratio and link size: never fewer pixels a module than v111 drew on that same screen', () => {
+  const short = [];
+  let n = 0;
+  for (let w = 320; w <= 430; w++) {
+    for (const h of [568, 640, 667, 693, 740, 754, 759, 760, 800, 844, 882, 932]) {
+      for (const ratio of RATIOS) {
+        for (let size = 41; size <= 65; size += 4) {
+          n++;
+          const room = roomOn(w, h);
+          const L = qrLayout(size, room, ratio);
+          const was = Math.max(1, Math.floor((v111RoomOn(w, h) * ratio) / size + 1e-9));
+          if (L.s < was) short.push(`${w}×${h}@${ratio}, ${size} modules (room ${room.toFixed(2)}): ${L.s} < ${was}`);
+          assert.ok(L.w <= L.budget, `never wider than its room — ${w}×${h}@${ratio}, ${size}`);
+        }
+      }
+    }
+  }
+  assert.ok(n > 100000);
+  assert.deepEqual(short.slice(0, 6), [], `${short.length} rooms draw the code smaller than v111 did`);
+});
+
 // ---- what qrPng draws ----------------------------------------------------------------
 // A page whose canvas records what is asked of it: every call and every
 // property set in order, gradients with their stops, and REAL image data —
 // createImageData, putImageData and getImageData over an RGBA backing — so
 // what qrPng puts on its canvas is decoded, not just the matrix it started from.
-function fakePage({ context = true, imageData = true, tokens = {}, readback = 'drawn', ratio = 2, overlay = true, styles = true } = {}) {
+function fakePage({ context = true, imageData = true, tokens = {}, readback = 'drawn', ratio = 2, overlay = true, styles = true, blob = false, fonts = false } = {}) {
   const made = [];
   const asked = [];
-  const page = { made, asked, readback, styleCalls: 0 };
+  const page = { made, asked, readback, styleCalls: 0, fontLoads: [] };
   const doc = {
     documentElement: { fake: 'root' },
+    // A page's FontFaceSet, where asked for: it records what was loaded.
+    fonts: fonts ? { load: (f) => { page.fontLoads.push(f); return Promise.resolve([]); } } : undefined,
     createElement(tag) {
       assert.equal(tag, 'canvas');
-      const canvas = { width: 300, height: 150, rgba: null, log: [], puts: [], reads: [], gradients: [], ctxOpts: null, fake: 'canvas' };
+      const canvas = { width: 300, height: 150, rgba: null, log: [], puts: [], reads: [], gradients: [], texts: [], ctxOpts: null, fake: 'canvas' };
       const backing = () => {
         if (!canvas.rgba || canvas.rgba.length !== canvas.width * canvas.height * 4) canvas.rgba = new Uint8ClampedArray(canvas.width * canvas.height * 4);
         return canvas.rgba;
       };
-      const state = { fillStyle: '#000000', strokeStyle: '#000000', globalAlpha: 1, globalCompositeOperation: 'source-over', lineWidth: 1, shadowColor: 'rgba(0, 0, 0, 0)', shadowBlur: 0, shadowOffsetX: 0, shadowOffsetY: 0, imageSmoothingEnabled: true };
+      const state = { fillStyle: '#000000', strokeStyle: '#000000', globalAlpha: 1, globalCompositeOperation: 'source-over', lineWidth: 1, shadowColor: 'rgba(0, 0, 0, 0)', shadowBlur: 0, shadowOffsetX: 0, shadowOffsetY: 0, imageSmoothingEnabled: true, font: '10px sans-serif', textAlign: 'start', textBaseline: 'alphabetic' };
       const real = {
         createImageData: (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }),
         putImageData(img, x, y) {
@@ -474,6 +513,9 @@ function fakePage({ context = true, imageData = true, tokens = {}, readback = 'd
           if (typeof k === 'symbol') return undefined;
           if (k in real) return imageData ? real[k] : undefined;
           if (k in t) return t[k];
+          // Text as wide as half its size a character, in the font it is set in.
+          if (k === 'measureText') return (text) => ({ width: String(text).length * 0.5 * Number((/(\d+(?:\.\d+)?)px/.exec(t.font) || [0, 10])[1]) });
+          if (k === 'fillText') return (text, x, y) => { canvas.log.push(['fillText', String(text), x, y]); canvas.texts.push({ text: String(text), x, y, font: t.font, fillStyle: t.fillStyle, globalAlpha: t.globalAlpha, textAlign: t.textAlign }); };
           if (k === 'createRadialGradient' || k === 'createLinearGradient') {
             return (...a) => {
               const g = { fake: 'gradient', stops: [], addColorStop(o, col) { g.stops.push([o, col]); } };
@@ -497,6 +539,8 @@ function fakePage({ context = true, imageData = true, tokens = {}, readback = 'd
         return context ? ctx : null;
       };
       canvas.toDataURL = (type) => { canvas.encoded = [canvas.width, canvas.height]; return `data:${type};fake${made.indexOf(canvas)}`; };
+      // An engine that encodes off the main thread hands back a Blob.
+      if (blob) canvas.toBlob = (done, type) => { canvas.encoded = [canvas.width, canvas.height]; setTimeout(() => done(new Blob([`fake${made.indexOf(canvas)}`], { type })), 0); };
       made.push(canvas);
       return canvas;
     },
@@ -635,11 +679,11 @@ test('qrPng: everything but the modules is independent of the link — the same 
   assert.notEqual(a, b);
   assert.equal(qrMatrix(a).size, qrMatrix(b).size);
   // A fresh grain for `a` (a size no test above drew), then one for `b` at
-  // another size, then `b` back at the first: the grain made for it then is
-  // the very noise made for `a`.
+  // another framed size, then `b` back at the first: the grain made for it
+  // then is the very noise made for `a`.
   const pa = fakePage({ ratio: 1.75, tokens: PAGE_TOKENS });
   withPage(pa, () => qrPng(a, 200));
-  withPage(fakePage({ ratio: 1.75, tokens: PAGE_TOKENS }), () => qrPng(b, 180));
+  withPage(fakePage({ ratio: 1.75, tokens: PAGE_TOKENS }), () => qrPng(b, 204));
   const pb = fakePage({ ratio: 1.75, tokens: PAGE_TOKENS });
   withPage(pb, () => qrPng(b, 200));
   assert.equal(pa.made.length, 2, 'the card and its grain');
@@ -767,4 +811,104 @@ test('the code line’s band is reserved: off by default, and when asked for it 
   assert.ok(Buffer.from(bc.puts[0].data).equals(Buffer.from(pc.puts[0].data)), 'the same pixels');
   assert.deepEqual(bc.log.find((e) => e[0] === 'fillRect'), ['fillRect', 0, 0, b.px, b.h], 'the aura fills the taller card');
   assert.equal(bc.log.filter((e) => e[0] === 'fillText' || e[0] === 'strokeText').length, 0, 'and nothing written in it: codes do not exist yet');
+});
+
+// ---- the saved card (what a long-press Save or a right-click keeps) ---------------------
+// Kevin (2026-10-03): "When we add our code we and bake that url / code into
+// the downloadable image and make it sexy please." The codes are slice 3 and
+// do not exist yet, so their line stays reserved and nothing of the link is
+// ever written into the image. What is in scope now: the card a person keeps
+// is drawn for keeping — one export size whatever the screen (the sheet's own
+// card is the size of its tile: 263px from a 320 phone), whole pixels a
+// module, the quiet zone kept, read back like the sheet's — and it says whose
+// it is: the crew's name and the fest's short name, in the app's own type.
+const WORDS = { crew: 'Menu Crew', fest: 'ACL', year: "'26" };
+const saveCard = (page, text, words = WORDS) => {
+  const saved = { document: globalThis.document, window: globalThis.window };
+  globalThis.document = page.doc;
+  globalThis.window = page.win;
+  // Restored once it has settled: the card is drawn after the fonts load.
+  return Promise.resolve().then(() => qrSaveCard(text, words)).finally(() => { globalThis.document = saved.document; globalThis.window = saved.window; });
+};
+
+test('the saved card is one size on every screen: the export layout, whole pixels a module, the code at its origin decoding to the link, read back at the eye', async () => {
+  const sizes = new Set();
+  for (const ratio of [1, 2, 2.625, 3]) {
+    for (const shape of ['festival', 'the longest show list, as a list']) {
+      const link = SHAPES[shape];
+      const page = fakePage({ ratio, tokens: PAGE_TOKENS });
+      const out = await saveCard(page, link);
+      const m = qrMatrix(link);
+      const L = qrLayout(m.size, SAVE_CARD.room, SAVE_CARD.ratio);
+      const card = page.made.find((c) => c.encoded);
+      const at = `${ratio}x, ${shape}: ${JSON.stringify(out)}`;
+      assert.ok(card, `a card was encoded — ${at}`);
+      assert.equal(out.px, L.w, `as wide as the export layout, whatever this screen's ratio — ${at}`);
+      assert.equal(out.h, L.h + Math.round(SAVE_CARD.band * SAVE_CARD.ratio), `and the band under it — ${at}`);
+      assert.deepEqual(card.encoded, [out.px, out.h], at);
+      sizes.add(`${out.px}x${out.h}`);
+      assert.ok(out.px >= 1000, `big enough to keep: ${out.px}px wide`);
+      assert.equal(card.puts.length, 1, 'the code goes down whole, once');
+      const put = card.puts[0];
+      assert.deepEqual([put.x, put.y], [L.origin, L.origin], 'at the layout’s origin');
+      assert.ok(Buffer.from(put.data).equals(Buffer.from(codePixels(m, L.s, QR_COLOURS).data)), 'byte for byte what codePixels paints');
+      assert.ok(Number.isInteger(put.width / m.size) && put.width / m.size === L.s, 'whole pixels a module');
+      // The quiet zone: four modules of the panel all round, never written over.
+      assert.equal(decode(crop(card, L.origin, L.origin, put.width)), link, 'the code square scans to the link');
+      const c = L.origin + Math.floor((QUIET + 3.5) * L.s);
+      assert.deepEqual(card.reads, [[c, c, 1, 1]], 'read back at the eye’s core, as the sheet’s card is');
+      assert.ok(card.texts.every((t) => t.y > L.h && t.y < out.h), `its words in the band under the square card, never over the code — ${JSON.stringify(card.texts)}`);
+      assert.deepEqual([card.width, card.height], [0, 0], 'the canvas let go once encoded');
+    }
+  }
+  assert.equal(sizes.size, 2, `one size for each link shape, whatever the screen: ${[...sizes]}`);
+});
+
+test('the saved card says whose it is — the crew’s name and the fest’s short name, in the app’s own type — and never a word of the link', async () => {
+  const link = SHAPES['the longest show list, as a list'];
+  const page = fakePage({ ratio: 3, tokens: PAGE_TOKENS, fonts: true });
+  await saveCard(page, link);
+  const card = page.made.find((c) => c.encoded);
+  const texts = card.texts.map((t) => t.text);
+  assert.deepEqual(texts, ['MENU CREW', 'ACL', "'26"], 'the crew, then the fest and its year, as the header writes them');
+  for (const t of card.texts) {
+    assert.match(t.font, /\bAnton\b/, `${t.text}: the app’s display type (--font-display)`);
+    assert.equal(t.fillStyle, '#ffffff', `${t.text}: white, as the hero’s label — never the fest accent`);
+  }
+  const crewLine = card.texts[0];
+  const festLine = card.texts[1];
+  assert.ok(Number(/(\d+)px/.exec(crewLine.font)[1]) > Number(/(\d+)px/.exec(festLine.font)[1]), 'the crew’s name leads');
+  const year = card.texts[2];
+  assert.ok(year.globalAlpha < 1 && Number(/(\d+)px/.exec(year.font)[1]) < Number(/(\d+)px/.exec(festLine.font)[1]), 'the year a step back, as .yr is');
+  // Nothing of the link in the image: no URL, no token, no part of the hash.
+  const all = card.log.filter((e) => e[0] === 'fillText' || e[0] === 'strokeText').map((e) => e[1]).join(' ');
+  for (const bit of [TOKEN, 'g=', 'http', 'fest.kevinhg.com', '#', 'show=', 'view=']) assert.equal(all.includes(bit), false, `never "${bit}" in its words: ${all}`);
+  // The type is loaded before it is drawn (a canvas draws a missing face in a fallback).
+  assert.ok(page.fontLoads.some((f) => /Anton/.test(f)), `the display face asked for first: ${JSON.stringify(page.fontLoads)}`);
+});
+
+test('a long crew name fits the card: it gives way in size first, then ends in an ellipsis — never past the frame', async () => {
+  for (const crewName of ['A crew whose name runs right across the card and on', 'Wilhelmina Featherstonhaugh’s Birthday Weekend Crew']) {
+    const page = fakePage({ ratio: 2, tokens: PAGE_TOKENS });
+    const out = await saveCard(page, SHAPES.festival, { ...WORDS, crew: crewName });
+    const card = page.made.find((c) => c.encoded);
+    const line = card.texts[0];
+    const px = Number(/(\d+(?:\.\d+)?)px/.exec(line.font)[1]);
+    const L = qrLayout(qrMatrix(SHAPES.festival).size, SAVE_CARD.room, SAVE_CARD.ratio);
+    assert.ok(line.text.length * 0.5 * px <= out.px - 2 * (L.frame + L.d + L.e) + 0.5, `inside the card's margins: "${line.text}" at ${px}px in ${out.px}`);
+    assert.ok(line.text === crewName.toUpperCase() || line.text.endsWith('…'), `whole, or ending in an ellipsis: ${line.text}`);
+  }
+});
+
+test('the saved card encodes off the main thread where the engine can (a Blob, an object URL), and fails like the sheet’s card: blank read-back or no canvas reject, naming no link', async () => {
+  const page = fakePage({ ratio: 2, tokens: PAGE_TOKENS, blob: true });
+  const out = await saveCard(page, SHAPES.festival);
+  assert.match(out.src, /^blob:/, `an object URL: ${out.src}`);
+  const blank = fakePage({ ratio: 2, tokens: PAGE_TOKENS, readback: 'blank' });
+  await assert.rejects(saveCard(blank, SHAPES.view), (e) => {
+    assert.match(String(e && e.message), /reads back blank/);
+    assert.doesNotMatch(String(e && e.message), new RegExp(TOKEN));
+    return true;
+  });
+  await assert.rejects(saveCard(fakePage({ context: false }), SHAPES.bare), { message: 'qr: no 2d canvas' });
 });

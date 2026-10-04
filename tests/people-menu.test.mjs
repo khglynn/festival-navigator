@@ -518,7 +518,13 @@ test('Pick for a friend: server-first, and it ends on their own link, for if the
   assert.ok(post, 'the server hears it first');
   assert.ok(post.body.data.people.Zed, 'the person, by name');
   const done = document.querySelector('#artist-sheet');
+  assert.equal(done, sheet, 'the same sheet: its answer is a step of it, never a new sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
+  assert.equal(done.querySelector('.sheet-title .inv-nowrap').textContent, 'IS IN', '"IS IN" kept whole: never "IN" alone on a line');
+  assert.equal(done.querySelectorAll('.inv-step').length, 1, 'the answer alone: the friend step and the link’s have gone');
+  assert.equal(done.querySelector('.sheet-back').hidden, true, 'no ‹: nothing to go back to');
+  assert.ok(done.querySelector('.sheet-close'), 'the ✕ stays');
+  assert.equal(document.activeElement, done, 'the focus stays in the sheet as the field goes');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
   assert.equal(done.querySelector('.inv-qr'), null, 'and no QR: whoever scanned a QR of Zed’s link would be told it is theirs');
   assert.equal(done.querySelector('.inv-sub').textContent, 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
@@ -706,7 +712,10 @@ test('one add per crew across a closed and reopened sheet: the new sheet waits o
   assert.equal(linkStep(sheet).hidden, false, 'a reopened sheet opens on the link, as every Invite does');
   assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'Adding Mo…', 'its row says what is out');
   toFriend(sheet);
-  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'and so does the step behind it');
+  assert.match(sheet.querySelector('.inv-status').textContent, /Adding Mo…/, 'and so does the step behind it — to a screen reader, out of the flow');
+  assert.equal(sheet.querySelector('.inv-status').classList.contains('heard'), true);
+  assert.ok(sheet.querySelector('.inv-add .inv-add-wait .eq-loader'), 'the wait is on the Add button, its bars where its word was');
+  assert.equal(sheet.querySelector('.inv-add').getAttribute('aria-label'), 'Adding Mo…');
   assert.equal(sheet.querySelector('.inv-add').disabled, true, 'and waits for it');
   assert.equal(sheet.querySelector('.inv-name input').readOnly, true);
   assert.ok([...sheet.querySelectorAll('.inv-others button')].every((b) => b.disabled));
@@ -807,7 +816,14 @@ test('a request that hangs is let go at its deadline: a plain word, and the entr
     assert.equal(sheet.querySelector('.inv-add').disabled, true, 'waiting');
     await until(() => !sheet.querySelector('.inv-add').disabled, 'the entries to come back');
     assert.equal(sheet.querySelector('.inv-status').textContent, 'Didn’t reach the crew — try again.');
+    assert.equal(sheet.querySelector('.inv-status').classList.contains('heard'), false, 'the plain word in its place, seen');
     assert.equal(sheet.querySelector('.inv-name input').readOnly, false);
+    // The wait went with it: Add says Add again, and the row behind the step
+    // says its own words (the review of v112: a row left saying "Adding Uma…"
+    // after a failed add passed every test).
+    assert.equal(sheet.querySelector('.inv-add').querySelector('.inv-add-wait'), null, 'no bars on Add');
+    assert.equal(sheet.querySelector('.inv-add').getAttribute('aria-label'), null);
+    assert.equal(sheet.querySelector('.inv-friend-sub').textContent, 'They can join anytime');
   } finally {
     AbortSignal.timeout = real;
     holdPosts = false;

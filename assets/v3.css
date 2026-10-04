@@ -510,7 +510,9 @@ html { touch-action: manipulation; }
  * never stretched to fill (a 1.1× stretch made the modules alternate 7 and
  * 8 pixels). 208px on a tall phone, where the growth over v111's 176 pays
  * for the aura's frame and the code keeps every pixel a module it had;
- * 196 on a shorter one (375×667); 132 on a short screen, last, below. */
+ * 196 on a shorter one (375×667); 132 on a short screen, last, below. A
+ * narrow phone's 54vw (172.8 at 320) grew too little to pay for the frame,
+ * so there the code keeps every pixel it would have plain (qr.js qrLayout). */
 .invite-sheet .inv-qr-tile { position: relative; width: min(208px, 54vw); aspect-ratio: 1; box-sizing: border-box;
                              display: flex; align-items: center; justify-content: center;
                              opacity: .4; transition: opacity .2s ease-out; }
@@ -537,6 +539,14 @@ html { touch-action: manipulation; }
 .invite-sheet .inv-qr-tile::after { inset: 6%; border-radius: 3.9%; background: var(--qr-panel-ghost); }
 .invite-sheet .inv-qr img { position: relative; z-index: 1; display: block; flex: none; width: 100%; max-width: 100%;
                             image-rendering: pixelated; -webkit-touch-callout: default; visibility: hidden; }
+/* The card a long-press keeps (qr.js qrSaveCard, app.js offerKeep): drawn for
+ * keeping at one export size, the crew's and the fest's names in its band. It
+ * lies under the card on screen in the same box, never seen, and once it is
+ * in (.keep) the screen's card lets a press through to it — so Save to
+ * Photos, Save Image and Copy Image take it, and the screen keeps its own
+ * card, whole pixels a module. */
+.invite-sheet .inv-qr .inv-qr-keep { position: absolute; inset: 0; margin: auto; z-index: 0; object-fit: contain; image-rendering: auto; }
+.invite-sheet .inv-qr.keep img:not(.inv-qr-keep) { pointer-events: none; }
 .invite-sheet .inv-qr.in .inv-qr-tile { opacity: 1; }
 .invite-sheet .inv-qr.in .inv-qr-tile::before, .invite-sheet .inv-qr.in .inv-qr-tile::after { opacity: 0; }
 .invite-sheet .inv-qr.in img { visibility: visible; }
@@ -545,16 +555,43 @@ html { touch-action: manipulation; }
  * at 166px it put Share 26px below the sheet's 72vh fold (the review of
  * 1b80842). There the code keeps every pixel a module v111 gave it and the
  * aura lives on what is left (qr.js qrLayout), and a screenshot of the
- * longest shared-view link still decodes. Last, so it wins. */
-@media (max-height: 640px) { .invite-sheet .inv-qr-tile { width: min(132px, 52vw); } }
+ * longest shared-view link still decodes. Last, so it wins. The link's step
+ * draws its parts a little closer there, so the friend row under Share opens
+ * whole at 320×568, not cut in half by the sheet's edge (the review of
+ * v112) — and a phone on its side gets two columns, below. */
+@media (max-height: 640px) {
+  .invite-sheet .inv-qr-tile { width: min(132px, 52vw); }
+  .invite-sheet .inv-link-step { gap: 8px; }
+  .invite-sheet .inv-qr { gap: 6px; }
+}
 .invite-sheet .inv-qr-cap { color: var(--text-tertiary); font-size: 11.5px; line-height: 1.45;
                             text-align: center; text-wrap: balance; max-width: 36ch;
                             visibility: hidden; opacity: 0; transition: opacity .2s ease-out, visibility .2s; }
 .invite-sheet .inv-qr.in .inv-qr-cap { visibility: visible; opacity: 1; }
+/* A phone on its side (the review of v112: at 844×390 Share and Done opened
+ * below the dialog's edge, at 667×375 the sheet showed the link alone): the
+ * link's step in two columns — the QR and its words on the left, at the
+ * tile's width; the line, the link, Share and the friend row on the right —
+ * so it all opens on screen. Only where the QR is there to sit on the left
+ * (:has); an engine without :has keeps the one column. */
+@media (max-height: 480px) and (min-aspect-ratio: 4/3) {
+  .invite-sheet .inv-link-step:has(> .inv-qr) { display: grid; grid-template-columns: min-content minmax(0, 1fr);
+                                                column-gap: 18px; row-gap: 10px; align-items: start; align-content: start; }
+  .invite-sheet .inv-link-step:has(> .inv-qr) > * { grid-column: 2; }
+  .invite-sheet .inv-link-step > .inv-qr { grid-column: 1; grid-row: 1 / span 4; width: min-content; }
+  .invite-sheet .inv-link-step:not(:has(> .inv-friend)) > .inv-qr { grid-row: 1 / span 3; }
+  .invite-sheet .inv-link-step > .inv-qr .inv-qr-cap { max-width: none; }
+}
 /* Share fills the row; the quiet Done / Later sits at its end — alone on a
  * laptop with no share sheet, it stays small rather than span the sheet. */
 .invite-sheet .inv-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; }
+/* balance: a long name's "Share Wilhelmina Featherstonha’s link" breaks in
+ * two even lines at 320, never "link" alone (F5 of the review of v112). */
+.invite-sheet .inv-share { flex: 1; font-size: 13px; padding: 11px; text-wrap: balance; }
+/* The add's answer, "ZED IS IN": the phrase stays whole and the lines even,
+ * so a long name never leaves "IN" alone on a line of its own at 320. */
+.invite-sheet .sheet-title { text-wrap: balance; }
+.invite-sheet .inv-nowrap { white-space: nowrap; }
 .invite-sheet .inv-done { font-size: 12px; padding: 11px 16px; }
 /* Pick for a friend (Kevin, 2026-10-03: "cleaner and more subtle since this
  * shelf is so busy now"): ONE quiet, full-width row under Share — a hairline
@@ -570,6 +607,11 @@ html { touch-action: manipulation; }
 .invite-sheet .inv-friend-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
 .invite-sheet .inv-friend-chev { color: var(--text-tertiary); font-size: 20px; line-height: 1; flex: none; margin-top: -2px; }
 @media (hover: hover) and (pointer: fine) { .invite-sheet .inv-friend:hover { background: var(--card); } }
+/* …a little closer on a short screen, still over the 44px floor (above). */
+@media (max-height: 640px) {
+  .invite-sheet .inv-friend { padding-top: 6px; padding-bottom: 6px; }
+  .invite-sheet .inv-friend-text { gap: 1px; }
+}
 /* The friend step's groups: a label, then its part. Our people are Settings'
  * roster chip at Settings' size (settings.js crewSection). */
 .invite-sheet .inv-group { display: flex; flex-direction: column; gap: 7px; }
@@ -579,9 +621,17 @@ html { touch-action: manipulation; }
                                 border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px;
                                 font-family: var(--font-ui); }
 .invite-sheet .inv-name input:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line, as on the join shelf */
-.invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; }
+.invite-sheet .inv-add { font-size: 13px; padding: 11px 20px; flex: none; position: relative; }
+/* While an add is out the button carries the wait (app.js setWaiting): its
+ * bars where its word was, the word keeping the width, so nothing on the
+ * sheet moves (the review of v112: a status line arriving under the field
+ * shoved the step 29px). The status line says it to a screen reader from out
+ * of the flow — no room, no gap — and takes its place again for a plain word. */
+.invite-sheet .inv-add.waiting .inv-add-word { visibility: hidden; }
+.invite-sheet .inv-add-wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .invite-sheet .inv-status { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; }
 .invite-sheet .inv-status:empty { display: none; }
+.invite-sheet .inv-status.heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .invite-sheet .inv-others { display: flex; flex-wrap: wrap; gap: 6px; }
 .invite-sheet .inv-others .btn-tonal { font-size: 12.5px; padding: 7px 13px; }
 /* A member's own chip on the Pick-as shelf says so (join-shelf.js `me`). */
@@ -667,8 +717,9 @@ button.room-head { cursor: pointer; }
  * SAT AFTERS's did from its date. */
 .room-head .sub:empty { display: none; }
 /* The hairline fades in over its first 12px: when a long head leaves it only a
- * few pixels (FRI ACL MUSIC FESTIVAL  OCT 2 · WEEKEND 1 · ZILKER PARK at 390),
- * a hard-edged stub read as a stray dot after the text. */
+ * few pixels (a long fest name with its OCT 2 · WEEKEND 1 · ZILKER PARK at
+ * 390 — ACL's old long name did, before 2026-10-03), a hard-edged stub read
+ * as a stray dot after the text. */
 .room-head .line { flex: 1 1 0; min-width: 0; height: 1px;
                    background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 

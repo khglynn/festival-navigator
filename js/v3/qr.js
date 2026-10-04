@@ -24,9 +24,10 @@
 // the panel, on the magenta that rises from the card's bottom; it never
 // moves the code or takes a pixel from it (tests/qr.test.mjs). The result
 // carries the card's height (h, cssH; h === px today), and app.js sizes the
-// image by its width alone, so a taller card needs nothing new there. The
-// likely home is a bigger export render shared as a file, so the sheet at
-// 320×568 never grows.
+// image by its width alone, so a taller card needs nothing new there. Its
+// home is the saved card (qrSaveCard, below): the card a long-press keeps,
+// drawn at one export size with the crew's and the fest's names in its band,
+// so the sheet at 320×568 never grows.
 //
 // app.js reaches this module only through import('./qr.js'), so a vendored
 // encoder an old engine cannot parse costs the sheet its QR, never the app
@@ -34,7 +35,7 @@
 // pins it). Plain canvas 2D, iOS Safari 15 and up: arcTo paths (no
 // roundRect), radial gradients, one 'overlay' composite (skipped where the
 // engine refuses it), a shadow, and the code put down as image data — no
-// filters, no text.
+// filters; text only in the saved card's band (fillText, in the app's face).
 import { encode } from '../../vendor/uqr.mjs';
 
 // The quiet zone the QR spec asks for, in modules: four light modules all
@@ -97,18 +98,22 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 // Where every pixel goes, in whole device pixels, for a code `size` modules
 // square (quiet zone included) in a `room` CSS px square at `ratio` device
 // pixels to one. Scanning first: module size is what makes a camera read
-// (the design's measured ablation, 2026-10-03), so on the smallest tile the
-// code keeps every pixel qr.js ever gave it and the aura lives on what is
-// left, a hairline or more; on the grown tiles (196, 208) the frame is
-// guaranteed, and the growth over v111's 176 pays for it. Over every tile,
-// ratio and link size the app has, the code never has fewer pixels a module
-// than v111 drew (tests/qr.test.mjs, 252 cases).
+// (the design's measured ablation, 2026-10-03), so in any room short of the
+// grown tiles' 196 the code keeps every pixel qr.js would give it plain and
+// the aura lives on what is left, a hairline or more — the smallest tile, and
+// a narrow phone's 54vw (172.8 at 320), which grew less over v111's 52vw than
+// a frame costs (the review of v112: 320×693 at 2x drew 6 a module where v111
+// drew 7). On the grown tiles (196, 208) the frame is guaranteed, and the
+// growth over v111's 176 pays for it. Over every room a phone gives, at every
+// ratio and link size, the code never has fewer pixels a module than v111
+// drew on that screen (tests/qr.test.mjs).
 //   s       pixels a module;     frame   the aura's width around the panel;
 //   d       light beyond the quiet zone, so the panel's rounded corner never
 //           reaches the quiet zone's corner (an arc sits r(1 - 1/√2) in);
 //   e       up to two more modules of light, where the room has them spare;
 //   panel   the panel's side (code + d + e each side); w, h the card's;
 //   origin  where the code's top-left (quiet zone included) sits on the card.
+const FRAME_ROOM = 196; // the smaller grown tile (v3.css): from here up, the frame is paid for
 export function qrLayout(size, room, ratio) {
   const budget = Math.max(size, Math.floor(room * ratio + 1e-6));
   const target = clamp(room * 0.06, 5, 14) * ratio; // the frame we want: 12.5 CSS px at 208
@@ -119,7 +124,7 @@ export function qrLayout(size, room, ratio) {
   const plain = Math.max(1, Math.floor(budget / size)); // what the plain code gets: the most that fit
   const frameAt = (k) => Math.floor((budget - size * k - 2 * d) / 2);
   const sFrame = Math.floor((budget - 2 * fMin - 2 * d) / size);
-  const s = room < 160 ? plain : Math.max(1, Math.min(plain, sFrame));
+  const s = room < FRAME_ROOM ? plain : Math.max(1, Math.min(plain, sFrame));
   if (frameAt(s) < 0) {
     // Only the smallest tile with a long link: no room for even the light
     // beyond the quiet zone, so the panel's corner tightens to what is left.
@@ -454,24 +459,7 @@ export function qrPng(text, room, opts = {}) {
   canvas.width = W;
   canvas.height = H;
   try {
-    // Read back at once (readsBack) and encoded (toDataURL): a CPU canvas
-    // skips the GPU round trip; an engine that does not know the hint ignores it.
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('qr: no 2d canvas');
-    if (typeof ctx.createImageData !== 'function' || typeof ctx.putImageData !== 'function') throw new Error('qr: no image data');
-    if (L.frame >= 1) paintCard(ctx, W, H, L, colours, ratio);
-    // The panel, opaque — with no frame (the smallest tile, a long link) the
-    // card is the panel alone.
-    ctx.beginPath();
-    rrect(ctx, L.frame, L.frame, L.panel, L.panel, L.panelR);
-    ctx.fillStyle = colours.panel;
-    ctx.fill();
-    // The code, painted by the pixel and put down whole, once.
-    const code = codePixels(matrix, L.s, colours);
-    const img = ctx.createImageData(code.side, code.side);
-    if (!img || !img.data || img.data.length !== code.data.length) throw new Error('qr: no image data');
-    img.data.set(code.data);
-    ctx.putImageData(img, L.origin, L.origin);
+    const ctx = drawCard(canvas, matrix, L, colours, ratio);
     if (!readsBack(ctx, L.origin, L.s)) throw new Error('qr: the canvas reads back blank');
     const out = { src: canvas.toDataURL('image/png'), px: W, cssPx: W / ratio, h: H, cssH: H / ratio };
     kept = { doc, key, out };
@@ -482,6 +470,183 @@ export function qrPng(text, room, opts = {}) {
     canvas.width = 0;
     canvas.height = 0;
   }
+}
+// The card on `canvas` (sized by the caller, band and all): the aura and its
+// panel, then the code, painted by the pixel and put down whole, once.
+function drawCard(canvas, matrix, L, colours, ratio) {
+  // Read back at once (readsBack) and encoded (toDataURL): a CPU canvas
+  // skips the GPU round trip; an engine that does not know the hint ignores it.
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error('qr: no 2d canvas');
+  if (typeof ctx.createImageData !== 'function' || typeof ctx.putImageData !== 'function') throw new Error('qr: no image data');
+  if (L.frame >= 1) paintCard(ctx, canvas.width, canvas.height, L, colours, ratio);
+  // The panel, opaque — with no frame (the smallest tile, a long link) the
+  // card is the panel alone.
+  ctx.beginPath();
+  rrect(ctx, L.frame, L.frame, L.panel, L.panel, L.panelR);
+  ctx.fillStyle = colours.panel;
+  ctx.fill();
+  const code = codePixels(matrix, L.s, colours);
+  const img = ctx.createImageData(code.side, code.side);
+  if (!img || !img.data || img.data.length !== code.data.length) throw new Error('qr: no image data');
+  img.data.set(code.data);
+  ctx.putImageData(img, L.origin, L.origin);
+  return ctx;
+}
+
+// ---- the saved card ---------------------------------------------------------------
+// What a long-press Save to Photos (or a right-click Save Image) keeps — the
+// review of v112: the sheet's own card is the size of its tile (263px from a
+// 320 phone, wordless), and Kevin asked for the downloadable image to be
+// "sexy", the code baked in once codes exist. So the card a person keeps is
+// its own render: the sheet's card at one export size whatever the screen
+// (the 216px tile's proportions at 5×, about 1080px wide), whole pixels a
+// module, the quiet zone kept, read back like the sheet's — and in the band
+// under it, on the magenta rising from the card's bottom, whose it is: the
+// crew's name and the fest's short name with its year, in the app's display
+// type (Anton, --font-display), white like the hero's label. Never a word of
+// the link: the link IS the crew's credential, and a photo of the code is
+// already that. The code line (slice 3) will take its place in this band.
+// app.js lays it under the sheet's card, so the OS's long-press finds it.
+export const SAVE_CARD = Object.freeze({ room: 216, ratio: 5, band: 64 });
+const DISPLAY_FACE = 'Anton'; // --font-display's face (assets/v3-tokens.css), loaded by assets/fonts/fonts.css
+let savedKept = null;
+// The display face, before a canvas draws with it: a canvas draws a face that
+// has not loaded in a fallback, for good. Not past a moment: a card in a
+// fallback face is still the card.
+function typeReady() {
+  let f = null;
+  try { f = document.fonts; } catch { f = null; }
+  if (!f || typeof f.load !== 'function') return Promise.resolve();
+  let timer = null;
+  const late = new Promise((done) => { timer = setTimeout(done, 1500); });
+  let load;
+  try { load = Promise.resolve(f.load(`400 100px ${DISPLAY_FACE}`)).catch(() => {}); } catch { load = Promise.resolve(); }
+  return Promise.race([load, late]).finally(() => clearTimeout(timer));
+}
+// One line of words, centred in the card at `y` (its baseline), as large as
+// `size` allows inside `maxW`: smaller first (to 62% of it), then cut with an
+// ellipsis. `parts` [[text, size scale, alpha]] are set side by side.
+// The display face's tracking, as the fest's name is set (.04em, v3.css
+// .fest-name), where the canvas can (letterSpacing: not on older engines).
+function spaceOut(ctx, px) {
+  if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round(px * 0.04)}px`;
+}
+function fitLine(ctx, text, size, maxW) {
+  const min = Math.round(size * 0.62);
+  let px = size;
+  const width = (t, p) => { ctx.font = `400 ${p}px ${DISPLAY_FACE}, sans-serif`; spaceOut(ctx, p); const m = ctx.measureText(t); return m && Number.isFinite(m.width) ? m.width : t.length * p * 0.5; };
+  while (px > min && width(text, px) > maxW) px -= 2;
+  let t = text;
+  while (t.length > 1 && width(t, px) > maxW) t = `${t.slice(0, -2).trimEnd()}…`;
+  ctx.font = `400 ${px}px ${DISPLAY_FACE}, sans-serif`;
+  spaceOut(ctx, px);
+  return { text: t, px };
+}
+function paintWords(ctx, W, H, L, words, ratio) {
+  const crew = String((words && words.crew) || '').trim().toUpperCase();
+  const fest = String((words && words.fest) || '').trim().toUpperCase();
+  const year = String((words && words.year) || '').trim();
+  if (!crew && !fest) return;
+  const margin = L.frame + L.d + L.e; // the words keep the code's own edges
+  const maxW = W - 2 * margin;
+  const top = L.h;
+  const bottom = H - L.frame;
+  const crewSize = Math.round(W * 0.085);
+  const festSize = Math.round(W * 0.052);
+  const gap = Math.round(crewSize * 0.42);
+  const cap = (px) => px * 0.73; // Anton's capitals, in ems
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'alphabetic';
+  // The hero's label shadow (v3-tokens .hero-label), so white reads on any of the aura.
+  ctx.shadowColor = 'rgba(0, 0, 0, .4)';
+  ctx.shadowBlur = 6 * ratio;
+  ctx.shadowOffsetY = Math.round(ratio);
+  const c = crew ? fitLine(ctx, crew, crewSize, maxW) : null;
+  const block = (c ? cap(c.px) : 0) + (c && fest ? gap : 0) + (fest ? cap(festSize) : 0);
+  let y = top + (bottom - top - block) / 2;
+  if (c) {
+    y += cap(c.px);
+    ctx.font = `400 ${c.px}px ${DISPLAY_FACE}, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(c.text, W / 2, Math.round(y));
+    if (fest) y += gap;
+  }
+  if (fest) {
+    // The fest and its year as the header sets them: the year a step back
+    // (.65em, .75 — v3.css .fest-row .yr).
+    y += cap(festSize);
+    const f = fitLine(ctx, fest, festSize, maxW * 0.8);
+    const yearPx = Math.round(f.px * 0.65);
+    const fw = ctx.measureText(f.text).width || f.text.length * f.px * 0.5;
+    ctx.font = `400 ${yearPx}px ${DISPLAY_FACE}, sans-serif`;
+    spaceOut(ctx, yearPx);
+    const yw = year ? (ctx.measureText(year).width || year.length * yearPx * 0.5) : 0;
+    const space = year ? Math.round(f.px * 0.22) : 0;
+    let x = (W - (fw + space + yw)) / 2;
+    ctx.textAlign = 'left';
+    ctx.font = `400 ${f.px}px ${DISPLAY_FACE}, sans-serif`;
+    spaceOut(ctx, f.px);
+    ctx.fillText(f.text, Math.round(x), Math.round(y));
+    if (year) {
+      x += fw + space;
+      ctx.font = `400 ${yearPx}px ${DISPLAY_FACE}, sans-serif`;
+      spaceOut(ctx, yearPx);
+      ctx.globalAlpha = 0.75;
+      ctx.fillText(year, Math.round(x), Math.round(y));
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+// The canvas as a file: a Blob encoded off the main thread where the engine
+// can (an object URL), a PNG data URL where it cannot.
+function encodeCard(canvas) {
+  if (typeof canvas.toBlob === 'function') {
+    return new Promise((done) => {
+      try { canvas.toBlob((blob) => done(blob || null), 'image/png'); } catch { done(null); }
+    }).then((blob) => {
+      if (blob) { try { return URL.createObjectURL(blob); } catch { /* no object URLs: the data URL */ } }
+      return canvas.toDataURL('image/png');
+    });
+  }
+  return Promise.resolve(canvas.toDataURL('image/png'));
+}
+// `text` as the card to keep, with `words` ({ crew, fest, year }) in its band:
+// resolves to { src, px, h } (a blob: or data: URL, its pixels); rejects as
+// qrPng throws (no canvas, no image data, a canvas that reads back blank),
+// never with the text in the error. The last card is kept for this page.
+export async function qrSaveCard(text, words = {}) {
+  await typeReady();
+  const matrix = qrMatrix(text);
+  const colours = tokenColours();
+  const { room, ratio, band } = SAVE_CARD;
+  const doc = typeof document !== 'undefined' ? document : null;
+  const key = JSON.stringify([text, words && words.crew, words && words.fest, words && words.year, colours]);
+  if (savedKept && savedKept.doc === doc && savedKept.key === key) return { ...savedKept.out };
+  const L = qrLayout(matrix.size, room, ratio);
+  const W = L.w;
+  const H = L.h + Math.round(band * ratio);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  let src;
+  try {
+    const ctx = drawCard(canvas, matrix, L, colours, ratio);
+    paintWords(ctx, W, H, L, words, ratio);
+    if (!readsBack(ctx, L.origin, L.s)) throw new Error('qr: the canvas reads back blank');
+    src = await encodeCard(canvas);
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+  const out = { src, px: W, h: H };
+  if (savedKept && savedKept.out.src !== src && /^blob:/.test(savedKept.out.src)) {
+    try { URL.revokeObjectURL(savedKept.out.src); } catch { /* already gone */ }
+  }
+  savedKept = { doc, key, out };
+  return { ...out };
 }
 // A canvas can draw and still hand back a blank image: a browser that blocks
 // canvas readback (Firefox's resistFingerprinting, Tor, the CanvasBlocker

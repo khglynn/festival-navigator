@@ -29,6 +29,7 @@ const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 
 const FID = 'portola-2026';
+const STEP_SETTLE_MS = 350; // app.js: how long a step that just arrived holds its taps
 const CREW = 'peoplemenucontract_0123'; // made-up crews, never real links
 const OTHER = 'peoplemenucontract_other';
 const SAT = new Date('2026-09-26T16:15:00-07:00'); // Portola Saturday, the grid live: NOW is in the day row
@@ -44,8 +45,7 @@ const docFor = () => ({
 // draws it — a stand-in for Linux and Android, whose Inter and Anton are wider
 // than a Mac's (CI put the 320 pill at one disc where the Mac fit two,
 // 2026-09-26). now-jump's trick, aimed at the same dock.
-async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT, reducedMotion = 'no-preference', routes = null, others = false } = {}) {
-  const touch = width < 720;
+async function openApp(engine, { width = 390, height = 844, guest = false, wide = null, fid = FID, now = SAT, reducedMotion = 'no-preference', routes = null, others = false, touch = width < 720 } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch && engine === chromium, deviceScaleFactor: 2, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block', reducedMotion });
   await lateStarts(ctx);
   const doc = docFor();
@@ -98,7 +98,9 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
   await page.evaluate(() => document.fonts.ready);
   await sleep(600);
   const phone = touch;
-  const bar = phone ? 'dock' : 'rail';
+  // The dock under 720 wide, the rail from there — a phone on its side is a
+  // finger on the rail.
+  const bar = await page.evaluate(() => (document.getElementById('dock-you')?.getBoundingClientRect().width ? 'dock' : 'rail'));
   // Real input: a finger's tap, or a mouse's click, at the middle of the thing.
   const press = async (sel) => {
     const b = await page.locator(sel).first().boundingBox();
@@ -420,6 +422,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await page.keyboard.type('Zed'); // straight in: the field has the focus
       await press('.invite-sheet .inv-add');
       await page.waitForFunction(() => /ZED IS IN/.test(document.querySelector('.invite-sheet .sheet-title')?.textContent || ''), null, { timeout: 4000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 }); // the answer travels in as a step
+      await motionDone(page, { within: '.invite-sheet' });
       assert.equal(posts.length, 1, 'one request: the server heard it first');
       assert.ok(posts[0].data.people.Zed, 'with Zed');
       assert.match(await page.locator('.invite-sheet .inv-link input').inputValue(), /me=Zed/, 'his own link');
@@ -519,6 +523,353 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The other half of the step change (the review of v112: the arrivals
+  // could be removed, started at once, or their title left uncrossed, and
+  // every test still passed): each part of the step that arrives — the title,
+  // the ‹ with the friend step, every part of the step — comes in from
+  // nothing, once the step that leaves has gone; the old title crosses out.
+  // Both ways: in to the friend step, and ‹ back to the link.
+  test(`${name} 390: the step that arrives comes in part by part after the one that leaves has gone, both ways — and the old title crosses out`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, others: true });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await sheetStill(page);
+      await page.evaluate(() => {
+        window.__anims = [];
+        const own = Element.prototype.animate;
+        Element.prototype.animate = function (frames, opts) {
+          const a = own.call(this, frames, opts);
+          window.__anims.push({ el: this, frames, opts });
+          return a;
+        };
+      });
+      const read = (toSel) => page.evaluate((sel) => {
+        const s = document.querySelector('.invite-sheet');
+        const step = s.querySelector(sel).closest('.inv-step');
+        const back = s.querySelector('.sheet-back');
+        const parts = [s.querySelector('.sheet-title'), ...(back.hidden ? [] : [back]), ...[...step.children].filter((n) => !n.hidden)];
+        const left = window.__anims.filter((x) => x.el.classList && x.el.classList.contains('inv-step') && x.el !== step);
+        const outEnd = left.length ? Math.max(...left.map((x) => (x.opts.delay || 0) + x.opts.duration)) : null;
+        const of = (el) => window.__anims.filter((x) => x.el === el).map((x) => ({ from: x.frames[0], delay: x.opts.delay || 0 }));
+        const ghost = window.__anims.find((x) => x.el.classList && x.el.classList.contains('sheet-title') && x.el.getAttribute('aria-hidden') === 'true');
+        const backOut = window.__anims.filter((x) => x.el === back).map((x) => x.frames.at(-1));
+        const out = { outEnd, parts: parts.map((el) => ({ c: el.className, a: of(el) })), ghost: ghost ? ghost.frames.at(-1) : null, backHidden: back.hidden, backOut };
+        window.__anims = [];
+        return out;
+      }, toSel);
+      const check = (r, way) => {
+        assert.ok(r.outEnd !== null, `${way}: the step that left did so by an animation: ${JSON.stringify(r)}`);
+        for (const p of r.parts) {
+          assert.equal(p.a.length, 1, `${way}: ${p.c} arrives by one animation: ${JSON.stringify(r)}`);
+          assert.equal(p.a[0].from.opacity, 0, `${way}: ${p.c} from nothing`);
+          assert.ok(p.a[0].delay >= r.outEnd, `${way}: ${p.c} after the step that left has gone (${p.a[0].delay} >= ${r.outEnd})`);
+        }
+        assert.ok(r.ghost && r.ghost.opacity === 0, `${way}: the old title crosses out`);
+      };
+      await press('.invite-sheet .inv-friend');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      const inward = await read('.inv-name');
+      check(inward, 'in');
+      assert.ok(inward.parts.some((p) => /sheet-back/.test(p.c)), 'the ‹ arrives with the friend step');
+      await press('.invite-sheet .sheet-back');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      const outward = await read('.inv-link');
+      check(outward, 'back');
+      assert.equal(outward.backHidden, true, 'the ‹ went with its step');
+      assert.ok(outward.backOut.length === 1 && outward.backOut[0].opacity === 0, `and it left by fading, not a hide: ${JSON.stringify(outward.backOut)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The keys (notes.js rideKeys, one ride for every sheet): the friend step's
+  // field takes the focus inside the tap, so on a phone the keyboard comes up
+  // while the step is still moving — and the sheet stands on it, the field in
+  // view above it, whenever it rises (the review of v112: deleting the ride
+  // passed every test). A scripted visualViewport stands in for iOS's keys.
+  const fakeKeys = (page) => page.evaluate(() => {
+    const et = new EventTarget();
+    const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, pageLeft: 0, scale: 1, kb: 0,
+      get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
+      addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+    Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
+    window.__keys = (kb) => { vv.kb = kb; et.dispatchEvent(new Event('resize')); };
+  });
+  for (const raiseAt of [0, 120, 600]) {
+    test(`${name} 390: the friend step with the keys up (raised ${raiseAt} ms after the tap) stands on them, its field in view`, { skip }, async () => {
+      const { ctx, page, errors, press } = await openApp(get(), { width: 390, others: true });
+      try {
+        await fakeKeys(page);
+        await press('#dock-you');
+        await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        await sheetStill(page);
+        const b = await page.locator('.invite-sheet .inv-friend').boundingBox();
+        await page.evaluate((ms) => { document.querySelector('.invite-sheet .inv-friend').addEventListener('click', () => setTimeout(() => window.__keys(336), ms), { once: true }); }, raiseAt);
+        await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+        await sleep(raiseAt + 200);
+        await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        const m = await page.evaluate(() => {
+          const s = document.querySelector('.invite-sheet');
+          const r = s.getBoundingClientRect();
+          const f = s.querySelector('.inv-name input').getBoundingClientRect();
+          return { sheet: [r.top, r.bottom], keysTop: innerHeight - 336, field: [f.top, f.bottom], focus: document.activeElement === s.querySelector('.inv-name input') };
+        });
+        assert.ok(m.sheet[1] <= m.keysTop + 1, `the sheet stands on the keys: ${JSON.stringify(m)}`);
+        assert.ok(m.field[0] >= Math.max(0, m.sheet[0]) && m.field[1] <= m.keysTop, `the field shows above the keys: ${JSON.stringify(m)}`);
+        assert.equal(m.focus, true, 'the field has the focus');
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+
+  // …and leaving, it stops riding them (the review of v112): ✕ on the friend
+  // step makes the sheet inert, the field blurs and the keys go down while
+  // the sheet is still on its way out. A sheet still riding them was fitted
+  // again mid-exit — its bottom and its height cap let go, so it jumped the
+  // keyboard's height as it left. Every sheet's ride ends where its way out
+  // begins (notes.js leave).
+  test(`${name} 390: closing the friend step with the keys up, the sheet leaves from where it stood — the keys going down mid-exit never refit it`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390 });
+    try {
+      await fakeKeys(page);
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await press('.invite-sheet .inv-friend');
+      await page.evaluate(() => window.__keys(300));
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      const up = await page.evaluate(() => { const s = document.querySelector('.invite-sheet'); return { bottom: s.style.bottom, maxHeight: s.style.maxHeight }; });
+      assert.equal(up.bottom, '300px', `standing on the keys: ${JSON.stringify(up)}`);
+      // The ✕, and the keys going down inside the sheet's way out.
+      await page.evaluate(() => {
+        const s = document.querySelector('.invite-sheet');
+        s.querySelector('.sheet-close').addEventListener('click', () => setTimeout(() => {
+          window.__leaving = { connected: s.isConnected, id: s.id, moving: s.getAnimations().length };
+          window.__keys(0);
+          window.__after = { bottom: s.style.bottom, maxHeight: s.style.maxHeight };
+        }, 20), { once: true });
+      });
+      await page.touchscreen.tap(...await page.locator('.invite-sheet .sheet-close').boundingBox().then((c) => [c.x + c.width / 2, c.y + c.height / 2]));
+      await page.waitForFunction(() => window.__after, null, { timeout: 3000 });
+      const at = await page.evaluate(() => ({ leaving: window.__leaving, after: window.__after }));
+      assert.ok(at.leaving.connected && at.leaving.id === '' && at.leaving.moving > 0, `the keys went down while the sheet was on its way out: ${JSON.stringify(at)}`);
+      assert.deepEqual(at.after, up, `the leaving sheet kept where it stood: ${JSON.stringify(at)}`);
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 3000 });
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The add's answer is a step of the same sheet (the review of v112: the
+  // add's "Adding Zed…" line shoved the friend step 29px in one frame, then
+  // ZED IS IN replaced the whole sheet in one — the only state change in the
+  // flow that still cut). While the add is out nothing moves: the Add button
+  // carries the wait itself, at its own width. Its answer travels like the
+  // ‹ and the row do: the friend step leaves, its ‹ with it, ZED IS IN
+  // arrives part by part, and the sheet's height travels between the two.
+  const holdAdds = () => {
+    let release = () => {};
+    const held = new Promise((r) => { release = r; });
+    const routes = (c) => c.route('**/api/crew**', async (r) => { if (r.request().method() !== 'GET') await held; await r.fallback(); });
+    return { routes, release: () => release() };
+  };
+  test(`${name} 390: Add — nothing moves while it is out, and its answer travels in as a step: the friend step and its ‹ leave, ZED IS IN arrives, the height travels`, { skip }, async (t) => {
+    const hold = holdAdds();
+    const { ctx, page, errors, posts, press } = await openApp(get(), { width: 390, routes: hold.routes, others: true });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await press('.invite-sheet .inv-friend');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await page.keyboard.type('Zed');
+      const where = () => page.evaluate(() => {
+        const s = document.querySelector('.invite-sheet');
+        const top = (sel) => s.querySelector(sel).getBoundingClientRect().top;
+        const add = s.querySelector('.inv-add').getBoundingClientRect();
+        return { sheet: s.getBoundingClientRect().top, h: s.getBoundingClientRect().height, title: top('.sheet-title'), field: top('.inv-name input'), add: [add.left, add.width] };
+      });
+      const before = await where();
+      // Every animation from here, and the sheet's height in every frame.
+      await page.evaluate(() => {
+        window.__anims = [];
+        window.__seek = null;
+        const own = Element.prototype.animate;
+        Element.prototype.animate = function (frames, opts) {
+          const a = own.call(this, frames, opts);
+          window.__anims.push({ el: this, frames, opts });
+          // The sheet's height, sought along the way (a seek reads the same in
+          // every engine, where painted frames do not), then played from the start.
+          const sheet = document.querySelector('.invite-sheet');
+          if (this === sheet && !window.__seek) {
+            window.__swapAt = [document.timeline.currentTime, opts.duration];
+            a.pause();
+            window.__seek = [0.25, 0.5, 0.75].map((p) => { a.currentTime = opts.duration * p; return sheet.getBoundingClientRect().height; });
+            a.currentTime = 0;
+            a.play();
+          }
+          return a;
+        };
+        window.__hs = [];
+        const tick = () => {
+          const s = document.querySelector('.invite-sheet');
+          if (!s) return;
+          window.__hs.push([document.timeline.currentTime, s.getBoundingClientRect().height]);
+          if (window.__hs.length < 2000) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await press('.invite-sheet .inv-add');
+      await page.waitForFunction(() => document.querySelector('.invite-sheet .inv-add').disabled, null, { timeout: 3000 });
+      await sleep(250);
+      const out = await where();
+      for (const k of ['sheet', 'h', 'title', 'field']) assert.ok(Math.abs(out[k] - before[k]) < 0.5, `${k} did not move when the add went out: ${before[k]} → ${out[k]}`);
+      assert.deepEqual(out.add, before.add, 'the Add button kept its place and its width');
+      const waiting = await page.evaluate(() => {
+        const s = document.querySelector('.invite-sheet');
+        return { bars: !!s.querySelector('.inv-add .eq-loader'), heard: s.querySelector('.inv-status').textContent, row: s.querySelector('.inv-friend-sub').textContent };
+      });
+      assert.deepEqual(waiting, { bars: true, heard: 'Adding Zed…', row: 'Adding Zed…' }, 'the wait is on the button, said to a screen reader, and on the row behind');
+      hold.release();
+      await page.waitForFunction(() => /ZED IS IN/.test(document.querySelector('.invite-sheet .sheet-title')?.textContent || '') && !document.querySelector('.invite-sheet.stepping'), null, { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      assert.equal(posts.length, 1, 'one request');
+      const r = await page.evaluate(() => {
+        const s = document.querySelector('.invite-sheet');
+        const steps = [...s.querySelectorAll('.inv-step')];
+        const done = steps[0];
+        const back = s.querySelector('.sheet-back');
+        const of = (el) => window.__anims.filter((x) => x.el === el);
+        const sheetH = of(s).map((x) => x.frames.map((f) => f.height));
+        const leftEls = window.__anims.filter((x) => x.el.classList && x.el.classList.contains('inv-step') && x.el !== done);
+        const outEnd = leftEls.length ? Math.max(...leftEls.map((x) => (x.opts.delay || 0) + x.opts.duration)) : null;
+        const parts = [s.querySelector('.sheet-title'), ...done.children].map((el) => ({ c: el.className, a: of(el).map((x) => ({ from: x.frames[0], delay: x.opts.delay || 0 })) }));
+        return {
+          steps: steps.length, titles: s.querySelectorAll('.sheet-title').length, backHidden: back.hidden,
+          backOut: of(back).map((x) => x.frames.at(-1)), leftOut: leftEls.map((x) => x.frames.at(-1)), outEnd, sheetH, parts,
+          link: s.querySelector('.inv-link input').value, focusIn: s.contains(document.activeElement),
+          hs: window.__hs, seek: window.__seek, swapAt: window.__swapAt, restH: s.getBoundingClientRect().height,
+        };
+      });
+      assert.equal(r.steps, 1, 'at rest the sheet is the answer alone: the friend step and the link’s step have gone');
+      assert.equal(r.titles, 1, 'one title, its ghost gone');
+      assert.match(r.link, /me=Zed/, 'his own link');
+      assert.equal(r.backHidden, true, 'no ‹ on the answer: there is no step to go back to');
+      assert.ok(r.backOut.length === 1 && r.backOut[0].opacity === 0, `the ‹ left by fading: ${JSON.stringify(r.backOut)}`);
+      assert.ok(r.leftOut.length === 1 && r.leftOut[0].opacity === 0, `the friend step left by fading where it stood: ${JSON.stringify(r.leftOut)}`);
+      assert.ok(r.sheetH.length === 1 && Math.abs(parseFloat(r.sheetH[0][0]) - parseFloat(r.sheetH[0][1])) > 40, `the sheet's height animated, not set: ${JSON.stringify(r.sheetH)}`);
+      const lo = Math.min(before.h, r.restH);
+      const hi = Math.max(before.h, r.restH);
+      for (const h of r.seek) assert.ok(lo + 1 < h && h < hi - 1, `the height partway along, not jumped: ${JSON.stringify(r.seek)} (${before.h} → ${r.restH})`);
+      for (const p of r.parts) {
+        assert.equal(p.a.length, 1, `${p.c} arrives by one animation: ${JSON.stringify(r.parts)}`);
+        assert.equal(p.a[0].from.opacity, 0, `${p.c} from nothing`);
+        assert.ok(p.a[0].delay >= r.outEnd, `${p.c} after the friend step has gone`);
+      }
+      assert.equal(r.focusIn, true, 'the focus stays in the sheet');
+      // Where the engine applies an animation every frame (Chromium), the
+      // painted frames show it on its way too, never one jump between two.
+      // (A loaded runner paints few frames in a 240ms swap: there the seek
+      // above stands alone, as the QR fold's does.)
+      const during = r.hs.filter(([at]) => at > r.swapAt[0] && at < r.swapAt[0] + r.swapAt[1]);
+      if (name === 'Chromium' && during.length >= 3) {
+        const between = r.hs.filter(([, h]) => lo + 1 < h && h < hi - 1).length;
+        assert.ok(between >= 2, `the height seen on its way in ${between} of ${during.length} frames painted during the swap, not jumped ${Math.round(hi - lo)}px in one`);
+      } else {
+        t.diagnostic(`${name}: ${during.length} frames painted during the ${r.swapAt[1]}ms swap; the travel is proven by seeking it`);
+      }
+      assert.deepEqual(errors, []);
+    } finally { hold.release(); await ctx.close(); }
+  });
+
+  // A long name's answer at 320 (the review of v112, F5): the title read
+  // "WILHELMINA FEATHERSTONHA IS" / "IN" — "IS IN" now stays one phrase on
+  // the line its name ends on — and Share's words stay inside their pill.
+  test(`${name} 320×568: a long name's answer never leaves "IN" alone on a line`, { skip }, async () => {
+    const { ctx, page, errors, press } = await openApp(get(), { width: 320, height: 568 });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await press('.invite-sheet .inv-friend');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await page.keyboard.type('Wilhelmina Featherstonha'); // the field's 24 characters
+      await press('.invite-sheet .inv-add');
+      await page.waitForFunction(() => /IS IN$/.test(document.querySelector('.invite-sheet .sheet-title')?.textContent || '') && !document.querySelector('.invite-sheet.stepping'), null, { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      const r = await page.evaluate(() => {
+        const title = document.querySelector('.invite-sheet .sheet-title');
+        const phrase = title.querySelector('.inv-nowrap');
+        const range = document.createRange();
+        range.selectNodeContents(title.firstChild);
+        const name = [...range.getClientRects()];
+        const p = phrase.getBoundingClientRect();
+        const share = document.querySelector('.invite-sheet .inv-share');
+        return { text: title.textContent, phraseLines: phrase.getClientRects().length, nameEnds: name.at(-1).top, phraseTop: p.top, share: share.scrollWidth <= share.clientWidth + 1 };
+      });
+      assert.equal(r.text, 'WILHELMINA FEATHERSTONHA IS IN');
+      assert.equal(r.phraseLines, 1, `"IS IN" on one line: ${JSON.stringify(r)}`);
+      assert.ok(Math.abs(r.nameEnds - r.phraseTop) < 2, `and on the line the name ends on, never alone: ${JSON.stringify(r)}`);
+      assert.equal(r.share, true, 'Share’s words inside their pill');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // An add's answer landing while a step is moving (the review of v112): the
+  // sheet reopened with the add still out, its row tapped, and the answer in
+  // while the friend step travels in — the sheet comes to rest as ZED IS IN,
+  // nothing left moving, at that state's own height.
+  test(`${name} 390: an add answered while the steps are moving comes to rest as its answer — nothing left mid-way`, { skip }, async () => {
+    const hold = holdAdds();
+    const { ctx, page, errors, press } = await openApp(get(), { width: 390, routes: hold.routes });
+    try {
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      await press('.invite-sheet .inv-friend');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await page.keyboard.type('Zed');
+      await press('.invite-sheet .inv-add');
+      await press('.invite-sheet .sheet-close');
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 3000 });
+      await press('#dock-you');
+      await press('#dock-you-wrap .hl-pop [data-act="invite"]');
+      await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      assert.equal(await page.locator('.invite-sheet .inv-friend-sub').textContent(), 'Adding Zed…', 'the reopened sheet says what is out');
+      const b = await page.locator('.invite-sheet .inv-friend').boundingBox();
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await page.waitForFunction(() => document.querySelector('.invite-sheet.stepping'), null, { timeout: 2000 }).catch(() => {});
+      hold.release();
+      await page.waitForFunction(() => /ZED IS IN/.test(document.querySelector('.invite-sheet .sheet-title')?.textContent || ''), null, { timeout: 4000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+      await motionDone(page, { within: '.invite-sheet' });
+      const r = await page.evaluate(() => {
+        const s = document.querySelector('.invite-sheet');
+        const h = s.getBoundingClientRect().height;
+        s.style.transition = 'none';
+        const natural = s.scrollHeight + parseFloat(getComputedStyle(s).borderTopWidth) + parseFloat(getComputedStyle(s).borderBottomWidth);
+        const back = s.querySelector('.sheet-back');
+        return { h, natural, running: s.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length, steps: s.querySelectorAll('.inv-step').length, titles: s.querySelectorAll('.sheet-title').length, back: !back || back.hidden };
+      });
+      assert.equal(r.running, 0, `nothing left moving: ${JSON.stringify(r)}`);
+      assert.ok(Math.abs(r.h - r.natural) < 1.5, `at the answer's own height: ${JSON.stringify(r)}`);
+      assert.deepEqual([r.steps, r.titles, r.back], [1, 1, true], `the answer alone: ${JSON.stringify(r)}`);
+      assert.deepEqual(errors, []);
+    } finally { hold.release(); await ctx.close(); }
+  });
+
   // A double tap on the row (a phone that felt slow, a thumb that bounced)
   // must not reach the friend step: at 390 its "+ Drew" lands right where
   // the row's words were, and the second half of the tap added Drew to the
@@ -545,13 +896,25 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           return { x: t.left + Math.min(40, t.width / 2), y: r.top + r.height / 2 };
         });
         const tapAt = () => (phone ? page.touchscreen.tap(x, y) : page.mouse.click(x, y));
-        for (const gap of [120, 240]) {
+        // Each click's time, in the page (the review of v112: a page.evaluate
+        // sat inside the gap this measures, leaving 60–90 ms between the
+        // second tap and the window it tests; a slow runner would then add
+        // Drew and read exactly like the bug).
+        await page.evaluate(() => { window.__clicks = []; document.addEventListener('click', () => window.__clicks.push(performance.now()), { capture: true }); });
+        for (const gap of [120, 200]) {
+          await page.evaluate(() => { window.__clicks = []; });
           await tapAt();
           await sleep(gap);
-          const hit = await page.evaluate(([px, py]) => { const e = document.elementFromPoint(px, py); return e ? e.closest('button')?.textContent || e.className : null; }, [x, y]);
           await tapAt();
+          const { hit, apart } = await page.evaluate(([px, py]) => {
+            const e = document.elementFromPoint(px, py);
+            const c = window.__clicks;
+            return { hit: e ? e.closest('button')?.textContent || e.className : null, apart: c.length >= 2 ? c[1] - c[0] : null };
+          }, [x, y]);
+          // Inside the window the step holds taps for, or this run proves nothing.
+          assert.ok(apart !== null && apart < STEP_SETTLE_MS, `timing, not the app: the two taps landed ${apart} ms apart, past the ${STEP_SETTLE_MS} ms this case tests`);
           await sleep(700);
-          assert.equal(posts.length, 0, `a second tap ${gap} ms after the first added nobody (under it then: ${hit})`);
+          assert.equal(posts.length, 0, `a second tap ${Math.round(apart)} ms after the first added nobody (under it then: ${hit})`);
           assert.equal(await page.locator('.invite-sheet .sheet-title').textContent(), 'ADD A FRIEND', 'the friend step is up, and nothing else happened');
           await press('.invite-sheet .sheet-back');
           await motionDone(page, { within: '.invite-sheet' });
@@ -619,7 +982,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   // the common one, where the sheet's 72vh cap is a fold the friend row
   // can sit below.
   for (const [w, h] of [[320, 568], [390, 844]]) {
-    test(`${name} ${w}×${h}: the Invite sheet's QR is square, inside the sheet, drawn, and scans to the link; Copy and Share still work; the friend row scrolls into reach and its step's field is on screen`, { skip }, async () => {
+    test(`${name} ${w}×${h}: the Invite sheet's QR is square, inside the sheet, drawn, and scans to the link, and the card a long-press keeps is the export card; Copy and Share still work; the friend row is on screen, its step's field too, and ‹ comes back to the scroll it left`, { skip }, async (t) => {
       const { ctx, page, errors, posts, press, fetched } = await openApp(get(), { width: w, height: h });
       try {
         if (name === 'Chromium') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: server.origin });
@@ -709,7 +1072,44 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const modules = 17 + 4 * hit.version + 8;
         const lay = await page.evaluate(([m, room]) => import('/js/v3/qr.js').then((q) => q.qrLayout(m, room, 2)), [modules, geo.tile.w]);
         assert.equal(geo.natural[0], lay.w, `the card is qrLayout's: ${geo.natural[0]} for ${modules} modules in ${geo.tile.w}px (${JSON.stringify(lay)})`);
-        if (geo.tile.w >= 196) assert.ok(lay.s >= Math.floor((176 * 2) / modules), `no fewer pixels a module than v111: ${lay.s}`);
+        // v111's tile on this same screen: min(132px, 52vw) up to 640 tall, min(176px, 52vw) above.
+        const v111 = Math.min(h <= 640 ? 132 : 176, 0.52 * w);
+        assert.ok(lay.s >= Math.floor((v111 * 2) / modules), `no fewer pixels a module than v111 drew here: ${lay.s} (v111's ${v111}px tile)`);
+        // The card a long-press keeps (qr.js qrSaveCard, the review of v112:
+        // the saved image was this screen's card, 263px from a 320 phone, no
+        // words): under the card on screen, where a press lands; one export
+        // size on every screen; and it scans. The screen's card covers it
+        // whole — showing it or not, the tile is the same pixels.
+        await page.waitForSelector('.invite-sheet .inv-qr.keep', { timeout: 6000 });
+        const keep = await page.evaluate(async () => {
+          const tile = document.querySelector('.invite-sheet .inv-qr-tile');
+          const shown = tile.querySelector('img:not(.inv-qr-keep)');
+          const k = tile.querySelector('.inv-qr-keep');
+          const r = shown.getBoundingClientRect();
+          const kr = k.getBoundingClientRect();
+          const hits = [[0.5, 0.5], [0.15, 0.5], [0.5, 0.85]].map(([fx, fy]) => document.elementFromPoint(r.left + r.width * fx, r.top + r.height * fy) === k);
+          const q = await import('/js/v3/qr.js');
+          const c = document.createElement('canvas');
+          c.width = Math.round(k.naturalWidth / 2);
+          c.height = Math.round(k.naturalHeight / 2);
+          c.getContext('2d').drawImage(k, 0, 0, c.width, c.height);
+          return { hits, natural: [k.naturalWidth, k.naturalHeight], box: [kr.left - r.left, kr.top - r.top, kr.width - r.width, kr.height - r.height], alt: k.alt, hidden: k.getAttribute('aria-hidden'), jpeg: c.toDataURL('image/jpeg', 1), save: q.SAVE_CARD };
+        });
+        assert.deepEqual(keep.hits, [true, true, true], 'a press on the card lands on the card made for keeping');
+        assert.ok(keep.box.every((d) => Math.abs(d) < 0.5), `in the very box of the card on screen: ${keep.box}`);
+        assert.deepEqual([keep.alt, keep.hidden], ['', 'true'], 'read once, as the card on screen');
+        const want = await page.evaluate(([m, sc]) => import('/js/v3/qr.js').then((q) => { const L = q.qrLayout(m, sc.room, sc.ratio); return [L.w, L.h + Math.round(sc.band * sc.ratio)]; }), [modules, keep.save]);
+        assert.deepEqual(keep.natural, want, `the export size, whatever this screen: ${keep.natural}`);
+        assert.ok(keep.natural[0] >= 1000, `big enough to keep: ${keep.natural}`);
+        const kpx = jpeg.decode(Buffer.from(keep.jpeg.split(',')[1], 'base64'), { useTArray: true });
+        const khit = jsQR(new Uint8ClampedArray(kpx.data.buffer, kpx.data.byteOffset, kpx.data.byteLength), kpx.width, kpx.height, { inversionAttempts: 'dontInvert' });
+        assert.equal(khit && khit.data, link, 'the card kept scans to the link');
+        const tileShot = () => page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'png' });
+        await page.evaluate(() => { document.querySelector('.invite-sheet .inv-qr-keep').style.visibility = 'hidden'; });
+        const without = await tileShot();
+        await page.evaluate(() => { document.querySelector('.invite-sheet .inv-qr-keep').style.visibility = ''; });
+        const withKeep = await tileShot();
+        assert.ok(without.equals(withKeep), 'the card kept never shows past the card on screen');
         // Copy and Share, with real input, as before the QR.
         await press('.invite-sheet .inv-copy');
         if (name === 'Chromium') {
@@ -730,13 +1130,19 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           return f.height > 0 && f.top >= sh.top && f.bottom <= Math.min(sh.bottom, innerHeight);
         }, sel);
         const row = '.invite-sheet .inv-friend';
-        // On a common phone the whole step fits under the bigger card: the
-        // row is there at open, nothing to scroll.
-        if (h >= 800) assert.ok(await inReach(row), `at ${w}×${h} the friend row is on screen at open, unscrolled`);
+        // The whole step fits: the row is there at open, nothing to scroll —
+        // at 320×568 too, where it once opened cut in half by the sheet's
+        // edge (the review of v112).
+        assert.ok(await inReach(row), `at ${w}×${h} the friend row is whole on screen at open, unscrolled`);
+        // Scrolled to its end before the row is pressed (a wheel over the
+        // sheet, the way a trackpad or a drag moves it), so the ‹ below has a
+        // place to come back to.
         const c = await page.locator('.invite-sheet').boundingBox();
         await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
-        for (let i = 0; i < 8 && !(await inReach(row)); i++) { await page.mouse.wheel(0, 160); await sleep(120); }
+        await page.mouse.wheel(0, 400);
+        await sleep(200);
         assert.ok(await inReach(row), 'the friend row is on screen inside the sheet');
+        const linkScroll = await page.evaluate(() => document.querySelector('.invite-sheet').scrollTop);
         await press(row);
         await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
         await motionDone(page, { within: '.invite-sheet' });
@@ -745,6 +1151,15 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         await page.keyboard.type('Zed');
         assert.equal(await page.locator(field).inputValue(), 'Zed', 'and it takes a name, straight in');
         assert.equal(posts.length, 0, 'nothing sent yet');
+        // ‹ back: the link's step where it was left, scroll and all (the
+        // review of v112: a ‹ that dropped the scroll passed every test).
+        await press('.invite-sheet .sheet-back');
+        await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        const back = await page.evaluate(() => document.querySelector('.invite-sheet').scrollTop);
+        if (linkScroll > 0) assert.ok(Math.abs(back - linkScroll) <= 1, `the link's step back at its scroll: ${linkScroll} → ${back}`);
+        else t.diagnostic(`${w}×${h}: the link's step does not scroll here`);
+        assert.ok(await inReach(row), 'the row it left from, on screen');
         assert.deepEqual(errors, []);
       } finally { await ctx.close(); }
     });
@@ -799,6 +1214,42 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     });
   }
 
+  // A phone on its side (the review of v112: at 844×390 Share and Done
+  // opened below the dialog's edge and the friend row 111px down; at 667×375
+  // the sheet showed the link alone): the link's step in two columns, the QR
+  // beside the rest, all of it on screen at open, unscrolled.
+  for (const [w, h] of [[844, 390], [667, 375]]) {
+    test(`${name} ${w}×${h}, a phone on its side: Share, Done and the friend row are on screen when the Invite sheet opens, the QR beside them`, { skip }, async () => {
+      const { ctx, page, errors, press, bar } = await openApp(get(), { width: w, height: h, touch: true });
+      try {
+        await press(`#${bar}-you`);
+        // The menu's own fold on its side is the menu's matter: its last row
+        // is scrolled to here, setup only.
+        await page.locator(`#${bar}-you-wrap .hl-pop [data-act="invite"]`).scrollIntoViewIfNeeded();
+        await sleep(200);
+        await press(`#${bar}-you-wrap .hl-pop [data-act="invite"]`);
+        await page.waitForSelector('.invite-sheet .inv-qr.in', { timeout: 4000 });
+        await motionDone(page, { within: '.invite-sheet' });
+        await sheetStill(page);
+        const at = await page.evaluate(() => {
+          const sheet = document.querySelector('.invite-sheet');
+          const s = sheet.getBoundingClientRect();
+          const box = (sel) => { const b = sheet.querySelector(sel).getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; };
+          return { top: Math.max(s.top, 0), bottom: Math.min(s.bottom, innerHeight), scrolled: sheet.scrollTop, share: box('.inv-share'), done: box('.inv-done'), friend: box('.inv-friend'), tile: box('.inv-qr-tile'), link: box('.inv-link'), sub: box('.inv-sub') };
+        });
+        assert.equal(at.scrolled, 0, 'at open, unscrolled');
+        for (const k of ['share', 'done', 'friend']) assert.ok(at[k].t >= at.top && at[k].b <= at.bottom + 0.5, `${k} wholly on screen at open: ${JSON.stringify(at)}`);
+        assert.ok(at.tile.r <= at.link.l && at.tile.r <= at.sub.l, `the QR beside the line and the link, not above them: ${JSON.stringify(at)}`);
+        const link = await page.locator('.invite-sheet .inv-link input').inputValue();
+        const shot = await page.locator('.invite-sheet .inv-qr-tile').screenshot({ type: 'jpeg', quality: 100 });
+        const px = jpeg.decode(shot, { useTArray: true });
+        const hit = jsQR(new Uint8ClampedArray(px.data.buffer, px.data.byteOffset, px.data.byteLength), px.width, px.height, { inversionAttempts: 'dontInvert' });
+        assert.equal(hit && hit.data, link, 'and it scans to the link');
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+
   // The QR's late paths (the reviews of 1b80842): its module comes over the
   // network whenever the worker has not precached it yet — a first visit's
   // Create on weak signal is the share moment's cold path. Held, the tile is
@@ -840,6 +1291,18 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(before.cap, 'hidden', 'no "point a phone camera here" before there is a code to point it at');
       assert.ok(Number(before.tileOpacity) < 0.5, `a soft placeholder, not a white square promising a code: ${before.tileOpacity}`);
       assert.equal(before.ghost, '1', 'the placeholder is a soft version of the card (its aura, an empty window), whole until the code lands');
+      // Its window is the token's barely-there panel, never a white square
+      // (the review of v112: a white window passed every test).
+      const window_ = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.background = 'var(--qr-panel-ghost)';
+        document.body.appendChild(probe);
+        const want = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return { got: getComputedStyle(document.querySelector('.invite-sheet .inv-qr-tile'), '::after').backgroundColor, want };
+      });
+      assert.equal(window_.got, window_.want, `the empty window is --qr-panel-ghost: ${JSON.stringify(window_)}`);
+      assert.notEqual(window_.got, 'rgb(255, 255, 255)', 'never white');
       await sleep(1500);
       assert.equal((await qrRead(page)).tile !== null, true, 'still waiting, inside its deadline');
       release();

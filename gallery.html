@@ -308,7 +308,7 @@
       <div class="zoom-state-cap">A member, sharing a view (Portola + Afters, as a list): one quiet row under Share</div>
       <div class="sheet invite-sheet" data-path="/f/portola-2026" data-hash="&amp;f=portola-2026&amp;show=fest,afters&amp;view=list">
         <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
-        <div class="inv-step">
+        <div class="inv-step inv-link-step">
           <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.<br>Opens on Portola + Afters, as a list — what you’re showing now.</div>
           <div class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><div class="inv-qr-cap">Point a phone camera here to join. Anyone who scans it is in.</div></div>
           <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
@@ -324,7 +324,7 @@
         <div class="inv-step">
           <div class="inv-sub">You pick for them; the crew sees where they’re going.</div>
           <div class="inv-group"><div class="micro-label">Already in</div><div class="inv-people"><span class="person-chip static you" data-ci="0">Ana</span><span class="person-chip static" data-ci="1">Ben</span><span class="person-chip static" data-ci="2">Cy</span><span class="person-chip static" data-ci="3">Dot</span><span class="person-chip static" data-ci="4">Eli</span></div></div>
-          <div class="inv-name"><input maxlength="24" placeholder="Their name" aria-label="Their name"><button class="btn-tonal inv-add">Add</button></div>
+          <div class="inv-name"><input maxlength="24" placeholder="Their name" aria-label="Their name"><button class="btn-tonal inv-add"><span class="inv-add-word">Add</span></button></div>
           <div class="inv-status" aria-live="polite"></div>
           <div class="inv-group"><div class="micro-label">From your other fests</div><div class="inv-others"><button class="btn-tonal">+ Drew</button><button class="btn-tonal">+ Kat</button></div></div>
         </div>
@@ -334,7 +334,7 @@
       <div class="zoom-state-cap">A guest: the link and its QR, no name to add (v92)</div>
       <div class="sheet invite-sheet" data-path="/f/portola-2026" data-hash="&amp;f=portola-2026">
         <div style="display: flex; align-items: center; gap: 9px;"><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
-        <div class="inv-step">
+        <div class="inv-step inv-link-step">
           <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.</div>
           <div class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><div class="inv-qr-cap">Point a phone camera here to join. Anyone who scans it is in.</div></div>
           <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
@@ -346,7 +346,7 @@
       <div class="zoom-state-cap">The QR still drawing (its module held on weak signal): a soft, still card with an empty window — no modules, no caption — until the code lands and crossfades in</div>
       <div class="sheet invite-sheet" data-path="/f/acl-2026" data-hash="&amp;f=acl-2026" data-held>
         <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">INVITE SOMEONE</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
-        <div class="inv-step">
+        <div class="inv-step inv-link-step">
           <div class="inv-sub">Opens straight into Menu Crew. No accounts needed.</div>
           <div class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><div class="inv-qr-cap">Point a phone camera here to join. Anyone who scans it is in.</div></div>
           <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
@@ -359,7 +359,7 @@
       <div class="zoom-state-cap">The share moment: a crew just made, its link the first thing to send — and the same row</div>
       <div class="sheet invite-sheet" data-path="/f/acl-2026" data-hash="&amp;f=acl-2026">
         <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">ONE LINK MAKES IT A CREW</span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
-        <div class="inv-step">
+        <div class="inv-step inv-link-step">
           <div class="inv-sub">Opens straight into ACL 2026. No accounts needed.</div>
           <div class="inv-qr"><div class="inv-qr-tile"><img alt="QR code for the crew link"></div><div class="inv-qr-cap">Point a phone camera here to join. Anyone who scans it is in.</div></div>
           <div class="inv-link"><input readonly aria-label="Crew invite link"><button class="btn-tonal inv-copy">Copy</button></div>
@@ -368,13 +368,28 @@
         </div>
       </div>
     </div>
+    <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">The add's answer: the same sheet's last step, travelled in from the friend step — their own link, for if they ever want to pick; no ‹, and no QR (a QR of a personal link tells whoever scans it "this is yours")</div>
+      <div class="sheet invite-sheet" data-me-path="/f/acl-2026" data-me-hash="&amp;f=acl-2026&amp;me=Wilhelmina%20Featherstonha">
+        <div style="display: flex; align-items: center; gap: 9px;"><button class="sheet-back" aria-label="Back to the crew link" hidden disabled>‹</button><span class="sheet-title" style="flex: 1;">WILHELMINA FEATHERSTONHA <span class="inv-nowrap">IS IN</span></span><button class="sheet-close" aria-label="Close (inert — this is a picture)" disabled>✕</button></div>
+        <div class="inv-step">
+          <div class="inv-sub">If Wilhelmina Featherstonha ever wants to pick, send this link. Opening it makes the picks theirs.</div>
+          <div class="inv-link"><input readonly aria-label="Wilhelmina Featherstonha's personal invite link"><button class="btn-tonal inv-copy">Copy</button></div>
+          <div class="inv-actions"><button class="btn-tonal inv-share">Share Wilhelmina Featherstonha’s link</button><button class="btn-ghost inv-done">Done</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="col" style="gap: 6px; width: 358px;">
+      <div class="zoom-state-cap">The card a long-press keeps (Save to Photos, Save Image): drawn for keeping at one size on every phone, under the card on screen — the crew and the fest in the app's own type, never a word of the link; the code line will take its place in the band (slice 3)</div>
+      <img id="invite-keep-card" alt="The saved invite card, drawn on a made-up link" style="width: 300px; border-radius: 12px;">
+    </div>
   </div>
 </section>
 <script type="module">
 // The Invite sheet's QR: the real encoder and the real drawing (js/v3/qr.js),
 // on a made-up crew token of the real shape — never a real crew's link. The
 // friend step's people wear the real palette (Settings' roster chip).
-import { qrPng } from '/js/v3/qr.js';
+import { qrPng, qrSaveCard } from '/js/v3/qr.js';
 import { hslOf, strokeOf } from '/js/v3/palette.js';
 const EXAMPLE = 'galleryexample_0123456789ab';
 for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) {
@@ -383,6 +398,7 @@ for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) 
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = `1px solid ${strokeOf(ci, chip.classList.contains('you'))}`;
   }
+  if (sheet.dataset.mePath) { sheet.querySelector('.inv-link input').value = `${location.origin}${sheet.dataset.mePath}#g=${EXAMPLE}${sheet.dataset.meHash}`; continue; }
   if (!sheet.dataset.path) continue; // the friend step prints no crew link
   const link = `${location.origin}${sheet.dataset.path}#g=${EXAMPLE}${sheet.dataset.hash}`;
   sheet.querySelector('.inv-link input').value = link;
@@ -394,6 +410,9 @@ for (const sheet of document.querySelectorAll('#invite-gallery .invite-sheet')) 
   img.style.width = `${cssPx}px`;
   img.src = src;
 }
+// The card a long-press keeps, as the sheet lays it under its own.
+qrSaveCard(`${location.origin}/f/acl-2026#g=${EXAMPLE}&f=acl-2026`, { crew: 'Menu Crew', fest: 'ACL', year: "'26" })
+  .then(({ src }) => { document.getElementById('invite-keep-card').src = src; }, () => {});
 </script>
 
 <section class="demo-dock">

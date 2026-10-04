@@ -15,7 +15,7 @@ import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow, gearIcon, lineGlyph } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel, rideKeys } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel, rideSheetKeys } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
@@ -3735,7 +3735,43 @@ function warmQr() {
 // alone until the app next loads (the review of 116ab8e).
 const QR_WAIT_MS = 4000;
 const QR_FOLD_MS = 260; // the tile's way out: it fades, then its room closes
-function inviteQr(link) {
+// The words the saved card carries (qr.js qrSaveCard): the crew's name, and
+// the short name and year of the fest the link opens — the header's own
+// words. Never the link, which is the crew's credential.
+function saveCardWords() {
+  const fid = state.festivalForLinks();
+  const f = (fid && (FESTIVAL_INDEX.find((x) => x.id === fid) || state.FESTIVALS[fid])) || state.fest() || {};
+  return { crew: state.crewName(), fest: f.name || '', year: f.year || '' };
+}
+// After the sheet's card is in and the phone is idle: the card a long-press
+// keeps. It lies under the card on screen, its own size scaled to the same
+// box (never seen — the screen's card covers it), and the screen's card lets
+// a press through to it (.keep, v3.css), so Save to Photos, a right-click's
+// Save Image and Copy Image all take the card made for keeping. Until it is
+// in, they take the screen's card, as before; if it cannot be drawn, they
+// still do, and the failure is recorded in its own words, never the link's.
+const KEEP_IDLE_MS = 1200;
+function offerKeep(fig, tile, img, link, words, isGone) {
+  const go = () => {
+    if (isGone() || !fig.isConnected || !qrModule || typeof qrModule.qrSaveCard !== 'function') return;
+    qrModule.qrSaveCard(link, words).then(({ src }) => {
+      if (isGone() || !fig.isConnected) return;
+      const keep = document.createElement('img');
+      keep.className = 'inv-qr-keep';
+      keep.alt = '';
+      keep.setAttribute('aria-hidden', 'true');
+      keep.style.width = img.style.width;
+      keep.style.height = img.style.width;
+      keep.addEventListener('load', () => { if (!isGone()) fig.classList.add('keep'); }, { once: true });
+      keep.addEventListener('error', () => keep.remove(), { once: true });
+      keep.src = src;
+      tile.appendChild(keep); // after the card on screen, so the first image is still the one shown; the z-order puts it under
+    }, (e) => record('invite:qr-keep', e));
+  };
+  try { if (typeof window.requestIdleCallback === 'function') { window.requestIdleCallback(go, { timeout: KEEP_IDLE_MS }); return; } } catch { /* no idle callbacks */ }
+  setTimeout(go, 300);
+}
+function inviteQr(link, words) {
   // A plain box, not a <figure>: a figure takes its name from its caption,
   // and a screen reader heard the caption twice (the review of 1b80842). The
   // image's alt says what it is; the caption says what scanning it does.
@@ -3786,7 +3822,12 @@ function inviteQr(link) {
     setTimeout(done, QR_FOLD_MS * 3 + 50); // a backgrounded tab must not hang it
   };
   const fail = (e) => { report(e); leave(); };
-  img.addEventListener('load', () => { if (gone) return; clearTimeout(deadline); fig.classList.add('in'); }, { once: true });
+  img.addEventListener('load', () => {
+    if (gone) return;
+    clearTimeout(deadline);
+    fig.classList.add('in');
+    offerKeep(fig, tile, img, link, words, () => gone);
+  }, { once: true });
   img.addEventListener('error', () => fail(new Error('qr: the image did not load')), { once: true });
   const draw = (qr) => {
     const { src, cssPx } = qr.qrPng(link, qrRoom(img));
@@ -3835,21 +3876,31 @@ const STEP_SHIFT = 24; // px a step travels sideways on its way out or in
 // arriving step takes no taps while it moves (.stepping) nor for this long
 // after the swap, motion or none (.settling, v3.css).
 const STEP_SETTLE_MS = 350;
+// `backAfter`: whether the ‹ stands once the step has changed (the friend
+// step's, by default; the add's answer has no step to go back to). `text`
+// is the new title, or its parts (a name and a phrase kept whole, F5 of the
+// review of v112). `drop`: the leaving step is taken off the page once it
+// has gone — the add's answer is where the sheet ends.
 function stepSwapper(sheet, title, back) {
   let flight = null; // the swap still moving: land() puts it at rest at once
   let settled = 0;
-  const swap = ({ from, to, forward, scrollTo = 0, text }) => {
+  const swap = ({ from, to, forward, scrollTo = 0, text, backAfter = forward, drop = false }) => {
     if (flight) flight.land();
     from.classList.remove('settling');
     to.classList.add('settling');
     clearTimeout(settled);
     settled = setTimeout(() => to.classList.remove('settling'), STEP_SETTLE_MS);
-    const leaving = forward ? [from] : [from, back]; // the ‹ belongs to the friend step
+    const began = performance.now(); // the page's own clock, never the festival's (a pinned Date)
+    const backWas = !back.hidden;
+    const backArrives = backAfter && !backWas;
+    const leaving = backWas && !backAfter ? [from, back] : [from]; // the ‹ leaves with the step it belongs to
+    const say = () => title.replaceChildren(...(Array.isArray(text) ? text : [text]));
+    const gone = (n) => { if (drop && n === from) n.remove(); };
     const still = () => {
-      for (const n of leaving) n.hidden = true;
+      for (const n of leaving) { n.hidden = true; gone(n); }
       to.hidden = false;
-      back.hidden = !forward;
-      title.textContent = text;
+      back.hidden = !backAfter;
+      say();
       sheet.scrollTop = scrollTo;
     };
     if (!sheet.isConnected || !canAnimate(sheet, ctx)) { still(); return; }
@@ -3868,12 +3919,16 @@ function stepSwapper(sheet, title, back) {
     let landed = false;
     // At rest: the leaving parts hidden and put back in the flow, the ghost
     // gone. Brought early (a second swap, an add's answer), whatever is
-    // still moving stops where it would have ended.
-    const land = () => {
+    // still moving stops where it would have ended. Come to rest on its own,
+    // past the double tap's window, the new step takes taps at once — never
+    // left waiting on a timer a busy phone runs late (the add's answer once
+    // stood untappable after its motion had ended).
+    const land = (early = true) => {
       if (landed) return;
       landed = true;
-      if (flight && flight.land === land) flight = null;
+      if (flight === me) flight = null;
       clearTimeout(timer);
+      if (!early && performance.now() - began >= STEP_SETTLE_MS) to.classList.remove('settling');
       for (const a of moving) { try { a.cancel(); } catch { /* finished */ } }
       ghost.remove();
       for (const n of leaving) {
@@ -3881,11 +3936,13 @@ function stepSwapper(sheet, title, back) {
         n.inert = false;
         n.removeAttribute('aria-hidden');
         for (const k of ['position', 'top', 'left', 'width', 'margin', 'pointerEvents']) n.style[k] = '';
+        gone(n);
       }
       sheet.classList.remove('stepping');
     };
-    flight = { land };
-    const timer = setTimeout(land, GROW_MS * 3 + 50); // a backgrounded tab must not hang it
+    const me = { land: () => land(true) };
+    flight = me;
+    const timer = setTimeout(() => land(false), GROW_MS * 3 + 50); // a backgrounded tab must not hang it
     // The writes. The leaving parts are lifted where they stood; the new
     // step takes the flow, at its own scroll (the friend step's top; the
     // link's step where it was left).
@@ -3898,8 +3955,8 @@ function stepSwapper(sheet, title, back) {
     Object.assign(ghost.style, { position: 'absolute', margin: '0', pointerEvents: 'none', whiteSpace: 'nowrap' });
     sheet.appendChild(ghost);
     to.hidden = false;
-    if (forward) back.hidden = false; // going back, the ‹ is lifted with its step and hidden when it lands
-    title.textContent = text;
+    if (backArrives) back.hidden = false; // one leaving is lifted with its step and hidden when it lands
+    say();
     sheet.scrollTop = scrollTo;
     [...leaving, ghost].forEach((n, i) => {
       const at = n === ghost ? titleSpot : spots[i];
@@ -3918,19 +3975,19 @@ function stepSwapper(sheet, title, back) {
       // crossing read as a smear on the walk, 2026-10-03): the title (and
       // the ‹, coming in with its step) first, then the step's parts, a beat
       // apart.
-      const arriving = [[title, forward ? back : null], ...[...to.children].filter((n) => !n.hidden).map((n) => [n])];
+      const arriving = [[title, backArrives ? back : null], ...[...to.children].filter((n) => !n.hidden).map((n) => [n])];
       arriving.forEach((group, i) => {
         for (const n of group.filter(Boolean)) {
           moving.push(n.animate([{ opacity: 0, transform: `translateX(${dir * STEP_SHIFT}px)` }, { opacity: 1, transform: 'none' }],
             { duration: CASCADE_MS, delay: OUT_MS + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
         }
       });
-    } catch { land(); return; } // an engine that refuses the motion still lands the step
+    } catch { land(true); return; } // an engine that refuses the motion still lands the step
     // At rest once everything has: the height travelled, the leaving parts
     // gone, the last arrival in. Until then the sheet holds its scroll on
     // both axes (.stepping): an arrival on its way in from the side would
     // otherwise lend the sheet a sideways scroll for a moment.
-    Promise.all(moving.map((a) => a.finished)).then(land, land);
+    Promise.all(moving.map((a) => a.finished)).then(() => land(false), () => land(false));
   };
   swap.land = () => { if (flight) flight.land(); };
   return swap;
@@ -3954,7 +4011,7 @@ function openInvite({ moment = false } = {}) {
 
   // 1. The crew link: anyone who opens it is in.
   const linkStep = document.createElement('div');
-  linkStep.className = 'inv-step';
+  linkStep.className = 'inv-step inv-link-step'; // two columns on a phone on its side (v3.css)
   const sub = document.createElement('div');
   sub.className = 'inv-sub';
   sub.textContent = INVITE_WORDS.opens(state.crewName());
@@ -3976,13 +4033,14 @@ function openInvite({ moment = false } = {}) {
     actions.appendChild(shareBtn);
   }
   actions.appendChild(sheetDismiss(moment ? 'Later' : 'Done'));
-  linkStep.append(sub, inviteQr(link), inviteLinkRow(link, 'Crew invite link'), actions);
+  linkStep.append(sub, inviteQr(link, saveCardWords()), inviteLinkRow(link, 'Crew invite link'), actions);
   sheet.append(linkStep); // chrome (title + ✕) is already on
   dialogize(sheet, moment ? 'Share your crew link' : 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
   if (!member) return;
-  // The friend step's field takes the keys: the sheet stands on them.
-  rideKeys(sheet);
+  // The friend step's field takes the keys: the sheet stands on them, and
+  // closeSheet's way out ends the ride before the sheet leaves (notes.js).
+  rideSheetKeys(sheet);
 
   // 2. Pick for a friend — one who may never open the app (Kevin's Folsom
   // friends: "just a note for us that they're going there"), a shared phone,
@@ -4053,7 +4111,11 @@ function openInvite({ moment = false } = {}) {
   input.setAttribute('enterkeyhint', 'done');
   const addBtn = document.createElement('button');
   addBtn.className = 'btn-tonal inv-add';
-  addBtn.textContent = 'Add';
+  // Its word keeps its width while the bars stand in for it (setWaiting).
+  const addWord = document.createElement('span');
+  addWord.className = 'inv-add-word';
+  addWord.textContent = 'Add';
+  addBtn.appendChild(addWord);
   row.append(input, addBtn);
   const status = document.createElement('div');
   status.className = 'inv-status';
@@ -4110,12 +4172,20 @@ function openInvite({ moment = false } = {}) {
     friendRow.focus({ preventScroll: true });
   });
 
+  // The add's answer is the sheet's last step (the review of v112: it
+  // emptied the sheet and rebuilt it, so the friend step vanished in place
+  // and IS IN popped in, 126px in one frame). Whichever step is up leaves for
+  // it — the friend step, or the link's on a sheet reopened while the add was
+  // out — the way the ‹ and the row move the sheet; the step hidden behind it
+  // goes at once, and the one that leaves goes once it has. The head stays:
+  // its title crosses to IS IN, the ✕ stays, the ‹ leaves with its step.
   const succeed = (canonical, offline = false) => {
-    swap.land(); // a step still moving comes to rest before the sheet is rebuilt
-    sheet.textContent = '';
-    // Re-chrome the success state too, or it loses the ✕ the moment it
-    // becomes the thing you are actually looking at.
-    sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
+    swap.land(); // a step still moving comes to rest before the answer travels in
+    const from = friendStep.hidden ? linkStep : friendStep;
+    for (const st of [linkStep, friendStep]) if (st !== from) st.remove();
+    const doneStep = document.createElement('div');
+    doneStep.className = 'inv-step';
+    doneStep.hidden = true;
     const explain = document.createElement('div');
     explain.className = 'inv-sub';
     // Done as it stands: the link is for if they ever want to pick. Kept on
@@ -4139,7 +4209,19 @@ function openInvite({ moment = false } = {}) {
       done.appendChild(shareBtn);
     }
     done.appendChild(sheetDismiss('Done'));
-    sheet.append(explain, inviteLinkRow(theirs, `${canonical}'s personal invite link`), done);
+    doneStep.append(explain, inviteLinkRow(theirs, `${canonical}'s personal invite link`), done);
+    sheet.appendChild(doneStep);
+    // "IS IN" stays one phrase: at 320 a long name left "IN" alone on a
+    // second line (F5 of the review of v112).
+    const phrase = document.createElement('span');
+    phrase.className = 'inv-nowrap';
+    phrase.textContent = 'IS IN';
+    // The focus was in the step that leaves (the field, and a phone its
+    // keys), or lost already (Add, disabled while it waited, let it go): the
+    // dialog keeps it, and the keys go down.
+    const focusGoes = from.contains(document.activeElement) || !sheet.contains(document.activeElement);
+    swap({ from, to: doneStep, forward: true, backAfter: false, drop: true, text: [`${canonical.toUpperCase()} `, phrase] });
+    if (focusGoes) sheet.focus({ preventScroll: true });
   };
 
   // Every way in — the button, Enter, the chips — waits while this crew has
@@ -4147,13 +4229,29 @@ function openInvite({ moment = false } = {}) {
   // for this sheet), and a sheet opened while one is out says so — on its
   // row as well as its step — and takes its answer when it lands.
   let waiting = false;
+  // While an add is out nothing on the sheet moves (the review of v112: its
+  // "Adding Zed…" line arriving under the field shoved the step 29px in one
+  // frame): the Add button carries the wait — its bars where its word was, at
+  // the word's width — and the status line says it to a screen reader from
+  // out of the flow (.heard). A plain word after (taken, full, no signal)
+  // still takes the line's place, as it always did.
+  const bars = document.createElement('span');
+  bars.className = 'inv-add-wait';
+  bars.setAttribute('aria-hidden', 'true');
+  const eq = document.createElement('span');
+  eq.className = 'eq-loader';
+  eq.append(document.createElement('span'), document.createElement('span'), document.createElement('span'));
+  bars.appendChild(eq);
   const setWaiting = (on, who = '') => {
     waiting = on;
     addBtn.disabled = on;
     input.readOnly = on; // not disabled: the field keeps its focus and the keyboard stays up
     for (const b of sheet.querySelectorAll('.inv-others button')) b.disabled = on;
-    status.textContent = '';
-    if (on) status.appendChild(eqLoader(INVITE_WORDS.adding(who)));
+    addBtn.classList.toggle('waiting', on);
+    if (on) { addBtn.appendChild(bars); addBtn.setAttribute('aria-label', INVITE_WORDS.adding(who)); }
+    else { bars.remove(); addBtn.removeAttribute('aria-label'); }
+    status.classList.toggle('heard', on);
+    status.textContent = on ? INVITE_WORDS.adding(who) : '';
     friendSub.textContent = on ? INVITE_WORDS.adding(who) : INVITE_WORDS.friendSub;
   };
   const follow = (add) => {

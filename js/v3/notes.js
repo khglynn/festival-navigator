@@ -908,6 +908,16 @@ export function rideKeys(sheet) {
   return off;
 }
 let unride = () => {};
+// A sheet built outside this file (app.js's Invite sheet) rides the keys the
+// same way, and its ride ends where every sheet's does: leave() and
+// teardownSheet() stop it before the way out, so a sheet on its way out is
+// never fitted to the keys going down (the review of v112: the Invite sheet
+// kept its own undo and dropped it, and leaving, it jumped the keyboard's
+// height mid-exit).
+export function rideSheetKeys(sheet) {
+  unride();
+  unride = rideKeys(sheet);
+}
 function sweepLeaving() {
   for (const n of leavingSheets) n.remove();
   leavingSheets.clear();

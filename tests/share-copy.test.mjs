@@ -63,13 +63,14 @@ test('the QR says what scanning it does — the link is the credential, so the w
   assert.match(APP, /qrCaption: 'Point a phone camera here to join\. Anyone who scans it is in\.',/);
 });
 
-test('the QR only ever draws the crew link: never a personal link, never My link', () => {
+test('the QR only ever draws the crew link: never a personal link, never My link — on the sheet or on the card a long-press keeps', () => {
   const JS = ['js/v3/app.js', 'js/v3/settings.js', 'js/v3/people-menu.js', 'js/v3/plan-shelf.js', 'js/crew.js', 'js/v3/qr.js'];
   const calls = [];
   for (const f of JS) {
-    for (const m of read(f).matchAll(/\b(inviteQr|qrPng|qrMatrix)\(([^)]*)\)/g)) calls.push({ f, fn: m[1], args: m[2] });
+    for (const m of read(f).matchAll(/\b(inviteQr|qrPng|qrMatrix|qrSaveCard)\(([^)]*)\)/g)) calls.push({ f, fn: m[1], args: m[2] });
   }
-  assert.ok(calls.some((c) => c.fn === 'inviteQr' && c.args === 'link'), 'the Invite sheet draws its link');
+  assert.ok(calls.some((c) => c.fn === 'inviteQr' && /^link\b/.test(c.args)), 'the Invite sheet draws its link');
+  assert.ok(calls.some((c) => c.f === 'js/v3/app.js' && c.fn === 'qrSaveCard' && /^link\b/.test(c.args)), 'and the card it keeps is the same link');
   for (const c of calls) {
     assert.doesNotMatch(c.args, /meLink|theirs|canonical|meName|personal|#p=/, `${c.f}: ${c.fn}(${c.args}) — a QR of anything but the crew link`);
   }
@@ -77,7 +78,7 @@ test('the QR only ever draws the crew link: never a personal link, never My link
   // with no name, the bytes in the box under it.
   const sheet = APP.slice(APP.indexOf('function openInvite('), APP.indexOf('const succeed = '));
   assert.match(sheet, /const link = inviteLink\(\);/);
-  assert.match(sheet, /inviteQr\(link\), inviteLinkRow\(link, 'Crew invite link'\)/, 'the QR on top of the box, the same link in both');
+  assert.match(sheet, /inviteQr\(link, saveCardWords\(\)\), inviteLinkRow\(link, 'Crew invite link'\)/, 'the QR on top of the box, the same link in both');
   const done = APP.slice(APP.indexOf('const succeed = '), APP.indexOf('let waiting = false;'));
   assert.doesNotMatch(done, /inviteQr|qrPng/, 'the IS IN state — a personal link — has no QR');
 });
