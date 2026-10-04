@@ -13,8 +13,8 @@ how we got here belongs in DEVLOG.md.
   — the crew link as a QR in the app's own look and a card to keep when
   saved, the friend part as one quiet row opening its own step, short
   fest names (ACL, Seismic; ids and URLs unchanged), share links on
-  fest.kevinhg.com, and the dock's day row never resting on a cut-off
-  tab. v114 (Oct 3): ACL's W1 Sunday re-timed. Rollback: Vercel
+  fest.kevinhg.com, and the dock's day row giving its gaps (15–30px)
+  before it rests on a cut-off tab. v114 (Oct 3): ACL's W1 Sunday re-timed. Rollback: Vercel
   dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Rows, reviews, rollback
   targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
@@ -50,7 +50,7 @@ Then paste this into a fresh session on that Mac:
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–57): the Linux day-row
+Festival-navigator loose ends (LEDGER follow-ups 38–58): the Linux day-row
 probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
@@ -63,9 +63,11 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
   Settings → Get the latest version): Camera scans the Invite sheet's QR;
   long-press Save keeps the card (crew and fest names), not the plain
   code; Pick for a friend → add a name → NAME IS IN, upright and on its
-  side; a hitch just after the QR appears. Slice 2 (a quiet home-screen
-  row in Settings) waits on this. Also his: delete the branch
+  side; a hitch just after the QR appears. Also his: delete the branch
   `diag/qr-fold-webkit` on GitHub (this session's proxy refuses deletes).
+- Slice 2 (a quiet home-screen row in Settings) waits on his home-screen
+  test: Share → Add to Home Screen, open the icon — the board, or an
+  empty start page? (find-your-crew plan, Part A question 3).
 - Ray: the Sep 1 reply is still in Gmail drafts — send it now, or fold it
   into one email after ACL (its Pen card asks; the draft still says Discover
   "after ACL", now 2027).
@@ -80,7 +82,7 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Next, after the live lane
 
-0. Follow-ups: the LEDGER's list (1–57).
+0. Follow-ups: the LEDGER's list (1–58).
 1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
    only a start), the dock's FRI flash on open.
 2. After Portola: self-recovery when a phone boots stale cached modules

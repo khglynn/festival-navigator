@@ -6,8 +6,9 @@ Newest first. One entry per meaningful unit of work.
 
 Slice 1 of the find-your-crew plan (Oct 2), one of its two easy pieces:
 the crew link as a QR on the Invite sheet. On Oct 3, from his phone at
-ACL, Kevin asked for a cooler, branded code, a quieter friend section, a
-card worth saving, and short fest names. Merged on his OK on W1 Sunday
+ACL, Kevin asked for a cooler, branded code, a quieter friend section,
+short fest names, and a downloadable image worth keeping, with the crew
+code baked in once codes exist (the card's code line waits for them). Merged on his OK on W1 Sunday
 morning.
 
 - **The QR** (`js/v3/qr.js`, vendored uqr 0.1.3): the crew link the box
@@ -26,11 +27,15 @@ morning.
   what the section always said. Adding moves on to NAME IS IN.
 - **Short names:** ACL and Seismic; ids and URLs untouched, and the
   validator now errors on a long or "…Festival" name. Share links say
-  fest.kevinhg.com from every host.
+  fest.kevinhg.com from all three production hosts (previews and staging
+  keep their own).
 - **The day row.** "ACL" shortened the dock's fest name, which moved the
   day row, and a Saturday rest at 375–390 ended halfway through SUN 4. The
   gaps between tabs now give within 15–30px, by as little as clears the
   sliver (`restingGap`, pure, beside `restingLeft`); clean rows keep 24px.
+  Where no gap in bounds clears it, the row keeps 24px (ACL with Late
+  nights active, at the narrowest rows, can still show part of SAT 10:
+  LEDGER 58).
 - **What the reviews caught** (each fixed red-first): on a phone on its
   side, Pick for a friend left the link step up and the field off screen
   (`[hidden]` lost to the two-column grid's `display`); the add's own poll
@@ -47,9 +52,10 @@ morning.
   filtered at 844, as elsewhere.
 - **Numbering:** the branch's previews used v109–v112 while v113 and v114
   shipped from main, so it merged main twice and stamped v115.
-- **Left as is** (LEDGER 55–57): a half-pixel QR card offset in Chromium,
+- **Left as is** (LEDGER 55–58): a half-pixel QR card offset in Chromium,
   the people menu's fold on a phone on its side, and Safari's missing
-  `requestIdleCallback` (the card draws ~300 ms after the sheet opens).
+  `requestIdleCallback` (the card draws ~300 ms after the sheet opens),
+  and the narrowest rows' Late-nights sliver.
 - **Not built, waiting on Kevin:** crew codes (slice 3; he wants
   three-word combos, fun over strength, v1 word list sent) and the
   home-screen row (slice 2).
