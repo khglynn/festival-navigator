@@ -666,14 +666,21 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await motionDone(page, { within: '.invite-sheet' });
       const up = await page.evaluate(() => { const s = document.querySelector('.invite-sheet'); return { bottom: s.style.bottom, maxHeight: s.style.maxHeight }; });
       assert.equal(up.bottom, '300px', `standing on the keys: ${JSON.stringify(up)}`);
-      // The ✕, and the keys going down inside the sheet's way out.
+      // The ✕, and the keys going down inside the sheet's way out: the moment
+      // the sheet gives up its id (notes.js leave, which starts its exit in the
+      // same task), never a page timer after the tap — a busy Linux WebKit
+      // runner fired a 20 ms one after the sheet had already gone (CI run
+      // 37222071136: connected false).
       await page.evaluate(() => {
         const s = document.querySelector('.invite-sheet');
-        s.querySelector('.sheet-close').addEventListener('click', () => setTimeout(() => {
+        const mo = new MutationObserver(() => {
+          if (s.id) return;
+          mo.disconnect();
           window.__leaving = { connected: s.isConnected, id: s.id, moving: s.getAnimations().length };
           window.__keys(0);
           window.__after = { bottom: s.style.bottom, maxHeight: s.style.maxHeight };
-        }, 20), { once: true });
+        });
+        mo.observe(s, { attributes: true, attributeFilter: ['id'] });
       });
       await page.touchscreen.tap(...await page.locator('.invite-sheet .sheet-close').boundingBox().then((c) => [c.x + c.width / 2, c.y + c.height / 2]));
       await page.waitForFunction(() => window.__after, null, { timeout: 3000 });
