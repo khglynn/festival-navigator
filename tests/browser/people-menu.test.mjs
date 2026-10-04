@@ -112,8 +112,14 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     // machine it can still be moving at 350 ms, and a box read then is off
     // by the slide (a full local run, 2026-09-26: "the tops on one line
     // (40.6 / 38.5)", green alone three times). Read geometry at rest.
+    // And a menu on its way out is at rest when it has GONE, not when its
+    // fade stops running: until the fade's onfinish hides it, its footprint
+    // eats taps by design (app.js guardFade), and the Invite sheet's friend
+    // row and Share sit inside the Highlight menu's. A late finish (the
+    // LATE_FINISH_MS stand-in) left those taps eaten.
     await page.waitForFunction(() => [...document.querySelectorAll('.hl-pop, .sort-pop')]
-      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')), null, { timeout: 3000 }).catch(() => {});
+      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')
+        && (p.style.pointerEvents !== 'none' || getComputedStyle(p).display === 'none')), null, { timeout: 3000 }).catch(() => {});
   };
   // Outside the menu, far from it: a card on the wall clear of the menu —
   // where a thumb puts a menu away, and where the tap only closes it (the
