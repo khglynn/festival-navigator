@@ -602,7 +602,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       addEventListener: (...a) => { if (a[0] === 'resize') { listening += 1; log.push(`+${Math.round(performance.now() - t0)} ${from()}`); } et.addEventListener(...a); },
       removeEventListener: (...a) => { if (a[0] === 'resize') { listening -= 1; log.push(`-${Math.round(performance.now() - t0)} ${from()}`); } et.removeEventListener(...a); } };
     Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
-    window.__keys = (kb) => { vv.kb = kb; log.push(`keys ${kb} at ${Math.round(performance.now() - t0)}, ${listening} listening`); et.dispatchEvent(new Event('resize')); };
+    window.__keys = (kb) => { vv.kb = kb; window.__keysUp = kb > 0; log.push(`keys ${kb} at ${Math.round(performance.now() - t0)}, ${listening} listening`); et.dispatchEvent(new Event('resize')); };
     window.__keysLog = () => {
       const sh = document.querySelector('.invite-sheet');
       return { log, inline: sh ? { bottom: sh.style.bottom, maxHeight: sh.style.maxHeight, overflowY: sh.style.overflowY } : null };
@@ -621,7 +621,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         const b = await page.locator('.invite-sheet .inv-friend').boundingBox();
         await page.evaluate((ms) => { document.querySelector('.invite-sheet .inv-friend').addEventListener('click', () => setTimeout(() => window.__keys(336), ms), { once: true }); }, raiseAt);
         await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
-        await sleep(raiseAt + 200);
+        // Up when they are up: a page's timer can run late (WebKit on a busy
+        // runner fired the 600 ms raise after a fixed wait had measured —
+        // the ride's own log said so: listening, the keys never raised).
+        await page.waitForFunction(() => window.__keysUp === true, null, { timeout: 5000 });
+        await sleep(200);
         await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
         await motionDone(page, { within: '.invite-sheet' });
         const m = await page.evaluate(() => {
@@ -1295,8 +1299,16 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         window.addEventListener('keydown', (e) => {
           if (e.key !== 'Escape' || window.__closed) return;
           window.__closed = { before: parseFloat(getComputedStyle(sheet).height), moving: heightOn() };
-          setTimeout(() => { window.__closed.after = parseFloat(getComputedStyle(sheet).height); }, 0);
         }, true);
+        // The way out begins when the sheet gives up its id (notes.js leave,
+        // its first act) — Escape goes through history, so that can be a
+        // task later. Read once leave() has run, before any frame or timer:
+        // a timer ran late on WebKit and read a sheet already gone.
+        new MutationObserver((recs, mo) => {
+          if (sheet.id || !window.__closed) return;
+          window.__closed.after = parseFloat(getComputedStyle(sheet).height);
+          mo.disconnect();
+        }).observe(sheet, { attributes: true, attributeFilter: ['id'] });
       });
       const b = await page.locator('.invite-sheet .inv-friend').boundingBox();
       await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
