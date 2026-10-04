@@ -22,13 +22,47 @@ const machineContext = new WeakMap(); // browser → its own newContext, unpinne
 export function pinByDefault(browser) {
   if (!browser) return browser;
   const newContext = browser.newContext.bind(browser);
-  machineContext.set(browser, newContext);
+  machineContext.set(browser, guardedContexts(newContext));
   browser.newContext = async (options) => {
     const ctx = await newContext(options);
     await ctx.addInitScript(shiftDate, Date.parse(TEST_CLOCK));
-    return ctx;
+    return guardWaits(ctx);
   };
   return browser;
+}
+
+// Every page this harness hands out refuses a Promise from a waitForFunction
+// predicate (2026-10-04). Playwright calls the predicate synchronously and
+// stops at the first truthy result, and a Promise is truthy, so an async
+// predicate — `async () => …`, `() => import(…).then(…)`, `() =>
+// caches.has(…)`, a named one — ends the "wait" on its first poll, whatever
+// the page holds. The predicate runs inside a wrapper that throws instead, so
+// the mistake fails loudly at once in any shape; tests/browser-waits.test.mjs
+// catches the shapes it can read before a browser runs. An async check
+// belongs to waitForAsync below.
+export const PROMISE_IN_WAIT = 'waitForFunction got a Promise: a Promise is truthy, so this wait would end at once. Use waitForAsync (tests/helpers/browser.mjs).';
+const GUARDED = Symbol('waits guarded');
+function guardPage(page) {
+  if (!page || page[GUARDED]) return page;
+  const own = page.waitForFunction.bind(page);
+  page.waitForFunction = (fn, arg, options) => {
+    if (typeof fn !== 'function') return own(fn, arg, options);
+    // Playwright sends a function as its source anyway; this one wraps it.
+    const body = `const r = (${fn.toString()})(arg); if (r && typeof r.then === 'function') throw new Error(${JSON.stringify(PROMISE_IN_WAIT)}); return r;`;
+    return own(new Function('arg', body), arg, options);
+  };
+  page[GUARDED] = true;
+  return page;
+}
+function guardWaits(ctx) {
+  if (!ctx || typeof ctx.newPage !== 'function') return ctx; // a stand-in context (tests/test-clocks.test.mjs)
+  const newPage = ctx.newPage.bind(ctx);
+  ctx.newPage = async (...a) => guardPage(await newPage(...a));
+  if (typeof ctx.on === 'function') ctx.on('page', guardPage); // popups and pages opened from the page
+  return ctx;
+}
+function guardedContexts(newContext) {
+  return async (options) => guardWaits(await newContext(options));
 }
 
 // The one way out: a context on the machine's clock, for a test that is about
@@ -77,6 +111,39 @@ export async function motionDone(page, { within = null, timeout = 6000 } = {}) {
   }, within, { timeout, polling: 'raf' });
 }
 
+// Wait until an ASYNC check in the page comes back truthy (a module's state
+// through import(), the Cache API), polling from here. page.waitForFunction
+// cannot do this: it calls its predicate synchronously and stops at the first
+// truthy result, and a Promise is truthy — `waitForFunction(async () =>
+// false)` returns in ~30ms with false (2026-10-04; the error journal read one
+// beat early on a busy Linux WebKit runner, CI run 37218538542).
+// tests/browser-waits.test.mjs keeps async predicates out of waitForFunction.
+// Every wait inside is bounded by the deadline: a check that never settles (a
+// held module, a page going away) still ends in the named timeout, so the
+// caller reaches its cleanup (Copilot on #87).
+export async function waitForAsync(page, check, arg, { timeout = 5000, every = 100, what = 'the page' } = {}) {
+  const end = Date.now() + timeout;
+  const late = () => new Error(`waitForAsync: ${what} not true within ${timeout}ms`);
+  for (;;) {
+    const run = Promise.resolve().then(() => page.evaluate(check, arg));
+    run.catch(() => {}); // left behind at the deadline, it may still reject (the context closing)
+    let timer;
+    let value;
+    try {
+      value = await Promise.race([run, new Promise((_, no) => { timer = setTimeout(() => no(late()), Math.max(0, end - Date.now())); })])
+        .finally(() => clearTimeout(timer));
+    } catch (e) {
+      // A navigation mid-check is "not yet", as page.waitForFunction retries
+      // through one; anything else (the deadline, a broken check) is the answer.
+      if (!(e instanceof Error) || !/Execution context was destroyed/.test(e.message)) throw e;
+      value = false;
+    }
+    if (value) return value;
+    if (Date.now() >= end) throw late();
+    await new Promise((r) => setTimeout(r, Math.min(every, Math.max(0, end - Date.now()))));
+  }
+}
+
 // The page's fonts in, and one whole frame run between two animation-frame
 // callbacks: the page as a person sees it. A web font's arrival resizes boxes,
 // and the ResizeObservers that answer it (Our plan's refit) run in the next
@@ -105,7 +172,35 @@ export async function fontsIn(page) {
 // fixed beat fails here as it would on CI; one that waits for the motion
 // passes.
 export const LATE_MS = Number(process.env.LATE_ANIMATIONS_MS) || 0;
-export async function lateStarts(ctx, ms = LATE_MS) {
+// LATE_FINISH_MS is the other end of the same runner (2026-10-04): an
+// animation's `finished` promise and its onfinish land `ms` after it stops
+// running. Code that puts a thing at rest there (app.js stepSwapper's land,
+// which hides the leaving step and takes .stepping off) is still mid-way when
+// motionDone, which only asks whether anything is running, says it is done:
+// Linux WebKit read the link's step still up between the two (CI run
+// 37223242001). A test that waits for the state the app sets at rest passes
+// here; one that reads after motionDone alone fails as it would on CI.
+export const LATE_FINISH_MS = Number(process.env.LATE_FINISH_MS) || 0;
+export async function lateStarts(ctx, ms = LATE_MS, finish = LATE_FINISH_MS) {
+  if (finish) {
+    await ctx.addInitScript((lag) => {
+      const done = Object.getOwnPropertyDescriptor(Animation.prototype, 'finished');
+      if (done && done.get) {
+        Object.defineProperty(Animation.prototype, 'finished', {
+          configurable: true,
+          get() { return done.get.call(this).then((v) => new Promise((r) => setTimeout(() => r(v), lag))); },
+        });
+      }
+      const on = Object.getOwnPropertyDescriptor(Animation.prototype, 'onfinish');
+      if (on && on.set) {
+        Object.defineProperty(Animation.prototype, 'onfinish', {
+          configurable: true,
+          get() { return on.get.call(this); },
+          set(fn) { on.set.call(this, typeof fn === 'function' ? function lateFinish(e) { setTimeout(() => fn.call(this, e), lag); } : fn); },
+        });
+      }
+    }, finish);
+  }
   if (!ms) return;
   await ctx.addInitScript((lag) => {
     const animate = Element.prototype.animate;

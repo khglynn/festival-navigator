@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER, waitForAsync } from '../helpers/browser.mjs';
 import { pillWidth } from '../../js/v3/people-menu.js';
 import jpeg from 'jpeg-js';
 import jsQR from 'jsqr';
@@ -112,8 +112,14 @@ async function openApp(engine, { width = 390, height = 844, guest = false, wide 
     // machine it can still be moving at 350 ms, and a box read then is off
     // by the slide (a full local run, 2026-09-26: "the tops on one line
     // (40.6 / 38.5)", green alone three times). Read geometry at rest.
+    // And a menu on its way out is at rest when it has GONE, not when its
+    // fade stops running: until the fade's onfinish hides it, its footprint
+    // eats taps by design (app.js guardFade), and the Invite sheet's friend
+    // row and Share sit inside the Highlight menu's. A late finish (the
+    // LATE_FINISH_MS stand-in) left those taps eaten.
     await page.waitForFunction(() => [...document.querySelectorAll('.hl-pop, .sort-pop')]
-      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')), null, { timeout: 3000 }).catch(() => {});
+      .every((p) => p.getAnimations().every((a) => a.playState !== 'running')
+        && (p.style.pointerEvents !== 'none' || getComputedStyle(p).display === 'none')), null, { timeout: 3000 }).catch(() => {});
   };
   // Outside the menu, far from it: a card on the wall clear of the menu —
   // where a thumb puts a menu away, and where the tap only closes it (the
@@ -399,6 +405,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const entries = await page.evaluate(() => history.length);
       await press('.invite-sheet .inv-friend');
       await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'ADD A FRIEND', null, { timeout: 3000 });
+      // At rest is when the step has landed (.stepping off: app.js stepSwapper
+      // hides the leaving step there), not when nothing is running — the land
+      // waits on the animations' finished promises, a frame or more after
+      // they stop running, and a busy WebKit runner read the link's step in
+      // between (CI run 37223242001).
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       const up = await page.evaluate(() => ({
         focus: document.activeElement === document.querySelector('.invite-sheet .inv-name input'),
@@ -413,11 +425,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // ‹ back to the link, and in again.
       await press('.invite-sheet .sheet-back');
       await page.waitForFunction(() => document.querySelector('.invite-sheet .sheet-title')?.textContent === 'INVITE SOMEONE', null, { timeout: 3000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       assert.equal(await page.locator('.invite-sheet .inv-link input').isVisible(), true, 'the link again');
       assert.equal(await page.evaluate(() => document.activeElement === document.querySelector('.invite-sheet .inv-friend')), true, 'focus on the row it left from');
       await press('.invite-sheet .inv-friend');
       await page.waitForFunction(() => document.activeElement === document.querySelector('.invite-sheet .inv-name input'), null, { timeout: 3000 });
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet.stepping'), null, { timeout: 3000 });
       await motionDone(page, { within: '.invite-sheet' });
       await page.keyboard.type('Zed'); // straight in: the field has the focus
       await press('.invite-sheet .inv-add');
@@ -516,7 +530,11 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // where it was before the sheet.
       await page.goBack();
       await page.waitForFunction(() => !document.querySelector('#artist-sheet'), null, { timeout: 3000 });
-      await sleep(300);
+      // The sheet gives up its id at once and leaves the page when its leave
+      // animation ends (notes.js leave): wait for that, not a fixed beat — a
+      // busy Linux WebKit runner was still mid-leave 300ms on (CI run
+      // 37221010659). A step that stays behind still fails here, by name.
+      await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 4000 }).catch(() => {});
       assert.equal(await page.locator('.invite-sheet').count(), 0, 'the whole sheet, not just its step');
       assert.equal(await page.evaluate(() => (history.state && (history.state.layers || []).length) || 0), 0, 'and no layer left behind');
       assert.deepEqual(errors, []);
@@ -662,14 +680,21 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       await motionDone(page, { within: '.invite-sheet' });
       const up = await page.evaluate(() => { const s = document.querySelector('.invite-sheet'); return { bottom: s.style.bottom, maxHeight: s.style.maxHeight }; });
       assert.equal(up.bottom, '300px', `standing on the keys: ${JSON.stringify(up)}`);
-      // The ✕, and the keys going down inside the sheet's way out.
+      // The ✕, and the keys going down inside the sheet's way out: the moment
+      // the sheet gives up its id (notes.js leave, which starts its exit in the
+      // same task), never a page timer after the tap — a busy Linux WebKit
+      // runner fired a 20 ms one after the sheet had already gone (CI run
+      // 37222071136: connected false).
       await page.evaluate(() => {
         const s = document.querySelector('.invite-sheet');
-        s.querySelector('.sheet-close').addEventListener('click', () => setTimeout(() => {
+        const mo = new MutationObserver(() => {
+          if (s.id) return;
+          mo.disconnect();
           window.__leaving = { connected: s.isConnected, id: s.id, moving: s.getAnimations().length };
           window.__keys(0);
           window.__after = { bottom: s.style.bottom, maxHeight: s.style.maxHeight };
-        }, 20), { once: true });
+        });
+        mo.observe(s, { attributes: true, attributeFilter: ['id'] });
       });
       await page.touchscreen.tap(...await page.locator('.invite-sheet .sheet-close').boundingBox().then((c) => [c.x + c.width / 2, c.y + c.height / 2]));
       await page.waitForFunction(() => window.__after, null, { timeout: 3000 });
@@ -1593,7 +1618,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.deepEqual(await qrRecords(page), [], 'too slow is not yet an error');
       // The request fails at last: that IS recorded, once, and nothing comes back.
       release();
-      await page.waitForFunction(() => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000 });
+      await waitForAsync(page, () => import('/js/errlog.js').then((m) => m.recent().some((e) => e.kind === 'invite:qr')), null, { timeout: 4000, what: 'the invite:qr record' });
       const said = await qrRecords(page);
       assert.equal(said.length, 1, `recorded once: ${JSON.stringify(said)}`);
       assert.doesNotMatch(JSON.stringify(said), new RegExp(`${CREW}|#g=|g=`), 'no link anywhere in it');
