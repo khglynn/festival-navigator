@@ -315,8 +315,9 @@ test('windows: every ACL night — both weekends (an unprinted closer glows to t
   assert.equal(late.length, 66);
   // Untagged sets twice, then W1's and W2's own (the W1 Saturday re-time of
   // 2026-10-03 split nine untagged sets, kept Fakemink's for W2 only and
-  // took three off W1: 49/42/42 then).
-  assert.equal(n, 39 * 2 + 50 + 52 + 66, 'every grid set on both weekends and every Late night, compared');
+  // took three off W1: 49/42/42 then; the W1 Sunday re-time that evening
+  // split five more and kept Paloma Morphy's for W2 only: 39/50/52 then).
+  assert.equal(n, 33 * 2 + 57 + 58 + 66, 'every grid set on both weekends and every Late night, compared');
   // Fcukers on Oct 10: Devil May Care posts 11:45 PM (doors 10), close 2 AM.
   const card = root.querySelector('.day-block[data-day="Late nights"] .room[data-iso="2026-10-10"] .card[data-artist="Fcukers"]');
   assert.deepEqual([Number(card.dataset.nowFrom), Number(card.dataset.nowTo)], [M(23, 45), M(26)]);
@@ -392,13 +393,13 @@ test('ACL: nights by date from Tue Sep 29 — the six weekend days and every Lat
   // 25 minutes were a stop of their own; both now run to the close, so she
   // is his fork to the end. The xx runs to the close on Oct 4 the same way.
   assert.deepEqual(plan.nights.map((n) => plan.night(n.id).stops), [1, 1, 5, 3, 2, 0, 0, 1, 5, 4, 2]);
-  assert.deepEqual(rows(plan, '2026-10-04'), ['some 6:30 PM–7:30 PM 3 Tito\'s (Fcukers)', '··· 7:30 PM–8:30 PM', 'some 8:30 PM–10 PM 4 T-Mobile (The xx)']);
+  assert.deepEqual(rows(plan, '2026-10-04'), ['some 6:30 PM–7:30 PM 3 Tito\'s (Fcukers)', '··· 7:30 PM–8:35 PM', 'some 8:35 PM–10 PM 4 T-Mobile (The xx)']);
 });
 
 test('ACL: no two grid places of one weekend overlap on one stage (the prototype had 41)', () => {
   const plan = P.planOf(ACL, { picks: ACL_PICKS, members: ACL_MEMBERS });
   const sets = plan.places.filter((p) => p.kind === 'set');
-  assert.equal(sets.length, 39 * 2 + 50 + 52, 'untagged sets on both weekends, tagged ones on theirs');
+  assert.equal(sets.length, 33 * 2 + 57 + 58, 'untagged sets on both weekends, tagged ones on theirs');
   let overlaps = 0;
   for (const n of plan.nights) {
     const here = sets.filter((p) => p.nightId === n.id);

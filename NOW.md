@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-03 4:20 PM PT (v113 live: ACL Sat W1 re-timed) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-03 5:55 PM PT (v113 live; v114 = ACL Sun W1 re-timed, in flight) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -33,9 +33,17 @@ three ideas offered to Kevin, no answer yet).
 **ACL, 2026-10-03 (v113):** mud delayed Saturday's doors to 2 PM; W1 Saturday
 is re-timed from ACL's revised poster (Left Lucid, Fightmaster, Fakemink
 cancelled on W1; LeTrainiump added), and a cancelled card now folds with
-its finished room (it held Saturday on the wall till 5 AM). Still to re-read against the newer
-posters on aclfestival.com/schedule: W1 Sunday (v10.02-B) and all of W2
-(Sat/Sun 9.30, Fri 10.01) — the file's W2 and Sunday are the Aug 27 posters.
+its finished room (it held Saturday on the wall till 5 AM).
+
+**In flight: v114, branch `data/acl-sun-w1`** — W1 Sunday (Oct 4) re-timed
+from the Oct 2 poster (v10.02-B): the T-Mobile / Miller Lite run from 4:30
+about 10 minutes earlier, Britton to Snapchat 3:30, Flight by Nothing to W1,
+Rubio → Vinny Tovar and Paloma Morphy → girlsweetvoiced (both cancelled on
+W1, picks kept); W2 byte for byte. Next step: unit and browser pins (The xx
+8:35, plan-model counts 247/181), `npm test`, a browser walk of Sunday W1,
+PR, CI, an independent review, merge, verify the three hosts serve
+festival-nav-v114. Still to re-read after that: all of W2 (Sat/Sun 9.30,
+Fri 10.01) — W2 in the file is the Aug 27 posters (LEDGER follow-up 51).
 
 ## Next: the iOS app
 
@@ -50,7 +58,7 @@ Then paste this into a fresh session on that Mac:
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–41): the Linux day-row
+Festival-navigator loose ends (LEDGER follow-ups 38–53): the Linux day-row
 probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
@@ -69,7 +77,7 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Next, after the live lane
 
-0. Follow-ups: the LEDGER's list (1–41).
+0. Follow-ups: the LEDGER's list (1–53).
 1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
    only a start), the dock's FRI flash on open.
 2. After Portola: self-recovery when a phone boots stale cached modules
