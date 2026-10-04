@@ -26,14 +26,22 @@ tomorrow's data. Same method as Saturday, W1 only.
   - Keys are the artists' own names ("Vinny Tovar", although the poster
     prints "VINNY"; "girlsweetvoiced" in the artist's lowercase).
   - Paloma's W2 set stays until W2 is re-read.
-- **W2 untouched.** Each untagged set that moved is split, and W2 keeps its
-  old time byte for byte. A script guard asserts W2 is identical. Pins
+- **W2's grid untouched.** Each untagged set that moved is split, and W2
+  keeps its old time byte for byte. (Moving Flight by Nothing's billing to
+  W1 does take its untimed card off Oct 11, where Kevin Atwater has that
+  slot: a correction.) A script guard asserts W2 is identical. Pins
   updated: Oct 4's plan rows (The xx 8:35) and plan-model's set counts
   (39/50/52 → 33/57/58).
 - **The build bump** (v114, data plus a stamp only) makes an open phone
   reload into tonight's file instead of keeping Saturday's (follow-up 52).
 - **Not entered:** the Bonus Tracks column, as on Saturday. **Still to
   re-read:** W2 Fri (10.01), Sat and Sun (9.30).
+- **Shipped** 2026-10-03 6:17 PM PT (#83), all three hosts on v114. CI
+  green on both engines. Review: a three-lens Claude workflow (poster,
+  rules, app), each finding sent to a skeptic: 0 confirmed. One note kept:
+  the poster DRAWS the 4:30 run about 5 minutes later than it prints (The
+  xx's box starts at 8:30, printed 8:35). Entered as printed, like
+  Saturday's Ryan Beatty; recorded in meta.note and LEDGER follow-up 54.
 
 ## 2026-10-03 — v113: ACL Saturday W1 re-timed after the mud delay
 
