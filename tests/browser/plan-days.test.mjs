@@ -29,8 +29,9 @@ const CREWS = {
 // The longest Earlier line ACL's data can make: its first Saturday is the one
 // night with three behind that are not consecutive (Sep 29, Oct 1, Oct 2, each
 // a date because its weekday comes twice), and a crew that picked every act
-// that night, on the grid and at the late shows, has 13 stops. At 1:50 AM the
-// last is on and 12 are over: "Earlier · Sep 29 · Oct 1 · Oct 2 · 12 stops".
+// that night, on the grid and at the late shows, has 11 stops (13 before the
+// mud re-time of 2026-10-03 took two noon sets off). At 1:50 AM the last is
+// on and 10 are over: "Earlier · Sep 29 · Oct 1 · Oct 2 · 10 stops".
 // (From 2 AM nothing is left and the plan lands on Sunday: a span.)
 const ACL_ALL_SAT = (() => {
   const base = CREWS['acl-2026'];
@@ -55,7 +56,7 @@ const ACL_W1_SUN = new Date('2026-10-04T19:00:00-05:00');  // ACL W1 Sunday: Mon
 const ACL_W2_SAT = new Date('2026-10-10T16:00:00-05:00');  // ACL W2 Saturday: nine nights behind, a short Sunday ahead
 const ACL_W2_SAT_9PM = new Date('2026-10-10T21:00:00-05:00');
 const SUN_9PM = new Date('2026-09-27T21:00:00-07:00');      // Portola Sunday: three nights behind and four stops over
-const ACL_W1_SAT_150AM = new Date('2026-10-04T01:50:00-05:00'); // still ACL's first Saturday: ACL_ALL_SAT's last stop on, 12 over
+const ACL_W1_SAT_150AM = new Date('2026-10-04T01:50:00-05:00'); // still ACL's first Saturday: ACL_ALL_SAT's last stop on, 10 over
 const QUIET_MS = 450; // the shelf swallows the click just after a tap or a drag (plan-shelf.js quietUntil, 400)
 
 // `fest`: which festival and made-up crew (`crew`: another made-up crew for
@@ -660,7 +661,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
           // Portola's three nights behind run on consecutive dates: one range.
           if (fest === 'portola-2026') assert.match(line.text, /^Earlier · Thu – Sat · \d+ stops$/);
           if (crew) {
-            assert.equal(line.text, 'Earlier · Sep 29 · Oct 1 · Oct 2 · 12 stops');
+            assert.equal(line.text, 'Earlier · Sep 29 · Oct 1 · Oct 2 · 10 stops');
             // No label or count is split between two lines ("SEP" / "29").
             assert.deepEqual(line.items, line.items.map(() => 1), `every label on one line: ${JSON.stringify(line)}`);
           }
