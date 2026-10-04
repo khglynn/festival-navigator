@@ -1,5 +1,5 @@
 _The 2026-10-02 design-and-judge run's output: three designs for a crew code, two judges, and this synthesis (Part A for Kevin, Part B the build plan)._
-_Slice 1 (the QR on the Invite sheet) is built on `feat/invite-qr`; slices 2 (the home-screen row) and 3 (four words from the key) wait on Kevin's answers to Part A's questions._
+_Slice 1 (the QR on the Invite sheet) shipped in v115 (PR #80, 2026-10-04); slices 2 (the home-screen row) and 3 (crew codes — Kevin now wants a code he types or a shuffled three-word combo, fun over strength) wait on his go._
 
 # PART A: For Kevin
 

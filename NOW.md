@@ -1,19 +1,21 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-04 12:45 AM PT (v114 live: ACL Sun W1 re-timed; PR #80 = v115, green, waits on Kevin) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-04 12:16 PM PT (v115 live and verified; its tests read at rest now, #87) · mode: live (ACL Oct 2–4, 9–11)**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v114, from `main`** (PR #83, merged 2026-10-03 6:17 PM PT) on fest /
-  festival / crew.kevinhg.com, all three serving festival-nav-v114 /
-  9f134cda: ACL's W1 Sunday (Oct 4) re-timed from the Oct 2 poster, Rubio
-  and Paloma Morphy cancelled on W1 (picks kept). v113 (earlier today): W1
-  Saturday re-timed after the mud delay, and a cancelled card folds with
-  its finished room (wall.js `roomPast`). Rollback: Vercel
-  dpl_iQnzZt75roomsvH5hNPXaJqwhjqk (v113 + docs). Rows, reviews, rollback
+- **v115, from `main`** (PR #80, merged 2026-10-04 9:51 AM PT on Kevin's
+  OK) on fest / festival / crew.kevinhg.com, all three serving
+  festival-nav-v115 / ffa70e4b: the Invite sheet (find your crew, slice 1)
+  — the crew link as a QR in the app's own look and a card to keep when
+  saved, the friend part as one quiet row opening its own step, short
+  fest names (ACL, Seismic; ids and URLs unchanged), share links on
+  fest.kevinhg.com, and the dock's day row giving its gaps (15–30px)
+  before it rests on a cut-off tab. v114 (Oct 3): ACL's W1 Sunday re-timed. Rollback: Vercel
+  dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Rows, reviews, rollback
   targets: the LEDGER.
 - **Alerts:** PostHog → Slack for a new error and one that came back
   (`ops/posthog/`), triggered by error-tracking issues only, and one usage
@@ -26,7 +28,7 @@ how we got here belongs in DEVLOG.md.
 Built 2026-10-02 (DESIGN §2g). Look after each festival day: errors by
 build, a stale build still in use, red sync, and how often an open lands
 with no crew (`landing` in "How opens begin" — the find-your-crew question;
-three ideas offered to Kevin, no answer yet).
+its slice 1, the Invite sheet's QR, is v115: watch whether it moves).
 
 **ACL, 2026-10-03:** W1 Saturday (v113, after the mud delay) and W1 Sunday
 (v114, the Oct 2 poster) are re-timed from ACL's revised posters; their
@@ -34,24 +36,6 @@ cancelled acts keep their entries and picks. Next: re-read all of W2 (Fri
 10.01, Sat and Sun 9.30) before Oct 9 — W2 in the file is still the Aug 27
 posters (LEDGER follow-up 51). The Sunday poster draws its 4:30 run about 5
 minutes later than it prints; entered as printed (follow-up 54).
-
-## Also: PR #80, the Invite sheet (draft, v115) — waits on Kevin
-
-Find your crew, slice 1 (`claude-plans/2026-10-02-find-your-crew.md`) and
-Kevin's Oct 3 asks: the crew link as a QR in the app's own look (the
-hero's aura, a light panel, deep brand ink — never "My link"), a card to
-keep when saved (crew and fest names, no link text), the friend part as
-one quiet row opening a step that keeps the section's old words, short
-fest names (ACL, Seismic; ids and URLs unchanged), share links on
-fest.kevinhg.com, and the dock row's gaps giving before it rests on a
-sliver. Main (through v114 and its docs) is merged in, so it stamps v115.
-CI was green on c424286 (WebKit included); the independent review of the
-head and its real-input walk are done, all seven confirmed findings fixed
-red-first. Kevin's: a real-iPhone check (Camera scans it; long-press Save
-keeps the card — the one thing not testable here; clear the preview's
-site data first), then his OK → merge, verify all three hosts serve
-festival-nav-v115. The branch `diag/qr-fold-webkit` needs deleting on
-GitHub.
 
 ## Next: the iOS app
 
@@ -66,7 +50,7 @@ Then paste this into a fresh session on that Mac:
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–54): the Linux day-row
+Festival-navigator loose ends (LEDGER follow-ups 38–59): the Linux day-row
 probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Open with Kevin
@@ -75,7 +59,15 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
   three-word combo ("sunburnt two step"), fun over strength; needs a
   DB-backed rate limit and a crew_codes table (additive). The v1 word list
   went to him Oct 3 with three small calls; the build waits on his go.
-- Slice 2 (a quiet home-screen row in Settings) waits on his iPhone test.
+- v115 on his iPhone, on production now (clear the site's data first, or
+  Settings → Get the latest version): Camera scans the Invite sheet's QR;
+  long-press Save keeps the card (crew and fest names), not the plain
+  code; Pick for a friend → add a name → NAME IS IN, upright and on its
+  side; a hitch just after the QR appears. Also his: delete the branch
+  `diag/qr-fold-webkit` on GitHub (this session's proxy refuses deletes).
+- Slice 2 (a quiet home-screen row in Settings) waits on his home-screen
+  test: Share → Add to Home Screen, open the icon — the board, or an
+  empty start page? (find-your-crew plan, Part A question 3).
 - Ray: the Sep 1 reply is still in Gmail drafts — send it now, or fold it
   into one email after ACL (its Pen card asks; the draft still says Discover
   "after ACL", now 2027).
@@ -90,7 +82,7 @@ probe, a pid-keyed redo of the offline name fix, three product calls.
 
 ## Next, after the live lane
 
-0. Follow-ups: the LEDGER's list (1–54).
+0. Follow-ups: the LEDGER's list (1–59).
 1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
    only a start), the dock's FRI flash on open.
 2. After Portola: self-recovery when a phone boots stale cached modules

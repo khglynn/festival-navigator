@@ -2,6 +2,84 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-04 — v115: the Invite sheet (find your crew, slice 1)
+
+Slice 1 of the find-your-crew plan (Oct 2), one of its two easy pieces:
+the crew link as a QR on the Invite sheet. On Oct 3, from his phone at
+ACL, Kevin asked for a cooler, branded code, a quieter friend section,
+short fest names, and a downloadable image worth keeping, with the crew
+code baked in once codes exist (the card's code line waits for them). Merged on his OK on W1 Sunday
+morning.
+
+- **The QR** (`js/v3/qr.js`, vendored uqr 0.1.3): the crew link the box
+  prints, never My link, drawn in the hero's aura on a light panel with
+  deep brand ink. Three designs went to a panel that judged them and
+  stress-decoded each one. `qrLayout` is a pure rule: never fewer pixels
+  per module than the plain v111 code had on the same screen. It is core
+  in APP_CORE although app.js only `import()`s it, so a field phone has it
+  offline. If it can't draw, it folds away and leaves the link.
+- **The card to keep.** Long-press Save keeps a separate ~1080×1400 card
+  (crew name, short fest name and year in Anton, no link text) that sits
+  under the on-screen code, which lets presses through. The one thing a
+  browser here can't test is iOS's long-press callout; it is Kevin's check.
+- **The friend part** is one quiet row now, opening ADD A FRIEND in the
+  same sheet. Kevin asked for the old words back on that step, so it says
+  what the section always said. Adding moves on to NAME IS IN.
+- **Short names:** ACL and Seismic; ids and URLs untouched, and the
+  validator now errors on a long or "…Festival" name. Share links say
+  fest.kevinhg.com from all three production hosts (previews and staging
+  keep their own).
+- **The day row.** "ACL" shortened the dock's fest name, which moved the
+  day row, and a Saturday rest at 375–390 ended halfway through SUN 4. The
+  gaps between tabs now give within 15–30px, by as little as clears the
+  sliver (`restingGap`, pure, beside `restingLeft`); clean rows keep 24px.
+  Where no gap in bounds clears it, the row keeps 24px (ACL with Late
+  nights active, at the narrowest rows, can still show part of SAT 10:
+  LEDGER 58).
+- **What the reviews caught** (each fixed red-first): on a phone on its
+  side, Pick for a friend left the link step up and the field off screen
+  (`[hidden]` lost to the two-column grid's `display`); the add's own poll
+  repainted the wall mid-step and dropped the answer 52px (remote repaints
+  now wait for the step to land); a day change that shortened the row's
+  scroll range jumped it 47px; two card draws could revoke each other's
+  image; a sheet closed mid-step snapped its height; a long crew name was
+  cut mid-word.
+- **CI, again: Linux WebKit's page timers run late on a busy runner.**
+  Two tests that measured after a `setTimeout` read nothing; a diagnostic
+  run proved the keyboard ride was never dropped. They now wait for the
+  event (`__keysUp`, a MutationObserver on the sheet leaving), not the
+  clock. The day rail's known "ResizeObserver loop" notice (LEDGER 37) is
+  filtered at 844, as elsewhere.
+- **After the merge, four more CI flakes, all in v115's own tests and all
+  the same mistake: reading before the app was at rest** (PR #87, tests
+  only).
+  - The QR "module never comes" test used an async `waitForFunction`.
+    Playwright takes its Promise as truthy, so the wait returned at once.
+    `waitForAsync` replaces it, and a source scan plus a runtime wrapper
+    now refuse the shape.
+  - Back's sheet was counted after a fixed 300 ms.
+  - The keys went down on a 20 ms page timer.
+  - The friend step was read after `motionDone`, while its land waited on
+    the animations' late `finished` promises.
+  - A new stand-in, `LATE_FINISH_MS`, reproduced that last one locally,
+    in Chromium.
+    Sweeping the suite with it found people-menu's `press()` tapping into a
+    closing menu whose footprint still ate taps.
+  - Each one now waits for the state the app sets, and the rule is in
+    AGENTS.md.
+  - Left as is: the warm-open test's 1 s jsdom budget under full-suite
+    load (LEDGER 59).
+- **Numbering:** the branch's previews used v109–v112 while v113 and v114
+  shipped from main, so it merged main twice and stamped v115.
+- **Left as is** (LEDGER 55–58; 59 is a test budget): a half-pixel QR
+  card offset in Chromium, the people menu's fold on a phone on its side,
+  and Safari's missing
+  `requestIdleCallback` (the card draws ~300 ms after the sheet opens),
+  and the narrowest rows' Late-nights sliver.
+- **Not built, waiting on Kevin:** crew codes (slice 3; he wants
+  three-word combos, fun over strength, v1 word list sent) and the
+  home-screen row (slice 2).
+
 ## 2026-10-03 (evening) — v114: ACL Sunday W1 re-timed for Oct 4
 
 Kevin asked what changed in the Oct 2 Sunday poster; the answer became

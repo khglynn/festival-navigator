@@ -47,10 +47,11 @@ live in `archive/`.
 ## Building now
 
 - `2026-10-02-find-your-crew.md`: finding your crew again on a new phone or
-  browser — a QR on the Invite sheet (slice 1, built on `feat/invite-qr`),
-  a quiet home-screen row in Settings (slice 2), four words from the crew's
-  key typed at fest.kevinhg.com (slice 3). Slices 2–3 wait on Kevin's
-  answers to its Part A.
+  browser — a QR on the Invite sheet (slice 1, shipped in v115, PR #80),
+  a quiet home-screen row in Settings (slice 2, waits on Kevin's
+  home-screen test, Part A question 3), crew codes typed at
+  fest.kevinhg.com (slice 3: Kevin now wants a code he picks or a shuffled
+  three-word combo, fun over strength; waits on his go).
 
 ## Banked, not built
 
