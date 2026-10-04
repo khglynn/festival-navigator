@@ -22,13 +22,47 @@ const machineContext = new WeakMap(); // browser → its own newContext, unpinne
 export function pinByDefault(browser) {
   if (!browser) return browser;
   const newContext = browser.newContext.bind(browser);
-  machineContext.set(browser, newContext);
+  machineContext.set(browser, guardedContexts(newContext));
   browser.newContext = async (options) => {
     const ctx = await newContext(options);
     await ctx.addInitScript(shiftDate, Date.parse(TEST_CLOCK));
-    return ctx;
+    return guardWaits(ctx);
   };
   return browser;
+}
+
+// Every page this harness hands out refuses a Promise from a waitForFunction
+// predicate (2026-10-04). Playwright calls the predicate synchronously and
+// stops at the first truthy result, and a Promise is truthy, so an async
+// predicate — `async () => …`, `() => import(…).then(…)`, `() =>
+// caches.has(…)`, a named one — ends the "wait" on its first poll, whatever
+// the page holds. The predicate runs inside a wrapper that throws instead, so
+// the mistake fails loudly at once in any shape; tests/browser-waits.test.mjs
+// catches the shapes it can read before a browser runs. An async check
+// belongs to waitForAsync below.
+export const PROMISE_IN_WAIT = 'waitForFunction got a Promise: a Promise is truthy, so this wait would end at once. Use waitForAsync (tests/helpers/browser.mjs).';
+const GUARDED = Symbol('waits guarded');
+function guardPage(page) {
+  if (!page || page[GUARDED]) return page;
+  const own = page.waitForFunction.bind(page);
+  page.waitForFunction = (fn, arg, options) => {
+    if (typeof fn !== 'function') return own(fn, arg, options);
+    // Playwright sends a function as its source anyway; this one wraps it.
+    const body = `const r = (${fn.toString()})(arg); if (r && typeof r.then === 'function') throw new Error(${JSON.stringify(PROMISE_IN_WAIT)}); return r;`;
+    return own(new Function('arg', body), arg, options);
+  };
+  page[GUARDED] = true;
+  return page;
+}
+function guardWaits(ctx) {
+  if (!ctx || typeof ctx.newPage !== 'function') return ctx; // a stand-in context (tests/test-clocks.test.mjs)
+  const newPage = ctx.newPage.bind(ctx);
+  ctx.newPage = async (...a) => guardPage(await newPage(...a));
+  if (typeof ctx.on === 'function') ctx.on('page', guardPage); // popups and pages opened from the page
+  return ctx;
+}
+function guardedContexts(newContext) {
+  return async (options) => guardWaits(await newContext(options));
 }
 
 // The one way out: a context on the machine's clock, for a test that is about
@@ -84,13 +118,29 @@ export async function motionDone(page, { within = null, timeout = 6000 } = {}) {
 // false)` returns in ~30ms with false (2026-10-04; the error journal read one
 // beat early on a busy Linux WebKit runner, CI run 37218538542).
 // tests/browser-waits.test.mjs keeps async predicates out of waitForFunction.
+// Every wait inside is bounded by the deadline: a check that never settles (a
+// held module, a page going away) still ends in the named timeout, so the
+// caller reaches its cleanup (Copilot on #87).
 export async function waitForAsync(page, check, arg, { timeout = 5000, every = 100, what = 'the page' } = {}) {
   const end = Date.now() + timeout;
+  const late = () => new Error(`waitForAsync: ${what} not true within ${timeout}ms`);
   for (;;) {
-    const value = await page.evaluate(check, arg);
+    const run = Promise.resolve().then(() => page.evaluate(check, arg));
+    run.catch(() => {}); // left behind at the deadline, it may still reject (the context closing)
+    let timer;
+    let value;
+    try {
+      value = await Promise.race([run, new Promise((_, no) => { timer = setTimeout(() => no(late()), Math.max(0, end - Date.now())); })])
+        .finally(() => clearTimeout(timer));
+    } catch (e) {
+      // A navigation mid-check is "not yet", as page.waitForFunction retries
+      // through one; anything else (the deadline, a broken check) is the answer.
+      if (!(e instanceof Error) || !/Execution context was destroyed/.test(e.message)) throw e;
+      value = false;
+    }
     if (value) return value;
-    if (Date.now() >= end) throw new Error(`waitForAsync: ${what} not true within ${timeout}ms`);
-    await new Promise((r) => setTimeout(r, every));
+    if (Date.now() >= end) throw late();
+    await new Promise((r) => setTimeout(r, Math.min(every, Math.max(0, end - Date.now()))));
   }
 }
 
