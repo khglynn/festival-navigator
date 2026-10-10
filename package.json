@@ -23,6 +23,9 @@
   "author": "Kevin HG",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "npm": ">=11.10.0"
+  },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@resvg/resvg-js": "^2.6.2",
