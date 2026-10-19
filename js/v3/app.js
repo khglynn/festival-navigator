@@ -5535,6 +5535,7 @@ function freshenFromNetwork(token, catalog, current) {
 // open happened to ask (Codex round 3, new B: A's answer landed while B was
 // on screen, and B's identical answer then changed nothing).
 function refreshFestivalFile(fid) {
+  festAskedAt = Date.now();
   fetchFestivalFile(fid).then((fest) => {
     if (!fest || JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
     state.FESTIVALS[fid] = fest;
@@ -5542,6 +5543,28 @@ function refreshFestivalFile(fid) {
     if (state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
   }).catch((e) => { console.warn('warm open: festival file', e); record('warm-open:fest-file', e); });
 }
+
+// The same refresh when a phone left open comes back to the page (v116,
+// LEDGER follow-up 52): a pocket phone stays open on the wall for days, and
+// a set-times drop used to reach it only once it was closed and opened
+// again. At most once in five minutes (every boot asks for the file it
+// opens, so the clock starts at load); never under Stay offline; never while
+// something is in progress (a crew being made, a join, a share) — the next
+// resume asks instead. A crew's own festival has no file to ask for: its
+// list is the crew's (applyFreshCustoms).
+const FEST_REFRESH_MS = 5 * 60 * 1000;
+let festAskedAt = Date.now();
+function refreshFestivalOnResume() {
+  if (document.visibilityState !== 'visible') return;
+  if (Date.now() - festAskedAt < FEST_REFRESH_MS) return;
+  if (appSettings().stayOffline) return;
+  const fid = state.activeFestivalId;
+  if (!fid || !state.getCrewToken() || $('screen-app').style.display === 'none') return;
+  if (document.body.dataset.busy || document.body.dataset.sharing) return;
+  if (!FESTIVAL_INDEX.some((f) => f.id === fid && !f.custom)) return;
+  refreshFestivalFile(fid);
+}
+document.addEventListener('visibilitychange', refreshFestivalOnResume);
 
 // The crew's own festivals, fresh from the server. One that changed is a data
 // push like any other: its computed days go, and if it is on screen the wall
