@@ -1,0 +1,20 @@
+# TEMPORARY (deps/oct-bumps, 2026-10-19): runs probe/ only, to chase a
+# Linux-WebKit-only wheel failure without the full browser suite. Removed
+# before the PR merges.
+name: probe
+on:
+  push:
+    branches: [deps/oct-bumps]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: BROWSER_TEST_REQUIRED=1 node --test probe/wheel-probe.mjs
+      - run: for i in 1 2 3 4 5; do BROWSER_TEST_REQUIRED=1 node --test --test-name-pattern="WebKit" tests/browser/acl-latenights.test.mjs 2>&1 | grep -E "wheel|^# (pass|fail)"; done
