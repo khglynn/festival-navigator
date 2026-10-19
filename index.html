@@ -118,6 +118,10 @@
 <body>
     <noscript><div style="padding:40px;text-align:center;font-weight:600;">Festival Navigator needs JavaScript.</div></noscript>
 
+    <!-- The screens are the page's main content, one shown at a time: the
+         landmark a screen reader jumps to (Lighthouse landmark-one-main,
+         v116). A plain block, so it adds no box of its own to any screen. -->
+    <main id="screens">
     <!-- Landing (atlas 21a) -->
     <div id="screen-landing" class="entry-screen" style="display:none">
       <div class="center-col">
@@ -302,6 +306,7 @@
         <button id="error-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
       </div>
     </div>
+    </main>
 
     <div id="toast-root"></div>
     <!-- What NOW landed on, said to a screen reader (focus stays on NOW). Here
