@@ -55,18 +55,28 @@ const scrollY = (page) => page.evaluate(() => window.scrollY);
 // Wheel the page down until it stands past `y`, then wait for it to stop.
 async function wheelTo(page, y) {
   await page.mouse.move(60, 600);
-  for (let i = 0; i < 40 && (await scrollY(page)) < y; i++) await page.mouse.wheel(0, 400);
-  // Still: the same scroll on two polls in a row.
-  await page.waitForFunction(() => {
-    const now = window.scrollY;
-    const still = now === window.__lastY;
-    window.__lastY = now;
-    return still;
-  }, null, { polling: 120, timeout: 5000 });
+  // One notch at a time, each left to come to rest (an engine may glide a
+  // wheel): a burst of notches read before they land overshot to the page's
+  // foot, where the browser's clamp decides the place, not the app (CI,
+  // WebKit: 3871 -> 3877).
+  for (let i = 0; i < 40 && (await scrollY(page)) < y; i++) {
+    await page.mouse.wheel(0, 300);
+    await stillPage(page);
+  }
   const at = await scrollY(page);
+  const max = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
   assert.ok(at >= y, `the page scrolled past ${y} (stands at ${at})`);
+  assert.ok(at < max - 100, `and stands mid-page, clear of the clamp at its foot (${at} of ${max})`);
   return at;
 }
+// Still: the same scroll on three polls in a row.
+const stillPage = (page) => page.waitForFunction(() => {
+  const now = window.scrollY;
+  const w = window.__still || (window.__still = { y: null, n: 0 });
+  w.n = now === w.y ? w.n + 1 : 0;
+  w.y = now;
+  return w.n >= 2;
+}, null, { polling: 100, timeout: 5000 });
 // The engine restores a scroll for the wall's history entry right after the
 // popstate that closes Settings; the app keeps it from doing so until that
 // Back is done, then hands the entry back ('auto') — the state at rest.
@@ -101,16 +111,14 @@ test('390 touch: Settings opened from a scrolled wall stands at its top, a drill
 
     // A drill opened from a scrolled Settings stands at its own top.
     await page.mouse.move(195, 600);
-    for (let i = 0; i < 10; i++) await page.mouse.wheel(0, 400);
+    await page.mouse.wheel(0, 300);
     await page.waitForFunction(() => window.scrollY > 0, null, { timeout: 3000 });
-    await page.waitForFunction(() => {
-      const now = window.scrollY;
-      const still = now === window.__lastY;
-      window.__lastY = now;
-      return still;
-    }, null, { polling: 120, timeout: 5000 });
+    const how = page.locator('#settings-main button', { hasText: /^How it works/ }).first();
+    await how.scrollIntoViewIfNeeded(); // so the click below moves nothing
+    await stillPage(page);
     const mainAt = await scrollY(page);
-    await page.locator('#settings-main button', { hasText: /^How it works/ }).first().click();
+    assert.ok(mainAt > 0, `Settings is scrolled when the drill opens (${mainAt})`);
+    await how.click();
     await page.waitForFunction(() => {
       const sub = document.getElementById('settings-subview');
       return !!sub && sub.childElementCount > 0 && document.getElementById('settings-main').style.display === 'none';
