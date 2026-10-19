@@ -456,7 +456,7 @@
               return cache.keys().then(function (reqs) {
                 return Promise.all(reqs.map(function (req) {
                   var p = new URL(req.url).pathname;
-                  if (!/\.m?js$/.test(p) || p.indexOf('/data/') === 0) return null;
+                  if (!/\.m?js$/.test(p)) return null;
                   return cache.delete(req);
                 }));
               });
