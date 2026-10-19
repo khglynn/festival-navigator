@@ -181,7 +181,6 @@ api/person.js                 the me link: one person across crews (public pid, 
 api/access.js                 Spotify access requests (Slack approve flow)
 api/festival-add.js           AI lineup research; returns a candidate, saves nothing
 api/import-schedule.js        reads a schedule image; returns only what is printed, stores nothing
-api/selections.js             RETIRED endpoint: answers 410 so old clients self-heal
 api/share.js                  per-festival link previews: index.html with its OG tags swapped
 api/_lib/                     validation + guards shared by client and server
 db/schema.sql                 Neon Postgres schema incl. the atomic jsonb_deep_merge()
