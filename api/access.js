@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       if (baseUrl) {
         try { notified = await notifySlack(email, baseUrl); } catch (e) { console.error('slack notify failed:', e); }
       } else {
-        console.error('access: no trusted base URL (set PUBLIC_BASE_URL); Slack link omitted');
+        console.error('access: no trusted base URL (set PUBLIC_BASE_URL); no Slack message sent for this request');
       }
     }
     return res.status(200).json({ status, notified });
