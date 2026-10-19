@@ -90,9 +90,9 @@ Each has a default; "3: yes" is enough.
 7. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
    closed, `UNLICENSED`), GitHub Pages off, branch auto-delete on, the
    `browser` job required beside `checks`, email addresses redacted on the
-   kept `seasons/kickoff` and `live/plan-share` branches. Still to do: delete
-   the ~90 merged and throwaway branches (keep `seasons/*`, `live/plan-share`;
-   the checker refuses deletes from an agent, so it is a script Kevin runs);
+   kept `seasons/kickoff` and `live/plan-share` branches, and 91 merged and
+   throwaway branches deleted (six kept as `archive/*` tags; left: main,
+   `seasons/*`, `live/plan-share`, the open Dependabot branch). Still to do:
    the `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
    (his login); in Neon, the test-walk crews, duplicate person rows and older
    backups (production data: a backup branch, then a reviewed plan).
