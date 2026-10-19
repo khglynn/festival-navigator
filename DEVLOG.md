@@ -31,19 +31,22 @@ CI before its merge.
   stops if the live build is not its own, fetches the rest and writes only
   when the set hashes to its own `ASSET_STAMP`; the page reloads only on
   "repaired". Codex then found the older static-miss path could still
-  write a single install-list file, so that writer was cut: APP_CORE is
-  only ever written whole (now an AGENTS.md law). CI's browser job walks
+  write a single install-list file, unproven, so that writer was cut:
+  APP_CORE is written only by install or by a repair that first proves the
+  whole set (now an AGENTS.md law; a repair's writes are not atomic, so a
+  deadline mid-write leaves proven files only). CI's browser job walks
   the real previous build to this one (`PREV_BUILD`), and fails loudly if
   a released version is ever re-stamped.
 - **Also merged:** #93 (neon 1.2, jsdom 30.1, Playwright 1.63, css-color
   7.1.7, which fixed the radial gradients jsdom dropped; server functions
   on Node 24 to match CI; two browser tests made robust to 1.63's WebKit);
-  #89 (Gabby's 7-day wait on new packages, minus the engine-strict that
-  Vercel's npm 10 refused); #92 (EDC Orlando and Seismic by day, re-checked
+  #89 (Gabby's Dependabot cooldown and a 7-day wait for new resolutions,
+  which only npm 11.10+ honours; the engine-strict that enforced it went,
+  because Vercel's npm 10 refused it); #92 (EDC Orlando and Seismic by day, re-checked
   slot for slot against the official posters); #88 (Dependabot on
   Thursdays).
-- **Found and left for Kevin** (NOW.md, "Open with Kevin"): an old crew
-  link in public history that still works; the MIT LICENSE (#91); staging
+- **Found and left for Kevin** (NOW.md, "Open with Kevin"): the MIT
+  LICENSE (#91); staging
   frozen at v35 on the production database; a stray Vercel project in the
   codercom team deploying every push; GitHub Pages serving a broken copy;
   ~90 merged branches; test-walk debris in Neon; Dependabot merging to

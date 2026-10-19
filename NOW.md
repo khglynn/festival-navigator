@@ -19,7 +19,8 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
   The season's releases and reviews: the LEDGER,
   `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as history).
 - **The same pass:** server functions on Node 24 with neon 1.2 (#93); a
-  7-day wait on new packages (#89); EDC Orlando and Seismic by day (#92);
+  Dependabot cooldown and, on npm 11.10+, a 7-day wait for new
+  resolutions (#89); EDC Orlando and Seismic by day (#92);
   Dependabot on Thursdays (#88); the docs and README (#94). The LICENSE
   (#91) waits on Kevin.
 - **Smoke check for a release:** `node ops/prod-smoke.mjs` (all three hosts,
@@ -61,32 +62,30 @@ Each has a default; "3: yes" is enough.
 1. **Staging** (stage.fest.kevinhg.com) serves a July build, v35, on the
    production database. Default: retire it (remove the domain, pause the
    staging project); the other way is a Neon branch of its own.
-2. **An old crew link is in public git history and still works** ("The
-   Crew", created Jul 7; it sat in NOW.md for two days in July). Default:
-   move the crew to a new link while nobody is using it, and Kevin sends
-   the crew the new one; the alternative is to leave it.
-3. **Two List-view calls from Oct 4, never recorded** (his ring note and
+2. **Two List-view calls from Oct 4, never recorded** (his ring note and
    Pen checklist): "Default to list", and "in the List, highlighting should
    still just highlight" plus an always-reachable Picks view, which would
    reverse v104's rule that the List filters by highlight. Default: keep
    Board as the default and the List filter as shipped until he says.
-4. **Crew codes** (find your crew, slice 3): a code he types or a shuffled
+3. **Crew codes** (find your crew, slice 3): a code he types or a shuffled
    three-word combo; the word list went to him Oct 3. Default: build the
    three-word combo once he OKs the list. Slice 2 (a home-screen row in
    Settings) waits on his test: Share → Add to Home Screen, open the icon:
    the board, or an empty start page?
    (`claude-plans/2026-10-02-find-your-crew.md`, Part A question 3).
-5. **Product calls offered in September, no answer yet** (LEDGER 22–24):
+4. **Product calls offered in September, no answer yet** (LEDGER 22–24):
    pinned notes as the room head's whisper (default: not now); a second
    import door in the just-joined welcome (default: yes); How it works
    without "White stroke = you" (default: keep it dropped); a tap on a
    grown card in Our picks (default: leave as is).
-6. **v115 on his iPhone**, never confirmed: Camera scans the Invite sheet's
-   QR; long-press Save keeps the card; Pick for a friend → add a name.
-   Default: check whenever convenient; nothing is urgent off-season.
-7. **Ray's email**: the reply is a draft in Gmail (thread "Forked
+5. **v116 on his iPhone**, the first real phone on it: opening it lands on
+   the app (no Try again screen); Settings opens at the top; Settings →
+   Diagnostics says v116 from the worker; and v115's unconfirmed checks
+   (Camera scans the Invite QR; long-press Save keeps the card; Pick for a
+   friend → add a name). Default: whenever convenient.
+6. **Ray's email**: the reply is a draft in Gmail (thread "Forked
    festival-navigator"); the September draft beside it can go.
-8. **Housekeeping, each a yes/no:** the MIT LICENSE (#91); delete the ~90
+7. **Housekeeping, each a yes/no:** the MIT LICENSE (#91); delete the ~90
    merged and throwaway branches (keep `seasons/*`) and turn on
    auto-delete; turn off GitHub Pages (a broken copy of the app); the
    `hg-vibe-code-test-festival-nav` Vercel project in the codercom team

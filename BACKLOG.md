@@ -38,9 +38,8 @@ DEVLOG.
     arming on `(any-hover: hover)`; `js/v3/card-facts.js` deliberately
     avoids media queries today (old NOW, kept 2026-10-19).
 12. Festival date strings read unevenly in the picker ("Jun 25, Jun 26,
-    Jun 27, Jun 28"; "(8-day event, seventh edition)"). Trimming them means
-    re-rendering the link-preview cards, which print the dates (off-season
-    walk, 2026-10-19).
+    Jun 27, Jun 28"; "(8-day event, seventh edition)"): trim them in
+    data/festivals/index.json and each file (off-season walk, 2026-10-19).
 
 ## Tests
 
