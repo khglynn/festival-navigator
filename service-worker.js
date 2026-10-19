@@ -219,6 +219,11 @@ async function repairShell() {
   const ac = new AbortController();
   const { signal } = ac;
   const deadline = setTimeout(() => ac.abort(), REPAIR_MS);
+  // The deadline ends the run even where an engine is slow to fail an
+  // aborted fetch: every wait on the network races it.
+  const stopped = new Promise((resolve, reject) => { signal.addEventListener('abort', () => reject(new Error('timeout'))); });
+  stopped.catch(() => {});
+  const until = (p) => Promise.race([p, stopped]);
   try {
     const cache = await caches.open(CACHE_VERSION); // opened first: an activate that deletes it mid-run takes these writes with it
     const get = async (p) => {
@@ -226,11 +231,11 @@ async function repairShell() {
       if (!r.ok) throw new Error('server');
       return { p, r, bytes: await r.clone().arrayBuffer() };
     };
-    const page = await get('/');
+    const page = await until(get('/'));
     const build = /<meta name="fn-build" content="([^"]+)"/.exec(new TextDecoder().decode(page.bytes));
     if (!build) return 'failed';
     if (build[1] !== BUILD) return 'newer';
-    const rest = await Promise.all(STAMPED.map(get));
+    const rest = await until(Promise.all(STAMPED.map(get)));
     const index = new Uint8Array(rest[STAMPED.indexOf('/index.html')].bytes);
     const top = new Uint8Array(page.bytes);
     if (index.length !== top.length || index.some((x, i) => x !== top[i])) return 'mismatch';

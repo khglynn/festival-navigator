@@ -5,7 +5,11 @@
 //   server.overlay.set('HEAD /', 'drop')                  hang up on that request (lie-fi)
 //   server.overlay.set('HEAD /', 'last')                  answer it, then hang up on everything
 //                                                         after (the network dies right then)
+//   server.overlay.set('/x.woff2', 'hang')                take the request and say nothing until
+//                                                         server.release() (a network that hangs)
 //   server.setDown(true | false)                          hang up on everything / answer again
+//   server.log                                            every request seen, as 'GET /path'
+//                                                         (clear it with server.log.length = 0)
 // A key may name a method ('HEAD /') or just a path ('/js/x.js', any method;
 // the query is ignored, so '/api/crew' answers '/api/crew?t=…').
 //   server.setRoot(dir)   serve another tree from now on (a whole other build)
@@ -25,22 +29,29 @@ export function serveBuild(root) {
   const overlay = new Map();
   let base = root;
   let down = false;
+  const log = [];
+  const held = [];
   const server = http.createServer((req, res) => {
     if (down) { req.socket.destroy(); return; }
     let p;
     try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400); res.end(); return; }
     if (p.includes('..')) { res.writeHead(403); res.end(); return; }
+    log.push(`${req.method} ${p}`);
     // vercel.json rewrites a festival link (/f/<id>) to api/share, which
     // answers with this build's index.html (its preview tags swapped in).
     if (p === '/f' || p.startsWith('/f/')) p = '/';
     const o = overlay.has(`${req.method} ${p}`) ? overlay.get(`${req.method} ${p}`) : overlay.get(p);
     if (o === 'drop') { req.socket.destroy(); return; }
+    if (o === 'hang') { held.push({ req, res, p }); return; }
     if (o === 'last') res.on('finish', () => { goDown(true); });
     if (o && o !== 'last') {
       res.writeHead(o.status || 200, { 'content-type': o.type || TYPES[path.extname(p)] || 'text/plain', 'cache-control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : o.body);
       return;
     }
+    serveFile(req, res, p);
+  });
+  function serveFile(req, res, p) {
     if (p === '/' || p === '') p = '/index.html';
     let file = path.join(base, p);
     if (!fs.existsSync(file) && fs.existsSync(`${file}.html`)) file += '.html';
@@ -48,7 +59,15 @@ export function serveBuild(root) {
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
     if (req.method === 'HEAD') { res.end(); return; }
     fs.createReadStream(file).pipe(res);
-  });
+  }
+  // The held requests get their real answer now — late, as a network that
+  // hung would give it. One whose client gave up is already gone.
+  function release() {
+    for (const { req, res, p } of held.splice(0)) {
+      if (res.destroyed || req.socket.destroyed) continue;
+      serveFile(req, res, p);
+    }
+  }
   // Down is a network that is gone, not a server that refuses: every open
   // connection is cut and every new one is cut as it arrives, so no request
   // can sit on a kept-alive socket waiting for an answer that never comes.
@@ -68,6 +87,8 @@ export function serveBuild(root) {
       resolve({
         origin: `http://127.0.0.1:${port}`,
         overlay,
+        log,
+        release,
         setRoot: (dir) => { base = dir; },
         setDown: goDown,
         close: () => new Promise((r) => { server.closeAllConnections?.(); server.close(r); }),
