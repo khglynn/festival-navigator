@@ -113,7 +113,7 @@ async function sameWall(page, was, why) {
   const now = (await cardsOnWall(page)).find((c) => c.key === was.key);
   const y = await scrollY(page);
   assert.ok(now && Math.abs(now.top - was.top) <= 2,
-    `${why}: ${was.key} stood at ${Math.round(was.top)}px, now ${now ? Math.round(now.top) + 'px' : 'gone'} (scrollY ${was.y} -> ${y})`);
+    `${why}: ${was.key} stood at ${Math.round(was.top)}px, now ${now ? Math.round(now.top) + 'px' : 'gone'} (scrollY at the dock ${was.atDock}, at the Settings tap ${was.y}, now ${y})`);
 }
 // An element's box, read in the viewport.
 const boxOf = (page, sel) => page.evaluate((s) => {
@@ -122,21 +122,28 @@ const boxOf = (page, sel) => page.evaluate((s) => {
   const r = el.getBoundingClientRect();
   return { top: r.top, bottom: r.bottom, h: r.height };
 }, sel);
+// Returns what the wall showed at the moment Settings was tapped (the place
+// the app keeps), with scrollY before the dock tap for the record: the steps
+// between can move the page, and the place is the one the person left.
 async function openSettingsFromDock(page) {
+  const atDock = await scrollY(page);
   await page.click('#dock-fest-link');
   await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'visible' });
   await motionDone(page);
+  await stillPage(page);
+  const was = await seen(page);
+  if (was) was.atDock = atDock;
   await page.locator('#dock-fest-wrap .sort-pop button.settings').first().click();
   await page.waitForSelector('#screen-settings', { state: 'visible' });
   await page.waitForSelector('#settings-main .back-btn', { state: 'visible' });
+  return was;
 }
 
 test('390 touch: Settings opened from a scrolled wall stands at its top, a drill does too, and Back finds the wall\'s place', { skip }, async () => {
   const { ctx, page } = await wallPhone();
   try {
     await wheelTo(page, 1500);
-    const was = await seen(page);
-    await openSettingsFromDock(page);
+    const was = await openSettingsFromDock(page);
     assert.equal(await scrollY(page), 0, 'Settings opens at its top');
     const back = await boxOf(page, '#settings-main .back-btn');
     assert.ok(back && back.top >= 0 && back.bottom <= 844, `its back chevron is on screen: ${JSON.stringify(back)}`);
@@ -180,8 +187,7 @@ for (const [name, engine, skipIt] of [['Chromium', () => browser, skip], ['WebKi
     const { ctx, page } = await wallPhone(engine());
     try {
       await wheelTo(page, 1200);
-      const was = await seen(page);
-      await openSettingsFromDock(page);
+      const was = await openSettingsFromDock(page);
       assert.equal(await scrollY(page), 0, 'Settings opens at its top');
       assert.equal(await page.evaluate(() => history.scrollRestoration), 'manual', 'the wall\'s entry holds its own place while Settings is up');
       await page.goBack();
