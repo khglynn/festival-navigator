@@ -193,3 +193,18 @@ test('ACL Saturday W1, 6 PM: what is over folds, the three cancelled cards stay 
   assert.ok(!names(sat).includes('LeTrainiump'), 'LeTrainiump (2:25–2:55) is over');
   assert.ok(names(sat).includes('Ryan Beatty'), 'Ryan Beatty (5:50–6:50) is on');
 });
+
+// LEDGER follow-up 49 (v116): the count is of sets that happened. Portola's
+// Saturday at 11 PM folds its whole festival room, Skepta's cancelled card
+// with it — and the line said 32, Skepta among them, of a grid of 31 (30 acts
+// and Despacio). A cancelled act folds with its room and is not counted.
+test('Portola Saturday, 11 PM: the room folds whole, and its line counts the 31 sets — not the cancelled act', () => {
+  const root = render(PORTOLA, PT('2026-09-26T23:00:00'));
+  const sat = room(root, 'Saturday', ':fest');
+  assert.equal(sat.querySelectorAll('.card[data-artist]').length, 0, 'every Saturday card is folded, Skepta\'s too');
+  assert.equal(lineOf(sat).textContent, 'Earlier · 31 sets');
+  const open = render(PORTOLA, PT('2026-09-26T23:00:00'), { pastOpen: new Set(['2026-09-26|:fest']) });
+  const back = room(open, 'Saturday', ':fest');
+  assert.deepEqual(cancelledIn(back), ['Skepta'], 'opened, the cancelled card is back with the rest');
+  assert.equal(back.querySelectorAll('.card.past').length, 32, 'all thirty-two folded cards come back');
+});
