@@ -14,10 +14,15 @@
 // foot.js export that only N's app.js imports — so any module of N meeting a
 // module of N+1 fails to link, loudly, instead of passing by luck.
 //
-// The real pair, the release check before a merge: PREV_BUILD=<git ref of
-// the live release, e.g. main> runs the same walk with that commit's files
-// as N (git archive into a temp folder). CI's checkout is one commit deep,
-// so CI runs the dressed pair only.
+// The real pair: PREV_BUILD=<git ref of the live release> runs the same walk
+// with that commit's files as N (git archive into a temp folder) — the real
+// deploy skew, this tree's page over the live build's cached modules and
+// styles, which the dressed pair (built from this tree) cannot show. CI runs
+// it on every push (v116 review): origin/main on a pull request or a branch,
+// HEAD^ on main itself (.github/workflows/ci.yml). When PREV_BUILD is the same
+// build as this tree (a change that ships no app files) there is no pair to
+// walk, and the dressed pair stands alone. Locally, before a merge:
+//   PREV_BUILD=origin/main node --test tests/browser/release-upgrade.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -188,7 +193,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
   });
 
   const ref = process.env.PREV_BUILD;
-  test(`${name}: the real pair — PREV_BUILD's worker opens this tree`, { skip: skip || (ref ? false : 'set PREV_BUILD=<git ref of the live release> to walk the real pair') }, async () => {
+  test(`${name}: the real pair — PREV_BUILD's worker opens this tree`, { skip: skip || (ref ? false : 'set PREV_BUILD=<git ref of the live release> to walk the real pair') }, async (t) => {
     if (!prevDir) {
       prevDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fn-prev-build-'));
       const tar = path.join(prevDir, '..', `${path.basename(prevDir)}.tar`);
@@ -197,7 +202,10 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       fs.rmSync(tar, { force: true });
     }
     const previous = versionOf(prevDir);
-    assert.notEqual(previous, NEXT, `PREV_BUILD (${ref}) is ${previous}, the same build as this tree: bump with node scripts/sw-stamp.mjs first`);
+    // The same build on both sides: nothing ships between them, so there is
+    // no upgrade to walk. (A change that does ship app files under an
+    // unbumped stamp is tests/app-shell-complete.test.mjs's to catch.)
+    if (previous === NEXT) { t.skip(`PREV_BUILD (${ref}) is ${previous}, the same build as this tree: no upgrade to walk, the dressed pair covers it`); return; }
     server.overlay.clear();
     crewApi();
     server.setRoot(prevDir);
