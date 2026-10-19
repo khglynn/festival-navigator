@@ -1,8 +1,7 @@
 {
   "name": "festival-navigator",
-  "version": "2.0.0",
+  "private": true,
   "description": "Offline-first festival planner with live crew sync — pick your set times together, works in a field with one bar of signal",
-  "main": "index.html",
   "scripts": {
     "build": "echo 'No build step needed for static site'",
     "brand": "node scripts/brand-assets.mjs",
