@@ -1,5 +1,10 @@
 # Native apps: the stack, and a path (2026-09-29)
 
+**Status, 2026-10-19: not started.** The Mac session planned for Thursday
+Oct 1 never ran, so the dates below have passed; the decisions and steps
+have not. Kevin's side is as of Sep 29 ("Before Thursday", below). The next
+step and its paste-ready kickoff are in the root `NOW.md`.
+
 Kevin asked: if the festival app goes to the App Store (and Play), what
 should it be built with, which agent should drive it (Codex's computer use vs
 Claude's iOS Simulator), and can one codebase ship iOS and Android at once?

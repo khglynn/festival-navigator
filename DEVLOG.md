@@ -331,7 +331,38 @@ the RUNBOOK beside it.
   bad signal" was the walker's own `context.route` holding the navigation
   before the service worker could answer. A proxy harness that hangs page and
   worker alike measured 1.6 s in Chromium and WebKit
-  (`claude-plans/2026-09-23-crew-join-build/liefi-harness.mjs`).
+  (`claude-plans/archive/2026/2026-09-23-crew-join-build/liefi-harness.mjs`).
+
+## 2026-09-03 → 17 — v74 to v85: the wall simplified, shipped before Portola
+
+*(Written 2026-10-19 from git, PR #18 and PR #19; no entry was kept at the
+time.)* Production stayed on v73 from Sep 2 until Sep 17. v74 to v79 and
+v81 to v84 were branch and preview builds, never live; Kevin looked at the
+v83 and v84 previews and his notes went into v85.
+
+- **The spec came first.** Kevin picked direction A of the Sep 16 "The
+  Wall, Simplified" canvas, written up as
+  `claude-plans/2026-09-16-wall-v4/MODEL-V4.md`: stage columns on a clock
+  only where a festival publishes a stage grid, venue stacks of artist cards
+  in play order everywhere else; the data's shape decides, never a
+  threshold. Days are the days (dated sections such as ACL's late nights
+  get a tab of their own), the fest name opens the show menu, a NOW ring
+  marks who is playing in a stack, one card width everywhere, highlighting
+  dims and never filters, and notes are written where you are (a festival,
+  a date, a section on a date, an artist). Stage solo, the deck, the bucket
+  filter, the header fold and the inline tilde whisper were deleted.
+- **v80 (PR #18, Sep 17)** shipped the offline-cache fix a day ahead on its
+  own: a cache hit never refreshes the shell, a navigation always gets the
+  shell, and the worker leaves `/_vercel/` alone.
+- **v85 (PR #19, Sep 17)** shipped everything since v73 on one branch:
+  MODEL-V4, refreshed data (Portola afters re-timed from venue pages with
+  `~` where guessed, ACL set times for both weekends, Lost Lands removed on
+  Kevin's call, pick keys frozen), and the fix round (the shell reload
+  rule, cold-boot loader, Low Power, rotation, the ACL weekend guard).
+  Gates: 613 unit tests (Tokyo too), the browser suite 19/19, a Codex
+  ship-readiness round, real-browser walks on both engines.
+- Between the two, on Sep 13, the repo enrolled in the shared Dependabot
+  auto-merge (PR #17).
 
 ## 2026-09-02 — the hover was fine; the shell was old. Then the two hazards under it, a contract that runs in a browser, and Kevin's phone notes
 
