@@ -390,6 +390,7 @@ function toggleFoldFlow(key) {
   // gives back.
   const daysBefore = planDayKeys();
   ctx.folded = next;
+  keepWallAddress(); // the address says the rooms it is showing (wallUrl)
   const daysAfter = planDayKeys();
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
   // Where the person is standing, read before anything moves: the element at
@@ -460,6 +461,7 @@ function unfoldAll() {
   const place = takeWallPlace();
   saveFolded(ctx.fid, []);
   ctx.folded = [];
+  keepWallAddress();
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
   repaintWall({ place });
@@ -1337,12 +1339,18 @@ function lookAround(token, doc) {
 // even then only the parts it has no choice of its own for; so the reload
 // shows no "Opened as a list." and never undoes a Board chosen since (which
 // also rewrote the address without the view).
+//
+// And the ROOMS (v116, LEDGER follow-up 10): `&show=` when this phone hides
+// some, exactly as shareView puts them on the crew link, read from this
+// festival's own fold for the same reason the view is.
 function wallUrl(token) {
   // A festival standing in for this open is never the address: a reload or a
   // copied link asks for the one this phone wanted (v107).
   const fid = state.festivalForLinks();
-  const list = !!fid && !state.isShownForNow() && listOffered(state.fest()) && loadView(fid) === LIST;
-  return crew.crewLink(token, fid, null, null, list ? LIST : null);
+  const own = !!fid && !state.isShownForNow();
+  const list = own && listOffered(state.fest()) && loadView(fid) === LIST;
+  const show = own ? showOf(roomsOnWall(), loadFolded(fid)) : null;
+  return crew.crewLink(token, fid, null, show, list ? LIST : null);
 }
 
 function joinFromLayer() {
