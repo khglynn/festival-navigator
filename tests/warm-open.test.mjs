@@ -19,6 +19,12 @@ const TOKEN = 'warmopentest_0123456789ab'; // a made-up crew, never a real link
 const CACHED = crewDoc({ Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } }, { Robyn: { Kevin: 2 } });
 const FRESH_ACT = 'Warm Open Fresh Act';
 
+// A sanity cap, not the proof (the order below is): generous for a loaded
+// machine, and still under the shortest budget a cold path would have to
+// burn through before it painted from the phone's copy (the boot's 8 s crew
+// fetch, js/crew.js).
+const PAINT_CAP_MS = 7000;
+
 const net = heldNetwork();
 globalThis.caches = cachesHolding({
   '/data/festivals/index.json': INDEX,
@@ -41,16 +47,29 @@ const { $ } = shell;
 const state = await import('../js/state.js'); // the SAME instances app.js holds
 const shown = () => SCREENS.filter((id) => $(id).style.display !== 'none');
 const booted = Math.round(performance.now() - t0); // jsdom + the module graph: machine load, not the app
-const painted = await within(3000, () => shown().includes('screen-app'));
+// What the network had done by the moment the wall painted — read at the
+// paint, in the same check that sees it.
+let atPaint = null;
+const painted = await within(PAINT_CAP_MS, () => {
+  if (!shown().includes('screen-app')) return false;
+  atPaint ??= { gaveUp: [...net.gaveUp], pending: net.pending(), calls: [...net.calls] };
+  return true;
+});
 
 test('a warm open paints the wall from this phone’s copy while the network hangs', () => {
-  // The network here NEVER answers — the cold path would never paint at all
-  // (its festival file has no timeout of its own). So painting is the proof;
-  // the bound only says "without waiting", measured from the moment the app's
-  // modules finished loading so a busy test machine cannot fake a failure.
-  assert.notEqual(painted, null, 'the wall never painted — it is waiting on a network that will not answer');
+  // The network here NEVER answers until a later test releases it. The proof
+  // is an ORDER, not a stopwatch (LEDGER follow-up 59: a 1000 ms budget on
+  // jsdom went red at ~3.9 s on a loaded machine, and a fast cold path could
+  // pass one anyway): the wall painted while the crew doc and the festival
+  // file were still hanging, before the app had given up on any request — so
+  // it waited for no network budget to run out (the shortest, the boot's
+  // crew fetch, is 8 s; the festival file's 12 s).
+  assert.notEqual(painted, null, `the wall never painted within ${PAINT_CAP_MS} ms — it is waiting on a network that will not answer`);
   console.log(`  warm first paint (jsdom): ${Math.round(painted)} ms after the modules loaded (${booted} ms to load them)`);
-  assert.ok(painted < 1000, `painted ${Math.round(painted)} ms after load — should not wait on the network at all`);
+  assert.deepEqual(atPaint.gaveUp, [], 'no request had timed out or been dropped when the wall painted');
+  assert.ok(atPaint.calls.some((c) => c.startsWith('GET /api/crew?')), 'the crew doc had been asked for…');
+  assert.ok(atPaint.calls.includes(`GET /data/festivals/${FID}.json`), '…and the live festival file');
+  assert.ok(atPaint.pending >= 2, `…and both were still hanging when the wall painted (${atPaint.pending} held)`);
   assert.deepEqual(shown(), ['screen-app']);
   assert.equal(state.activeFestivalId, FID);
   assert.equal(state.crewDoc.festivals[FID].selections.Robyn.Kevin, 2, 'the cached picks');
