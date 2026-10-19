@@ -268,7 +268,8 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
   measured maximum scroll) wherever the engine has `ScrollTimeline` — under
   Reduce Motion and Low power too, because tracking a finger is direct
-  manipulation, not decoration — and a transform from the lead's scroll
+  manipulation, not decoration, and the fallback trails the grid by a
+  frame on a phone — and a transform from the lead's scroll
   event only where the engine lacks it (iOS before 26). Never set a strip's
   scrollLeft; anything that mirrors or restores scroll positions skips
   `isStripScroller`. Traps: jsdom's `CSS.supports` says yes to everything

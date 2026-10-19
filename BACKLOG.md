@@ -47,6 +47,9 @@ DEVLOG.
 15. v92 minors: a resize mid-bloom, a font load and a resize in one frame
     (LEDGER 4); v97 minors: a closing fold before a festival switch, a
     folded import landing renders twice (LEDGER 9).
+16. Only if a phone tap ever grows a card on a real iPhone: gate hover
+    arming on `(any-hover: hover)`; `js/v3/card-facts.js` deliberately
+    avoids media queries today (old NOW, kept 2026-10-19).
 
 ## Tests
 
@@ -65,6 +68,11 @@ DEVLOG.
    idle (audit 2026-10-19, C9).
 7. The v101 window catches (banked at tag `back-pocket/window-catches`)
    and the stop-end cap, with their acceptance tests (LEDGER 29, 30).
+8. `tests/brand-assets.test.mjs` and `tests/view-menu.test.mjs` (line 131)
+   hard-code `https://fest.kevinhg.com`, so a fork that follows
+   `docs/fork-setup.md` must edit them too. Derive the expected origin
+   from `api/share.js`'s `ORIGIN` and index.html's `fn-canonical-host`
+   instead (PR #94 review, 2026-10-19).
 
 ## Product ideas, banked
 

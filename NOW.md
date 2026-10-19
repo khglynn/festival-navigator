@@ -9,12 +9,12 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Live on production
 
-- **v115, from `main`**, on fest / festival / crew.kevinhg.com, all three
-  serving festival-nav-v115 (checked 2026-10-19). The last release of the
-  season: the Invite sheet with the crew link as a QR. Rollback: Vercel
-  dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Every release, review and
-  rollback target of the season: the LEDGER,
-  `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as history).
+- **Live:** v115 from `main` on all three hosts, checked 2026-10-19.
+- The last release of the season, v115, added the Invite sheet with the
+  crew link as a QR. Its rollback: Vercel dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny
+  (v114 + docs). Every release, review and rollback target of the season:
+  the LEDGER, `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as
+  history).
 - **This pass (off-season polish, 2026-10-19):** ORCHESTRATOR FILLS IN —
   the release line (v116?), its PRs, rollback target, and what is still
   open after the merges.
@@ -79,9 +79,8 @@ Each has a default; "3: yes" is enough.
    QR; long-press Save keeps the card; Pick for a friend → add a name.
    Default: check whenever convenient; nothing is urgent off-season.
 7. ORCHESTRATOR: Ray's email, the LICENSE answer, GitHub housekeeping
-   (merged branches, private vulnerability reporting for SECURITY.md, the
-   repo description) and the Portola/ACL archive flip go here or come off,
-   depending on what this pass settled.
+   (merged branches, the repo description) and the Portola/ACL archive
+   flip go here or come off, depending on what this pass settled.
 
 ## Next, when there is time
 
