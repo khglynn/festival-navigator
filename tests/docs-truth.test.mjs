@@ -1,6 +1,7 @@
 // Docs that CAN drift eventually DO drift. This suite is the forcing function:
-// the "current truth" docs (README, VERCEL_SETUP, AGENTS.md) are asserted against
-// the code they describe, so a lie fails CI instead of misleading a forker.
+// the "current truth" docs (README, CLAUDE.md, AGENTS.md, and NOW.md's size and
+// paths) are asserted against the code they describe, so a lie fails CI instead
+// of misleading a forker.
 //
 // Written 2026-07-12 after the finish-pass audit found the README describing a
 // version of this app that has not existed for two releases: a `js/render/`

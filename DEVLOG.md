@@ -2,6 +2,69 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-19 — the off-season polish pass: the front door and the docs
+
+The season is over (Portola Sep 26–27, ACL Oct 2–11) and Ray, who forked
+the app in July, is about to be pointed at the repo. A read-only audit came
+first (front door, docs, privacy, the ledger, production health); this
+entry is the docs lane. *(Release facts for this pass: the orchestrator
+adds them here after the merges.)*
+
+- **The front door.** The README is written for a visitor now: the pitch,
+  the live link, a picture of the wall (`docs/img/wall.jpg`, the gallery's
+  fixture Saturday), a dated status line, how it works as of v115, privacy
+  in plain words, running and forking it, adding a festival. New
+  CONTRIBUTING.md and SECURITY.md. `docs/fork-setup.md` says what the code
+  does today (the report key is inert on a fork's domain but live on its
+  localhost; the Spotify redirect URI; `GEMINI_MODEL`; a merge to main is
+  production). The live site stops serving AGENTS.md, CLAUDE.md, docs/,
+  ops/, db/ and .gitignore (`.vercelignore`).
+- **Off-season docs.** NOW.md is an off-season screen. The Portola LEDGER
+  is closed as history, its open follow-ups in a new root BACKLOG.md.
+  Finished build logs moved to `claude-plans/archive/2026/`; the plans
+  index, MODEL-V4's status, the unified build's arc NOW and the native-apps
+  plan say what is true now. The missing Sep 3–17 entry is below.
+- **Privacy at HEAD.** Kevin's correspondence with Ray (two archived files)
+  moved to Kevin's own notes; Ray is credited as "Ray (raypp2)" in the
+  plans and docs; a work email left a design doc. History is unchanged.
+- **AGENTS.md went from 25.3 KB to under 24 KB** (Codex reads at most
+  32 KiB; the workspace aims under 24). No rule was dropped except the
+  long-press half of the browser-test traps, moot since v98 removed the
+  long-press. The two Claude-Code-only lines moved to CLAUDE.md. It also
+  says how Dependabot PRs really land (patch and minor merge themselves
+  after the `checks` job). The incidents the rules came from stay here:
+  - The festival accent had crept into seven places by 2026-07-12,
+    including the loader shown while a crew was being created.
+  - Before 2026-07-12 the merge SQL sat inline in api/crew.js, and the
+    suite tested a JS "reference twin" that production never ran.
+  - 2026-07-12: `vercel dev` served an old app.js until a restart; every
+    fix read "not applied" in a browser until the service worker was
+    unregistered. 2026-07-14: the ES-module cache survived
+    `Network.clearBrowserCache`. 2026-08-29: the gate-round fixes shipped
+    under an unbumped v43.
+  - The 44px floor once named six selectors: chips at 26px, the "+ ✎" note
+    chip at 17px and every button in Settings got nothing.
+  - 2026-09-23: CI put Robyn's corners 1.4px apart, because Linux draws
+    Inter wider than the Chromium-on-macOS measurements the width table
+    used.
+  - 2026-09-26: under `page.clock` the long-press timer ran late on a big
+    wall (tests held a fixed 650 ms); moot since v98.
+  - 2026-10-04: four Linux WebKit flakes in v115's tests in one day taught
+    "wait for the state at rest, never a beat".
+  - 2026-09-01: "hover is broken again" was a v75 shell judging v76 code.
+  - Chrome 152 grew a keyboard zoom on click · Escape · click; Safari before
+    18.2 sends no pointerType; before `touchAt` (2026-09-23) a tapped card
+    zoomed itself.
+  - 2026-09-02: without `-webkit-user-select`, a long-press on iOS raised
+    the Copy/Search callout over the zoom.
+  - Before MODEL-V4, three layout engines shared one card and a numeric
+    threshold picked, so one Sunday rendered three ways. ACL's Late nights
+    (Sep 29 to Oct 10) are why a section can carry a date, not a weekday.
+  - 2026-08-27: festival JSONs were cache-first, so a set-times drop
+    reached an online phone one open late.
+  - Copying a venue-registry URL onto an event once made a run guess look
+    like a printed close.
+
 ## 2026-10-04 — v115: the Invite sheet (find your crew, slice 1)
 
 Slice 1 of the find-your-crew plan (Oct 2), one of its two easy pieces:
