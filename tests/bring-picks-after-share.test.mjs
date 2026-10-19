@@ -49,6 +49,10 @@ const sheet = () => document.getElementById('artist-sheet');
 
 test('a second Portola crew is created: the share moment comes up — and the offer does not come up under it', async () => {
   await settle(60);
+  // Portola is archived since v116: its row sits in the picker's Past
+  // festivals fold, which opens first.
+  const past = [...$('create-fests').querySelectorAll('button')].find((b) => /^Past festivals/.test(b.textContent));
+  if (past) past.click();
   const portola = [...$('create-fests').querySelectorAll('button')].find((b) => /^PORTOLA/.test(b.textContent));
   portola.click();
   $('create-go-multi').click();
