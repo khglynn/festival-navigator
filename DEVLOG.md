@@ -56,9 +56,10 @@ CI before its merge.
   `package.json` says `UNLICENSED`); yes to the rest. Done from here: GitHub
   Pages off, branch auto-delete on, the `browser` job required beside
   `checks` (Dependabot still merges patch and minor bumps with no review),
-  email addresses redacted on the two kept branches. Refused to an agent by
-  the auto-mode checker, so left for Kevin's hand: pausing staging, deleting
-  the old branches, and the production-data cleanup.
+  email addresses redacted on the two kept branches. Kevin ran the branch
+  cleanup himself (the auto-mode checker refuses deletes to an agent): 91
+  branches deleted, six unmerged throwaways kept as `archive/*` tags. Still
+  for his hand: pausing staging and the production-data cleanup.
 
 The docs lane:
 
