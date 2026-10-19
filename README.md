@@ -261,6 +261,8 @@ So the app offers three doors, in the order most people will use them:
 
 ## License
 
-MIT per `package.json`; a LICENSE file is pending. The bundled
-`vendor/html2canvas.min.js` and `vendor/uqr.mjs` are MIT (their headers are
-kept), and the Anton and Inter fonts are under the SIL Open Font License.
+No open license. The code is public to read and learn from, and all rights
+are reserved (`"license": "UNLICENSED"` in `package.json`); if you'd like to
+reuse part of it, ask. The bundled `vendor/html2canvas.min.js` and
+`vendor/uqr.mjs` keep their own MIT licenses (their headers are kept), and
+the Anton and Inter fonts are under the SIL Open Font License.

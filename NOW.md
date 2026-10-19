@@ -21,8 +21,8 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 - **The same pass:** server functions on Node 24 with neon 1.2 (#93); a
   Dependabot cooldown and, on npm 11.10+, a 7-day wait for new
   resolutions (#89); EDC Orlando and Seismic by day (#92);
-  Dependabot on Thursdays (#88); the docs and README (#94). The LICENSE
-  (#91) waits on Kevin.
+  Dependabot on Thursdays (#88); the docs and README (#94). No open
+  license: Kevin declined MIT (#91 closed, #98).
 - **Smoke check for a release:** `node ops/prod-smoke.mjs` (all three hosts,
   build and asset stamp).
 - **Alerts:** PostHog → Slack for a new error and one that came back
@@ -59,9 +59,11 @@ session on that Mac:
 
 Each has a default; "3: yes" is enough.
 
-1. **Staging** (stage.fest.kevinhg.com) serves a July build, v35, on the
-   production database. Default: retire it (remove the domain, pause the
-   staging project); the other way is a Neon branch of its own.
+1. **Staging** (stage.fest.kevinhg.com, a July build on the production
+   database): retire it (Kevin, 2026-10-19). Pausing the Vercel project
+   needs his hand, since the auto-mode checker refuses it from an agent:
+   vercel.com/kevinhg/festival-navigator-staging/settings, then Pause; then
+   drop AGENTS.md's staging bullet.
 2. **Two List-view calls from Oct 4, never recorded** (his ring note and
    Pen checklist): "Default to list", and "in the List, highlighting should
    still just highlight" plus an always-reachable Picks view, which would
@@ -85,13 +87,17 @@ Each has a default; "3: yes" is enough.
    friend → add a name). Default: whenever convenient.
 6. **Ray's email**: the reply is a draft in Gmail (thread "Forked
    festival-navigator"); the September draft beside it can go.
-7. **Housekeeping, each a yes/no:** the MIT LICENSE (#91); delete the ~90
-   merged and throwaway branches (keep `seasons/*`) and turn on
-   auto-delete; turn off GitHub Pages (a broken copy of the app); the
-   `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
-   (deploys every push); Neon's test-walk crews, duplicate person rows and
-   older backup branches; whether Dependabot may keep merging patch and
-   minor bumps to production with no review.
+7. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
+   closed, `UNLICENSED`), GitHub Pages off, branch auto-delete on, the
+   `browser` job required beside `checks`, email addresses redacted on the
+   kept `seasons/kickoff` and `live/plan-share` branches. Still to do: delete
+   the ~90 merged and throwaway branches (keep `seasons/*`, `live/plan-share`;
+   the checker refuses deletes from an agent, so it is a script Kevin runs);
+   the `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
+   (his login); in Neon, the test-walk crews, duplicate person rows and older
+   backups (production data: a backup branch, then a reviewed plan).
+8. **Dependabot #97** (pglite, jsdom, Playwright) came in red on its first
+   run; the required checks keep it from merging. Look before it does.
 
 ## Next, when there is time
 

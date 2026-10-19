@@ -52,6 +52,14 @@ CI before its merge.
   ~90 merged branches; test-walk debris in Neon; Dependabot merging to
   production with no review.
 
+- **Kevin's calls the next morning:** no open license (#91 closed;
+  `package.json` says `UNLICENSED`); yes to the rest. Done from here: GitHub
+  Pages off, branch auto-delete on, the `browser` job required beside
+  `checks` (Dependabot still merges patch and minor bumps with no review),
+  email addresses redacted on the two kept branches. Refused to an agent by
+  the auto-mode checker, so left for Kevin's hand: pausing staging, deleting
+  the old branches, and the production-data cleanup.
+
 The docs lane:
 
 - **The front door.** The README is written for a visitor now: the pitch,
