@@ -4433,7 +4433,42 @@ let settingsActions = null;
 // fresh open.
 // A welcome that could not show (a refresh restored Settings over the wall)
 // gets its turn here, v92; the offer still waits for its "Got it".
-function closeSettings() { show('screen-app'); keepWallAddress(); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+function closeSettings() {
+  const back = settingsLeftWall;
+  settingsLeftWall = null;
+  show('screen-app');
+  keepWallAddress();
+  // The wall Settings was opened from comes back where it stood — the same
+  // crew on the same festival only: a festival switched in there is a new
+  // wall, and maybeOpenOnDay lands it.
+  const same = back && back.token === state.getCrewToken() && back.fid === state.activeFestivalId;
+  repaintWall({ place: same ? back.place : null });
+  if (same && !back.place && Math.abs(window.scrollY - back.y) >= 1) window.scrollTo({ top: back.y, behavior: 'auto' });
+  // The browser's own restore for this entry again, once this Back is done
+  // with it (a later task: the restore it skips runs right after popstate).
+  if (back) setTimeout(() => { try { history.scrollRestoration = 'auto'; } catch { /* as above */ } }, 0);
+  maybeOpenOnDay();
+  safely('welcome', maybeWelcome);
+}
+// Settings is a screen of its own over a wall that scrolls the PAGE, and
+// showing it used to leave the page's scroll where the wall had it: opened
+// from the middle of a day, Settings came up at its own bottom, title and back
+// chevron above the fold (the off-season walk, v116). So it opens at its top,
+// and the wall's place is kept here for the way back.
+let settingsLeftWall = null;
+function leaveWallForSettings() {
+  settingsLeftWall = null;
+  if ($('screen-app').style.display === 'none') return;
+  let place = null;
+  try { place = takeWallPlace(); } catch { place = null; } // a place is never worth a Settings that won't open
+  settingsLeftWall = { token: state.getCrewToken(), fid: state.activeFestivalId, place, y: window.scrollY };
+  // The browser keeps a scroll for the wall's history entry and puts it back
+  // AFTER the popstate that closes Settings — the Settings page's 0, written
+  // over the place closeSettings just restored. The wall's entry is still the
+  // current one here (the router pushes Settings after this), so it alone
+  // stops restoring until the wall is back (closeSettings hands it back).
+  try { history.scrollRestoration = 'manual'; } catch { /* a history that will not say: the place still lands without Back */ }
+}
 // The wall's address follows its festival (v96 — Sol's review of 3599950):
 // a festival switched in Settings is no boot, so nothing rewrote the address,
 // and it kept the old one — a link copied from the bar previewed the old
@@ -4453,6 +4488,10 @@ function keepWallAddress() {
 function openSettings() {
   closeSheet();
   refreshCtx();
+  // Arriving, as against re-rendering in place (a toggle, Back from a drill):
+  // only an arrival takes the page to the top.
+  const arriving = $('screen-settings').style.display === 'none';
+  if (arriving) leaveWallForSettings();
   show('screen-settings');
   settingsActions = {
     close: () => { if (!router.requestClose()) closeSettings(); },
@@ -4629,6 +4668,7 @@ function openSettings() {
     },
   };
   renderSettings($('settings-root'), ctx, settingsActions);
+  if (arriving && window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 // Union a fetched person doc into this device: remember every crew, claim
