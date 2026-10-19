@@ -3118,7 +3118,7 @@ function noteOpen(screen) {
     : screen === 'screen-error' ? (o.offline ? 'offline' : 'fatal')
       : OPEN_PATHS[screen];
   if (path) track('app_open', { path, page_load: o.pageLoad, build_changed: buildChanged() });
-  // How often an OPEN lands on Your crews, and with how many crews (the
+  // How often an OPEN lands on Your festivals (the landing), and with how many crews (the
   // find-your-crew question, 2026-10-01) — never a trip back to it from
   // Settings, Create or an error screen (Copilot's review of v108).
   if (path === 'landing') {
@@ -3145,7 +3145,7 @@ let paintedOnce = false;
 function noteFirstPaint(warm) {
   if (paintedOnce) return;
   paintedOnce = true;
-  // A wall reached from Your crews, a join or Create is minutes of a person
+  // A wall reached from Your festivals, a join or Create is minutes of a person
   // in between, not load time (the Claude review of v108).
   if (!wallFirst) return;
   let nav = null;
@@ -5646,7 +5646,7 @@ function renderFatal({ offline = null } = {}) {
     // The buttons first: if anything below throws, the last-resort screen
     // still has working buttons.
     $('error-retry').onclick = () => location.reload();
-    // Your crews means it: an automatic retry already under way is cancelled
+    // Your festivals means it: an automatic retry already under way is cancelled
     // with the timer, or it would land its wall — or the calm screen — over
     // the crews a moment later (v107 final review).
     $('error-home').onclick = () => { stopOfflineRetry(); bootGeneration++; history.replaceState(null, '', '/'); renderLanding(); };
