@@ -128,6 +128,9 @@ test('the one-set nudge: a live festival\'s lone all-day set beside busy stages 
 
 test('Portola declares its three drop-in rooms and is clean; without the grid\'s two it is asked about exactly those', () => {
   const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
+  // Portola is archived since v116, and archived files are never asked. Judge
+  // it as the live file it was, which is what these declarations answered.
+  portola.status = 'scheduled';
   const declared = [
     ...Object.entries(portola.days).flatMap(([day, d]) => (d.artists || []).filter((a) => a.dropIn === true).map((a) => `${day} ${a.stage} ${a.name} ${a.time}`)),
     ...portola.artists.filter((a) => a.dropIn === true).map((a) => `${a.day} ${a.venue} ${a.name} ${a.time}`),

@@ -30,9 +30,11 @@ const index = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), '
 
 const STAGES = ['Pier Stage', 'Crane Stage', 'Warehouse', 'Ship Tent', 'Despacio'];
 
-test('portola-2026: scheduled in both the file and the index, zero validator errors AND zero warnings', () => {
-  assert.equal(portola.status, 'scheduled');
-  assert.equal(index.find((f) => f.id === 'portola-2026').status, 'scheduled');
+// Archived since v116 (it happened Sep 26–27, 2026): the same status in both
+// places, and the file still validates clean.
+test('portola-2026: archived in both the file and the index, zero validator errors AND zero warnings', () => {
+  assert.equal(portola.status, 'archived');
+  assert.equal(index.find((f) => f.id === 'portola-2026').status, 'archived');
   const r = validateFestivalDoc(portola, { filename: 'portola-2026.json' });
   assert.deepEqual(r.errors, []);
   assert.deepEqual(r.warnings, [], 'every billed artist has a set; no dupes');
