@@ -212,9 +212,9 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   ask when a finding is a product call he hasn't seen, or when anything
   writes to friends' real data. Dependency PRs are the exception today:
   Dependabot's patch and minor bumps merge themselves once the required
-  `checks` job is green (the shared automerge in
-  `.github/workflows/dependabot-automerge.yml`), with no independent review
-  and without waiting on the `browser` job (2026-10-19).
+  `checks` and `browser` jobs are green (the shared automerge in
+  `.github/workflows/dependabot-automerge.yml`; `browser` required since
+  2026-10-19), with no independent review.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
   `node scripts/validate-festivals.mjs` before committing — CI enforces it.
 - **Artist names in a live festival file are pick keys, and there is no

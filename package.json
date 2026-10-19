@@ -20,7 +20,7 @@
     "pwa"
   ],
   "author": "Kevin HG",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "engines": {
     "node": "24.x"
