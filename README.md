@@ -7,11 +7,13 @@ one wall, live, and it still works in a field with one bar of signal.
 
 ![A Saturday on the wall: each card blends the colors of the friends who picked it](docs/img/wall.jpg)
 
-**Status, 2026-10-19:** the 2026 season is over (Portola in September, ACL
-in October) and v115 is live. Still in the catalog, with crews already
-picking: EDC Orlando (Nov 6–8) and Seismic (Nov 13–15), both lineups waiting
-on set times, and Tomorrowland Winter (March 2027). This is a personal
-project built by Kevin HG for his friends, in the open.
+**Live:** v115, checked 2026-10-19.
+
+The 2026 season is over (Portola in September, ACL in October). Still in
+the catalog, with crews already picking: EDC Orlando (Nov 6–8) and Seismic
+(Nov 13–15), both lineups waiting on set times, and Tomorrowland Winter
+(March 2027). This is a personal project built by Kevin HG for his friends,
+in the open.
 
 **Festivals loaded:** 10. The list lives in
 [`data/festivals/index.json`](data/festivals/index.json), and only there.
@@ -36,22 +38,22 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   side. Everything else (the afters, the late nights, the street party) is a
   stack of cards under the room it happens in, in play order. Picks carry
   over when set times land, because they belong to the artist, not the slot.
-- **Board or List.** The Show menu switches between the wall and a time list
-  of rows, per phone and per festival. In the List, what's already over
-  folds away behind an "Earlier" line.
+- **Board or List.** The menu on the festival's name switches between the
+  wall and a time list of rows, per phone and per festival. In the List,
+  what's already over folds away behind an "Earlier" line.
 - **Tap to open, + and − to pick.** On a phone, a tap opens the card's
   shelf: its facts, `−` and `+` in its bottom corners, and the crew's notes.
   Levels go `picked ×1 → ×2 → ×3 → must`; `+` climbs and `−` steps back.
   With a mouse, hover grows the card and a click cycles the levels. Everyone
   in the crew gets a color, and overlapping picks blend on the card, so you
   can see at a glance where the crew is heading.
-- **Our picks.** Above the dock sits where most of the crew will be right
-  now (or next). Drag it up for the day's whole route, stop by stop, with
-  the moments the crew splits. "Share our picks" sends the day as a few plain
-  lines and a link that opens on it.
+- **Our picks.** Just above the bar at the bottom of the screen sits where
+  most of the crew will be right now (or next). Drag it up for the day's
+  whole route, stop by stop, with the moments the crew splits. "Share our
+  picks" sends the day as a few plain lines and a link that opens on it.
 - **Notes** go where you are standing: on the festival, on a date, on a
-  section on a date (Folsom on Friday), or on an artist. Replies thread one
-  level deep, and a pinned note stays on top.
+  section on a date (the street fair on Friday), or on an artist. Replies
+  thread one level deep, and a note you pin stays on top for you.
 - **Import from a festival's own app.** Screenshots of your schedule there
   become picks: Gemini reads only what is printed, your phone matches the
   names, nothing is saved until you add them, and the image is never kept.
@@ -60,9 +62,10 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 - **Offline first.** Picks save on the phone instantly and sync when signal
   comes back. The server merges every write atomically, so two people picking
   at once never overwrite each other.
-- **Spotify, if you want it.** Connect (PKCE, no secrets in the browser) and
-  artists you already listen to get a badge; picks can become a playlist on
-  your own account. See *Spotify* below; the 2026 rules are tight.
+- **Spotify, if you want it.** Connect (a sign-in that keeps no secret in
+  the browser) and artists you already listen to get a badge; picks can
+  become a playlist on your own account. See *Spotify* below; the 2026
+  rules are tight.
 - **Export.** A day of the wall as a picture, or all your picks as text.
 
 ## Privacy, plainly
@@ -72,9 +75,11 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   every crew you're in.
 - On the hosted app, crash reports and a short list of usage counts leave
   the phone through one file, [`js/errlog.js`](js/errlog.js). Each carries
-  your name in the crew, your phone type and what you tapped, from an
-  allowlist of fields and words. Never note text, artist names or crew
-  links; links and tokens are scrubbed out of error messages.
+  your name in the crew, your phone type and what you tapped, which
+  festival you had open, your public person id, a random id for the phone,
+  and its screen size and app build, all from an allowlist of fields and
+  words. Never note text, artist names or crew links; links and tokens are
+  scrubbed out of error messages.
 - One switch in Settings, "Send crash reports and usage to Kevin", turns it
   all off. A fork on its own domain reports nowhere until it sets its own
   key; run locally, it still reports upstream until that key is changed or
@@ -82,8 +87,11 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 
 ## Run it locally
 
-You need Node 22 or newer (CI runs Node 24). No build step: the CSS is
-hand-written and the JS ships as ES modules.
+Use Node 24, as CI does (`package.json` pins `engines.node` to `24.x`).
+The test tools ask for 24.15.0 or newer on that line (jsdom's own
+`engines`); Node 22.22.2 or newer also runs everything, and there `npm ci`
+prints an `EBADENGINE` warning about the 24.x pin, which is expected. No
+build step: the CSS is hand-written and the JS ships as ES modules.
 
 1. `npm ci`
 2. `npm test` runs the unit suite on a pinned clock. It needs no database
@@ -94,19 +102,23 @@ hand-written and the JS ships as ES modules.
 
 [`tests/README.md`](tests/README.md) explains the pinned clock.
 
-To run the app itself, `vercel dev`. Two traps, both real: it does not serve
-files created after it started (restart it), and it pulls the real cloud
-environment, so `localhost` talks to whatever database `DATABASE_URL`
-names. Point Development at a database branch, or treat local writes as
+To run the app itself, `npx vercel dev` (the Vercel CLI is not one of this
+repo's dependencies; install it globally if you'd rather type
+`vercel dev`). Two traps, both real: it does not serve files created after
+it started (restart it), and it pulls the real cloud environment, so
+`localhost` talks to whatever database `DATABASE_URL` names. Point Development at a database branch, or treat local writes as
 production writes.
 
 ## Fork it or host your own
 
-Before your first deploy, change the two tags at the top of `index.html`:
-`fn-canonical-host` (your host; left as is, Spotify sign-in sends your
-users' crew links to the upstream domain) and `fn-report-key` (your own
-PostHog key, or empty). Then read [`docs/fork-setup.md`](docs/fork-setup.md),
-which has the full runbook and the traps a real fork hit.
+Before your first deploy, point the app at yourself in three things:
+`index.html`'s `fn-canonical-host` tag (left as is, Spotify sign-in sends
+your users' crew links to the upstream domain), its `fn-report-key` tag
+(your own PostHog key, or empty), and the link-preview origin (`ORIGIN` in
+`api/share.js` and the `og:url` and `og:image` tags in `index.html`; left
+as is, every pasted link unfurls from the upstream domain).
+[`docs/fork-setup.md`](docs/fork-setup.md) has the exact steps in the order
+that keeps the tests green, and the traps a real fork hit.
 
 1. **Deploy to Vercel** (static files and functions).
 2. **Create a Postgres database** (the free Neon tier is plenty) and load
@@ -124,9 +136,10 @@ which has the full runbook and the traps a real fork hit.
    | `PUBLIC_BASE_URL` | no | your origin, for that approve link |
 
    The access-request flow turns on with the three Spotify and Slack
-   variables; on your own domain also set `PUBLIC_BASE_URL`, or the Slack
-   message arrives without its approve link. Without them, members bring
-   their own Spotify Client ID.
+   variables. On your own domain also set `PUBLIC_BASE_URL`: without it the
+   server trusts no host to build the approve link for, so no Slack message
+   is sent at all (the request is still recorded). Without the three
+   variables, members bring their own Spotify Client ID.
 
 ## Add a festival
 
@@ -179,7 +192,7 @@ js/name-rules.mjs             name validation SHARED with the server
 api/crew.js                   the crew store: create, read, atomic merge
 api/person.js                 the me link: one person across crews (public pid, secret token)
 api/access.js                 Spotify access requests (Slack approve flow)
-api/festival-add.js           AI lineup research; returns a candidate, saves nothing
+api/festival-add.js           AI lineup research: returns a candidate; saves it as the crew's own festival once confirmed
 api/import-schedule.js        reads a schedule image; returns only what is printed, stores nothing
 api/share.js                  per-festival link previews: index.html with its OG tags swapped
 api/_lib/                     validation + guards shared by client and server
@@ -213,9 +226,12 @@ atomic `UPDATE` through `jsonb_deep_merge()` (see
 UPDATE, a second write waits on the row lock and then merges against the
 first one's committed row, so two writes can't race by construction.
 
-Other phones poll the merged doc every 25 seconds (every 5 minutes in
-low-power mode) and on focus. Removals sync as **tombstones** (`removed:
-true`, and level-`0` picks) because a deep merge can't express deletion.
+Other phones poll the merged doc every 25 seconds and again when the app
+comes back to the screen. In Low power, or with the phone's Reduce Motion
+on (it rides the same switch), the poll stretches to every 5 minutes and
+coming back does not jump the queue. Removals sync as **tombstones**
+(`removed: true`, and level-`0` picks) because a deep merge can't express
+deletion.
 
 Two consequences worth knowing before you change anything here:
 

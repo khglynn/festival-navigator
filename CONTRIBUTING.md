@@ -16,7 +16,10 @@ group of friends and kept in the open, so the process is light.
 
 ## Running the tests
 
-Node 22 or newer (CI runs Node 24).
+Use Node 24, as CI does (`package.json` pins `engines.node` to `24.x`;
+the test tools ask for 24.15.0 or newer on that line). Node 22.22.2 or
+newer also works, and there `npm ci` prints an `EBADENGINE` warning about
+the pin, which is expected.
 
 ```sh
 npm ci
