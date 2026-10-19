@@ -858,9 +858,12 @@ the RUNBOOK beside it.
   #1–#4 and #10 fixed and the rest partial; the partials closed in one more
   commit (renderer-consistent split, `stages` guard, AM/PM case in
   `timeToMinutes`, navigation lifetime, explicit error on a cold miss).
-  **Still Kevin's call**: commit `8f4a09d`/`66c4eed` history carries two
-  email addresses in the Ray checkpoint doc (redacted at HEAD; rewriting a
-  public branch's history is a bigger act than the exposure).
+  **Still Kevin's call**: history from commit `8f4a09d` until `22657b8`
+  (which redacted them) carries two email addresses in the Ray checkpoint
+  doc, Ray's and Kevin's public one (corrected 2026-10-19: this line used
+  to name `66c4eed`, which carries none; the doc itself left the repo for
+  Kevin's notes the same day). Rewriting a public branch's history is a
+  bigger act than the exposure.
 - **Live preview walk** (Playwright, the real Vercel preview, the real
   Neon merge): SAT / SUN / AFTERS / FOLSOM tabs; 64 grid cells; 38 + 8
   section cards with venue · hours; tapping Overmono on the grid repainted
