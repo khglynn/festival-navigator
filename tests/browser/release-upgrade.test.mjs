@@ -20,8 +20,10 @@
 // styles, which the dressed pair (built from this tree) cannot show. CI runs
 // it on every push (v116 review): origin/main on a pull request or a branch,
 // HEAD^ on main itself (.github/workflows/ci.yml). When PREV_BUILD is the same
-// build as this tree (a change that ships no app files) there is no pair to
-// walk, and the dressed pair stands alone. Locally, before a merge:
+// build as this tree — the same CACHE_VERSION and the same ASSET_STAMP (a
+// change that ships no app files) — there is no pair to walk, and the dressed
+// pair stands alone. The same version over a different stamp FAILS: a
+// released version was reused. Locally, before a merge:
 //   PREV_BUILD=origin/main node --test tests/browser/release-upgrade.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -37,6 +39,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (root, p) => fs.readFileSync(path.join(root, p), 'utf8');
 const versionOf = (root) => /const CACHE_VERSION = 'festival-nav-(v\d+)'/.exec(read(root, 'service-worker.js'))[1];
 const NEXT = versionOf(ROOT);
+const stampOf = (root) => /const ASSET_STAMP = '([0-9a-f]{8})'/.exec(read(root, 'service-worker.js'))?.[1] || null;
 const server = await serveBuild(ROOT);
 const chromium = await launchBrowser();
 const webkit = await launchWebkit();
@@ -202,10 +205,18 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       fs.rmSync(tar, { force: true });
     }
     const previous = versionOf(prevDir);
-    // The same build on both sides: nothing ships between them, so there is
-    // no upgrade to walk. (A change that does ship app files under an
-    // unbumped stamp is tests/app-shell-complete.test.mjs's to catch.)
-    if (previous === NEXT) { t.skip(`PREV_BUILD (${ref}) is ${previous}, the same build as this tree: no upgrade to walk, the dressed pair covers it`); return; }
+    // The same build on both sides — the same version AND the same stamp:
+    // nothing ships between them, so there is no upgrade to walk. The same
+    // version over different app files is a released version reused (a
+    // `sw-stamp.mjs --keep` after the release): phones that hold that
+    // version would never fetch the new files, and nothing else catches it —
+    // tests/app-shell-complete.test.mjs only checks that the stamp matches
+    // this tree's files, not that the version is new.
+    if (previous === NEXT) {
+      assert.equal(stampOf(ROOT), stampOf(prevDir), `a released version was reused: PREV_BUILD (${ref}) is ${previous} with stamp ${stampOf(prevDir)}, and this tree ships other app files (${stampOf(ROOT)}) under the same version — run node scripts/sw-stamp.mjs to bump it`);
+      t.skip(`PREV_BUILD (${ref}) is ${previous} with the same stamp, the same build as this tree: no upgrade to walk, the dressed pair covers it`);
+      return;
+    }
     server.overlay.clear();
     crewApi();
     server.setRoot(prevDir);

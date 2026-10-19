@@ -65,8 +65,9 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       # The previous build: main for a pull request or a branch (what is live
       # when this merges), the commit before for a push to main itself. The
-      # same build on both sides skips the real pair; the dressed pair always
-      # runs.
+      # same build on both sides (version and stamp) skips the real pair; the
+      # same version over other app files fails it (a released version
+      # reused); the dressed pair always runs.
       - run: npm run test:browser
         env:
           PREV_BUILD: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'HEAD^' || 'origin/main' }}
