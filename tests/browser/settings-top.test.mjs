@@ -82,6 +82,39 @@ const stillPage = (page) => page.waitForFunction(() => {
 // Back is done, then hands the entry back ('auto') — the state at rest.
 const backAtRest = (page) => page.waitForFunction(() => history.scrollRestoration === 'auto'
   && document.getElementById('screen-app').style.display !== 'none', null, { timeout: 5000 });
+// What the person is looking at: the first card under the sticky band, keyed
+// the way the wall keys its anchors (wall.js wallAnchors: day, room, artist,
+// occurrence, and a count for a repeat), and where it stands. "The wall where
+// it was" is that card back at that spot. The app keeps the place by what is
+// on screen (keepWallPlace), so when something above it measures a few pixels
+// differently after the repaint (Linux WebKit in CI: scrollY 3871 -> 3877)
+// scrollY moves and the wall does not. The bug this guards, the engine's own
+// restore writing Settings' 0 over the place, moves every card at once.
+const cardsOnWall = (page) => page.evaluate(() => {
+  const band = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 0;
+  const count = new Map();
+  return [...document.querySelectorAll('#wall-root .card[data-artist]')].map((el) => {
+    const day = (el.closest('.day-block') || { dataset: {} }).dataset.day || '';
+    const room = (el.closest('.room') || { dataset: {} }).dataset.room || '';
+    let key = `${day}|${room}|${el.dataset.artist}|${el.dataset.occ || ''}`;
+    const n = (count.get(key) || 0) + 1;
+    count.set(key, n);
+    if (n > 1) key += `|${n}`;
+    return { key, top: el.getBoundingClientRect().top, band };
+  });
+});
+async function seen(page) {
+  const inView = (await cardsOnWall(page)).filter((c) => c.top >= c.band - 1 && c.top < 844);
+  inView.sort((a, b) => a.top - b.top);
+  return inView[0] ? { key: inView[0].key, top: inView[0].top, y: await scrollY(page) } : null;
+}
+async function sameWall(page, was, why) {
+  assert.ok(was, 'not vacuous: a card stood under the band before Settings opened');
+  const now = (await cardsOnWall(page)).find((c) => c.key === was.key);
+  const y = await scrollY(page);
+  assert.ok(now && Math.abs(now.top - was.top) <= 2,
+    `${why}: ${was.key} stood at ${Math.round(was.top)}px, now ${now ? Math.round(now.top) + 'px' : 'gone'} (scrollY ${was.y} -> ${y})`);
+}
 // An element's box, read in the viewport.
 const boxOf = (page, sel) => page.evaluate((s) => {
   const el = document.querySelector(s);
@@ -101,7 +134,8 @@ async function openSettingsFromDock(page) {
 test('390 touch: Settings opened from a scrolled wall stands at its top, a drill does too, and Back finds the wall\'s place', { skip }, async () => {
   const { ctx, page } = await wallPhone();
   try {
-    const before = await wheelTo(page, 1500);
+    await wheelTo(page, 1500);
+    const was = await seen(page);
     await openSettingsFromDock(page);
     assert.equal(await scrollY(page), 0, 'Settings opens at its top');
     const back = await boxOf(page, '#settings-main .back-btn');
@@ -135,8 +169,7 @@ test('390 touch: Settings opened from a scrolled wall stands at its top, a drill
     assert.ok(Math.abs(mainAfter - mainAt) <= 2, `Back from the drill puts Settings where it stood: ${mainAt} -> ${mainAfter}`);
     await page.click('#settings-main .back-btn');
     await backAtRest(page);
-    const after = await scrollY(page);
-    assert.ok(Math.abs(after - before) <= 2, `Back puts the wall where it was: ${before} -> ${after}`);
+    await sameWall(page, was, 'Back puts the wall where it was');
   } finally {
     await ctx.close();
   }
@@ -146,14 +179,14 @@ for (const [name, engine, skipIt] of [['Chromium', () => browser, skip], ['WebKi
   test(`${name} 390 touch: browser Back from Settings finds the wall's place too`, { skip: skipIt }, async () => {
     const { ctx, page } = await wallPhone(engine());
     try {
-      const before = await wheelTo(page, 1200);
+      await wheelTo(page, 1200);
+      const was = await seen(page);
       await openSettingsFromDock(page);
       assert.equal(await scrollY(page), 0, 'Settings opens at its top');
       assert.equal(await page.evaluate(() => history.scrollRestoration), 'manual', 'the wall\'s entry holds its own place while Settings is up');
       await page.goBack();
       await backAtRest(page);
-      const after = await scrollY(page);
-      assert.ok(Math.abs(after - before) <= 2, `browser Back puts the wall where it was: ${before} -> ${after}`);
+      await sameWall(page, was, 'browser Back puts the wall where it was');
     } finally {
       await ctx.close();
     }
