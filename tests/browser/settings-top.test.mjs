@@ -198,3 +198,46 @@ for (const [name, engine, skipIt] of [['Chromium', () => browser, skip], ['WebKi
     }
   });
 }
+
+// Every other way out of Settings hands the page's scroll back to the browser
+// too (v116 review): Switch crew, Forget this crew and Add a festival leave
+// Settings without its Back, and used to leave the tab on 'manual' — no
+// scroll restore on Back, Forward or reload for the rest of its life.
+const EXITS = [
+  ['Switch crew', async (page) => {
+    const row = page.locator('#screen-settings button', { hasText: /^Switch crew/ }).first();
+    await row.scrollIntoViewIfNeeded();
+    await row.click();
+    await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
+  }],
+  ['Forget this crew', async (page) => {
+    const row = page.locator('#screen-settings button', { hasText: /Forget this crew on this device/ }).first();
+    await row.scrollIntoViewIfNeeded();
+    await row.click();
+    await page.locator('#screen-settings button', { hasText: /Tap again to forget this crew/ }).first().click();
+    await page.waitForSelector('#screen-landing', { state: 'visible', timeout: 5000 });
+  }],
+  ['Add a festival', async (page) => {
+    const row = page.locator('#screen-settings button', { hasText: /^\+ Add a festival/ }).first();
+    await row.scrollIntoViewIfNeeded();
+    await row.click();
+    await page.waitForFunction(() => location.hash === '#new' && document.getElementById('screen-settings').style.display === 'none', null, { timeout: 5000 });
+  }],
+];
+for (const [name, engine, skipIt] of [['Chromium', () => browser, skip], ['WebKit', () => webkit, skipWebkit]]) {
+  for (const [door, leave] of EXITS) {
+    if (name === 'WebKit' && door !== 'Switch crew') continue; // one door proves the engine; the rest is the app's own code path
+    test(`${name} 390 touch: Settings left by "${door}" gives the page's scroll back to the browser`, { skip: skipIt }, async () => {
+      const { ctx, page } = await wallPhone(engine());
+      try {
+        await wheelTo(page, 1200);
+        await openSettingsFromDock(page);
+        assert.equal(await page.evaluate(() => history.scrollRestoration), 'manual', 'not vacuous: Settings holds the wall\'s place');
+        await leave(page);
+        assert.equal(await page.evaluate(() => history.scrollRestoration), 'auto', `after "${door}" the browser restores scroll again`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+}

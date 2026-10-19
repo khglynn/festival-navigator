@@ -1354,6 +1354,7 @@ function wallUrl(token) {
 }
 
 function joinFromLayer() {
+  letGoOfWallPlace(); // Add yourself from Settings: the wall again, by another door
   router.reset();
   history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
@@ -4443,7 +4444,6 @@ let settingsActions = null;
 // gets its turn here, v92; the offer still waits for its "Got it".
 function closeSettings() {
   const back = settingsLeftWall;
-  settingsLeftWall = null;
   show('screen-app');
   keepWallAddress();
   // The wall Settings was opened from comes back where it stood — the same
@@ -4454,7 +4454,7 @@ function closeSettings() {
   if (same && !back.place && Math.abs(window.scrollY - back.y) >= 1) window.scrollTo({ top: back.y, behavior: 'auto' });
   // The browser's own restore for this entry again, once this Back is done
   // with it (a later task: the restore it skips runs right after popstate).
-  if (back) setTimeout(() => { try { history.scrollRestoration = 'auto'; } catch { /* as above */ } }, 0);
+  letGoOfWallPlace({ later: true });
   maybeOpenOnDay();
   safely('welcome', maybeWelcome);
 }
@@ -4476,6 +4476,18 @@ function leaveWallForSettings() {
   // current one here (the router pushes Settings after this), so it alone
   // stops restoring until the wall is back (closeSettings hands it back).
   try { history.scrollRestoration = 'manual'; } catch { /* a history that will not say: the place still lands without Back */ }
+}
+// The other half, on EVERY way out of Settings, not only its Back (v116
+// review): Switch crew, Forget this crew, Add a festival, another crew's board
+// and Add yourself all leave Settings without closeSettings, and used to leave
+// the tab on 'manual' — no scroll restore on Back, Forward or reload for the
+// rest of its life — and a stale wall place for the next close to misread.
+// renderLanding and boot call it too, as the backstop for an exit added later.
+// `later`: closeSettings' own Back, whose skipped restore runs after popstate.
+function letGoOfWallPlace({ later = false } = {}) {
+  settingsLeftWall = null;
+  const auto = () => { try { if (history.scrollRestoration !== 'auto') history.scrollRestoration = 'auto'; } catch { /* as above */ } };
+  if (later) setTimeout(auto, 0); else auto();
 }
 // The wall's address follows its festival (v96 — Sol's review of 3599950):
 // a festival switched in Settings is no boot, so nothing rewrote the address,
@@ -4588,6 +4600,7 @@ function openSettings() {
     addMember: () => { openAddMember(); router.push('sheet:add-member'); },
     // FLOW-6: the landing is the crew switcher; the current crew stays remembered.
     switchCrew: () => {
+      letGoOfWallPlace();
       router.reset();
       history.replaceState(null, '', '/');
       renderLanding();
@@ -4595,6 +4608,7 @@ function openSettings() {
     // Fest-first: settings lists YOUR boards; adding goes to the shared
     // multi-pick page, and a board in another circle opens like a landing row.
     addFestival: () => {
+      letGoOfWallPlace();
       router.reset();
       location.hash = '#new';
       boot();
@@ -4607,6 +4621,7 @@ function openSettings() {
         showToast($('toast-root'), 'This device’s storage is blocked — couldn’t point the board at that festival.', 6000);
         return;
       }
+      letGoOfWallPlace();
       router.reset();
       location.hash = `#g=${token}`;
       boot();
@@ -4614,6 +4629,7 @@ function openSettings() {
     leaveCrew: () => {
       const t = state.getCrewToken();
       crew.forgetCrew(t);
+      letGoOfWallPlace();
       router.reset();
       history.replaceState(null, '', '/');
       renderLanding();
@@ -4725,6 +4741,7 @@ async function restoreFromMeLink(token, current = () => true) {
 }
 
 function renderLanding() {
+  letGoOfWallPlace();
   show('screen-landing');
   document.title = 'Festival Navigator';
 
@@ -5777,6 +5794,7 @@ export async function boot() {
   firstBoot = false;
   openPending = { pageLoad: isFirst, warm: false, offline: false };
   festViewPending = true;
+  letGoOfWallPlace(); // no Settings survives a boot (router.reset, next line)
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
