@@ -3,6 +3,9 @@
 // caching, like static-server.mjs — plus an overlay the test sets and clears:
 //   server.overlay.set('/js/v3/foot.js', { body, type })  serve these bytes instead
 //   server.overlay.set('HEAD /', 'drop')                  hang up on that request (lie-fi)
+//   server.overlay.set('HEAD /', 'last')                  answer it, then hang up on everything
+//                                                         after (the network dies right then)
+//   server.setDown(true | false)                          hang up on everything / answer again
 // A key may name a method ('HEAD /') or just a path ('/js/x.js', any method;
 // the query is ignored, so '/api/crew' answers '/api/crew?t=…').
 //   server.setRoot(dir)   serve another tree from now on (a whole other build)
@@ -21,7 +24,9 @@ const TYPES = {
 export function serveBuild(root) {
   const overlay = new Map();
   let base = root;
+  let down = false;
   const server = http.createServer((req, res) => {
+    if (down) { req.socket.destroy(); return; }
     let p;
     try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400); res.end(); return; }
     if (p.includes('..')) { res.writeHead(403); res.end(); return; }
@@ -30,7 +35,8 @@ export function serveBuild(root) {
     if (p === '/f' || p.startsWith('/f/')) p = '/';
     const o = overlay.has(`${req.method} ${p}`) ? overlay.get(`${req.method} ${p}`) : overlay.get(p);
     if (o === 'drop') { req.socket.destroy(); return; }
-    if (o) {
+    if (o === 'last') res.on('finish', () => { goDown(true); });
+    if (o && o !== 'last') {
       res.writeHead(o.status || 200, { 'content-type': o.type || TYPES[path.extname(p)] || 'text/plain', 'cache-control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : o.body);
       return;
@@ -43,6 +49,19 @@ export function serveBuild(root) {
     if (req.method === 'HEAD') { res.end(); return; }
     fs.createReadStream(file).pipe(res);
   });
+  // Down is a network that is gone, not a server that refuses: every open
+  // connection is cut and every new one is cut as it arrives, so no request
+  // can sit on a kept-alive socket waiting for an answer that never comes.
+  const sockets = new Set();
+  server.on('connection', (socket) => {
+    if (down) { socket.destroy(); return; }
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  });
+  function goDown(on) {
+    down = !!on;
+    if (down) for (const socket of sockets) socket.destroy();
+  }
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
@@ -50,6 +69,7 @@ export function serveBuild(root) {
         origin: `http://127.0.0.1:${port}`,
         overlay,
         setRoot: (dir) => { base = dir; },
+        setDown: goDown,
         close: () => new Promise((r) => { server.closeAllConnections?.(); server.close(r); }),
       });
     });

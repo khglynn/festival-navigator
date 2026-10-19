@@ -338,19 +338,32 @@
          - A worker-served page whose app cannot LINK on a reload — the second
            try, or the person's own Try again — has a copy in the worker's
            cache that cannot work: a plain reload serves it again (v116,
-           LEDGER follow-up 17). So this build's copy goes (the festival-nav-v*
-           app caches; the festival data cache never) and the page reloads
-           once: with its cache empty the worker fetches every file from the
-           network, and the next build's install refills it whole. Only after
-           a quick check that the network answers — with no signal, the copy
-           it has is kept. The worker itself stays registered on purpose:
-           WebKit empties the origin's whole Cache Storage once a registration
-           is gone (measured, Playwright WebKit, 2026-10-19), which would take
-           every festival saved for a field with it. The loop guard is a stamp
-           in this tab's sessionStorage, because the fresh copy's own load is a
-           reload too: a build that cannot link even from the network would
-           otherwise throw its copy away forever. No stamp to write or read
-           (storage blocked): no fresh copy. -->
+           LEDGER follow-up 17). So that copy's code goes and the page reloads
+           once, the code fetched from the network. Only the controlling
+           worker's OWN cache, named by the worker itself (no answer: nothing
+           goes) — never a newer worker's, and never one an older activate
+           kept for festival data it could not rescue — and only its code:
+           the page, its styles and fonts stay, so a network that dies right
+           after the check still opens this page, which then says the signal
+           is weak, and festival data never goes. Not while a new build is installing
+           or waiting: its claim reloads the page anyway (the glue below).
+           Only after a quick check that the network answers — with no
+           signal, the copy it has is kept. Under Stay offline the automatic
+           paths never fetch; the person's own Try again on the panel is
+           their yes to one fetch. The worker itself stays registered on
+           purpose: WebKit empties the origin's whole Cache Storage once a
+           registration is gone (measured, Playwright WebKit, 2026-10-19),
+           which would take every festival saved for a field with it. The
+           loop guard is a stamp in this tab's sessionStorage, because the
+           fresh copy's own load is a reload too: a build that cannot link
+           even from the network would otherwise throw its copy away forever.
+           No stamp to write or read (storage blocked): no fresh copy.
+         - Once the app runs, the worker is asked to make its copy whole
+           (service-worker.js refill): a copy that lost files — the fresh copy
+           above, storage trouble — would otherwise open nowhere offline until
+           the next build installs, because pages are never stored and files
+           only an install fetches (the Invite QR) never come back. A whole
+           copy costs the worker a look, nothing more. -->
     <script>
       (function () {
         var done = false;
@@ -378,36 +391,116 @@
           if (navType() !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
           return navigator.onLine !== false && !stayingOffline();
         }
+        // Read once and gone: a mark the last load left for this one.
+        function takeMark(key) {
+          try {
+            var v = window.sessionStorage.getItem(key) === '1';
+            if (v) window.sessionStorage.removeItem(key);
+            return v;
+          } catch (e) { return false; }
+        }
+        // The person's Try again on the panel under Stay offline: their yes to
+        // fetching a fresh copy once (Stay offline is a choice not to use the
+        // network, and the panel is the one place left to say otherwise — its
+        // switch lives in Settings, which needs the app that will not start).
+        var CONSENT_KEY = 'fn_fetch_once';
+        var consented = takeMark(CONSENT_KEY);
+        // A fresh copy's own load asks for the refill below even under Stay
+        // offline: it finishes the fetch the person said yes to.
+        var REFILL_KEY = 'fn_refill_once';
+        var refillOnce = takeMark(REFILL_KEY);
         // A fresh copy: only where a worker's copy failed to link on a reload,
         // online, and not within ten minutes of this tab's last fresh copy.
         var FRESH_KEY = 'fn_fresh_copy_at';
-        function freshCopyAllowed() {
-          if (!linked || !servedByWorker() || navType() !== 'reload') return false;
-          if (navigator.onLine === false || stayingOffline()) return false;
+        // `unread`: the answer when there is no stamp to read (storage blocked).
+        function freshlyCopied(unread) {
           try {
             var at = Number(window.sessionStorage.getItem(FRESH_KEY)) || 0;
-            return !(at && Math.abs(Date.now() - at) < 10 * 60 * 1000);
-          } catch (e) { return false; }
+            return !!at && Math.abs(Date.now() - at) < 10 * 60 * 1000;
+          } catch (e) { return unread; }
+        }
+        function freshCopyAllowed() {
+          if (!linked || !servedByWorker() || navType() !== 'reload') return false;
+          if (navigator.onLine === false || (stayingOffline() && !consented)) return false;
+          return !freshlyCopied(true); // no loop guard to read: no fresh copy
+        }
+        // The controlling worker's own build, as it names it; null when it
+        // does not answer (a worker from before v88, or a busy one).
+        function ownCache() {
+          return new Promise(function (resolve) {
+            var sw = navigator.serviceWorker;
+            var c = sw && sw.controller;
+            if (!c) { resolve(null); return; }
+            var t = setTimeout(function () { sw.removeEventListener('message', on); resolve(null); }, 2000);
+            function on(e) {
+              var b = e.data && e.data.fnBuild;
+              if (typeof b !== 'string') return;
+              clearTimeout(t);
+              sw.removeEventListener('message', on);
+              resolve(/^festival-nav-v\d+$/.test(b) ? b : null);
+            }
+            sw.addEventListener('message', on);
+            try { c.postMessage({ fn: 'build?' }); } catch (e) { clearTimeout(t); sw.removeEventListener('message', on); resolve(null); }
+          });
+        }
+        // What goes: the code (every .js and .mjs — what links, and what
+        // fails to). What stays: the page and its styles and fonts (a dead
+        // network after the check still opens this page, which then says so:
+        // a stylesheet that cannot arrive would hold every script below it,
+        // this one included, and leave a blank page in WebKit), and any
+        // festival data. The refill below replaces the lot.
+        function dropCode(name) {
+          return caches.has(name).then(function (has) {
+            if (!has) return null;
+            return caches.open(name).then(function (cache) {
+              return cache.keys().then(function (reqs) {
+                return Promise.all(reqs.map(function (req) {
+                  var p = new URL(req.url).pathname;
+                  if (!/\.m?js$/.test(p) || p.indexOf('/data/') === 0) return null;
+                  return cache.delete(req);
+                }));
+              });
+            });
+          });
         }
         function freshCopy() {
-          // Does the network answer at all? A HEAD the worker passes straight
-          // through (it serves GETs only), bounded: four seconds of lie-fi
-          // and the copy stays.
-          var probe = new Promise(function (resolve, reject) {
-            setTimeout(function () { reject(new Error('no signal')); }, 4000);
-            fetch('/', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
-              if (r.ok) resolve(); else reject(new Error('server'));
-            }, function () { reject(new Error('no signal')); });
-          });
-          probe.then(function () {
+          var sw = navigator.serviceWorker;
+          Promise.resolve().then(function () { return sw.getRegistration(); }).then(function (reg) {
+            // A new build on its way: its claim reloads this page — nothing to
+            // throw away, and its own fresh cache is not this copy's to touch.
+            if (reg && (reg.installing || reg.waiting)) throw new Error('arriving');
+            return ownCache();
+          }).then(function (own) {
+            if (!own) throw new Error('unnamed');
+            // Does the network answer at all? A HEAD the worker passes
+            // straight through (it serves GETs only), bounded: four seconds
+            // of lie-fi and the copy stays.
+            return new Promise(function (resolve, reject) {
+              setTimeout(function () { reject(new Error('no signal')); }, 4000);
+              fetch('/', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+                if (r.ok) resolve(own); else reject(new Error('server'));
+              }, function () { reject(new Error('no signal')); });
+            });
+          }).then(function (own) {
             window.sessionStorage.setItem(FRESH_KEY, String(Date.now()));
-            return caches.keys();
-          }).then(function (keys) {
-            return Promise.all(keys.filter(function (k) { return /^festival-nav-v\d+$/.test(k); }).map(function (k) { return caches.delete(k); }));
-          }).then(function () { location.reload(); }, function (e) {
+            return dropCode(own);
+          }).then(function () {
+            try { window.sessionStorage.setItem(REFILL_KEY, '1'); } catch (e) { /* the refill still runs, unless Stay offline */ }
+            location.reload();
+          }, function (e) {
             panel(e && e.message === 'no signal' ? NEEDS_SIGNAL : ON_US);
           });
         }
+        // Once the app runs, the worker makes its copy whole if it is not
+        // (comment above). Off the boot's path: a beat after load.
+        function askRefill() {
+          if (!ran() || (stayingOffline() && !refillOnce)) return;
+          try {
+            var c = navigator.serviceWorker && navigator.serviceWorker.controller;
+            if (c) c.postMessage({ fn: 'refill' });
+          } catch (e) { /* no worker to ask */ }
+        }
+        window.addEventListener('load', function () { setTimeout(askRefill, 3000); });
         var WEAK = 'The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.';
         var ON_US = 'The app didn\u2019t finish loading \u2014 not your signal this time, a hiccup on our side. Try again in a minute.';
         var NEEDS_SIGNAL = 'The app didn\u2019t finish loading \u2014 this phone needs a fresh copy of it, and that needs signal. Try again once you have some.';
@@ -419,7 +512,10 @@
           var home = document.getElementById('error-home');
           if (home) home.style.display = 'none'; // it needs the app that has not started
           var retry = document.getElementById('error-retry');
-          if (retry) retry.onclick = function () { location.reload(); };
+          if (retry) retry.onclick = function () {
+            if (stayingOffline()) { try { window.sessionStorage.setItem(CONSENT_KEY, '1'); } catch (e) { /* then Stay offline holds */ } }
+            location.reload();
+          };
           screen.style.display = '';
         }
         function stuck() {
@@ -430,8 +526,10 @@
           if (freshCopyAllowed()) { freshCopy(); return; }
           // A file lost on the way is the signal's; one that arrived and
           // cannot link is the copy's, which signal only fixes by fetching
-          // a fresh one.
-          panel(!linked ? WEAK : (navigator.onLine === false || stayingOffline()) ? NEEDS_SIGNAL : ON_US);
+          // a fresh one — unless this tab just fetched one, and that did not
+          // link either.
+          panel(!linked ? WEAK : freshlyCopied(false) ? ON_US
+            : (navigator.onLine === false || (stayingOffline() && !consented)) ? NEEDS_SIGNAL : ON_US);
         }
         function isApp(t) {
           return !!t && t.tagName === 'SCRIPT' && t.type === 'module' && /\/js\/v3\/app\.js(?:[?#]|$)/.test(t.src || '');
