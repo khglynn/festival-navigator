@@ -187,7 +187,7 @@ function validateNoteMap(map, where) {
   // "X removed this note" sitting over a note that is very much alive (survey,
   // 2026-08-30). The shipped client cannot produce one — it always writes
   // `replyTo.re || replyTo.id` — but this file is the contract for every
-  // client, and there is a second one now (Ray Perfetti's fork).
+  // client, and there is a second one now: the fork by Ray (raypp2).
   //
   // Existence stays deliberately unrequired, as `validateNote` says: sync can
   // deliver a reply a beat before its root, so a payload holding only the reply
