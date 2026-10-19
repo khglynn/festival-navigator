@@ -31,6 +31,17 @@ const CURRENT = SW_SRC.match(/CACHE_VERSION = '([^']+)'/)[1];
 const DATA = SW_SRC.match(/DATA_CACHE = '([^']+)'/)[1];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// A Request that keeps the signal it was GIVEN: Node 24's Request.signal is a
+// follower of that one, and whether a follower has heard the abort yet is
+// the runtime's business (it had not, on CI's Node 24, the moment the worker
+// answered), not the worker's. The worker's promise is about its own signal.
+class SignalledRequest extends Request {
+  constructor(input, init) {
+    super(input, init);
+    this.given = (init && init.signal) || null;
+  }
+}
+
 // Boot the worker with fake caches/fetch. Caches are real buckets: `open(name)`
 // is that bucket, `caches.match` searches every bucket in creation order (as
 // browsers do). `cached` seeds paths into the bucket they live in — festival
@@ -81,7 +92,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
     location: { origin: ORIGIN },
     setTimeout: (fn, ms) => setTimeout(fn, Math.round(ms / 100)),
     clearTimeout,
-    URL, Request, Response, Promise, console, AbortController, TextEncoder, TextDecoder, crypto: globalThis.crypto,
+    URL, Request: SignalledRequest, Response, Promise, console, AbortController, TextEncoder, TextDecoder, crypto: globalThis.crypto,
   };
   vm.runInNewContext(SW_SRC, ctx);
   return {
@@ -401,11 +412,12 @@ const fileOf = (p) => readFileSync(join(ROOT, p === '/' ? '/index.html' : p));
 function serveTree({ swap = {}, hold = null, gate = null, deaf = false, seen = null } = {}) {
   return async (req) => {
     const p = new URL(req.url).pathname;
-    if (seen) seen.push({ p, cache: req.cache, signal: req.signal });
+    const signal = req.given || req.signal;
+    if (seen) seen.push({ p, cache: req.cache, signal });
     if (hold === p) {
       await new Promise((resolve, reject) => {
         gate.then(resolve);
-        if (!deaf) req.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        if (!deaf) signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
       });
     }
     if (Object.hasOwn(swap, p)) {

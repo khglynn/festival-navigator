@@ -75,6 +75,23 @@ const visible = (page, id) => page.evaluate((i) => {
 }, id);
 const landed = (page) => page.waitForFunction(() => window.__fnAppRan === true
   && document.getElementById('screen-landing').style.display !== 'none', null, { timeout: 30000 });
+// What the page and the server saw, for a wait that ran out.
+const said = (page) => page.evaluate(() => window.__fnRepair || null);
+async function landedOrSay(page, navs) {
+  try { await landed(page); } catch (e) {
+    let seen = null;
+    try {
+      seen = await page.evaluate(() => ({
+        repair: window.__fnRepair || null,
+        nav: performance.getEntriesByType('navigation')[0]?.type,
+        panel: document.getElementById('screen-error').style.display !== 'none' ? document.getElementById('error-msg').textContent : null,
+        repairedAt: sessionStorage.getItem('fn_repaired_at'),
+      }));
+    } catch (x) { seen = String(x); }
+    e.message += `\n  page: ${JSON.stringify(seen)}; loads: ${navs()}; server: ${server.log.filter((l) => !l.includes('/api/')).slice(-60).join(', ')}`;
+    throw e;
+  }
+}
 
 // A phone that opened the app once (the worker installed, the app ran), then
 // whose worker copy went bad: one module in this build's snapshot that cannot
@@ -148,7 +165,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     const { ctx, page, navs } = await installedThenBroken(engine);
     try {
       await page.goto(`${server.origin}/`, { waitUntil: 'commit' });
-      await landed(page);
+      await landedOrSay(page, navs);
       // The open (the bad copy), the second try (the same bad copy), the
       // repaired reload. Never more.
       assert.equal(navs(), 3, `${navs()} loads`);
@@ -178,6 +195,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       await panelUp(page);
       await page.waitForTimeout(1500);
       assert.equal(navs(), 2, 'the open and the second try; no reload after the answer');
+      assert.equal(await said(page), 'newer');
       assert.match(await page.textContent('#error-msg'), /our side/);
       assert.equal(await snapshotDeep(page), STALE, 'nothing written into this build\'s cache');
       assert.ok(!server.log.includes(REPAIR_SIGN), `only the page was fetched, not the install list: ${server.log.filter((l) => !l.includes('/api/'))}`);
@@ -195,6 +213,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       assert.ok(server.log.includes('GET /js/util.js'), 'not vacuous: the worker fetched the odd file');
       await page.waitForTimeout(1500);
       assert.equal(navs(), 2, 'the open and the second try; no reload');
+      assert.equal(await said(page), 'mismatch');
       assert.match(await page.textContent('#error-msg'), /our side/);
       assert.equal(await snapshotDeep(page), STALE, 'nothing written');
       assert.equal(await cachedText(page, '/js/util.js'), util, 'not even the files that did match');
@@ -213,6 +232,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       assert.ok(server.log.includes(`GET ${FONT}`), 'not vacuous: the worker asked for the file that hangs');
       // "needs signal" is the worker's own "timeout" answer; a page that gave
       // up waiting on its own would say "our side".
+      assert.equal(await said(page), 'timeout');
       const words = await page.textContent('#error-msg');
       assert.match(words, /needs a fresh copy/, words);
       // The network wakes up: the held request gets its real answer, late.
@@ -232,6 +252,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       await panelUp(page);
       await page.waitForTimeout(1000);
       assert.equal(navs(), 2, 'the open and the second try; nothing reloads into a dead network');
+      assert.equal(await said(page), 'failed');
       const words = await page.textContent('#error-msg');
       assert.match(words, /needs a fresh copy/, words);
       assert.doesNotMatch(words, /weak signal/, 'a copy that cannot link is not only the signal’s fault');
@@ -239,8 +260,9 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       assert.ok(await cached(page, '/js/v3/qr.js'), 'and nothing taken out of it');
       // Signal back: their Try again repairs, and the app opens.
       server.overlay.clear();
+      server.log.length = 0;
       await tap(page, '#error-retry');
-      await landed(page);
+      await landedOrSay(page, navs);
       assert.equal(navs(), 4, 'their Try again, then the repaired reload');
       assert.notEqual(await snapshotDeep(page), STALE, 'the real module now');
     } finally { await ctx.close(); }
@@ -257,7 +279,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       assert.equal(await snapshotDeep(page), STALE, 'the copy is kept');
       assert.match(await page.textContent('#error-msg'), /needs signal/);
       await tap(page, '#error-retry');
-      await landed(page);
+      await landedOrSay(page, navs);
       assert.equal(navs(), 3, 'their Try again, then the repaired reload');
       assert.notEqual(await snapshotDeep(page), STALE, 'the real module now');
       assert.equal(await page.evaluate(() => sessionStorage.getItem('fn_fetch_once')), null, 'the yes was spent, not kept');
@@ -312,6 +334,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       await panelUp(page, 20000); // its three seconds to say "started", not the 25 s backstop
       await page.waitForTimeout(1500);
       assert.equal(navs(), 2, 'the open and the second try; no repair, no reload');
+      assert.equal(await said(page), 'no answer');
       assert.ok(!server.log.includes(REPAIR_SIGN));
       assert.equal(await snapshotDeep(page), STALE, 'the copy is where it was');
       assert.match(await page.textContent('#error-msg'), /our side/);

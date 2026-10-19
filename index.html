@@ -456,6 +456,7 @@
             if (reg && (reg.installing || reg.waiting)) return 'arriving';
             return askRepair();
           }).then(function (word) {
+            window.__fnRepair = word; // what the worker said, for the tests and a look from the console
             if (word === 'repaired') {
               window.sessionStorage.setItem(REPAIRED_KEY, String(Date.now())); // throws: no reload (the guard could not hold)
               location.reload();
