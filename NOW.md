@@ -1,116 +1,103 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-04 12:16 PM PT (v115 live and verified; its tests read at rest now, #87) · mode: live (ACL Oct 2–4, 9–11)**
+**last-updated: 2026-10-19 · mode: off-season** (Portola and ACL are done;
+the next festivals friends have crews for are EDC Orlando, Nov 6–8, and
+Seismic, Nov 13–15, both still lineups without set times)
 
 Where things stand, on one screen. Change stale lines in place; the story of
-how we got here belongs in DEVLOG.md.
+how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Live on production
 
-- **v115, from `main`** (PR #80, merged 2026-10-04 9:51 AM PT on Kevin's
-  OK) on fest / festival / crew.kevinhg.com, all three serving
-  festival-nav-v115 / ffa70e4b: the Invite sheet (find your crew, slice 1)
-  — the crew link as a QR in the app's own look and a card to keep when
-  saved, the friend part as one quiet row opening its own step, short
-  fest names (ACL, Seismic; ids and URLs unchanged), share links on
-  fest.kevinhg.com, and the dock's day row giving its gaps (15–30px)
-  before it rests on a cut-off tab. v114 (Oct 3): ACL's W1 Sunday re-timed. Rollback: Vercel
-  dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Rows, reviews, rollback
-  targets: the LEDGER.
+- **v115, from `main`**, on fest / festival / crew.kevinhg.com, all three
+  serving festival-nav-v115 (checked 2026-10-19). The last release of the
+  season: the Invite sheet with the crew link as a QR. Rollback: Vercel
+  dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny (v114 + docs). Every release, review and
+  rollback target of the season: the LEDGER,
+  `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as history).
+- **This pass (off-season polish, 2026-10-19):** ORCHESTRATOR FILLS IN —
+  the release line (v116?), its PRs, rollback target, and what is still
+  open after the merges.
+- **Smoke check for a release:** `node ops/prod-smoke.mjs` (all three hosts,
+  build and asset stamp).
 - **Alerts:** PostHog → Slack for a new error and one that came back
-  (`ops/posthog/`), triggered by error-tracking issues only, and one usage
-  rule: 3+ phones red on sync in an hour ("Fest: 3+ phones can't sync").
+  (`ops/posthog/`), plus one usage rule: 3+ phones red on sync in an hour.
 - **Read it:** the pinned PostHog dashboard "Festival health" (2163278):
   errors and phones by build, opens, speed, sync, features, devices.
 
-## Now: watch ACL weekend 1 on "Festival health"
+## Off-season: what still moves
 
-Built 2026-10-02 (DESIGN §2g). Look after each festival day: errors by
-build, a stale build still in use, red sync, and how often an open lands
-with no crew (`landing` in "How opens begin" — the find-your-crew question;
-its slice 1, the Invite sheet's QR, is v115: watch whether it moves).
-
-**ACL, 2026-10-03:** W1 Saturday (v113, after the mud delay) and W1 Sunday
-(v114, the Oct 2 poster) are re-timed from ACL's revised posters; their
-cancelled acts keep their entries and picks. Next: re-read all of W2 (Fri
-10.01, Sat and Sun 9.30) before Oct 9 — W2 in the file is still the Aug 27
-posters (LEDGER follow-up 51). The Sunday poster draws its 4:30 run about 5
-minutes later than it prints; entered as printed (follow-up 54).
+- **Set-time drops.** EDC Orlando and Seismic are loaded as lineups (data
+  from Jul 7) and have crews with picks. When a festival posts its times, it
+  is a data-only push under the standing OK (validator + freeze + tests):
+  `docs/fest-update-runbook.md`. Nothing watches for the drop yet, and an
+  open phone only picks up new festival data on its next real open
+  (BACKLOG, real fix 3).
+- **ACL's weekend 2** ran on the Aug 27 posters; it was never re-read. It
+  is history now.
 
 ## Next: the iOS app
 
-The plan is `claude-plans/2026-09-29-native-apps-stack.md` (Capacitor around
-this app; TestFlight this year). Apple approved and Play verified Sep 29
-(Team ID and the rest in the plan's "Before Thursday"). Still Kevin's: a Mac
-with Xcode 26 and Android Studio (~30 GB free), Developer Mode on his iPhone.
-Then paste this into a fresh session on that Mac:
+The plan is `claude-plans/2026-09-29-native-apps-stack.md`: Capacitor around
+this app, TestFlight for the crew. Not started (the Mac session planned for
+Oct 1 never ran). Kevin's side, as of Sep 29: Apple Developer approved and
+Play identity verified; still to do, a Mac with Xcode 26 and Android Studio
+(~30 GB free) and Developer Mode on his iPhone. Then paste this into a fresh
+session on that Mac:
 
-> This is a fresh session with a clear mind stepping into work we grounded in one research chat (a claude.ai cloud session, Sep 28–29, 2026: the stack comparison, Capacitor research, Apple and Play rules, a Thursday runbook). Run the re-entry ritual first — festival-navigator's AGENTS.md, then NOW.md (its top "Live on production" and "Next" blocks win), then the work's own grounding: `claude-plans/2026-09-29-native-apps-stack.md` (the stack decision, the native pieces, "Decisions and the Thursday runbook" — the stack comparison is finished, don't redo it) and the chat itself at "~/Documents/HG Main/0.2 Clips + Social + AI/Agentic Research/misc/2026-09-29-festival-ios-tech-stack-chat.md" (Kevin's vault, outside this repo) (Kevin's own words and the account steps; it stays out of the public repo). Decisions already made — build on them; reopen one only with new evidence, and say you are: (1) Capacitor wraps the existing web app — no rewrite (2026-09-29, the plan's "Why Capacitor fits"); (2) TestFlight and Android internal testing or a direct install this year, no store listing (2026-09-29, chat turn 2); (3) over-the-air web updates with the web bundle shipped inside the app and a self-hosted updater, never loading fest.kevinhg.com remotely (2026-09-29, the plan's runbook); (4) Buy Me a Coffee stays a link out, no in-app purchases (chat turn 2). Still open — talk before building: the widget / Live Activity (Kevin, 2026-09-29: "not convinced about a widget"), the app ID (com.kevinhg.festival?) and the home-screen name. The deliverable is the Capacitor shell running today's app in the iOS Simulator and on Kevin's iPhone — `apiBase()` pointing server calls at fest.kevinhg.com, the offline data fallback — then a TestFlight build for the crew, same discipline as the festival-navigator releases v103–v106 (red-first tests, CI green including Linux WebKit, an independent Codex Sol review, a real-input walk, never production data). Check Kevin's side first: Apple Developer enrollment approved (his Team ID), Play's identity check, Xcode 26 and Android Studio installed, Developer Mode on his iPhone — and link every site or step you send him to. Before doing any work: echo back your understanding of where we are and where we're going, clearly and crisply, and ask questions. Big brain, great work, tight communication. Let's go.
+> This is a fresh session stepping into work we grounded in one research chat (a claude.ai cloud session, Sep 28–29, 2026: the stack comparison, Capacitor research, Apple and Play rules). Run the re-entry ritual first: festival-navigator's AGENTS.md, then NOW.md, then `claude-plans/2026-09-29-native-apps-stack.md` (the stack decision, the native pieces, the decisions and runbook; its dates have passed, its steps have not; the stack comparison is finished, don't redo it) and the chat itself at "~/Documents/HG Main/0.2 Clips + Social + AI/Agentic Research/misc/2026-09-29-festival-ios-tech-stack-chat.md" (Kevin's vault, outside this repo; it stays out of the public repo). Decisions already made, build on them, and reopen one only with new evidence: (1) Capacitor wraps the existing web app, no rewrite; (2) TestFlight and Android internal testing or a direct install first, no store listing yet; (3) over-the-air web updates with the web bundle shipped inside the app and a self-hosted updater, never loading fest.kevinhg.com remotely; (4) Buy Me a Coffee stays a link out, no in-app purchases. Still open, talk before building: the widget / Live Activity (Kevin, 2026-09-29: "not convinced about a widget"), the app ID (com.kevinhg.festival?) and the home-screen name. The deliverable is the Capacitor shell running today's app in the iOS Simulator and on Kevin's iPhone (`apiBase()` pointing server calls at fest.kevinhg.com, the offline data fallback), then a TestFlight build for the crew, with the release discipline of v103–v115 (red-first tests, CI green including Linux WebKit, an independent review, a real-input walk, never production data). Check Kevin's side first (Apple Team ID, Play's identity check, Xcode 26 and Android Studio installed, Developer Mode on his iPhone) and link every site or step you send him to. Before doing any work, echo back where we are and where we're going, and ask your questions.
 >
 > launch-pad: 3e80501e-f950-812d-ac9f-faea1a54b83b
 > (leave this line in — pasting it clears this entry's handoff automatically)
 
-Festival-navigator loose ends (LEDGER follow-ups 38–59): the Linux day-row
-probe, a pid-keyed redo of the offline name fix, three product calls.
-
 ## Open with Kevin
 
-- Crew codes (find your crew, slice 3): a code he can type or a shuffled
-  three-word combo ("sunburnt two step"), fun over strength; needs a
-  DB-backed rate limit and a crew_codes table (additive). The v1 word list
-  went to him Oct 3 with three small calls; the build waits on his go.
-- v115 on his iPhone, on production now (clear the site's data first, or
-  Settings → Get the latest version): Camera scans the Invite sheet's QR;
-  long-press Save keeps the card (crew and fest names), not the plain
-  code; Pick for a friend → add a name → NAME IS IN, upright and on its
-  side; a hitch just after the QR appears. Also his: delete the branch
-  `diag/qr-fold-webkit` on GitHub (this session's proxy refuses deletes).
-- Slice 2 (a quiet home-screen row in Settings) waits on his home-screen
-  test: Share → Add to Home Screen, open the icon — the board, or an
-  empty start page? (find-your-crew plan, Part A question 3).
-- Ray: the Sep 1 reply is still in Gmail drafts — send it now, or fold it
-  into one email after ACL (its Pen card asks; the draft still says Discover
-  "after ACL", now 2027).
-- Pinned notes shown on the wall (a pinned festival or day note as the room
-  head's whisper): offered, no answer yet.
-- Import: a second door in the just-joined welcome, and Portola-only — his
-  "all those changes seem chill" probably covers it; confirm, then build.
-- Small call with a default: How it works dropped "White stroke = you" (you
-  are never in the crew corner now).
-- If a phone tap ever grows a card on a real iPhone: gate hover arming on
-  `(any-hover: hover)` — card-facts.js deliberately avoids media queries.
+Each has a default; "3: yes" is enough.
 
-## Next, after the live lane
+1. **Staging** (stage.fest.kevinhg.com) serves a July build, v35, on the
+   production database. Default: retire it (remove the domain, pause the
+   staging project); the other way is a Neon branch of its own.
+2. **EDC Orlando and Seismic.** Their lineups date from Jul 7. Default:
+   refresh both now and load set times as they post (data-only pushes).
+3. **Two List-view calls from Oct 4, never recorded** (his ring note and
+   Pen checklist): "Default to list", and "in the List, highlighting should
+   still just highlight" plus an always-reachable Picks view, which would
+   reverse v104's rule that the List filters by highlight. Default: keep
+   Board as the default and the List filter as shipped until he says.
+4. **Crew codes** (find your crew, slice 3): a code he types or a shuffled
+   three-word combo; the word list went to him Oct 3. Default: build the
+   three-word combo once he OKs the list. Slice 2 (a home-screen row in
+   Settings) waits on his test: Share → Add to Home Screen, open the icon:
+   the board, or an empty start page?
+   (`claude-plans/2026-10-02-find-your-crew.md`, Part A question 3).
+5. **Product calls offered in September, no answer yet** (LEDGER 22–24):
+   pinned notes as the room head's whisper (default: not now); a second
+   import door in the just-joined welcome (default: yes); How it works
+   without "White stroke = you" (default: keep it dropped); a tap on a
+   grown card in Our picks (default: leave as is).
+6. **v115 on his iPhone**, never confirmed: Camera scans the Invite sheet's
+   QR; long-press Save keeps the card; Pick for a friend → add a name.
+   Default: check whenever convenient; nothing is urgent off-season.
+7. ORCHESTRATOR: Ray's email, the LICENSE answer, GitHub housekeeping
+   (merged branches, private vulnerability reporting for SECURITY.md, the
+   repo description) and the Portola/ACL archive flip go here or come off,
+   depending on what this pass settled.
 
-0. Follow-ups: the LEDGER's list (1–59).
-1. ACL before Oct 2: the Zilker headliners' ends (a code rule — they print
-   only a start), the dock's FRI flash on open.
-2. After Portola: self-recovery when a phone boots stale cached modules
-   beside new ones (seen again today: `roomOf` not found, 11:00 AM); a guard
-   against a sync push to the wrong crew.
-3. Data-only pushes as drops land (standing OK: validator + freeze + tests).
-4. After Oct 11: the merged wall for two crews at one fest, add-a-show
-   (`claude-plans/2026-09-02-add-a-show.md`), the staging site (fix or
-   retire), email Ray (raypp2) — the Sep 1 draft never went out (Pen card).
+## Next, when there is time
 
-## Banked, not built
-
-- In Kevin's Pen (2026-09-26): the 2027 tabs (Discover, Our picks, a
-  reference tab with the grounds and venue maps and everyone's notes); city
-  seasons leaving out festival-only artists, and combining cities; list-view
-  swipes; the in-app venue map; emailing Ray. The schedule-drop watcher
-  (`claude-plans/2026-08-27-schedule-drop-watcher-future-build.md`). An AI
-  festival import graded by an eval.
-- A sticky member-chip row · duplicate person rows for Portola crew members
-  (an idempotent claim fixes it) · the deferred sync and merge hardening list
-  in DEVLOG 2026-08-23 · day-to-day grid scroll mirroring only on scroll end
-  (needs Kevin's yes).
+1. `BACKLOG.md`, real fixes first: self-recovery when a phone boots stale
+   cached modules (1), the offline "drew"/"Drew" reconcile keyed on pid
+   (2), refreshing festival data on resume before the November drops (3).
+2. Add a show (`claude-plans/2026-09-02-add-a-show.md`) and the merged wall
+   for two crews at one festival.
 
 ## Where the rest lives
 
 - Rules: AGENTS.md. History: DEVLOG.md (search it; do not read it whole).
-  Specs and plans: `claude-plans/README.md`.
-- Backups: Neon branches `backup-2026-09-23-prefest` and
-  `backup-2026-09-26-pre-v101`, JSON exports outside the repo.
+  The long list: BACKLOG.md. Specs and plans: `claude-plans/README.md`.
+  Forking: `docs/fork-setup.md`.
+- Backups: dated Neon branches (`backup-2026-09-23-prefest`,
+  `backup-2026-09-26-pre-v101` and later ones), JSON exports outside the
+  repo.
 - NOW before 2026-09-16:
   `claude-plans/archive/2026/now-history-2026-07-07-to-2026-09-02.md`.
