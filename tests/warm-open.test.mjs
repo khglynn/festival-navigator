@@ -19,11 +19,51 @@ const TOKEN = 'warmopentest_0123456789ab'; // a made-up crew, never a real link
 const CACHED = crewDoc({ Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } }, { Robyn: { Kevin: 2 } });
 const FRESH_ACT = 'Warm Open Fresh Act';
 
-// A sanity cap, not the proof (the order below is): generous for a loaded
-// machine, and still under the shortest budget a cold path would have to
-// burn through before it painted from the phone's copy (the boot's 8 s crew
-// fetch, js/crew.js).
-const PAINT_CAP_MS = 7000;
+// The test holds the app's clock, not a stopwatch (v116 review): until the
+// wall has painted, no timer the app sets for a second or more — setTimeout,
+// setInterval, and the network budgets (AbortSignal.timeout, js/util.js
+// timeoutSignal) — ever runs. A warm open that waited on any of them (a
+// fetch budget running out, a "give it a second" sleep) would never paint,
+// however fast or slow the machine, and the cap below catches that. Released
+// once the wall is up, so the rest of the file runs on real time.
+const LONG_MS = 1000;
+const HELD = Symbol('held timer');
+const heldTimers = [];
+let holding = true;
+const realSetTimeout = globalThis.setTimeout;
+const realClearTimeout = globalThis.clearTimeout;
+const realSetInterval = globalThis.setInterval;
+const realClearInterval = globalThis.clearInterval;
+const realAbortTimeout = AbortSignal.timeout;
+const hold = (kind, fn, ms, args) => {
+  const h = { [HELD]: true, kind, fn, ms, args, real: null, cleared: false };
+  heldTimers.push(h);
+  return h;
+};
+globalThis.setTimeout = (fn, ms, ...args) => (holding && Number(ms) >= LONG_MS ? hold('timeout', fn, ms, args) : realSetTimeout(fn, ms, ...args));
+globalThis.setInterval = (fn, ms, ...args) => (holding && Number(ms) >= LONG_MS ? hold('interval', fn, ms, args) : realSetInterval(fn, ms, ...args));
+const clearHeld = (realClear) => (h) => {
+  if (h && h[HELD]) { h.cleared = true; if (h.real) realClear(h.real); return; }
+  realClear(h);
+};
+globalThis.clearTimeout = clearHeld(realClearTimeout);
+globalThis.clearInterval = clearHeld(realClearInterval);
+AbortSignal.timeout = (ms) => {
+  if (!(holding && Number(ms) >= LONG_MS)) return realAbortTimeout.call(AbortSignal, ms);
+  const c = new AbortController();
+  globalThis.setTimeout(() => c.abort(new DOMException('The operation timed out.', 'TimeoutError')), ms);
+  return c.signal;
+};
+function releaseTimers() {
+  holding = false;
+  for (const h of heldTimers.splice(0)) {
+    if (h.cleared) continue;
+    h.real = (h.kind === 'interval' ? realSetInterval : realSetTimeout)(h.fn, h.ms, ...h.args);
+  }
+}
+// A sanity cap, not the proof (the hold is): long, because with every long
+// timer held nothing the app could be waiting on fires during it anyway.
+const PAINT_CAP_MS = 20000;
 
 const net = heldNetwork();
 globalThis.caches = cachesHolding({
@@ -52,22 +92,24 @@ const booted = Math.round(performance.now() - t0); // jsdom + the module graph: 
 let atPaint = null;
 const painted = await within(PAINT_CAP_MS, () => {
   if (!shown().includes('screen-app')) return false;
-  atPaint ??= { gaveUp: [...net.gaveUp], pending: net.pending(), calls: [...net.calls] };
+  atPaint ??= { gaveUp: [...net.gaveUp], pending: net.pending(), calls: [...net.calls], held: heldTimers.filter((h) => !h.cleared).length };
   return true;
 });
+releaseTimers();
 
 test('a warm open paints the wall from this phone’s copy while the network hangs', () => {
-  // The network here NEVER answers until a later test releases it. The proof
-  // is an ORDER, not a stopwatch (LEDGER follow-up 59: a 1000 ms budget on
-  // jsdom went red at ~3.9 s on a loaded machine, and a fast cold path could
-  // pass one anyway): the wall painted before the app had given up on any
-  // request — so it waited for no network budget to run out (the shortest,
-  // the boot's crew fetch, is 8 s; the festival file's 12 s) — and every
-  // request it had sent by then was still hanging. (On a quick runner the
-  // paint comes before the requests go out at all; the next test checks
-  // they do.)
-  assert.notEqual(painted, null, `the wall never painted within ${PAINT_CAP_MS} ms — it is waiting on a network that will not answer`);
-  console.log(`  warm first paint (jsdom): ${Math.round(painted)} ms after the modules loaded (${booted} ms to load them)`);
+  // The network here NEVER answers until a later test releases it, and no
+  // app timer of a second or more ran before the paint (the hold above). The
+  // proof is that hold and an ORDER, never a stopwatch (LEDGER follow-up 59:
+  // a 1000 ms budget on jsdom went red at ~3.9 s on a loaded machine, and a
+  // 7 s cap alone let through a warm path that slept on a timer first, v116
+  // review): the wall painted while every long timer was still waiting —
+  // the boot's 8 s crew budget among them — and every request it had sent
+  // by then was still hanging. (On a quick runner the paint comes before the
+  // requests go out at all; the next test checks they do.)
+  assert.notEqual(painted, null, `the wall never painted within ${PAINT_CAP_MS} ms with the app's long timers held — it is waiting on a timer or a network that will not answer`);
+  console.log(`  warm first paint (jsdom): ${Math.round(painted)} ms after the modules loaded (${booted} ms to load them); ${atPaint.held} long timers held`);
+  assert.ok(atPaint.held > 0, 'not vacuous: the app had set long timers (its network budgets) by the paint, and none had run');
   assert.deepEqual(atPaint.gaveUp, [], 'no request had timed out or been dropped when the wall painted');
   assert.equal(atPaint.pending, atPaint.calls.length, `every request sent before the paint was still hanging (${atPaint.pending} of ${atPaint.calls.length})`);
   assert.deepEqual(shown(), ['screen-app']);
