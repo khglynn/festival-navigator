@@ -237,8 +237,8 @@ into the sections below.
   (`api/_lib/crew-shared.mjs:138-185`, whose own comment says "the server guarantees only the
   shape"). `model.threadsFor` (`js/v3/model.js:146-170`) then buckets such a note into the same
   branch as a tombstoned root and uses the *live* target's author as `stubAuthor`. Confirmed
-  end to end against a constructed doc. **Not reachable from the shipped UI** — but Ray
-  Perfetti's fork is exactly the second client this is waiting for, and any fix to the reply
+  end to end against a constructed doc. **Not reachable from the shipped UI** — but Ray's
+  (raypp2) fork is exactly the second client this is waiting for, and any fix to the reply
   UX above walks nearer to it. *Fix:* in `validateNoteMap`, reject a note whose `re` target is
   itself carrying `re`.
 
@@ -648,7 +648,7 @@ the data is crew-visible); `docs/user-flows.md`'s "Crew favorites" → "Most pic
 
 ### Backlog
 - Server-side one-level-deep enforcement for `re` (`validateNoteMap`) — not reachable from our
-  UI, but Ray Perfetti's fork is the second client it is waiting for.
+  UI, but Ray's (raypp2) fork is the second client it is waiting for.
 - Spotify combo-name splitting (b2b / parentheticals) for badges, and separately for the
   playlist search fallback. Affinity ratchet, pending your call below.
 - The affinity-inherited-by-a-reused-name leak, and the mid-scan rename guard.

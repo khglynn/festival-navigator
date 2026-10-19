@@ -91,7 +91,7 @@ inside the 3-second window no longer silently disarms it. The button carries
 `validateNoteMap` gets a second pass: if a note's `re` names an id *in the same map* and
 that note itself carries `re`, reject. Existence stays deliberately unrequired (sync can
 deliver a reply before its root), so a payload holding only the reply still passes — the
-rule bites exactly where the evidence is present. This is Ray Perfetti's fork's guardrail.
+rule bites exactly where the evidence is present. This is Ray's (raypp2) fork's guardrail.
 
 ---
 

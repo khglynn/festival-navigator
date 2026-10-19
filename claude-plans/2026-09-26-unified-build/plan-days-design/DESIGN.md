@@ -408,7 +408,7 @@ build log (`SHARE-BUILD.md` on `live/share`, items 7, 10f, 15–19).
   yes*; the design round's version keeps two up to eight.
 
 Published for Kevin on 2026-09-26 as https://claude.ai/artifact/PZPqA9buY6JZSSsVqrZUmy
-(login kevin.hq@tecovas.com), with a note that the Share release now carries the plan
+(from Kevin's other claude.ai login), with a note that the Share release now carries the plan
 link's day and filters a highlighted Share to the highlighted people's picks.
 
 **Kevin's call, 2026-09-26, about 5:35 PM PT** (relayed by the coordinator): "All the

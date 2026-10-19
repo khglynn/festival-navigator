@@ -1,8 +1,10 @@
 # MODEL-V4 — the wall, simplified (spec of record, 2026-09-16)
 
-**Status:** proposed 2026-09-16, awaiting Kevin's pick on the canvas
-(https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD — "The Wall, Simplified";
-direction A is this spec, B is today's build, C is a flat list).
+**Status (updated 2026-10-19):** the spec of record. Kevin picked
+direction A, proposed 2026-09-16 (the canvas,
+https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD — "The Wall, Simplified";
+A is this spec, B was the build of the day, C a flat list); it shipped in
+v85 (PR #19, 2026-09-17), and the declared by-time layout (§3e) in v94.
 **Supersedes** MODEL-V3 §2 (the layout rule), §3 (the bucket filter) and §4
 (the deck); **keeps** §1 (day-first) and §5 (the one rule: a venue-night is
 one room, artists play in sequence) with the changes below.

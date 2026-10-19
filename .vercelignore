@@ -1,8 +1,22 @@
 # Non-app files — kept in the repo but never deployed to the live site.
+# The repo is public, so none of this is secret; it just has no business on
+# the product's domain (agent notes, ops scripts and the schema read as a map
+# of the system, 2026-10-19). Nothing at runtime reads any of it.
+# Keep DEPLOYED: gallery.html (ops/prod-smoke.mjs boots it on production),
+# api/_lib/ (the functions import it) and vercel.json (Vercel reads it).
 claude-plans/
 NOW.md
 DEVLOG.md
 README.md
+AGENTS.md
+CLAUDE.md
+CONTRIBUTING.md
+SECURITY.md
+BACKLOG.md
+docs/
+ops/
+db/
+.gitignore
 .claude/
 .github/
 .remember/

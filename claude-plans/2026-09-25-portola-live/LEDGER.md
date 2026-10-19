@@ -3,6 +3,12 @@
 Every feedback item, every release, every review. Newest state at the top of
 each table; the rules live in RUNBOOK.md.
 
+**Closed as history, 2026-10-19.** The season is over (Portola Sep 26–27,
+ACL Oct 2–11). This file stays the record of every release and review; its
+open follow-ups now live in the root `BACKLOG.md`, and the root `NOW.md` is
+the cursor. Follow-ups below are marked done (with the evidence) or moot
+(season over) in place.
+
 ## Feedback items (round 1, Kevin 2026-09-25 ~5:15 PM PT)
 
 | # | Item (Kevin's words, short) | Kind | Where it is |
@@ -152,41 +158,46 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 
 ## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
 
-1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
-2. **Error reports don't name the build** when no service worker controls the page (every report tonight had `build: null`, `sw: "none"`): fall back to the page's own version.
-3. **"Zoom closed right after a click: notes sheet opened"** is the intended close when the note chip opens notes — stop reporting that reason as a warning.
+Status, 2026-10-19 (checked against main at efcb59e by the off-season
+audit): **done** 2, 3, 11, 19, 20, 21, 26, 33, 35, 40, 43, 44, 45, 48;
+**moot, season over** 1, 6, 8, 16, 28, 46, 47, 51, 53, 54. Every other item
+moved to the root `BACKLOG.md`, one line each with its number here.
+
+1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement. — **moot: there is no hold since the v98 tap change.**
+2. **Error reports don't name the build** when no service worker controls the page (every report tonight had `build: null`, `sw: "none"`): fall back to the page's own version. — **done in v106** (178864d, the fn-build meta).
+3. **"Zoom closed right after a click: notes sheet opened"** is the intended close when the note chip opens notes — stop reporting that reason as a warning. — **done** (quiet since v92; pinned by tests in v106).
 4. v92 minors (Sol): a resize mid-bloom can shift the bloom's origin; a font load and a resize in the same frame can relayout twice.
 5. Tests: a shared real-hold helper for every browser test (hold until the zoom stands — five files still hold a fixed 650 ms under page.clock); the CDP flick must end without a fling before a quick tap.
-6. Folsom neighbourhoods: the pick list has one for every party; the data has none — offered to Kevin.
+6. Folsom neighbourhoods: the pick list has one for every party; the data has none — offered to Kevin. — **moot: Folsom is over.**
 7. **The import's rate limit is per server instance** (Sol on v96): move to a shared per-crew quota (the crew row) before the import gets popular.
-8. **fold-intent on Linux WebKit only**: "NOW tapped during a tick's fade" moves the page 1350px there (skipped on Linux WebKit, dated, in the tap branch); check on a real iPhone.
+8. **fold-intent on Linux WebKit only**: "NOW tapped during a tick's fade" moves the page 1350px there (skipped on Linux WebKit, dated, in the tap branch); check on a real iPhone. — **moot for this season** (the iPhone check only mattered live).
 9. **v97 NITs** (Sol on 19df64b): settle a closing fold's animation before a festival switch (one extra repaint today); a folded import landing renders the wall twice (227 ms in jsdom — measure on a throttled phone).
 10. **The address carries the view but not the room checks** (`&show=`) that the invite link carries — make them match if a friend ever shares from the address bar with rooms hidden.
-11. **ACL prep**: Late nights print doors only (65 of 66) and the Zilker headliners print no end — a data job on `data/acl-prep` (guess-run-times + the venue registry + printed ends), before Sep 29.
+11. **ACL prep**: Late nights print doors only (65 of 66) and the Zilker headliners print no end — a data job on `data/acl-prep` (guess-run-times + the venue registry + printed ends), before Sep 29. — **done** (the ACL prep data, #56, and v106).
 12. **The Board's in-room fold** was not built in v97 (only whole past days fold on Board); the gallery has no List section yet; a Late nights date that is over folds as a whole day only on the next held clock.
 13. **An offline add with different casing** ("drew" while "Drew" syncs) blocks the sync; a todo test is written (`tests/offline-add-casing.test.mjs`).
 14. **The join shelf still has a grabber** (TAP-BUILD follow-up 8).
 15. **A ResizeObserver loop** in `wireScrollspy` (console warning only).
-16. **The NOW jump's glide test flakes** on a loaded runner.
+16. **The NOW jump's glide test flakes** on a loaded runner. — **moot: watched through the season, no action.**
 17. **A stale module cache** — "Importing binding name 'roomOf' is not found" at 11:00 AM on one phone (build null): the same class as Sep 25's `js/time.js` SyntaxError; the self-recovery work covers both.
 18. **A `LATE_ANIMATIONS_MS` CI step** (the sibling's offer): run the browser suite once with animations started late, as `tests/helpers/browser.mjs` lateStarts can, so Linux-only timing reds show up locally first.
-19. **A sibling session's gate must include CI** (Linux WebKit is required since v98); v101's local-only gate cost a round.
-20. **The Zilker headliners print no end**: a code rule decides it (run a stage's last endless set to the day's close), not a data guess.
-21. **The validator skips dated rooms** in some checks; **the notes sheet restores by time** for dated shows — both from the ACL rounds.
+19. **A sibling session's gate must include CI** (Linux WebKit is required since v98); v101's local-only gate cost a round. — **done** (RUNBOOK).
+20. **The Zilker headliners print no end**: a code rule decides it (run a stage's last endless set to the day's close), not a data guess. — **done in v106** (0f4901e: dayMeta closes at 10 PM, so an unprinted headliner runs to the close).
+21. **The validator skips dated rooms** in some checks; **the notes sheet restores by time** for dated shows — both from the ACL rounds. — **done in v106.**
 22. **Our picks: a tap on a grown card does nothing** — a product call for Kevin.
 23. **Pinned notes on the wall** (a festival or day note as the room head's whisper): offered, no answer.
 24. **Import follow-ons**: a second door in the just-joined welcome; Portola-only. Likely yes ("all those changes seem chill"); confirm before building.
 25. **Read festival data from `origin/main`, never a local checkout**: the map's first pass read a checkout five releases old and found 10 Folsom parties instead of 64.
 26. **(Fixed in v104)** **A note can lose keystrokes mid-typing** (tap-shelf-contract's composer test, 3 of ~250 CI jobs, once before the Share existed): the typed text stops right after a space, focus leaving the textarea. Maybe a real "keyboard drops while typing a note" bug; instrumented copy at tag `back-pocket/composer-probe`.
 27. **The playlist ledger is an array** (`artists`), and jsonb_deep_merge replaces arrays: two members topping up at once can drop each other's confirmations (songs aren't doubled; the drill's count reads low). Key it by artist, read both shapes (V103-BUILD.md T3).
-28. **now-jump "WebKit 320: NOW slides SAT AFTERS"** flakes on loaded CI (once on v104's branch, once on the v103 release).
+28. **now-jump "WebKit 320: NOW slides SAT AFTERS"** flakes on loaded CI (once on v104's branch, once on the v103 release). — **moot: watched, no recurrence to chase.**
 29. **The v101 window catches** (a touch mid-arrival, a grab mid-slide, a font mid-arrival) are banked with their tests at tag `back-pocket/window-catches` and the plan-days DESIGN.md; the build owes a window model that passes Linux WebKit 3× without touching refit timing.
 30. **The stop-end cap** (a stop never outlasts its place) and a live fork outliving its parent: banked in the plan-days DESIGN.md with acceptance tests; production keeps the ≤10-minute stale "NOW till <past>" until then.
 31. **Pen flags** (2026-09-26): "Take Austin seasons live" (3e70501e…81ec) has no Project; city seasons has no alias of its own; no Peep row for Ray.
 32. **Worktrees symlink node_modules into each other**: the wrap cleanup broke the v103 builder's install (memory: worktree-cleanup-breaks-node-modules). Link new worktrees to the root's install.
-33. **Root checkout drifts behind origin during a worktree release train** (RUNBOOK step 7 now fast-forwards it after each merge).
+33. **Root checkout drifts behind origin during a worktree release train** (RUNBOOK step 7 now fast-forwards it after each merge). — **done** (RUNBOOK step 7).
 34. **The day row's NOW sits behind the fade at phone width under a highlight** (v104's resting rule, Kevin's option a; v105 makes it the NOW door more often). Measure whether a tighter phone row fits NOW beside the day.
-35. **Two WebKit browser tests are red on main after v105, and may be real laptop bugs** (not only timing): zoom-still-hand's glide — the click lands on NOW's measured box after the rail's motion ends and still doesn't scroll the page (main's run 36347630741 too); list-view "un-pick A, then B" — Robyn stays picked after two − clicks and her zoom is gone. Evidence and next steps: `claude-plans/2026-09-27-test-flakes.md` on branches fix/zoom-still-hand-glide (42846b6) and fix/list-hold-minus (798fc92); first step is a CI probe of the NOW click itself. Also once: the WebKit 1280 welcome-card test timed out.
+35. **Two WebKit browser tests are red on main after v105, and may be real laptop bugs** (not only timing): zoom-still-hand's glide — the click lands on NOW's measured box after the rail's motion ends and still doesn't scroll the page (main's run 36347630741 too); list-view "un-pick A, then B" — Robyn stays picked after two − clicks and her zoom is gone. Evidence: `claude-plans/archive/2026/2026-09-27-test-flakes.md` (copied to main 2026-10-19 from fix/zoom-still-hand-glide, 42846b6). Also once: the WebKit 1280 welcome-card test timed out. — **done in v106** (a69d14a: the test clicks NOW only at rest; 099a8e5: a repaint holds the page before it grows the zoom again).
 36. **pastMayMove never retries when a hold clears** (a share, a thin): a set that ended while the phone was locked stays unfolded until the next unlock or NOW tap. Pre-existing; a deferred check when the hold clears.
 37. **Five browser suites filter "ResizeObserver loop"**: fix the rail's observer (TAP-BUILD follow-up 6), then drop all five filters.
 38. **Laptop Safari's day row can stay on the day above after the open lands** (Linux WebKit 1280 only, ~half of CI runs, never locally; production before v106 did the same and landed 36px short). The rail assertion is quarantined in `tests/browser/acl-latenights.test.mjs`; next step: a probe test on a throwaway branch that logs every scrollspy claim, font status and whether the second landing ran.
@@ -197,15 +208,15 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 43. **v107 stand-in, Low (words): Our picks' footer with a highlight on a stand-in** says "Opens on everyone's picks" though the Share sends no link. Fix: `opens: state.isShownForNow() ? '' : (…)` in planAnswer. — **done in v108**
 44. **Test: boot-watchdog's stale-link case** should assert the fast "didn't finish loading" words — the 10 s net also shows Try again, so the case passes even with the counting rule off (it then fails only on its own timeout). — **done in v108**
 45. **Test: acl-latenights 390 NOW check (WebKit)** reads the peek 80 ms after a fixed-time visibilitychange; on a loaded runner the peek's NOW lagged the ring at 12:00 AM (push run 36942832772). Wait for the expected state instead of sleeping. — **done in v108**
-46. **Noise to watch:** a captive portal's 200 HTML for a festival file would report `festival:stand-in`; the join shelf's offline join passes the stand-in as `festHint` (saved only for a crew with no festival at all); the plan Share's words on a stand-in name the stand-in by design — a product call if "never named" is meant literally.
-47. **WebKit `zoom-notes-chip` once waited >15 s for the wall** (boot, before the chip; a68a9c2's push run 36949334930) — the sibling run on that commit and every run since passed; nothing in v108's boot path explains it. If it recurs, log the boot's phases in a copy of the test.
+46. **Noise to watch:** a captive portal's 200 HTML for a festival file would report `festival:stand-in`; the join shelf's offline join passes the stand-in as `festHint` (saved only for a crew with no festival at all); the plan Share's words on a stand-in name the stand-in by design — a product call if "never named" is meant literally. — **moot: season over.**
+47. **WebKit `zoom-notes-chip` once waited >15 s for the wall** (boot, before the chip; a68a9c2's push run 36949334930) — the sibling run on that commit and every run since passed; nothing in v108's boot path explains it. If it recurs, log the boot's phases in a copy of the test. — **moot: never recurred.**
 48. **people-menu "a crew-mate who left" applied the removal on this phone only**, so the shell's 25 s poll, landing mid-test under the Tokyo pass's load, brought Cy back from the fake server (push run 37021952091). Red-first with a forced poll at that point; the removal now goes to the server and arrives by `sync.afterServerWrite()`'s ordered poll. — **done on #79**
 49. **v113, Low (words): a List room's "Earlier · N sets" counts cancelled acts as sets** once they fold with the room (Portola Sat 11 PM: 32, one of them Skepta). Count only timed cards, or say "N sets · 1 cancelled". Not reachable with ACL's data (each ACL day folds whole).
 50. **v113, Low: a room holding ONLY cancelled cards still waits for 5 AM** (`roomPast` needs a timed card to judge by), so a day with such a section room would still hold the 11 PM open. No data triggers it. Fix: judge it by its day's other rooms, or by the day's close.
-51. **ACL data: re-read the W2 posters** — Fri (10.01), Sat and Sun (9.30). W1 Saturday (v113) and W1 Sunday (v114) are done; the file's W2 is still the Aug 27 posters. Machine reads of the W2 Sunday 9.30 poster suggest girlsweetvoiced has Paloma Morphy's Tito's slot on W2 too (her W2 set stays until a real reading). The schedule page renders only the current day's tab to a scraper; Yandex's image view of the CDN file works. Also: the BONUS TRACKS column (talks, drag, guest spots) is not entered — a product call.
+51. **ACL data: re-read the W2 posters** — Fri (10.01), Sat and Sun (9.30). W1 Saturday (v113) and W1 Sunday (v114) are done; the file's W2 is still the Aug 27 posters. Machine reads of the W2 Sunday 9.30 poster suggest girlsweetvoiced has Paloma Morphy's Tito's slot on W2 too (her W2 set stays until a real reading). The schedule page renders only the current day's tab to a scraper; Yandex's image view of the CDN file works. Also: the BONUS TRACKS column (talks, drag, guest spots) is not entered — a product call. — **moot: season over; W2 was never re-read, so the file's W2 is the Aug 27 posters.**
 52. **An open phone keeps the festival file it booted with**: `refreshFestivalFile` runs on a warm open only, never on resume, so a data-only push reaches a phone left open on its next real open. v113 being a build covered tonight (the new-build reload). Fix: refresh on `visibilitychange` → visible, throttled, as the sync poll does.
-53. **Fakemink's `cancelled.on` is the date we saw the poster** (Oct 3), not a known announcement date; replace with the real one if a report turns up. W2's Fakemink set stays until W2's poster is re-read (51).
-54. **v114, Low (data): the Sunday poster draws the 4:30 run about 5 minutes later than it prints** (box edges ~5:25, 6:25, 7:25, The xx at 8:30; printed 5:20, 6:20, 7:20, 8:35). Entered as printed, like Ryan Beatty on Saturday. If ACL's own app or a report says otherwise on the day, re-time W1 (a data-only push).
+53. **Fakemink's `cancelled.on` is the date we saw the poster** (Oct 3), not a known announcement date; replace with the real one if a report turns up. W2's Fakemink set stays until W2's poster is re-read (51). — **moot: season over.**
+54. **v114, Low (data): the Sunday poster draws the 4:30 run about 5 minutes later than it prints** (box edges ~5:25, 6:25, 7:25, The xx at 8:30; printed 5:20, 6:20, 7:20, 8:35). Entered as printed, like Ryan Beatty on Saturday. If ACL's own app or a report says otherwise on the day, re-time W1 (a data-only push). — **moot: season over.**
 55. **v115, Low: the on-screen QR card can sit half a device pixel off centre in Chromium** (found in the branch's v112 review, F3, and left as is: its parity fix was incomplete). Snap the tile's offset to the device pixel if it ever shows as a soft edge.
 56. **v115, layout call: the people menu folds awkwardly on a phone on its side** (already so before v115; found in the branch's v112 review, c182377: nine 44px rows need a layout call). The Invite sheet's two-column link step is the model; needs Kevin's eye before a build.
 57. **v115, watch: Safari has no `requestIdleCallback`**, so the kept card is drawn on the main thread about 300 ms after the Invite sheet opens. If a phone shows a hitch there, draw it on the first long-press instead, or in a worker with OffscreenCanvas where the engine has one.

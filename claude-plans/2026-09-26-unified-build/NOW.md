@@ -1,5 +1,9 @@
 # NOW — the unified build (arc)
 
+**CLOSED 2026-10-19.** The arc shipped through v105 (2026-09-28); what was
+left went to the Portola LEDGER and, after the season, the root
+`BACKLOG.md`. The root `NOW.md` is the cursor. What follows is history.
+
 **last-updated: 2026-09-27 1:10 PM PT · mode: arc** · plan: `PLAN.md` beside this
 (+ `REVIEW-1.md`, and Kevin's calls at the top of PLAN.md) · live-ops rules:
 `claude-plans/2026-09-25-portola-live/RUNBOOK.md` · started as an hg-durable-build.

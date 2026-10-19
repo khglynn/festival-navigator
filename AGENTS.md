@@ -1,25 +1,28 @@
 # festival-navigator — agent notes
 
 **Start here:** NOW.md says where things stand (one screen); then the laws
-below. Specs and plans are indexed in `claude-plans/README.md`.
+below. Specs and plans are indexed in `claude-plans/README.md`; the
+off-season list is `BACKLOG.md`.
 
-Non-inferable facts only (the code answers everything else — read it).
+Non-inferable facts only (the code answers everything else — read it). The
+incidents behind these rules are in DEVLOG.md; search it by the date.
 
 - **v3 design system**: static tokens in `assets/v3-tokens.css`, screen map +
   aura algorithm in `claude-plans/v3-inventory.md` — look values up, never
-  invent them. UI vocabulary is exactly: picked / must / notes / fest. Pick
-  levels are 0–4 (0 tombstone, 1–3 picked at alpha .5/.75/1, 4 must); legacy
-  v3-doc levels map 1→1, 2→2, 3→4 at read time (old "Must See"=3 IS must —
-  labels, not alphas, carry the semantics). Never a music-note glyph (Spotify is
-  the green pill). Notes are stored as keyed objects, never arrays
-  (jsonb_deep_merge replaces arrays — an array eats concurrent notes).
+  invent them. Styling is hand-written CSS (`assets/v3.css` for components):
+  no build step, no framework (Tailwind was dropped in v3; there is no
+  `npm run css`). UI vocabulary is exactly: picked / must / notes / fest.
+  Pick levels are 0–4 (0 tombstone, 1–3 picked at alpha .5/.75/1, 4 must);
+  legacy v3-doc levels map 1→1, 2→2, 3→4 at read time (old "Must See"=3 IS
+  must — labels, not alphas, carry the semantics). Never a music-note glyph
+  (Spotify is the green pill). Notes are stored as keyed objects, never
+  arrays (jsonb_deep_merge replaces arrays — an array eats concurrent notes).
 
 - **The festival accent (`--fest`) appears in exactly FOUR places**: the fest
   name, the active day tab, stage headers, and the current-fest border in
-  Settings. Anything else that wants to look selected or "ours" uses `--brand`.
-  This is a rule with teeth: the accent had crept into seven places by
-  2026-07-12, including the loader shown while a crew is being CREATED — i.e.
-  wearing a festival's colour before a festival had been chosen.
+  Settings. Anything else that wants to look selected or "ours" uses
+  `--brand`. (It once crept into seven places, including the loader shown
+  while a crew is being created, before any festival was chosen.)
 
 - **One card column, one token.** `--col-w` in `v3-tokens.css` is the width of
   every card column on the wall — the stage grid's, the sticky strip's, and the
@@ -48,22 +51,20 @@ Non-inferable facts only (the code answers everything else — read it).
   your meter on the left, everyone else's marks on the right — the crew
   corner never carries you, so its "+n" is other people. The fit's FIRST
   GUESS is a width table in aura.js that mirrors `assets/v3.css` (chip
-  padding, type sizes, Inter's digit widths, measured in Chromium on macOS);
-  then wall.js reads back what each card really drew and gives way further
-  wherever the corners crowd, and refits when a late font lands — because
-  Linux draws Inter wider (CI put Robyn's corners 1.4px apart, 2026-09-23)
-  and so will real phones. Keep the table close anyway (a good guess is one
-  pass); `tests/browser/meter-contract.test.mjs` measures every card in a
-  real browser, including a run with wider glyphs than this engine draws.
+  padding, type sizes, Inter's digit widths); then wall.js reads back what
+  each card really drew and gives way further wherever the corners crowd,
+  and refits when a late font lands — because Linux draws Inter wider and so
+  will real phones. Keep the table close anyway (a good guess is one pass);
+  `tests/browser/meter-contract.test.mjs` measures every card in a real
+  browser, including a run with wider glyphs than this engine draws.
 
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
-  those six (chips at 26px, the "+ ✎" note chip at 17px, every button in
-  Settings) silently got nothing. If you add a control, it inherits the floor by
-  being a button. Do not go back to enumerating. Cards are excluded on purpose
-  (expanding them steals taps from neighbouring picks); the narrow *glyph*
-  buttons get a wider horizontal upgrade, and that list only ever upgrades —
-  forgetting to add to it still leaves a control safe.
+  those six silently got nothing. If you add a control, it inherits the floor
+  by being a button. Do not go back to enumerating. Cards are excluded on
+  purpose (expanding them steals taps from neighbouring picks); the narrow
+  *glyph* buttons get a wider horizontal upgrade, and that list only ever
+  upgrades — forgetting to add to it still leaves a control safe.
 
 - **The model is fests × circles × you (2026-07-14):** the UI is
   festival-first; a "crew" is internally a circle — one cluster, one link,
@@ -85,12 +86,11 @@ Non-inferable facts only (the code answers everything else — read it).
   truth: `db/schema.sql`.
 - **The merge SQL lives in `api/_lib/crew-sql.mjs`, and that is deliberate**:
   `tests/db-merge.test.mjs` executes THOSE EXACT BYTES against a real Postgres
-  (PGlite — in-process, no server, no secrets, runs in CI). Before 2026-07-12 the
-  SQL sat inline in api/crew.js where only production could reach it, and the
-  suite tested a JS "reference twin" that its own comments admit is NOT what
-  production enforces. If you change the merge, change it there, and the test
-  follows automatically. Never re-type the SQL into a test — a test against a
-  copy passes through exactly the regression it exists to catch.
+  (PGlite — in-process, no server, no secrets, runs in CI). If you change the
+  merge, change it there, and the test follows automatically. Never re-type
+  the SQL into a test — a test against a copy passes through exactly the
+  regression it exists to catch (the suite once tested a JS "reference twin"
+  that production never ran).
 - **Active member names must be unique case-insensitively.** "Drew" and "drew"
   are one person to every human and two forever to the document, splitting their
   picks down the middle. Enforced in the merge's WHERE clause (the only place
@@ -105,50 +105,45 @@ Non-inferable facts only (the code answers everything else — read it).
   same bytes is pointless; sync.js remembers the refused payload and waits for a
   NEW edit rather than re-POSTing forever.
 - **Docs cannot lie any more, and that is enforced**: the present-tense docs
-  (README, this file) are asserted against the code they describe by
-  `tests/docs-truth.test.mjs` — read it for the current list rather than a
-  copy here, which is the drift this bullet keeps inviting. Two of its rules
-  bind whoever writes THIS file: NOW.md stays a one-screen cursor (the test
-  holds the cap), and every repo path NOW.md or AGENTS.md cites in backticks
-  must exist. History files (DEVLOG, claude-plans) are exempt — they are
-  supposed to talk about what we dropped.
+  (README, CLAUDE.md, this file, and NOW.md's size and paths) are asserted
+  against the code they describe by `tests/docs-truth.test.mjs` — read it for
+  the current list rather than a copy here, which is the drift this bullet
+  keeps inviting. Two of its rules bind whoever writes THIS file: NOW.md
+  stays a one-screen cursor (the test holds the cap), and every repo path
+  NOW.md or AGENTS.md cites in backticks must exist. Keep this file under
+  ~24 KB: Codex reads at most 32 KiB of it. History files (DEVLOG,
+  claude-plans) are exempt — they are supposed to talk about what we
+  dropped.
 - `vercel dev` does not serve files created after it starts, and can serve
-  STALE copies of edited files too (measured 2026-07-12: an edited app.js
-  served an old version until restart) — when in doubt, restart it, and
-  verify with `curl | md5` against the local file. It also refuses to run if
+  STALE copies of edited files too — when in doubt, restart it, and verify
+  with `curl | md5` against the local file. It also refuses to run if
   package.json has a `dev` script that calls `vercel dev` (recursion check),
   which is why there is no `dev` script. Local `vercel dev` pulls the REAL
   cloud env (DATABASE_URL included) — localhost /api hits the production
   Neon DB; treat writes accordingly.
 - **The service worker will serve you a stale app while you are testing.** After
   deploying, a browser that already has the old SW keeps serving the OLD cached
-  JS/CSS even though the server has the new bytes — verified live 2026-07-12,
-  where every fix read as "not applied" until the SW was unregistered and its
-  cache deleted. `curl | md5` says the server is right; the browser is lying.
-  Unregister + `caches.delete()` + hard reload before believing a browser check.
-  And bump `CACHE_VERSION` on every asset-changing commit. **Even with the SW
-  gone, hash-only navigations (`#g=…` → `#new`) keep the page's module map —
+  JS/CSS even though the server has the new bytes. `curl | md5` says the
+  server is right; the browser is lying. Unregister + `caches.delete()` + hard
+  reload before believing a browser check. **Even with the SW gone,
+  hash-only navigations (`#g=…` → `#new`) keep the page's module map —
   edited JS only reloads on a REAL document load (hop via about:blank), and
-  the ES-module cache also survives `Network.clearBrowserCache`** (burned a
-  test cycle 2026-07-14).
+  the ES-module cache also survives `Network.clearBrowserCache`.**
   **After any cached-asset change run `node scripts/sw-stamp.mjs`** — it bumps
   `CACHE_VERSION`, writes the same number into index.html's `fn-build` meta
   (the build a crash report names when no worker controls the page), and
   writes `ASSET_STAMP` (a hash of every APP_CORE file);
   `tests/app-shell-complete.test.mjs` recomputes it, so a stale stamp is a red
-  build (the gate-round fixes once shipped under an unbumped v43, 2026-08-29).
+  build. A released version is never re-stamped with `--keep` (the worker's
+  repair proves copies against it). **APP_CORE is written only by install's
+  addAll or a repair that first proves the whole set**, never one unproven
+  file: a lone write can be another build's bytes (v116).
 - **Staging (stage.fest.kevinhg.com preview deploys) shares the PRODUCTION
   DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
   staging was deleted through the prod Neon connection). Staging writes are
-  prod writes; test with throwaway crews/persons and delete them after.
-- Styling is hand-written CSS in `assets/v3-tokens.css` (tokens) and
-  `assets/v3.css` (components) — no build step, no framework. (Tailwind was
-  dropped in v3; there is no `npm run css`.)
-- Hook command strings in `.claude/settings.json` must stay apostrophe-free
-  (a `'` closes the shell quote and silently breaks compaction).
-- The Write tool has serialized literal control bytes (`\x00`) into files in
-  this repo twice when escape sequences were intended — after writing
-  regexes/tests with `\xNN`, verify with `python3 -c "open(...,'rb')"`.
+  prod writes; test with throwaway crews/persons and delete them after. The
+  staging host itself is frozen at v35 (curl, 2026-10-19); whether to retire
+  it or give it its own database branch is Kevin's call (NOW.md).
 - **Node tests are blind to two browser rules** (both bit on 2026-08-27,
   three Codex rounds and 256 green tests deep): (1) WebIDL receivers — a DOM
   global stored on an object or record and called as a method
@@ -160,19 +155,13 @@ Non-inferable facts only (the code answers everything else — read it).
   try. The suite carries receiver-strict and throwing-getter stubs now, but
   the defence with teeth is a real-browser walk (a Sonnet teammate, real
   pointer input, never `element.click()`) before any promote.
-- **Browser tests have two input traps that pass on a Mac and fail on CI**
-  (both 2026-09-26): under `page.clock` the long-press timer runs late on a
-  big wall, so hold until the zoom stands, as `holdOpen` in
-  `tests/browser/zoom-chips-contract.test.mjs` does (newer tests had copied
-  a fixed 650 ms hold from older ones instead); and a CDP touch flick leaves a
-  fling, so a quick tap after it only stops the coast (Chromium on Linux
-  drops that click). End the drag with the finger still, as
-  `tests/browser/guest-tap-route.test.mjs` does. To chase a CI-only flake,
-  log every input in a copy of the test, throttle the CPU (CDP
-  `Emulation.setCPUThrottlingRate`) and bisect across builds on a quiet
-  machine; another agent's browser run alongside gave false results.
-- **"Nothing is moving" is not "at rest"** (2026-10-04: four Linux WebKit
-  flakes in v115's tests in one day). The app settles things in an
+- **A CDP touch flick leaves a fling**, so a quick tap after it only stops
+  the coast (Chromium on Linux drops that click): end the drag with the
+  finger still, as `tests/browser/guest-tap-route.test.mjs` does. To chase
+  a CI-only flake, log every input in a copy of the test, throttle the CPU
+  (CDP `Emulation.setCPUThrottlingRate`) and bisect across builds on a
+  quiet machine; another agent's browser run alongside gave false results.
+- **"Nothing is moving" is not "at rest."** The app settles things in an
   animation's `finished`/`onfinish` and in page timers: a step lands and
   takes `.stepping` off, a closing menu stops eating taps, a sheet leaves
   the page. A busy runner delivers both late, so a test that reads after
@@ -187,12 +176,12 @@ Non-inferable facts only (the code answers everything else — read it).
   Entries older builds wrote live on friends' phones, two visits to one URL
   are two real places, a native link bypasses the router, and "skip the
   dead entry" can step out of the app. So a menu or popover takes no entry
-  of its own: the Show menu has none, and v93 spent four review rounds on
-  Back bugs giving it one before cutting it. Layers Back must close
-  (Settings and its drills, the note sheets) ride one designed model,
-  `js/v3/router.js`, and the join shelf keeps its own entry; anything new
-  that Back must close joins the router with those four cases as its
-  tests, not a patch mid-release.
+  of its own: the Show menu has none (v93 spent four review rounds on Back
+  bugs before cutting its entry). Layers Back must close (Settings and its
+  drills, the note sheets) ride one designed model, `js/v3/router.js`, and
+  the join shelf keeps its own entry; anything new that Back must close
+  joins the router with those four cases as its tests, not a patch
+  mid-release.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies images
@@ -221,7 +210,11 @@ Non-inferable facts only (the code answers everything else — read it).
   its real findings fixed — then merge it yourself and verify all three hosts
   (Kevin, 2026-09-25: "stop asking me to merge… you can just do it"). Still
   ask when a finding is a product call he hasn't seen, or when anything
-  writes to friends' real data.
+  writes to friends' real data. Dependency PRs are the exception today:
+  Dependabot's patch and minor bumps merge themselves once the required
+  `checks` job is green (the shared automerge in
+  `.github/workflows/dependabot-automerge.yml`), with no independent review
+  and without waiting on the `browser` job (2026-10-19).
 - Adding a festival: `docs/add-a-festival.md`. Validate with
   `node scripts/validate-festivals.mjs` before committing — CI enforces it.
 - **Artist names in a live festival file are pick keys, and there is no
@@ -230,74 +223,69 @@ Non-inferable facts only (the code answers everything else — read it).
   start picking in a fest, and before any set-times edit); a name that
   disappears fails CI. Grid names must match `artists[]` byte for byte —
   the validator makes a case-only match an ERROR because it would split
-  the crew's picks between two spellings forever (2026-08-27). A cancelled
-  act keeps its name the same way: its set comes off the grid and its
-  `artists[]` entry is marked `cancelled`, never deleted (Skepta,
-  2026-09-23 — "Cancelled acts" in `docs/add-a-festival.md`).
+  the crew's picks between two spellings forever. A cancelled act keeps its
+  name the same way: its set comes off the grid and its `artists[]` entry
+  is marked `cancelled`, never deleted ("Cancelled acts" in
+  `docs/add-a-festival.md`).
 - **Festival JSONs are served network-first by the service worker** (4 s
-  budget, persistent cache as the offline answer). They used to be
-  cache-first in the persistent data cache, which meant a set-times drop
-  reached an online phone one open LATE (found 2026-08-27). If a data drop
-  "isn't showing", the SW is the first suspect — see the stale-SW note above.
+  budget, persistent cache as the offline answer), so a set-times drop
+  reaches an online phone on its next open, not one open late. If a data
+  drop "isn't showing", the SW is the first suspect — see the stale-SW note
+  above.
 
-- **A hover report is only as good as the shell that made it (2026-09-02).**
-  Kevin's "hover is broken again" on 2026-09-01 was a v75 shell judging v76
-  code: his Diagnostics paste names the build, and the branch alias keeps an
-  open tab on the build it was born with. One rule now governs an open tab
-  (`index.html`): a new build reloads it only when nothing is in progress —
-  no timer and no hidden tab earns an exception — and until then the notice
-  is a persistent strip, never a toast, because a toast fades before the
-  person looks at it. Anything a reload would destroy must mark itself busy
-  while it runs; a flow that forgets gets reloaded out from under its user.
-  Before believing any "still broken": read the build line in the paste, and
-  walk the unique deployment URL, not the alias.
+- **A hover report is only as good as the shell that made it.** An open tab
+  can be running an older build than the code being judged. One rule
+  governs an open tab (`index.html`): a new build reloads it only when
+  nothing is in progress — no timer and no hidden tab earns an exception —
+  and until then the notice is a persistent strip, never a toast, because a
+  toast fades before the person looks at it. Anything a reload would
+  destroy must mark itself busy while it runs; a flow that forgets gets
+  reloaded out from under its user. Before believing any "still broken":
+  read the build line in the Diagnostics paste, and walk the unique
+  deployment URL, not the alias.
 - **The zoom's keyboard route opens on the module's own last-input, never
-  `:focus-visible`.** Chrome 152 flips a focused card to `:focus-visible`
-  after ANY keypress (Escape included), and the script `focus()` every pick
-  makes inherits it — click · Escape · click grew a keyboard zoom that no
-  hover-out could close. card-facts.js tracks the last keydown/pointerdown
-  at the document (capture); `tests/zoom-modality.test.mjs` pins it and the
-  real-browser contract (`npm run test:browser`, CI job `browser`) drives
-  Kevin's sequences with real input against gallery.html. What a press on
-  a card MEANS asks the same module (`clickHand(e)`, the tap change,
-  2026-09-26), which believes the click's own pointerType where engines tell
-  the truth — 'touch'/'pen' a finger, '' a key this turn or an assistive
-  activation — and never its 'mouse': WebKit types a finger's click "mouse"
-  (every iPhone; WebKit bug 324397), so a 'mouse' click, or one with no
-  pointerType (Safari before 18.2), is judged by the press it answers, per
-  pointer. A finger opens the card's notes shelf (its facts, − and + in
-  its bottom corners, the thread — the one place a finger picks); a click
-  with no pointer and no key (VoiceOver, Switch Control) opens it too; a
-  mouse click or Enter picks. Diagnostics says the hand and what decided it
-  (`hand`, `handBy`). There is no long-press: a hold is a slow tap,
-  and an engine that turns it into `contextmenu` (Android) opens the same
-  shelf. Every sheet rides the iOS keyboard through one helper, notes.js
-  `rideKeys`.
-  The hover route has the mirror trap (2026-09-23): WebKit follows a touch
-  tap with MOUSE-type pointer events at the spot the finger lifted — a
-  click, then pointerenter on the fresh card a pick swaps in — so
-  `pointerType === 'mouse'` alone is not a hand. card-facts.js `touchAt`
+  `:focus-visible`** (Chrome flips a focused card to `:focus-visible` after
+  ANY keypress, and every pick's script `focus()` inherits it).
+  card-facts.js tracks the last keydown/pointerdown at the document
+  (capture); `tests/zoom-modality.test.mjs` pins it and the real-browser
+  contract (`npm run test:browser`, CI job `browser`) drives Kevin's
+  sequences with real input against gallery.html. What a press on a card
+  MEANS asks the same module (`clickHand(e)`), which believes the click's
+  own pointerType where engines tell the truth — 'touch'/'pen' a finger, ''
+  a key this turn or an assistive activation — and never its 'mouse':
+  WebKit types a finger's click "mouse" (every iPhone; WebKit bug 324397),
+  so a 'mouse' click, or one with no pointerType, is judged by the press it
+  answers, per pointer. A finger opens the card's notes shelf (its facts,
+  − and + in its bottom corners, the thread — the one place a finger
+  picks); a click with no pointer and no key (VoiceOver, Switch Control)
+  opens it too; a mouse click or Enter picks. Diagnostics says the hand and
+  what decided it (`hand`, `handBy`). There is no long-press: a hold is a
+  slow tap, and an engine that turns it into `contextmenu` (Android) opens
+  the same shelf. Every sheet rides the iOS keyboard through one helper,
+  notes.js `rideKeys`. The hover route has the mirror trap: WebKit follows
+  a touch tap with MOUSE-type pointer events at the spot the finger lifted,
+  so `pointerType === 'mouse'` alone is not a hand. card-facts.js `touchAt`
   ignores mouse events at recent finger points until a mouse really moves
-  (`tests/zoom-touch-ghost.test.mjs`); before it, a tapped card zoomed itself.
+  (`tests/zoom-touch-ghost.test.mjs`).
 - **The stage strip is a follower, not a scroller.** Its row rides the lead
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
   measured maximum scroll) wherever the engine has `ScrollTimeline` — under
-  Reduce Motion and Low power too (2026-09-23: tracking a finger is direct
-  manipulation, not decoration, and the fallback trails the grid by a frame
-  on a phone) — and a transform from the lead's scroll event only where the
-  engine lacks it (iOS before 26). Never set a strip's scrollLeft; anything
-  that mirrors or restores scroll positions skips `isStripScroller`. Traps:
-  jsdom's `CSS.supports` says yes to everything (detect with
-  `typeof window.ScrollTimeline`), and the tokens file's two motion kill
-  rules (`!important` on `*`) would freeze the follow — their `animation`
-  shorthand even resets `animation-timeline` — so the follow's animation is
-  the one rule in v3.css that out-ranks them, reading the timeline's name
-  from `--strip-tl`. Don't move it back inline. The route is decided per
-  RENDER and written on the strip (`data-follow`, which Diagnostics reports),
-  and each render undoes the last render's wiring.
+  Reduce Motion and Low power too, because tracking a finger is direct
+  manipulation, not decoration, and the fallback trails the grid by a
+  frame on a phone — and a transform from the lead's scroll
+  event only where the engine lacks it (iOS before 26). Never set a strip's
+  scrollLeft; anything that mirrors or restores scroll positions skips
+  `isStripScroller`. Traps: jsdom's `CSS.supports` says yes to everything
+  (detect with `typeof window.ScrollTimeline`), and the tokens file's two
+  motion kill rules (`!important` on `*`) would freeze the follow — their
+  `animation` shorthand even resets `animation-timeline` — so the follow's
+  animation is the one rule in v3.css that out-ranks them, reading the
+  timeline's name from `--strip-tl`. Don't move it back inline. The route
+  is decided per RENDER and written on the strip (`data-follow`, which
+  Diagnostics reports), and each render undoes the last render's wiring.
 - **WebKit only honours `-webkit-user-select`** — an unprefixed
   `user-select: none` did nothing on iOS and a long-press selected the time
-  label and raised the Copy/Search callout over the zoom (2026-09-02). Every
+  label and raised the Copy/Search callout over the zoom. Every
   `user-select: none` in v3.css carries the prefix; keep it that way.
 - **The wall has two presentations and the data's SHAPE picks between them,
   never a threshold** (MODEL-V4, 2026-09-16 —
@@ -305,21 +293,19 @@ Non-inferable facts only (the code answers everything else — read it).
   ONLY where the festival publishes a stage grid (`fest.days[day].stages`);
   everything else is a stack of artist cards under the venue it happens in,
   in play order. A clock earns its complexity where "can I do both?" is a
-  real question — one site, several stages — and nowhere else. Before this,
-  three layout engines shared one card and a numeric threshold picked, so
-  nobody looking at the screen could see why one Sunday rendered three ways.
-  In the data: a SECTION is an `artists[].day` label that is not a grid day,
-  and it says where it goes with exactly one of `night` (a weekday — it
-  renders inside that day) or `date` (ISO — its section takes a tab of its
-  own; ACL's Late nights runs Sep 29 to Oct 10, so a weekday would mean two
-  nights), always with `venue`. The validator errors on both, on neither,
-  and on one section whose entries disagree. **A third presentation is
-  DECLARED, never inferred** (v94, MODEL-V4 §3e): a section whose `dayMeta`
-  entry says `"layout": "by-time"` (Folsom weekend, 68 one-party rooms)
-  shows each night's cards in start order under fixed time bands, each card
-  saying its own place; the same card, the same now window except that a
-  party's printed end wins, the same doors. On a phone it keeps the shell's
-  two columns and never scrolls sideways (a time list is read across).
+  real question — one site, several stages — and nowhere else. In the data:
+  a SECTION is an `artists[].day` label that is not a grid day, and it says
+  where it goes with exactly one of `night` (a weekday — it renders inside
+  that day) or `date` (ISO — its section takes a tab of its own; a section
+  that runs longer than a week would otherwise mean two nights), always
+  with `venue`. The validator errors on both, on neither, and on one
+  section whose entries disagree. **A third presentation is DECLARED, never
+  inferred** (v94, MODEL-V4 §3e): a section whose `dayMeta` entry says
+  `"layout": "by-time"` (Folsom weekend, 68 one-party rooms) shows each
+  night's cards in start order under fixed time bands, each card saying its
+  own place; the same card, the same now window except that a party's
+  printed end wins, the same doors. On a phone it keeps the shell's two
+  columns and never scrolls sideways (a time list is read across).
 - **The List is a VIEW the reader picks, not a presentation the data picks**
   (Phase 1 of the unified build, 2026-09-26): the Show menu's Board · List
   row, per phone per festival (`fn_view_v1_<fid>`), `&view=list` in a share
@@ -341,8 +327,7 @@ Non-inferable facts only (the code answers everything else — read it).
   close. And a close says where it came from: an https `closeSource` means a
   page printed THAT NIGHT's end, so it stands; anything else names the rule
   that produced it, so a re-run re-reads the registry instead of mistaking
-  its own guess for evidence. Copying a registry URL onto an event is what
-  broke that once.
+  its own guess for evidence. Never copy a registry URL onto an event.
 
 - **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
   code carries those).** This is a designer's passion project, and the bar is

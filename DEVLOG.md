@@ -2,6 +2,113 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-19 — the off-season polish pass: v116, the front door and the docs
+
+The season is over (Portola Sep 26–27, ACL Oct 2–11) and Ray, who forked
+the app in July, is about to be pointed at the repo. A read-only audit came
+first: nine auditors and a critic (front door, secrets, docs truth, code,
+the ledger, production, Kevin's Pen, the facts for Ray, an off-season
+browser walk). Five builders followed in their own worktrees, and every PR
+passed an independent review (Codex gpt-6.1-sol and an Opus reviewer) and
+CI before its merge.
+
+- **v116 (PR #96, rollback dpl_DEi98ibDvwomqPvfSeo9tpzGfpue).** Portola and
+  ACL archived: a newcomer lands on EDC Orlando, an old crew reads "this
+  wall is the memory". Settings opens at the top, and every way out of it
+  hands scroll restoration back. "Your festivals" on the bad-link screen; a
+  `<main>` landmark; the address keeps `&show=`; "Earlier · N sets" leaves
+  out cancelled acts; a stand-in's empty row never reaches the disk
+  (LEDGER 42); Diagnostics names the build the worker or page reports and
+  says which; a phone left open refreshes festival data when it comes back,
+  at most every 5 minutes; Ray credited as Ray (raypp2); dead exports gone
+  (and, with #94, the retired `/api/selections` stub).
+- **The boot recovery took three review rounds, and the third changed the
+  mechanism.** v107 allowed one reload when a phone's cached modules could
+  not link. Round one: deleting the cache and reloading left no offline
+  shell. Round two: dropping the code and topping the copy up on every
+  boot could still write two builds into one cache. Round three replaced
+  both with one mechanism, repair then reload: the worker fetches '/',
+  stops if the live build is not its own, fetches the rest and writes only
+  when the set hashes to its own `ASSET_STAMP`; the page reloads only on
+  "repaired". Codex then found the older static-miss path could still
+  write a single install-list file, unproven, so that writer was cut:
+  APP_CORE is written only by install or by a repair that first proves the
+  whole set (now an AGENTS.md law; a repair's writes are not atomic, so a
+  deadline mid-write leaves proven files only). CI's browser job walks
+  the real previous build to this one (`PREV_BUILD`), and fails loudly if
+  a released version is ever re-stamped.
+- **Also merged:** #93 (neon 1.2, jsdom 30.1, Playwright 1.63, css-color
+  7.1.7, which fixed the radial gradients jsdom dropped; server functions
+  on Node 24 to match CI; two browser tests made robust to 1.63's WebKit);
+  #89 (Gabby's Dependabot cooldown and a 7-day wait for new resolutions,
+  which only npm 11.10+ honours; the engine-strict that enforced it went,
+  because Vercel's npm 10 refused it); #92 (EDC Orlando and Seismic by day, re-checked
+  slot for slot against the official posters); #88 (Dependabot on
+  Thursdays).
+- **Found and left for Kevin** (NOW.md, "Open with Kevin"): the MIT
+  LICENSE (#91); staging
+  frozen at v35 on the production database; a stray Vercel project in the
+  codercom team deploying every push; GitHub Pages serving a broken copy;
+  ~90 merged branches; test-walk debris in Neon; Dependabot merging to
+  production with no review.
+
+The docs lane:
+
+- **The front door.** The README is written for a visitor now: the pitch,
+  the live link, a picture of the wall (`docs/img/wall.jpg`, the gallery's
+  fixture Saturday), a dated status line, how it works as of v115, privacy
+  in plain words, running and forking it, adding a festival. New
+  CONTRIBUTING.md and SECURITY.md. `docs/fork-setup.md` says what the code
+  does today (the report key is inert on a fork's domain but live on its
+  localhost; the Spotify redirect URI; `GEMINI_MODEL`; a merge to main is
+  production). The live site stops serving AGENTS.md, CLAUDE.md, docs/,
+  ops/, db/ and .gitignore (`.vercelignore`).
+- **Off-season docs.** NOW.md is an off-season screen. The Portola LEDGER
+  is closed as history, its open follow-ups in a new root BACKLOG.md.
+  Finished build logs moved to `claude-plans/archive/2026/`; the plans
+  index, MODEL-V4's status, the unified build's arc NOW and the native-apps
+  plan say what is true now. The missing Sep 3–17 entry is below.
+- **Privacy at HEAD.** Kevin's correspondence with Ray (two archived files)
+  moved to Kevin's own notes; Ray is credited as "Ray (raypp2)" in the
+  plans and docs; a work email left a design doc. History is unchanged.
+- **AGENTS.md went from 25.3 KB to under 24 KB** (Codex reads at most
+  32 KiB; the workspace aims under 24). No rule was dropped except the
+  long-press half of the browser-test traps, moot since v98 removed the
+  long-press. The two Claude-Code-only lines moved to CLAUDE.md. It also
+  says how Dependabot PRs really land (patch and minor merge themselves
+  after the `checks` job). The incidents the rules came from stay here:
+  - The festival accent had crept into seven places by 2026-07-12,
+    including the loader shown while a crew was being created.
+  - Before 2026-07-12 the merge SQL sat inline in api/crew.js, and the
+    suite tested a JS "reference twin" that production never ran.
+  - 2026-07-12: `vercel dev` served an old app.js until a restart; every
+    fix read "not applied" in a browser until the service worker was
+    unregistered. 2026-07-14: the ES-module cache survived
+    `Network.clearBrowserCache`. 2026-08-29: the gate-round fixes shipped
+    under an unbumped v43.
+  - The 44px floor once named six selectors: chips at 26px, the "+ ✎" note
+    chip at 17px and every button in Settings got nothing.
+  - 2026-09-23: CI put Robyn's corners 1.4px apart, because Linux draws
+    Inter wider than the Chromium-on-macOS measurements the width table
+    used.
+  - 2026-09-26: under `page.clock` the long-press timer ran late on a big
+    wall (tests held a fixed 650 ms); moot since v98.
+  - 2026-10-04: four Linux WebKit flakes in v115's tests in one day taught
+    "wait for the state at rest, never a beat".
+  - 2026-09-01: "hover is broken again" was a v75 shell judging v76 code.
+  - Chrome 152 grew a keyboard zoom on click · Escape · click; Safari before
+    18.2 sends no pointerType; before `touchAt` (2026-09-23) a tapped card
+    zoomed itself.
+  - 2026-09-02: without `-webkit-user-select`, a long-press on iOS raised
+    the Copy/Search callout over the zoom.
+  - Before MODEL-V4, three layout engines shared one card and a numeric
+    threshold picked, so one Sunday rendered three ways. ACL's Late nights
+    (Sep 29 to Oct 10) are why a section can carry a date, not a weekday.
+  - 2026-08-27: festival JSONs were cache-first, so a set-times drop
+    reached an online phone one open late.
+  - Copying a venue-registry URL onto an event once made a run guess look
+    like a printed close.
+
 ## 2026-10-04 — v115: the Invite sheet (find your crew, slice 1)
 
 Slice 1 of the find-your-crew plan (Oct 2), one of its two easy pieces:
@@ -331,7 +438,38 @@ the RUNBOOK beside it.
   bad signal" was the walker's own `context.route` holding the navigation
   before the service worker could answer. A proxy harness that hangs page and
   worker alike measured 1.6 s in Chromium and WebKit
-  (`claude-plans/2026-09-23-crew-join-build/liefi-harness.mjs`).
+  (`claude-plans/archive/2026/2026-09-23-crew-join-build/liefi-harness.mjs`).
+
+## 2026-09-03 → 17 — v74 to v85: the wall simplified, shipped before Portola
+
+*(Written 2026-10-19 from git, PR #18 and PR #19; no entry was kept at the
+time.)* Production stayed on v73 from Sep 2 until Sep 17. v74 to v79 and
+v81 to v84 were branch and preview builds, never live; Kevin looked at the
+v83 and v84 previews and his notes went into v85.
+
+- **The spec came first.** Kevin picked direction A of the Sep 16 "The
+  Wall, Simplified" canvas, written up as
+  `claude-plans/2026-09-16-wall-v4/MODEL-V4.md`: stage columns on a clock
+  only where a festival publishes a stage grid, venue stacks of artist cards
+  in play order everywhere else; the data's shape decides, never a
+  threshold. Days are the days (dated sections such as ACL's late nights
+  get a tab of their own), the fest name opens the show menu, a NOW ring
+  marks who is playing in a stack, one card width everywhere, highlighting
+  dims and never filters, and notes are written where you are (a festival,
+  a date, a section on a date, an artist). Stage solo, the deck, the bucket
+  filter, the header fold and the inline tilde whisper were deleted.
+- **v80 (PR #18, Sep 17)** shipped the offline-cache fix a day ahead on its
+  own: a cache hit never refreshes the shell, a navigation always gets the
+  shell, and the worker leaves `/_vercel/` alone.
+- **v85 (PR #19, Sep 17)** shipped everything since v73 on one branch:
+  MODEL-V4, refreshed data (Portola afters re-timed from venue pages with
+  `~` where guessed, ACL set times for both weekends, Lost Lands removed on
+  Kevin's call, pick keys frozen), and the fix round (the shell reload
+  rule, cold-boot loader, Low Power, rotation, the ACL weekend guard).
+  Gates: 613 unit tests (Tokyo too), the browser suite 19/19, a Codex
+  ship-readiness round, real-browser walks on both engines.
+- Between the two, on Sep 13, the repo enrolled in the shared Dependabot
+  auto-merge (PR #17).
 
 ## 2026-09-02 — the hover was fine; the shell was old. Then the two hazards under it, a contract that runs in a browser, and Kevin's phone notes
 
@@ -858,9 +996,12 @@ the RUNBOOK beside it.
   #1–#4 and #10 fixed and the rest partial; the partials closed in one more
   commit (renderer-consistent split, `stages` guard, AM/PM case in
   `timeToMinutes`, navigation lifetime, explicit error on a cold miss).
-  **Still Kevin's call**: commit `8f4a09d`/`66c4eed` history carries two
-  email addresses in the Ray checkpoint doc (redacted at HEAD; rewriting a
-  public branch's history is a bigger act than the exposure).
+  **Still Kevin's call**: history from commit `8f4a09d` until `22657b8`
+  (which redacted them) carries two email addresses in the Ray checkpoint
+  doc, Ray's and Kevin's public one (corrected 2026-10-19: this line used
+  to name `66c4eed`, which carries none; the doc itself left the repo for
+  Kevin's notes the same day). Rewriting a public branch's history is a
+  bigger act than the exposure.
 - **Live preview walk** (Playwright, the real Vercel preview, the real
   Neon merge): SAT / SUN / AFTERS / FOLSOM tabs; 64 grid cells; 38 + 8
   section cards with venue · hours; tapping Overmono on the grid repainted
