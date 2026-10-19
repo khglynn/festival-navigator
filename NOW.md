@@ -2,22 +2,26 @@
 
 **last-updated: 2026-10-19 · mode: off-season** (Portola and ACL are done;
 the next festivals friends have crews for are EDC Orlando, Nov 6–8, and
-Seismic, Nov 13–15, both still lineups without set times)
+Seismic, Nov 13–15: full by-day lineups, no set times yet)
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Live on production
 
-- **Live:** v115 from `main` on all three hosts, checked 2026-10-19.
-- The last release of the season, v115, added the Invite sheet with the
-  crew link as a QR. Its rollback: Vercel dpl_A4xbcf6WK7WxsFcrDXYFW8c91Wny
-  (v114 + docs). Every release, review and rollback target of the season:
-  the LEDGER, `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as
-  history).
-- **This pass (off-season polish, 2026-10-19):** ORCHESTRATOR FILLS IN —
-  the release line (v116?), its PRs, rollback target, and what is still
-  open after the merges.
+- **Live:** v116 from `main` on all three hosts, checked 2026-10-19.
+- **v116** (PR #96, 2026-10-19): Portola and ACL are archived, so a
+  newcomer lands on EDC Orlando and an old crew reads "this wall is the
+  memory"; Settings opens at the top; and a phone whose saved copy cannot
+  start asks its worker to repair it from the network, proved against the
+  build's own stamp, before reloading. Rollback: Vercel
+  dpl_DEi98ibDvwomqPvfSeo9tpzGfpue (v115 + the Oct 19 deps and data).
+  The season's releases and reviews: the LEDGER,
+  `claude-plans/2026-09-25-portola-live/LEDGER.md` (closed as history).
+- **The same pass:** server functions on Node 24 with neon 1.2 (#93); a
+  7-day wait on new packages (#89); EDC Orlando and Seismic by day (#92);
+  Dependabot on Thursdays (#88); the docs and README (#94). The LICENSE
+  (#91) waits on Kevin.
 - **Smoke check for a release:** `node ops/prod-smoke.mjs` (all three hosts,
   build and asset stamp).
 - **Alerts:** PostHog → Slack for a new error and one that came back
@@ -27,12 +31,12 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Off-season: what still moves
 
-- **Set-time drops.** EDC Orlando and Seismic are loaded as lineups (data
-  from Jul 7) and have crews with picks. When a festival posts its times, it
-  is a data-only push under the standing OK (validator + freeze + tests):
-  `docs/fest-update-runbook.md`. Nothing watches for the drop yet, and an
-  open phone only picks up new festival data on its next real open
-  (BACKLOG, real fix 3).
+- **Set-time drops.** EDC Orlando (expected around the last week of
+  October) and Seismic (around Nov 9) have crews with picks. When a
+  festival posts its times, it is a data-only push under the standing OK
+  (validator + freeze + tests): `docs/fest-update-runbook.md`. Nothing
+  watches for the drop yet; a phone left open picks it up when it comes
+  back to the app (v116).
 - **ACL's weekend 2** ran on the Aug 27 posters; it was never re-read. It
   is history now.
 
@@ -57,8 +61,10 @@ Each has a default; "3: yes" is enough.
 1. **Staging** (stage.fest.kevinhg.com) serves a July build, v35, on the
    production database. Default: retire it (remove the domain, pause the
    staging project); the other way is a Neon branch of its own.
-2. **EDC Orlando and Seismic.** Their lineups date from Jul 7. Default:
-   refresh both now and load set times as they post (data-only pushes).
+2. **An old crew link is in public git history and still works** ("The
+   Crew", created Jul 7; it sat in NOW.md for two days in July). Default:
+   move the crew to a new link while nobody is using it, and Kevin sends
+   the crew the new one; the alternative is to leave it.
 3. **Two List-view calls from Oct 4, never recorded** (his ring note and
    Pen checklist): "Default to list", and "in the List, highlighting should
    still just highlight" plus an always-reachable Picks view, which would
@@ -78,15 +84,20 @@ Each has a default; "3: yes" is enough.
 6. **v115 on his iPhone**, never confirmed: Camera scans the Invite sheet's
    QR; long-press Save keeps the card; Pick for a friend → add a name.
    Default: check whenever convenient; nothing is urgent off-season.
-7. ORCHESTRATOR: Ray's email, the LICENSE answer, GitHub housekeeping
-   (merged branches, the repo description) and the Portola/ACL archive
-   flip go here or come off, depending on what this pass settled.
+7. **Ray's email**: the reply is a draft in Gmail (thread "Forked
+   festival-navigator"); the September draft beside it can go.
+8. **Housekeeping, each a yes/no:** the MIT LICENSE (#91); delete the ~90
+   merged and throwaway branches (keep `seasons/*`) and turn on
+   auto-delete; turn off GitHub Pages (a broken copy of the app); the
+   `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
+   (deploys every push); Neon's test-walk crews, duplicate person rows and
+   older backup branches; whether Dependabot may keep merging patch and
+   minor bumps to production with no review.
 
 ## Next, when there is time
 
-1. `BACKLOG.md`, real fixes first: self-recovery when a phone boots stale
-   cached modules (1), the offline "drew"/"Drew" reconcile keyed on pid
-   (2), refreshing festival data on resume before the November drops (3).
+1. `BACKLOG.md`, real fixes first: the offline "drew"/"Drew" reconcile
+   keyed on pid, and the crew playlist kept as keyed rows, not an array.
 2. Add a show (`claude-plans/2026-09-02-add-a-show.md`) and the merged wall
    for two crews at one festival.
 

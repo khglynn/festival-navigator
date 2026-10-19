@@ -2,13 +2,54 @@
 
 Newest first. One entry per meaningful unit of work.
 
-## 2026-10-19 — the off-season polish pass: the front door and the docs
+## 2026-10-19 — the off-season polish pass: v116, the front door and the docs
 
 The season is over (Portola Sep 26–27, ACL Oct 2–11) and Ray, who forked
 the app in July, is about to be pointed at the repo. A read-only audit came
-first (front door, docs, privacy, the ledger, production health); this
-entry is the docs lane. *(Release facts for this pass: the orchestrator
-adds them here after the merges.)*
+first: nine auditors and a critic (front door, secrets, docs truth, code,
+the ledger, production, Kevin's Pen, the facts for Ray, an off-season
+browser walk). Five builders followed in their own worktrees, and every PR
+passed an independent review (Codex gpt-6.1-sol and an Opus reviewer) and
+CI before its merge.
+
+- **v116 (PR #96, rollback dpl_DEi98ibDvwomqPvfSeo9tpzGfpue).** Portola and
+  ACL archived: a newcomer lands on EDC Orlando, an old crew reads "this
+  wall is the memory". Settings opens at the top, and every way out of it
+  hands scroll restoration back. "Your festivals" on the bad-link screen; a
+  `<main>` landmark; the address keeps `&show=`; "Earlier · N sets" leaves
+  out cancelled acts; a stand-in's empty row never reaches the disk
+  (LEDGER 42); Diagnostics names the build the worker or page reports and
+  says which; a phone left open refreshes festival data when it comes back,
+  at most every 5 minutes; Ray credited as Ray (raypp2); dead exports gone
+  (and, with #94, the retired `/api/selections` stub).
+- **The boot recovery took three review rounds, and the third changed the
+  mechanism.** v107 allowed one reload when a phone's cached modules could
+  not link. Round one: deleting the cache and reloading left no offline
+  shell. Round two: dropping the code and topping the copy up on every
+  boot could still write two builds into one cache. Round three replaced
+  both with one mechanism, repair then reload: the worker fetches '/',
+  stops if the live build is not its own, fetches the rest and writes only
+  when the set hashes to its own `ASSET_STAMP`; the page reloads only on
+  "repaired". Codex then found the older static-miss path could still
+  write a single install-list file, so that writer was cut: APP_CORE is
+  only ever written whole (now an AGENTS.md law). CI's browser job walks
+  the real previous build to this one (`PREV_BUILD`), and fails loudly if
+  a released version is ever re-stamped.
+- **Also merged:** #93 (neon 1.2, jsdom 30.1, Playwright 1.63, css-color
+  7.1.7, which fixed the radial gradients jsdom dropped; server functions
+  on Node 24 to match CI; two browser tests made robust to 1.63's WebKit);
+  #89 (Gabby's 7-day wait on new packages, minus the engine-strict that
+  Vercel's npm 10 refused); #92 (EDC Orlando and Seismic by day, re-checked
+  slot for slot against the official posters); #88 (Dependabot on
+  Thursdays).
+- **Found and left for Kevin** (NOW.md, "Open with Kevin"): an old crew
+  link in public history that still works; the MIT LICENSE (#91); staging
+  frozen at v35 on the production database; a stray Vercel project in the
+  codercom team deploying every push; GitHub Pages serving a broken copy;
+  ~90 merged branches; test-walk debris in Neon; Dependabot merging to
+  production with no review.
+
+The docs lane:
 
 - **The front door.** The README is written for a visitor now: the pitch,
   the live link, a picture of the wall (`docs/img/wall.jpg`, the gallery's

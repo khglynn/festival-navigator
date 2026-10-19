@@ -134,7 +134,10 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   (the build a crash report names when no worker controls the page), and
   writes `ASSET_STAMP` (a hash of every APP_CORE file);
   `tests/app-shell-complete.test.mjs` recomputes it, so a stale stamp is a red
-  build.
+  build. A released version is never re-stamped with `--keep` (the worker's
+  repair proves copies against it). **APP_CORE is only ever written whole**
+  (install's addAll, or a proved repair): a lone write can be another
+  build's bytes (v116).
 - **Staging (stage.fest.kevinhg.com preview deploys) shares the PRODUCTION
   DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
   staging was deleted through the prod Neon connection). Staging writes are

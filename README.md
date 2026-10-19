@@ -7,7 +7,7 @@ one wall, live, and it still works in a field with one bar of signal.
 
 ![A Saturday on the wall: each card blends the colors of the friends who picked it](docs/img/wall.jpg)
 
-**Live:** v115, checked 2026-10-19.
+**Live:** v116, checked 2026-10-19.
 
 The 2026 season is over (Portola in September, ACL in October). Still in
 the catalog, with crews already picking: EDC Orlando (Nov 6–8) and Seismic
