@@ -36,9 +36,9 @@ export function crossSite(req) {
 // confirming it on screen. The alias moves with two weeks' notice (it pointed
 // at gemini-3-flash-preview in January and gemini-3.5-flash since May), so an
 // env override lets a deploy pin an exact id without a code change. The
-// catch, the alias and the error surfacing below are lifted from Ray
-// Perfetti's fork (raypp2/festival-navigator) — he paid for this knowledge
-// with a long debug session.
+// catch, the alias and the error surfacing below are lifted from the fork by
+// Ray (raypp2/festival-navigator) — he paid for this knowledge with a long
+// debug session.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
 // `image` ({ mimeType, data: base64 }) and `schema` (a responseSchema) are

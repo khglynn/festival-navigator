@@ -18,7 +18,6 @@ export const COLOR_PALETTE = [
   '168, 85, 247', '236, 72, 153', '249, 115, 22', '20, 184, 166',
   '99, 102, 241', '132, 204, 22', '244, 63, 94', '14, 165, 233'
 ];
-export const opacities = [0.5, 0.75, 1.0]; // index = level-1
 
 export const LS = {
   doc: (t) => `fn_crew_doc_v3_${t}`,
@@ -41,7 +40,6 @@ export let activeFestivalId = null;
 // no cached index — then nothing is known and everything would look dropped).
 export let missingFestivalId = null;
 export let currentDay = null;
-export let selectedPerson = null;
 let editSeq = 0; // bumped on every local edit; guards the push/clear race
 const dayCache = {}; // `${fid}|${day}` -> computed artists
 
@@ -60,7 +58,6 @@ export function mayWrite() {
 }
 export function getEditSeq() { return editSeq; }
 export function setCurrentDay(d) { currentDay = d; }
-export function setSelectedPerson(p) { selectedPerson = p; }
 
 // Load a crew into the active slot (from cache; sync refreshes it after).
 // NOTE: callers must `await loadFestival(state.activeFestivalId)` before
@@ -100,7 +97,6 @@ export function activateCrew(token, doc, festHint, { festival = null } = {}) {
   activeFestivalId = festival || ((savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId()));
   if (!festival && hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
   currentDay = null;
-  selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);
   ensureFestivalState(activeFestivalId);
 }
@@ -108,6 +104,16 @@ export function activateCrew(token, doc, festHint, { festival = null } = {}) {
 export function setActiveFestivalId(fid) {
   activeFestivalId = fid;
   shownForNow = null; // a festival chosen is no longer a stand-in
+  // Chosen, a stand-in's own festival is a real one (LEDGER 42, v116): its
+  // row made only to render it goes, so ensureFestivalState makes it again
+  // and queues the membership like any festival added. A row with a pick or
+  // a note on it is already real — those writes went out as writes — and is
+  // simply un-marked.
+  const row = crewDoc && crewDoc.festivals ? crewDoc.festivals[fid] : null;
+  if (row && madeForNow.has(row)) {
+    madeForNow.delete(row);
+    if (madeRowIsEmpty(row)) delete crewDoc.festivals[fid];
+  }
   saveLS(LS.fest(crewToken), fid);
 }
 
@@ -144,13 +150,17 @@ export function festivalNameForLinks() {
 
 // A stand-in's empty row stays off the disk too: the cached doc is what the
 // landing and Settings list a crew's festivals from, and the crew never had
-// this one (v107 review). A pick or note on it is real, and is kept.
+// this one (v107 review). A pick or note on it is real, and is kept. EVERY
+// such row, not only the current stand-in's (LEDGER 42, v116): a switch in
+// Settings to another festival left the last one's made row behind, and the
+// next save put it on disk.
+const madeRowIsEmpty = (row) => !Object.keys(row.selections || {}).length && !row.notes;
 export function persist() {
   let d = crewDoc;
-  const standIn = shownForNow && d.festivals ? d.festivals[shownForNow] : null;
-  if (standIn && madeForNow.has(standIn) && !Object.keys(standIn.selections || {}).length && !standIn.notes) {
+  const made = Object.entries(d.festivals || {}).filter(([, row]) => row && madeForNow.has(row) && madeRowIsEmpty(row));
+  if (made.length) {
     d = { ...d, festivals: { ...d.festivals } };
-    delete d.festivals[shownForNow];
+    for (const [fid] of made) delete d.festivals[fid];
   }
   saveLS(LS.doc(crewToken), JSON.stringify(d));
 }
@@ -207,12 +217,6 @@ export function ensureFestivalState(fid) {
     editSeq++; persistPending();
   }
   if (!crewDoc.festivals[fid].selections) crewDoc.festivals[fid].selections = {};
-}
-
-export function nextColor(peopleObj) {
-  const used = new Set(Object.values(peopleObj).filter(p => !p.removed).map(p => p.color));
-  const open = COLOR_PALETTE.find(c => !used.has(c));
-  return open || COLOR_PALETTE[Object.keys(peopleObj).length % COLOR_PALETTE.length];
 }
 
 // ---- pending-change recorders (each also applies to the local doc) -----------

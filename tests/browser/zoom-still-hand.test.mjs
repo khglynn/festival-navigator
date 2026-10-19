@@ -62,6 +62,16 @@ async function openWall(engine, at) {
     ? route.fulfill({ contentType: 'application/json', body })
     : route.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
   await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+  // The walk is a LIVE Saturday night, and Portola is archived since v116: an
+  // archived wall wears the "already happened" strip above it, which moves
+  // the rail — and the still pointer — down by its height. Served as it was
+  // that night, so the geometry is the night's.
+  const live = async (route, patch) => {
+    const res = await route.fetch();
+    route.fulfill({ response: res, body: JSON.stringify(patch(await res.json())) });
+  };
+  await ctx.route(`**/data/festivals/${FID}.json`, (route) => live(route, (f) => ({ ...f, status: 'scheduled' })));
+  await ctx.route('**/data/festivals/index.json', (route) => live(route, (list) => list.map((f) => (f.id === FID ? { ...f, status: 'scheduled' } : f))));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => { throw e; });
   await page.clock.setFixedTime(new Date(at));

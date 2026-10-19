@@ -95,3 +95,41 @@ test('a stand-in festival the crew really has keeps its row on disk, even with n
   assert.ok(!saved.festivals['held-made'], 'the row made to render it stays off the disk');
   assert.ok(saved.festivals['sync-fest']);
 });
+
+// LEDGER follow-up 42 (v116). Offline, the open shows a stand-in; the person
+// then switches in Settings to ANOTHER festival the phone holds and picks.
+// The save only stripped the CURRENT stand-in's made row, so the old one —
+// still empty, and never the crew's — landed on disk, and Your festivals
+// listed it.
+test('a switch away from a stand-in leaves its empty made row off the disk too', () => {
+  FESTIVAL_INDEX.push({ id: 'held-left', status: 'scheduled' }, { id: 'held-next', status: 'scheduled' });
+  const doc = base();
+  doc.festivals['held-next'] = { selections: {} };
+  state.activateCrew(TOKEN, doc, null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-left');
+  assert.ok(state.crewDoc.festivals['held-left'], 'the stand-in is rendered');
+  state.setActiveFestivalId('held-next'); // Settings, still offline
+  state.ensureFestivalState('held-next');
+  state.recordSelection('Robyn', 'Kevin', 2);
+  state.persist();
+  const saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(!saved.festivals['held-left'], 'the row made for the stand-in never reaches the disk');
+  assert.ok(saved.festivals['held-next'], 'the festival switched to is there');
+});
+
+// …and choosing the stand-in's OWN festival in Settings makes it a real one:
+// its row joins the crew like any festival added, membership queued — the
+// made row used to stay, so the choice saved without telling anyone.
+test('choosing the stand-in\'s own festival queues its membership like any added festival', () => {
+  FESTIVAL_INDEX.push({ id: 'held-chosen', status: 'scheduled' });
+  localStorage.removeItem(`fn_crew_pending_v3_${TOKEN}`);
+  state.activateCrew(TOKEN, base(), null, { festival: 'sync-fest' });
+  state.showFestivalForNow('held-chosen');
+  assert.equal((state.pendingChanges.festivals || {})['held-chosen'], undefined, 'a stand-in queues nothing');
+  state.setActiveFestivalId('held-chosen');
+  state.ensureFestivalState('held-chosen');
+  assert.deepEqual((state.pendingChanges.festivals || {})['held-chosen'], { selections: {} }, 'chosen: the membership is queued');
+  state.persist();
+  const saved = JSON.parse(localStorage.getItem(`fn_crew_doc_v3_${TOKEN}`));
+  assert.ok(saved.festivals['held-chosen'], 'and its row is the crew\'s now, on disk');
+});

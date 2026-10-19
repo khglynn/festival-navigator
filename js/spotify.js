@@ -25,7 +25,7 @@ const redirectUri = () => `${location.origin}/spotify-callback`;
 // Spotify a stage.fest redirect URI and got "redirect_uri: Not matching
 // configuration" (Kevin, 2026-07-12). Localhost stays in place for dev.
 // The value lives in index.html's fn-canonical-host meta (ONE place a fork
-// edits — issue #6, Ray Perfetti, 2026-07-24; shipped 2026-08-30). The
+// edits — issue #6, Ray (raypp2), 2026-07-24; shipped 2026-08-30). The
 // architecture is unchanged and deliberate: Spotify only accepts
 // pre-registered exact-match redirect URIs, so every non-canonical host hops.
 // The literal is the fallback for Node tests and a stripped <head>.

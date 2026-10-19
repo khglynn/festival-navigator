@@ -368,19 +368,22 @@ export function hostKind() {
 // scripts/sw-stamp.mjs writes beside CACHE_VERSION, so the HTML that loaded
 // these modules says which release it is (LEDGER follow-up 2, 2026-09-26:
 // every report that night said build null, sw "none"). Only a page with no
-// such meta falls back to the cache names, a guess. `sw` says which it was.
+// such meta falls back to the cache names, a guess. `sw` says whether a
+// worker was in control; `from` says which answer it was ('worker', 'page',
+// 'cache-guess', or null for none) — the Diagnostics paste shows it (v116).
 let buildInfo = null;
 let buildStarted = false;
 let buildWaiters = [];
 const awaitingBuild = [];
 
-function settleBuild(version, stamp, sw) {
+function settleBuild(version, stamp, sw, from) {
   if (buildInfo) return;
   const v = typeof version === 'string' ? /^festival-nav-(v\d+)$/.exec(version) : null;
   buildInfo = {
     build: v ? v[1] : null,
     stamp: typeof stamp === 'string' && /^[0-9a-f]{8}$/.test(stamp) ? stamp : null,
     sw: sw,
+    from: v ? from : null,
   };
   // Reports queued before the answer arrived were made by THIS page: give
   // them its build now, before anything sends them.
@@ -408,14 +411,14 @@ function metaBuild() {
 
 function buildFromCaches(sw) {
   const own = metaBuild();
-  if (own) { settleBuild('festival-nav-' + own, null, sw); return; }
+  if (own) { settleBuild('festival-nav-' + own, null, sw, 'page'); return; }
   try {
     window.caches.keys().then((keys) => {
       let hit = null;
       for (let i = 0; i < keys.length; i++) if (/^festival-nav-v\d+$/.test(keys[i])) { hit = keys[i]; break; }
-      settleBuild(hit, null, sw);
-    }, () => settleBuild(null, null, sw));
-  } catch { settleBuild(null, null, sw); }
+      settleBuild(hit, null, sw, 'cache-guess');
+    }, () => settleBuild(null, null, sw, null));
+  } catch { settleBuild(null, null, sw, null); }
 }
 
 function askBuild() {
@@ -427,7 +430,7 @@ function askBuild() {
     if (!controller) { buildFromCaches('none'); return; }
     container.addEventListener('message', (e) => {
       const d = e && e.data;
-      if (d && typeof d.fnBuild === 'string') settleBuild(d.fnBuild, d.fnStamp, 'controlled');
+      if (d && typeof d.fnBuild === 'string') settleBuild(d.fnBuild, d.fnStamp, 'controlled', 'worker');
     });
     try { if (typeof container.startMessages === 'function') container.startMessages(); } catch { /* auto-started */ }
     controller.postMessage({ fn: 'build?' });
@@ -447,9 +450,9 @@ function buildReady() {
 
 // The build THIS page runs ("v89"), or null when nothing can say. Read-only:
 // Settings' "Get the latest version" row names it (v90). Nothing leaves the
-// phone for it. With reports off the question is asked now rather than at
-// boot, so a page a newer worker has already taken over (the new-build strip
-// is up) may hear the newer worker's answer — the row reads the strip first.
+// phone for it. The question is asked at boot whether reports are on or not
+// (hookGlobalErrors, v116), so a newer worker that takes the page over later
+// is never the one that answers.
 export function pageBuild() {
   return buildReady().then(() => (buildInfo && buildInfo.build) || null);
 }
@@ -1221,7 +1224,12 @@ export function hookGlobalErrors() {
     const wirePagehide = () => { window.addEventListener('pagehide', () => { endStretch(); beaconReports(); }); };
     if (window.document.readyState === 'complete') wirePagehide();
     else window.addEventListener('load', wirePagehide, { once: true });
-    if (reporting()) askBuild();
+    // Which build this page runs, asked now, whether reports are on or not:
+    // the worker in control at boot served these modules, and a newer one
+    // that takes over later would answer for ITS build (the Diagnostics
+    // paste and the "Get the latest version" row read this, v116). A message
+    // to this phone's own worker: nothing leaves.
+    askBuild();
   } catch { /* a journal must never be the thing that throws */ }
 }
 
@@ -1264,17 +1272,24 @@ function motionFacts() {
 
 // The shareable dump: enough to see what a phone saw, nothing private. Since
 // v88 it also says whether reports are on and how many are still waiting, so
-// a friend's paste answers "did Kevin already get this?".
+// a friend's paste answers "did Kevin already get this?". Since v116 its
+// build is the one crash reports carry — the worker that served this page,
+// else the page's own fn-build meta, else a guess from the cache names — and
+// `buildFrom` says which ('worker', 'page', 'cache-guess' or 'unknown').
+// Before, it was always the guess: the first festival-nav-v* cache name,
+// which right after an update can be either version.
 export async function diagnostics() {
-  let build = 'unknown';
+  let build = null;
+  let buildFrom = 'unknown';
   try {
-    const keys = await window.caches.keys();
-    build = keys.find((k) => k.startsWith('festival-nav-v')) || 'no-cache';
-  } catch { /* no SW, private mode */ }
+    await buildReady();
+    if (buildInfo && buildInfo.build) { build = buildInfo.build; buildFrom = buildInfo.from || 'unknown'; }
+  } catch { /* no worker, no meta, no caches: unknown */ }
   let ua = '';
   try { ua = window.navigator.userAgent; } catch { ua = ''; }
   return Object.assign({
     build: build,
+    buildFrom: buildFrom,
     ua: ua,
     viewport: window.innerWidth + 'x' + window.innerHeight,
     online: online(),

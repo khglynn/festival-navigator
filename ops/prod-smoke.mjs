@@ -38,6 +38,7 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appCorePaths } from './app-core.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = process.env.SMOKE_OUT_DIR || path.join(os.tmpdir(), 'fest-smoke');
@@ -89,8 +90,7 @@ async function checkHost(host) {
 // Every APP_CORE path, fetched from each host, must hash the same everywhere.
 async function compareAppCore() {
   const swText = await (await fetch(`https://${HOSTS[0]}/service-worker.js`, { cache: 'no-store' })).text();
-  const block = (swText.match(/const APP_CORE = \[([\s\S]*?)\];/) || [])[1] || '';
-  const paths = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const paths = appCorePaths(swText); // root paths only (ops/app-core.mjs)
   const mismatches = [];
   for (const p of paths) {
     const hashes = [];

@@ -1893,11 +1893,16 @@ function foldPast(root, ctx, { days, weekends }) {
       if (!p || !list) continue;
       // What the highlight left (a thinned card is out of the DOM).
       const past = p.cards.filter((c) => c.isConnected && p.overs.get(c));
-      if (!past.length) continue;
+      // The line counts what happened: a cancelled act folds with its room
+      // but is no set (v116, LEDGER 49 — Portola's Saturday said 32 with
+      // Skepta). A fold of nothing but cancelled cards says nothing and
+      // leaves them where they are (LEDGER 50's room; no data has one).
+      const happened = past.filter((c) => !c.classList.contains('cancelled')).length;
+      if (!happened) continue;
       const key = `${list.dataset.iso}|${room.dataset.room}`;
       const isOpen = open.has(key);
       list.classList.add('has-past');
-      list.prepend(pastLine(key, isOpen, `Earlier · ${pastNoun(room, past.length)}`, ctx));
+      list.prepend(pastLine(key, isOpen, `Earlier · ${pastNoun(room, happened)}`, ctx));
       if (isOpen) { past.forEach((c) => c.classList.add('past')); continue; }
       past.forEach((c) => c.remove());
       for (const band of list.querySelectorAll(':scope > .time-band')) if (!band.querySelector('.card')) band.remove();

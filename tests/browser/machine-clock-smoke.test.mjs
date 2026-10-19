@@ -27,9 +27,19 @@ import { launchBrowser, launchWebkit, onMachineClock, NO_BROWSER } from '../help
 import { shiftDate } from '../helpers/test-clock.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-// The festivals a clock can move under: the catalog's scheduled ones.
-const LIVE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/festivals/index.json'), 'utf8'))
-  .filter((f) => f.status === 'scheduled').map((f) => f.id);
+// The festivals a clock can move under: the catalog's scheduled ones. Between
+// seasons none is scheduled (v116 archived Portola and ACL '26, and the next
+// fests have no set times yet), so then it is the two latest archived
+// festivals that still carry a timetable and its zone: their walls run every
+// hour rule a live one does, and the HOURS below are theirs.
+const INDEX = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/festivals/index.json'), 'utf8'));
+const clocked = (f) => {
+  const file = JSON.parse(fs.readFileSync(path.join(ROOT, `data/festivals/${f.id}.json`), 'utf8'));
+  return !!(file.days && Object.keys(file.days).length && file.timezone);
+};
+const SCHEDULED = INDEX.filter((f) => f.status === 'scheduled').map((f) => f.id);
+const LIVE = SCHEDULED.length ? SCHEDULED
+  : INDEX.filter((f) => f.status === 'archived' && clocked(f)).slice(0, 2).map((f) => f.id);
 const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
 const webkit = await launchWebkit();

@@ -880,6 +880,10 @@ export function renderSettings(root, ctx, actions) {
   main.appendChild(list);
 
   root.append(sub, main);
+  // Back from a drill: the Settings page where it stood when the drill opened.
+  const y = mainScrollY;
+  mainScrollY = null;
+  if (y != null && Math.abs(window.scrollY - y) >= 1) window.scrollTo({ top: y, behavior: 'auto' });
 }
 
 // ---- get the latest version (v90, Kevin at Portola, 2026-09-25) --------------------
@@ -1105,10 +1109,16 @@ export function updateRow(envOf = updateEnv) {
 
 // Open a settings drill by its router key — the one entry point both the
 // in-UI rows and the router's forward/refresh re-open path share (FLOW-2).
+// A drill is a page of its own, so it opens at its top (v116): the page
+// scrolls as a whole, and a drill opened from the foot of Settings used to
+// come up wherever Settings stood, its title and back chevron above the fold.
+// Settings' own place is kept for the way back (renderSettings reads it).
+let mainScrollY = null;
 export function openSubviewByKey(key, ctx, actions) {
   const root = document.getElementById('settings-root');
   const rerender = () => renderSettings(root, ctx, actions);
   const main = document.getElementById('settings-main');
+  if (main && main.style.display !== 'none') mainScrollY = window.scrollY;
   if (main) main.style.display = 'none';
   const host = document.getElementById('settings-subview');
   const sub = { ...actions, rerender };
@@ -1119,6 +1129,7 @@ export function openSubviewByKey(key, ctx, actions) {
   else if (key === 'sub:bulk') openBulkPaste(host, { back, recordPick: actions.recordPick, afterApply: actions.afterBulk });
   else if (key === 'sub:export') openExportLikes(host, ctx, back);
   else if (key === 'sub:day-image') openDayImage(host, ctx, back);
+  if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 // ---- Spotify drill (21f / SPOT-2) — one state-driven card ---------------------------

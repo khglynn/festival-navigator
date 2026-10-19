@@ -1,25 +1,5 @@
 [
   {
-    "id": "portola-2026",
-    "name": "Portola",
-    "year": "'26",
-    "startsOn": "2026-09-26",
-    "status": "scheduled",
-    "dates": "September 26–27, 2026",
-    "location": "San Francisco, CA",
-    "accent": "56, 189, 248"
-  },
-  {
-    "id": "acl-2026",
-    "name": "ACL",
-    "year": "'26",
-    "startsOn": "2026-10-02",
-    "status": "scheduled",
-    "dates": "Oct 2–4 & 9–11, 2026",
-    "location": "Austin, TX",
-    "accent": "250, 204, 21"
-  },
-  {
     "id": "edc-orlando-2026",
     "name": "EDC Orlando",
     "year": "'26",
@@ -48,6 +28,26 @@
     "dates": "March 20–27, 2027 (8-day event, seventh edition)",
     "location": "Alpe d'Huez, France",
     "accent": "147, 197, 253"
+  },
+  {
+    "id": "acl-2026",
+    "name": "ACL",
+    "year": "'26",
+    "startsOn": "2026-10-02",
+    "status": "archived",
+    "dates": "Oct 2–4 & 9–11, 2026",
+    "location": "Austin, TX",
+    "accent": "250, 204, 21"
+  },
+  {
+    "id": "portola-2026",
+    "name": "Portola",
+    "year": "'26",
+    "startsOn": "2026-09-26",
+    "status": "archived",
+    "dates": "September 26–27, 2026",
+    "location": "San Francisco, CA",
+    "accent": "56, 189, 248"
   },
   {
     "id": "electric-forest-2026",

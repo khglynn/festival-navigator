@@ -98,7 +98,6 @@ let quietUntil = 0;  // the click that follows a drag or a peek tap is not a sec
 let held = false;    // an answer that came in under a hand: drawn when it lets go
 let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 
-export const planShelf = () => el;
 // Open, and not on its way out. A plan with no row to close to (a highlight
 // emptied it, or the morning after) leaves from open, and `mode` stays open
 // until the leave ends; the app reads this to keep an open plan a highlight
