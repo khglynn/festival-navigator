@@ -76,8 +76,9 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   allowlist of fields and words. Never note text, artist names or crew
   links; links and tokens are scrubbed out of error messages.
 - One switch in Settings, "Send crash reports and usage to Kevin", turns it
-  all off. A fork reports nowhere until it sets its own key
-  ([`docs/fork-setup.md`](docs/fork-setup.md)).
+  all off. A fork on its own domain reports nowhere until it sets its own
+  key; run locally, it still reports upstream until that key is changed or
+  emptied ([`docs/fork-setup.md`](docs/fork-setup.md)).
 
 ## Run it locally
 
