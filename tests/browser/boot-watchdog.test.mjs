@@ -162,7 +162,12 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       // The link error's own fast path (1.5 s), not the 10 s net — which
       // shows Try again too, so Try again alone proves nothing (v107 review).
       await page.waitForFunction(() => document.getElementById('screen-error').style.display !== 'none', null, { timeout: 6000 });
-      assert.match(await page.textContent('#error-msg'), /didn’t finish loading/);
+      // A file that arrived and cannot link is not the signal's fault: a
+      // first visit that meets one met a deploy mid-way (v116).
+      const words = await page.textContent('#error-msg');
+      assert.match(words, /didn’t finish loading/);
+      assert.match(words, /our side/);
+      assert.doesNotMatch(words, /weak signal/);
       await page.waitForTimeout(1500);
       assert.equal(navs(), 1);
       assert.ok(await visible(page, 'error-retry'));

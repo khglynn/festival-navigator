@@ -334,11 +334,28 @@
            from the whole snapshot it just installed (the glue below).
          - Nothing at all after 10 s (a download that hangs rather than
            fails): the same screen, worded as still loading; a slow app that
-           then arrives takes the screen over as usual. -->
+           then arrives takes the screen over as usual.
+         - A worker-served page whose app cannot LINK on a reload — the second
+           try, or the person's own Try again — has a copy in the worker's
+           cache that cannot work: a plain reload serves it again (v116,
+           LEDGER follow-up 17). So this build's copy goes (the festival-nav-v*
+           app caches; the festival data cache never) and the page reloads
+           once: with its cache empty the worker fetches every file from the
+           network, and the next build's install refills it whole. Only after
+           a quick check that the network answers — with no signal, the copy
+           it has is kept. The worker itself stays registered on purpose:
+           WebKit empties the origin's whole Cache Storage once a registration
+           is gone (measured, Playwright WebKit, 2026-10-19), which would take
+           every festival saved for a field with it. The loop guard is a stamp
+           in this tab's sessionStorage, because the fresh copy's own load is a
+           reload too: a build that cannot link even from the network would
+           otherwise throw its copy away forever. No stamp to write or read
+           (storage blocked): no fresh copy. -->
     <script>
       (function () {
         var done = false;
         var sawError = false;
+        var linked = false; // a file arrived and could not link to the rest: the copy's fault, not the signal's
         // The app is running once app.js says so, or once its script's load
         // fires with no error seen first — the proof an OLDER app.js gives too
         // (none says __fnAppRan): a returning phone's first open after a
@@ -351,13 +368,49 @@
         function servedByWorker() {
           try { return !!(navigator.serviceWorker && navigator.serviceWorker.controller); } catch (e) { return false; }
         }
-        function secondTryAllowed() {
-          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
+        function navType() {
           var nav = null;
           try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) { nav = null; }
-          if (!nav || nav.type !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
+          return nav ? nav.type : null;
+        }
+        function secondTryAllowed() {
+          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
+          if (navType() !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
           return navigator.onLine !== false && !stayingOffline();
         }
+        // A fresh copy: only where a worker's copy failed to link on a reload,
+        // online, and not within ten minutes of this tab's last fresh copy.
+        var FRESH_KEY = 'fn_fresh_copy_at';
+        function freshCopyAllowed() {
+          if (!linked || !servedByWorker() || navType() !== 'reload') return false;
+          if (navigator.onLine === false || stayingOffline()) return false;
+          try {
+            var at = Number(window.sessionStorage.getItem(FRESH_KEY)) || 0;
+            return !(at && Math.abs(Date.now() - at) < 10 * 60 * 1000);
+          } catch (e) { return false; }
+        }
+        function freshCopy() {
+          // Does the network answer at all? A HEAD the worker passes straight
+          // through (it serves GETs only), bounded: four seconds of lie-fi
+          // and the copy stays.
+          var probe = new Promise(function (resolve, reject) {
+            setTimeout(function () { reject(new Error('no signal')); }, 4000);
+            fetch('/', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+              if (r.ok) resolve(); else reject(new Error('server'));
+            }, function () { reject(new Error('no signal')); });
+          });
+          probe.then(function () {
+            window.sessionStorage.setItem(FRESH_KEY, String(Date.now()));
+            return caches.keys();
+          }).then(function (keys) {
+            return Promise.all(keys.filter(function (k) { return /^festival-nav-v\d+$/.test(k); }).map(function (k) { return caches.delete(k); }));
+          }).then(function () { location.reload(); }, function (e) {
+            panel(e && e.message === 'no signal' ? NEEDS_SIGNAL : ON_US);
+          });
+        }
+        var WEAK = 'The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.';
+        var ON_US = 'The app didn\u2019t finish loading \u2014 not your signal this time, a hiccup on our side. Try again in a minute.';
+        var NEEDS_SIGNAL = 'The app didn\u2019t finish loading \u2014 this phone needs a fresh copy of it, and that needs signal. Try again once you have some.';
         function panel(words) {
           var screen = document.getElementById('screen-error');
           if (!screen) return;
@@ -374,7 +427,11 @@
           done = true;
           window.__fnAppFailed = true; // the worker's first claim reloads this page (below)
           if (secondTryAllowed()) { location.reload(); return; }
-          panel('The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.');
+          if (freshCopyAllowed()) { freshCopy(); return; }
+          // A file lost on the way is the signal's; one that arrived and
+          // cannot link is the copy's, which signal only fixes by fetching
+          // a fresh one.
+          panel(!linked ? WEAK : (navigator.onLine === false || stayingOffline()) ? NEEDS_SIGNAL : ON_US);
         }
         function isApp(t) {
           return !!t && t.tagName === 'SCRIPT' && t.type === 'module' && /\/js\/v3\/app\.js(?:[?#]|$)/.test(t.src || '');
@@ -404,7 +461,7 @@
           var linking = syntax && /import|export|module|binding/i.test(m);
           if (!linking && !own) return;
           sawError = true;
-          if (linking) setTimeout(stuck, 1500);
+          if (linking) { linked = true; setTimeout(stuck, 1500); }
         });
         document.addEventListener('load', function (e) {
           if (!isApp(e.target)) return;
