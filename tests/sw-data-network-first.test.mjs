@@ -36,7 +36,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // `older` seeds an older version's cache, created first. Timeouts are scaled
 // down so the 4 s budget becomes ~40 ms — the ratio between "network" delays
 // and the budget is what the strategy is about, not the wall-clock number.
-function bootWorker({ cached = {}, older = null, fetchImpl, putDelay = 0 }) {
+function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0 }) {
   const handlers = {};
   const buckets = new Map();
   const puts = [];
@@ -62,6 +62,9 @@ function bootWorker({ cached = {}, older = null, fetchImpl, putDelay = 0 }) {
   for (const [path, body] of Object.entries(cached)) {
     bucket(path.startsWith('/data/festivals/') ? DATA : CURRENT).store.set(ORIGIN + path, body);
   }
+  // `shell`: this worker's version cache exactly as its install left it
+  // (index.json included — the install precaches it there).
+  for (const [path, body] of Object.entries(shell)) bucket(CURRENT).store.set(ORIGIN + path, body);
   const ctx = {
     self: { addEventListener: (name, fn) => { handlers[name] = fn; }, skipWaiting: async () => {}, clients: { claim: async () => {} } },
     caches: {
@@ -378,4 +381,75 @@ test('activate: an old cache with no festival data is simply deleted', async () 
   const w = bootForActivate({ oldEntries: new Map([[`${ORIGIN}/js/v3/app.js`, 'shell']]), openDataFails: true });
   await w.run();
   assert.deepEqual(w.deleted, ['festival-nav-v36']);
+});
+
+// "Make your copy whole" (v116 review): after the watchdog's fresh copy the
+// cache had no page and no install-only files, and the phone opened nowhere
+// offline until the next release. The page asks once the app runs; the worker
+// refills from the network only when something is missing, and only with a
+// whole copy of its OWN build.
+const APP_CORE = JSON.parse(`[${/const APP_CORE = \[([\s\S]*?)\];/.exec(SW_SRC)[1].replace(/\/\/.*$/gm, '').replace(/'/g, '"').replace(/,\s*$/, '')}]`);
+const BUILD = CURRENT.replace('festival-nav-', '');
+const pageOf = (build) => `<!doctype html><meta name="fn-build" content="${build}"><p>shell</p>`;
+const allCore = (except = []) => Object.fromEntries(APP_CORE.filter((p) => !except.includes(p)).map((p) => [p, `old ${p}`]));
+async function askRefill(w) {
+  const waited = [];
+  w.handlers.message({ data: { fn: 'refill' }, source: null, waitUntil: (p) => waited.push(p) });
+  assert.equal(waited.length, 1, 'the refill is held open by waitUntil');
+  return Promise.all(waited);
+}
+
+test('refill: a whole copy is only looked at — no network, no write', async () => {
+  const w = bootWorker({ shell: allCore(), fetchImpl: async () => new Response('x') });
+  assert.ok(APP_CORE.length > 40 && APP_CORE.includes('/') && APP_CORE.includes('/js/v3/qr.js'), 'not vacuous: the real list');
+  const [said] = await askRefill(w);
+  assert.equal(said, 'whole');
+  assert.equal(w.fetches, 0);
+  assert.deepEqual(w.puts, []);
+});
+
+test('refill: a copy missing its page and the QR module is fetched whole again from the network', async () => {
+  const w = bootWorker({
+    shell: allCore(['/', '/index.html', '/js/v3/qr.js']),
+    fetchImpl: async (req) => {
+      const p = new URL(req.url).pathname;
+      return new Response(p === '/' || p === '/index.html' ? pageOf(BUILD) : `new ${p}`);
+    },
+  });
+  const [said] = await askRefill(w);
+  assert.equal(said, 'refilled');
+  assert.equal(w.cachedBody(CURRENT, '/'), pageOf(BUILD), 'the page is back: an offline open has a shell');
+  assert.equal(w.cachedBody(CURRENT, '/js/v3/qr.js'), 'new /js/v3/qr.js', 'and the file only an install fetches');
+  assert.equal(w.cachedBody(CURRENT, '/js/v3/app.js'), 'new /js/v3/app.js', 'every file from the same fetch: one copy, never a patch over the old one');
+});
+
+test('refill: when the network already serves ANOTHER build, nothing is written into this build\'s cache', async () => {
+  const w = bootWorker({
+    shell: allCore(['/']),
+    fetchImpl: async (req) => new Response(new URL(req.url).pathname === '/' ? pageOf('v999') : 'newer'),
+  });
+  const [said] = await askRefill(w);
+  assert.equal(said, 'another build');
+  assert.deepEqual(w.puts, []);
+});
+
+test('refill: one file that does not arrive and nothing is written; a second ask while one runs is the same run', async () => {
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const w = bootWorker({
+    shell: allCore(['/']),
+    fetchImpl: async (req) => {
+      await gate;
+      if (new URL(req.url).pathname === '/js/v3/wall.js') throw new TypeError('Failed to fetch');
+      return new Response(pageOf(BUILD));
+    },
+  });
+  const first = askRefill(w);
+  const second = askRefill(w);
+  release();
+  const [[a], [b]] = await Promise.all([first, second]);
+  assert.equal(a, 'failed');
+  assert.equal(b, 'failed');
+  assert.equal(w.fetches, APP_CORE.length, 'one run, not two');
+  assert.deepEqual(w.puts, [], 'a half copy is never written');
 });

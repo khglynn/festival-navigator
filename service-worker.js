@@ -3,7 +3,7 @@
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
 const CACHE_VERSION = 'festival-nav-v116'; // bumped by node scripts/sw-stamp.mjs; what each build shipped is in DEVLOG.md
-const ASSET_STAMP = '2a4d563b'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const ASSET_STAMP = '603f062b'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -146,9 +146,50 @@ self.addEventListener('activate', (event) => {
 // answers, and the page falls back to the cache names.
 self.addEventListener('message', (event) => {
   const d = event.data;
-  if (!d || d.fn !== 'build?' || !event.source) return;
+  if (!d) return;
+  if (d.fn === 'refill') { event.waitUntil(refill()); return; }
+  if (d.fn !== 'build?' || !event.source) return;
   try { event.source.postMessage({ fnBuild: CACHE_VERSION, fnStamp: ASSET_STAMP }); } catch { /* the page is gone */ }
 });
+
+// "Make your copy whole" (v116 review), asked by index.html once the app
+// runs. This cache is filled whole at install and never again — pages are
+// never stored (below), and a file only the install fetches (the Invite
+// QR's) never comes back — so a copy that lost files would open nowhere
+// offline until the next build installs: the watchdog's fresh copy drops this
+// cache's code by design, and storage can lose entries too. A whole copy
+// costs a look and nothing more. A copy with a hole is fetched again ALL at
+// once, as at install, and written only when every file arrived and the page
+// among them is this build's own (its fn-build): the network may be serving
+// a newer build already, and its files in this build's cache would be the
+// mixed copy this worker exists to prevent — that build's worker brings its
+// own. Best-effort: never throws, never blocks a fetch, one at a time.
+const BUILD = CACHE_VERSION.replace('festival-nav-', '');
+const REFILL_MS = 120000; // a hung network gives up the turn, so a later ask can try again
+let refilling = null;
+function refill() {
+  if (!refilling) {
+    const giveUp = new Promise((resolve) => setTimeout(() => resolve('gave up'), REFILL_MS));
+    refilling = Promise.race([refillShell(), giveUp]).catch(() => 'failed').finally(() => { refilling = null; });
+  }
+  return refilling;
+}
+async function refillShell() {
+  const cache = await caches.open(CACHE_VERSION);
+  let whole = true;
+  for (const url of APP_CORE) if (!(await cache.match(url))) { whole = false; break; }
+  if (whole) return 'whole';
+  const got = await Promise.all(APP_CORE.map((url) => fetch(new Request(new URL(url, location.origin).href, { cache: 'no-cache' })).catch(() => null)));
+  if (got.some((r) => !r || !r.ok)) return 'failed';
+  const page = await got[APP_CORE.indexOf('/')].clone().text();
+  const build = /<meta name="fn-build" content="([^"]+)"/.exec(page);
+  if (!build || build[1] !== BUILD) return 'another build';
+  await Promise.all(APP_CORE.map((url, i) => cache.put(url, got[i])));
+  await Promise.all(APP_EXTRAS.map(async (url) => {
+    try { if (!(await cache.match(url))) await cache.add(new Request(url)); } catch { /* extras are best-effort, as at install */ }
+  }));
+  return 'refilled';
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
