@@ -152,7 +152,7 @@ for hosts `api/access.js` trusts (`HOST_ALLOW`, which names upstream's), so
 on your own domain also set `PUBLIC_BASE_URL`. Without it, the request is
 recorded but no Slack message is sent at all: the server will not build a
 link for a host it does not trust, and it sends nothing rather than a
-message with no way to approve. Without any of the three, members bring
+message with no way to approve. If any of the three is missing, the flow stays off: members bring
 their own Spotify Client ID and nothing breaks.
 
 ## 2. Database (Neon)
@@ -187,7 +187,7 @@ branch, or treat local writes as production writes.
 icons and the per-festival 1200×630 preview cards from the mark and
 `data/festivals/index.json`. The mark is generated in code, not drawn:
 `markSvg()` in `scripts/brand-assets.mjs` builds it from `MARK_WASHES`
-(its colour washes), `ANCHORS` (where they sit) and `MARK_RADIUS`, and
+(its color washes), `ANCHORS` (where they sit) and `MARK_RADIUS`, and
 writes `assets/mark.svg` from that on every run. So change those, not the
 SVG, which the next run overwrites. Then run it, and
 `node scripts/sw-stamp.mjs` (the icons are cached files). A test fails CI
