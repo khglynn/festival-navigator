@@ -18,9 +18,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appCoreFiles, assetStamp } from '../scripts/sw-stamp.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SW_SRC = readFileSync(join(ROOT, 'service-worker.js'), 'utf8');
@@ -36,7 +38,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // `older` seeds an older version's cache, created first. Timeouts are scaled
 // down so the 4 s budget becomes ~40 ms — the ratio between "network" delays
 // and the budget is what the strategy is about, not the wall-clock number.
-function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0 }) {
+function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0, registration = undefined }) {
   const handlers = {};
   const buckets = new Map();
   const puts = [];
@@ -66,7 +68,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
   // (index.json included — the install precaches it there).
   for (const [path, body] of Object.entries(shell)) bucket(CURRENT).store.set(ORIGIN + path, body);
   const ctx = {
-    self: { addEventListener: (name, fn) => { handlers[name] = fn; }, skipWaiting: async () => {}, clients: { claim: async () => {} } },
+    self: { addEventListener: (name, fn) => { handlers[name] = fn; }, skipWaiting: async () => {}, clients: { claim: async () => {} }, registration },
     caches: {
       open: async (name) => bucket(name),
       match: async (req) => {
@@ -79,11 +81,11 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
     location: { origin: ORIGIN },
     setTimeout: (fn, ms) => setTimeout(fn, Math.round(ms / 100)),
     clearTimeout,
-    URL, Request, Response, Promise, console,
+    URL, Request, Response, Promise, console, AbortController, TextEncoder, TextDecoder, crypto: globalThis.crypto,
   };
   vm.runInNewContext(SW_SRC, ctx);
   return {
-    handlers, puts,
+    handlers, puts, ctx, evalIn: (code) => vm.runInContext(code, ctx),
     get fetches() { return fetches; },
     cachedBody: (name, path) => bucket(name).store.get(ORIGIN + path),
   };
@@ -383,73 +385,177 @@ test('activate: an old cache with no festival data is simply deleted', async () 
   assert.deepEqual(w.deleted, ['festival-nav-v36']);
 });
 
-// "Make your copy whole" (v116 review): after the watchdog's fresh copy the
-// cache had no page and no install-only files, and the phone opened nowhere
-// offline until the next release. The page asks once the app runs; the worker
-// refills from the network only when something is missing, and only with a
-// whole copy of its OWN build.
-const APP_CORE = JSON.parse(`[${/const APP_CORE = \[([\s\S]*?)\];/.exec(SW_SRC)[1].replace(/\/\/.*$/gm, '').replace(/'/g, '"').replace(/,\s*$/, '')}]`);
+// "Repair your copy" (v116, review round 3): a page whose copy cannot link
+// asks the worker to fetch its whole install list again, prove it is this
+// build's own (the page's fn-build, then ASSET_STAMP over every file), and
+// only then write it over the old copy. The stamp function is the guard that
+// matters most: if it ever drifted from scripts/sw-stamp.mjs, every repair
+// would quietly say "mismatch" and fix nothing.
+const STAMPED = appCoreFiles(SW_SRC);
+const ASSET = SW_SRC.match(/ASSET_STAMP = '([0-9a-f]{8})'/)[1];
 const BUILD = CURRENT.replace('festival-nav-', '');
-const pageOf = (build) => `<!doctype html><meta name="fn-build" content="${build}"><p>shell</p>`;
-const allCore = (except = []) => Object.fromEntries(APP_CORE.filter((p) => !except.includes(p)).map((p) => [p, `old ${p}`]));
-async function askRefill(w) {
-  const waited = [];
-  w.handlers.message({ data: { fn: 'refill' }, source: null, waitUntil: (p) => waited.push(p) });
-  assert.equal(waited.length, 1, 'the refill is held open by waitUntil');
-  return Promise.all(waited);
+const fileOf = (p) => readFileSync(join(ROOT, p === '/' ? '/index.html' : p));
+// The network serving this tree, as a deploy of it would: `swap` replaces
+// some paths' answers (bytes, an HTTP status, or a thrown error); `hold`
+// makes a path wait for `gate`, honouring the request's abort unless `deaf`.
+function serveTree({ swap = {}, hold = null, gate = null, deaf = false, seen = null } = {}) {
+  return async (req) => {
+    const p = new URL(req.url).pathname;
+    if (seen) seen.push({ p, cache: req.cache, signal: req.signal });
+    if (hold === p) {
+      await new Promise((resolve, reject) => {
+        gate.then(resolve);
+        if (!deaf) req.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      });
+    }
+    if (Object.hasOwn(swap, p)) {
+      const v = swap[p];
+      if (v instanceof Error) throw v;
+      if (typeof v === 'number') return new Response('nope', { status: v });
+      return new Response(v);
+    }
+    return new Response(fileOf(p));
+  };
 }
+const pageOf = (build) => readFileSync(join(ROOT, 'index.html'), 'utf8').replace(/(<meta name="fn-build" content=")v\d+(">)/, `$1${build}$2`);
+// The page's ask, as index.html sends it: a port for the answers.
+function askRepair(w) {
+  const said = [];
+  const waited = [];
+  w.handlers.message({ data: { fn: 'repair' }, source: null, ports: [{ postMessage: (m) => said.push(JSON.parse(JSON.stringify(m))) }], waitUntil: (p) => waited.push(p) });
+  assert.equal(waited.length, 1, 'the repair is held open by waitUntil');
+  assert.deepEqual(said, [{ fnRepair: 'started' }], 'the first word comes at once');
+  return Promise.all(waited).then(() => said.slice(1).map((m) => m.fnRepair));
+}
+const oldShell = () => Object.fromEntries(['/', ...STAMPED].map((p) => [p, `old ${p}`]));
 
-test('refill: a whole copy is only looked at — no network, no write', async () => {
-  const w = bootWorker({ shell: allCore(), fetchImpl: async () => new Response('x') });
-  assert.ok(APP_CORE.length > 40 && APP_CORE.includes('/') && APP_CORE.includes('/js/v3/qr.js'), 'not vacuous: the real list');
-  const [said] = await askRefill(w);
-  assert.equal(said, 'whole');
-  assert.equal(w.fetches, 0);
+test('repair: the worker\'s stamp over the real files IS ASSET_STAMP, over the same list in the same order', async () => {
+  const w = bootWorker({ fetchImpl: () => never() });
+  assert.deepEqual([...w.evalIn('STAMPED')], STAMPED, 'the worker stamps exactly the files sw-stamp.mjs stamps');
+  assert.ok(STAMPED.length > 40 && STAMPED.includes('/index.html') && STAMPED.includes('/assets/fonts/inter-var-latin.woff2'), 'not vacuous: the real list, fonts and all');
+  assert.equal(assetStamp(SW_SRC, ROOT), ASSET, 'not vacuous: the stamp is fresh');
+  assert.equal(await w.ctx.stampOf(STAMPED.map((p) => fileOf(p))), ASSET);
+});
+
+test('repair: the worker\'s stamp matches sw-stamp.mjs on a CRLF file, a byte-order mark and a changed font', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fn-stamp-'));
+  try {
+    const odd = {
+      '/js/util.js': Buffer.from(readFileSync(join(ROOT, 'js/util.js'), 'utf8').replace(/\n/g, '\r\n')),
+      '/assets/v3.css': Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), readFileSync(join(ROOT, 'assets/v3.css'))]),
+      '/assets/fonts/anton-400-latin.woff2': Buffer.concat([readFileSync(join(ROOT, 'assets/fonts/anton-400-latin.woff2')), Buffer.from([0xff, 0x0d, 0x0a])]),
+    };
+    for (const p of STAMPED) {
+      mkdirSync(dirname(join(dir, p)), { recursive: true });
+      writeFileSync(join(dir, p), odd[p] || fileOf(p));
+    }
+    const node = assetStamp(SW_SRC, dir);
+    assert.notEqual(node, ASSET, 'not vacuous: the odd tree stamps differently (the BOM and the font count)');
+    const w = bootWorker({ fetchImpl: () => never() });
+    assert.equal(await w.ctx.stampOf(STAMPED.map((p) => readFileSync(join(dir, p)))), node);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('repair: the network serving this build — every file fetched fresh, proved, and written over the old copy', async () => {
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen }) });
+  assert.deepEqual(await askRepair(w), ['repaired']);
+  assert.equal(seen[0].p, '/', 'the page first');
+  assert.equal(seen.length, 1 + STAMPED.length, 'then every other file, once');
+  assert.ok(seen.every((r) => r.cache === 'no-cache'), 'past every HTTP cache');
+  assert.equal(w.puts.length, 1 + STAMPED.length);
+  assert.ok(w.puts.every((x) => x.startsWith(`${CURRENT} `)), 'this build\'s cache only — never the data cache or another');
+  assert.equal(w.cachedBody(CURRENT, '/'), fileOf('/').toString('utf8'), 'the page itself');
+  assert.equal(w.cachedBody(CURRENT, '/js/v3/foot.js'), fileOf('/js/v3/foot.js').toString('utf8'));
+  assert.ok(seen.every((r) => r.signal.aborted), 'nothing left in flight after the answer');
+});
+
+test('repair: the network serving ANOTHER build — only the page is fetched, nothing is written, the answer is "newer"', async () => {
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, swap: { '/': pageOf('v99999') } }) });
+  assert.deepEqual(await askRepair(w), ['newer']);
+  assert.deepEqual(seen.map((r) => r.p), ['/']);
   assert.deepEqual(w.puts, []);
 });
 
-test('refill: a copy missing its page and the QR module is fetched whole again from the network', async () => {
-  const w = bootWorker({
-    shell: allCore(['/', '/index.html', '/js/v3/qr.js']),
-    fetchImpl: async (req) => {
-      const p = new URL(req.url).pathname;
-      return new Response(p === '/' || p === '/index.html' ? pageOf(BUILD) : `new ${p}`);
-    },
-  });
-  const [said] = await askRefill(w);
-  assert.equal(said, 'refilled');
-  assert.equal(w.cachedBody(CURRENT, '/'), pageOf(BUILD), 'the page is back: an offline open has a shell');
-  assert.equal(w.cachedBody(CURRENT, '/js/v3/qr.js'), 'new /js/v3/qr.js', 'and the file only an install fetches');
-  assert.equal(w.cachedBody(CURRENT, '/js/v3/app.js'), 'new /js/v3/app.js', 'every file from the same fetch: one copy, never a patch over the old one');
-});
-
-test('refill: when the network already serves ANOTHER build, nothing is written into this build\'s cache', async () => {
-  const w = bootWorker({
-    shell: allCore(['/']),
-    fetchImpl: async (req) => new Response(new URL(req.url).pathname === '/' ? pageOf('v999') : 'newer'),
-  });
-  const [said] = await askRefill(w);
-  assert.equal(said, 'another build');
+test('repair: a page that is not ours at all (no fn-build: a Wi-Fi login page) is the signal\'s — nothing written', async () => {
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, swap: { '/': '<html>Log in to Pier 80 Wi-Fi</html>' } }) });
+  assert.deepEqual(await askRepair(w), ['failed']);
+  assert.equal(seen.length, 1);
   assert.deepEqual(w.puts, []);
 });
 
-test('refill: one file that does not arrive and nothing is written; a second ask while one runs is the same run', async () => {
+test('repair: one file that is not this build\'s bytes, or a page that is not /index.html, and nothing is written', async () => {
+  for (const swap of [{ '/js/v3/wall.js': 'export const wall = "another deploy";' }, { '/': `${pageOf(BUILD)}\n<!-- edge -->` }]) {
+    const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ swap }) });
+    assert.deepEqual(await askRepair(w), ['mismatch'], Object.keys(swap)[0]);
+    assert.deepEqual(w.puts, []);
+    assert.equal(w.cachedBody(CURRENT, '/js/v3/wall.js'), 'old /js/v3/wall.js');
+  }
+});
+
+test('repair: a file that does not arrive, or a server error, and nothing is written', async () => {
+  for (const [swap, word] of [[{ '/js/v3/qr.js': new TypeError('Failed to fetch') }, 'failed'], [{ '/assets/v3.css': 503 }, 'server']]) {
+    const seen = [];
+    const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ swap, seen }) });
+    assert.deepEqual(await askRepair(w), [word]);
+    assert.deepEqual(w.puts, []);
+    assert.ok(seen.every((r) => r.signal.aborted), 'the rest of the batch is cancelled');
+  }
+});
+
+test('repair: a network that hangs is ABORTED at the deadline — "timeout", every fetch cancelled, nothing written', async () => {
   let release;
   const gate = new Promise((r) => { release = r; });
-  const w = bootWorker({
-    shell: allCore(['/']),
-    fetchImpl: async (req) => {
-      await gate;
-      if (new URL(req.url).pathname === '/js/v3/wall.js') throw new TypeError('Failed to fetch');
-      return new Response(pageOf(BUILD));
-    },
-  });
-  const first = askRefill(w);
-  const second = askRefill(w);
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, hold: '/assets/fonts/inter-var-latin.woff2', gate }) });
+  const t0 = Date.now();
+  assert.deepEqual(await askRepair(w), ['timeout']);
+  assert.ok(Date.now() - t0 < 2000, 'the deadline (20 s, scaled) ends it');
+  assert.ok(seen.every((r) => r.signal.aborted), 'every request cancelled');
   release();
-  const [[a], [b]] = await Promise.all([first, second]);
-  assert.equal(a, 'failed');
-  assert.equal(b, 'failed');
-  assert.equal(w.fetches, APP_CORE.length, 'one run, not two');
-  assert.deepEqual(w.puts, [], 'a half copy is never written');
+  await sleep(50);
+  assert.deepEqual(w.puts, [], 'and nothing lands after');
+});
+
+test('repair: a fetch that ignores the abort and answers after the deadline still writes nothing', async () => {
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ hold: '/js/v3/app.js', gate, deaf: true }) });
+  const answer = askRepair(w);
+  await sleep(400); // past the scaled 20 s deadline
+  release(); // the late answer: the whole, correct set
+  assert.deepEqual(await answer, ['timeout']);
+  assert.deepEqual(w.puts, []);
+});
+
+test('repair: a second ask while one runs is the same run, and both pages hear its answer', async () => {
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, hold: '/', gate }) });
+  const first = askRepair(w);
+  const second = askRepair(w);
+  release();
+  assert.deepEqual(await Promise.all([first, second]), [['repaired'], ['repaired']]);
+  assert.equal(seen.length, 1 + STAMPED.length, 'one batch, not two');
+  assert.deepEqual(await askRepair(w), ['repaired'], 'and once it settles, a later ask runs again');
+});
+
+test('repair: a new build installing or waiting — "newer" with no network at all', async () => {
+  for (const registration of [{ installing: {} }, { waiting: {} }]) {
+    const w = bootWorker({ shell: oldShell(), registration, fetchImpl: () => { throw new Error('no fetch'); } });
+    assert.deepEqual(await askRepair(w), ['newer']);
+    assert.equal(w.fetches, 0);
+    assert.deepEqual(w.puts, []);
+  }
+});
+
+test('repair: an ask with no port to answer on is ignored — no network, no write', () => {
+  const w = bootWorker({ fetchImpl: () => { throw new Error('no fetch'); } });
+  const waited = [];
+  w.handlers.message({ data: { fn: 'repair' }, source: null, ports: [], waitUntil: (p) => waited.push(p) });
+  assert.equal(waited.length, 0);
+  assert.equal(w.fetches, 0);
 });
