@@ -60,16 +60,16 @@ test('a warm open paints the wall from this phone’s copy while the network han
   // The network here NEVER answers until a later test releases it. The proof
   // is an ORDER, not a stopwatch (LEDGER follow-up 59: a 1000 ms budget on
   // jsdom went red at ~3.9 s on a loaded machine, and a fast cold path could
-  // pass one anyway): the wall painted while the crew doc and the festival
-  // file were still hanging, before the app had given up on any request — so
-  // it waited for no network budget to run out (the shortest, the boot's
-  // crew fetch, is 8 s; the festival file's 12 s).
+  // pass one anyway): the wall painted before the app had given up on any
+  // request — so it waited for no network budget to run out (the shortest,
+  // the boot's crew fetch, is 8 s; the festival file's 12 s) — and every
+  // request it had sent by then was still hanging. (On a quick runner the
+  // paint comes before the requests go out at all; the next test checks
+  // they do.)
   assert.notEqual(painted, null, `the wall never painted within ${PAINT_CAP_MS} ms — it is waiting on a network that will not answer`);
   console.log(`  warm first paint (jsdom): ${Math.round(painted)} ms after the modules loaded (${booted} ms to load them)`);
   assert.deepEqual(atPaint.gaveUp, [], 'no request had timed out or been dropped when the wall painted');
-  assert.ok(atPaint.calls.some((c) => c.startsWith('GET /api/crew?')), 'the crew doc had been asked for…');
-  assert.ok(atPaint.calls.includes(`GET /data/festivals/${FID}.json`), '…and the live festival file');
-  assert.ok(atPaint.pending >= 2, `…and both were still hanging when the wall painted (${atPaint.pending} held)`);
+  assert.equal(atPaint.pending, atPaint.calls.length, `every request sent before the paint was still hanging (${atPaint.pending} of ${atPaint.calls.length})`);
   assert.deepEqual(shown(), ['screen-app']);
   assert.equal(state.activeFestivalId, FID);
   assert.equal(state.crewDoc.festivals[FID].selections.Robyn.Kevin, 2, 'the cached picks');
