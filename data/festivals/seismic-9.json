@@ -8,117 +8,229 @@
   "dates": "November 13-15, 2026 (Friday-Sunday)",
   "accent": "167, 139, 250",
   "status": "lineup",
+  "timezone": "America/Chicago",
   "artists": [
     {
-      "name": "Above & Beyond"
+      "name": "Above & Beyond",
+      "day": "Saturday"
     },
     {
-      "name": "horsegiirl"
+      "name": "horsegiirl",
+      "day": "Friday"
     },
     {
-      "name": "Sara Landry"
+      "name": "Sara Landry",
+      "day": "Sunday"
     },
     {
-      "name": "Porter Robinson"
+      "name": "Porter Robinson",
+      "day": "Friday"
     },
     {
-      "name": "KI/KI"
+      "name": "KI/KI",
+      "day": "Sunday"
     },
     {
-      "name": "SG Lewis"
+      "name": "SG Lewis",
+      "day": "Saturday"
     },
     {
-      "name": "Chris Lorenzo"
+      "name": "Chris Lorenzo",
+      "day": "Friday"
     },
     {
-      "name": "Max Styler"
+      "name": "Max Styler",
+      "day": "Saturday"
     },
     {
-      "name": "Layton Giordani"
+      "name": "Layton Giordani",
+      "day": "Sunday"
     },
     {
-      "name": "MPH"
+      "name": "MPH",
+      "day": "Sunday"
     },
     {
-      "name": "Notion"
+      "name": "Notion",
+      "day": "Sunday"
     },
     {
-      "name": "Diffrent"
+      "name": "Diffrent",
+      "day": "Sunday"
     },
     {
-      "name": "Smokey Bubblin' B"
+      "name": "Smokey Bubblin' B",
+      "day": "Friday"
     },
     {
-      "name": "Brutalismus 3000"
+      "name": "Brutalismus 3000",
+      "day": "Sunday"
     },
     {
-      "name": "VTSS"
+      "name": "VTSS",
+      "day": "Friday"
     },
     {
-      "name": "Luke Alessi"
+      "name": "Luke Alessi",
+      "day": "Saturday"
     },
     {
-      "name": "Devault"
+      "name": "Devault",
+      "day": "Saturday"
     },
     {
-      "name": "HNTR"
+      "name": "HNTR",
+      "day": "Friday"
     },
     {
-      "name": "Kyle Starkey"
+      "name": "Kyle Starkey",
+      "day": "Sunday"
     },
     {
-      "name": "Adam Sellouk"
+      "name": "Adam Sellouk",
+      "day": "Saturday"
     },
     {
-      "name": "1TBSP"
+      "name": "1TBSP",
+      "day": "Saturday"
     },
     {
-      "name": "BOLO"
+      "name": "BOLO",
+      "day": "Friday"
     },
     {
-      "name": "Kamino"
+      "name": "Kamino",
+      "day": "Friday"
     },
     {
-      "name": "Brunello"
+      "name": "Brunello",
+      "day": "Saturday"
     },
     {
-      "name": "Cole Knight b2b Dreya V"
+      "name": "Cole Knight b2b Dreya V",
+      "day": "Friday"
     },
     {
-      "name": "Welker"
+      "name": "Welker",
+      "day": "Sunday"
     },
     {
-      "name": "Benwal"
+      "name": "Benwal",
+      "day": "Sunday"
     },
     {
-      "name": "Joss Dean"
+      "name": "Joss Dean",
+      "day": "Saturday"
     },
     {
-      "name": "Conrad Taylor"
+      "name": "Conrad Taylor",
+      "day": "Friday"
     },
     {
-      "name": "Mestiza"
+      "name": "Mestiza",
+      "day": "Friday"
     },
     {
-      "name": "Fallon"
+      "name": "Fallon",
+      "day": "Saturday"
     },
     {
-      "name": "Hills"
+      "name": "Hills",
+      "day": "Sunday"
     },
     {
-      "name": "Starjunk 95"
+      "name": "Starjunk 95",
+      "day": "Sunday"
+    },
+    {
+      "name": "Chris Liebing",
+      "day": "Friday"
+    },
+    {
+      "name": "Jenna Shaw",
+      "day": "Friday"
+    },
+    {
+      "name": "Maddix",
+      "day": "Friday"
+    },
+    {
+      "name": "Marco Strous",
+      "day": "Friday"
+    },
+    {
+      "name": "Marie Vaunt",
+      "day": "Friday"
+    },
+    {
+      "name": "Frederic.",
+      "day": "Saturday"
+    },
+    {
+      "name": "ØTTA",
+      "day": "Saturday"
+    },
+    {
+      "name": "OZA",
+      "day": "Saturday"
+    },
+    {
+      "name": "SPFDJ",
+      "day": "Saturday"
+    },
+    {
+      "name": "Toccororo",
+      "day": "Saturday"
+    },
+    {
+      "name": "Paige Tomlinson",
+      "day": "Sunday"
+    },
+    {
+      "name": "STÜM",
+      "day": "Sunday"
+    },
+    {
+      "name": "TWOFACED",
+      "day": "Sunday"
+    },
+    {
+      "name": "Volkoder",
+      "day": "Sunday"
     }
   ],
   "meta": {
-    "announcementStatus": "lineup-only",
-    "researchedAt": "2026-07-07",
+    "announcementStatus": "lineup-with-days",
+    "researchedAt": "2026-10-19",
     "sources": [
       "https://www.seismicdanceevent.com/seismic-9-0-lineup-is-here/",
       "https://www.seismicdanceevent.com/",
       "https://www.seismicdanceevent.com/faqs/",
       "https://www.jambase.com/festival/seismic-dance-event-2026",
-      "https://www.frontstagefestivals.com/festival/seismic-dance-event-2026"
+      "https://www.frontstagefestivals.com/festival/seismic-dance-event-2026",
+      "https://www.seismicdanceevent.com/lineup/",
+      "https://www.seismicdanceevent.com/seismic-phase-2-lineup-is-here/",
+      "https://www.seismicdanceevent.com/wp-content/uploads/2026/09/1X1-ByDay-PH09-Lineup-SDE9.png",
+      "https://magneticmag.com/2026/09/seismic-dance-event-9-0-phase-two-lineup-2026/",
+      "https://edmidentity.com/2025/11/10/seismic-dance-event-8-set-times/"
     ],
-    "note": "This is the \"Phase One\" lineup only (33 billing lines / 34 artists counting the Cole Knight b2b Dreya V pairing), published by the official site on 2026-05-22. Multiple outlets (EDM Identity, EDMTunes, Beatportal, ravejungle, edmnomad, JamBase) independently confirm this same phase-one roster and count. The official site itself and press coverage explicitly state \"phase one\" — a Phase Two / by-day lineup reveal is expected later (for the 2025/8.0 edition, Phase 2 + by-day split landed ~Sept 19, ~8 weeks before the fest, so a 2026 Phase 2 is plausible around Aug-Sept 2026 but has NOT happened yet as of 2026-07-07). No day assignments, stage assignments, or set times exist yet for any artist — do not infer them. The three stage names (Volcano/Tsunami/Frequency) are venue-level recurring stages mentioned in press coverage, not yet mapped to specific artists for 2026."
+    "note": "2026-10-19 refresh: Phase 2 and the by-day split, announced by the official site on 2026-09-03 (seismicdanceevent.com/seismic-phase-2-lineup-is-here). Days transcribed from the official by-day poster (1X1-ByDay-PH09-Lineup-SDE9.png), read visually twice and cross-read against its wide BANNER version and the lineup page's A-Z list (modified 2026-09-14): 47 billing lines, Friday 16, Saturday 15, Sunday 16, nobody on two days. All 33 Phase One lines are still billed, nothing cancelled. 14 new lines: Chris Liebing, Jenna Shaw, Maddix, Marco Strous, Marie Vaunt (Friday); Frederic., ØTTA, OZA, SPFDJ, Toccororo (Saturday); Paige Tomlinson, STÜM, TWOFACED, Volkoder (Sunday). Magnetic (2026-09-09) independently lists the same 14 and the same 33. Spellings of new lines follow the official site's own mixed case (artist pages' descriptions: \"Toccororo\", \"OZA\", \"TWOFACED\", \"STÜM\", \"Frederic.\"); ØTTA follows the poster and the site's news post (her artist page slugs it \"OTTA\"). Phase One names keep their frozen spellings where the poster differs only in case or style (\"Hills\" is billed HILLS; \"Cole Knight b2b Dreya V\" is billed with B2B; \"horsegiirl\" and \"Smokey Bubblin' B\" as frozen). Billing extras kept out of names: Porter Robinson is billed \"(DJ Set)\". Saturday's Frequency stage is an \"ØTTA x Hotties\" takeover (ØTTA, OZA, SPFDJ, Toccororo, Frederic. per the festival's Instagram), Sunday's Frequency is a \"Next Gen House\" takeover (speed garage, hard house, speed house; the lineup page tags Paige Tomlinson, STÜM and TWOFACED \"Speed Garage Takeover\");the Technobus returns all weekend with no names published. Stages are NOT set per act: only a handful are stated (Instagram: Adam Sellouk Volcano Saturday, Hills Volcano Sunday, Volkoder Tsunami Sunday), and a partial map would misplace the rest. Three stages: Volcano (indoor), Tsunami (outdoor), Frequency. Dates unchanged: November 13-15, 2026 at The Concourse Project (site, 2026-10-19). No set times yet, and festival hours are still TBA (Magnetic, 2026-09-09). When to expect them: for 8.0 (Nov 14-16, 2025) the three daily set-time graphics surfaced around the Monday of festival week (EDM Identity's guide, 2025-11-10, with hours Fri 4 PM-1 AM, Sat 3 PM-1 AM, Sun 2 PM-11 PM), so expect 9.0's about 2026-11-09. When they land, follow docs/fest-update-runbook.md: freeze first, keep these spellings. History: 2026-07-07 file held the Phase One lineup only (published 2026-05-22, 33 lines)."
+  },
+  "dayMeta": {
+    "Friday": {
+      "wd": "Fri",
+      "date": "Nov 13",
+      "iso": "2026-11-13"
+    },
+    "Saturday": {
+      "wd": "Sat",
+      "date": "Nov 14",
+      "iso": "2026-11-14"
+    },
+    "Sunday": {
+      "wd": "Sun",
+      "date": "Nov 15",
+      "iso": "2026-11-15"
+    }
   }
 }

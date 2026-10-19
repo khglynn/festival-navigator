@@ -341,7 +341,7 @@
       ]
     },
     "edc-orlando-2026": {
-      "frozenAt": "2026-08-27",
+      "frozenAt": "2026-10-19",
       "id": "edc-orlando-2026",
       "names": [
         "A Little Sound",
@@ -397,6 +397,7 @@
         "JOA",
         "Jessica Audiffred",
         "Jkyl & Hyde",
+        "Josh Baker",
         "Joshwa",
         "KI/KI",
         "KREAM",
@@ -428,6 +429,7 @@
         "Of The Trees (Sunset Set)",
         "Omar+",
         "Pegassi",
+        "Prospa",
         "Prospa B2B Josh Baker",
         "RAJE",
         "Ravenscoon",
@@ -451,10 +453,14 @@
         "Zack Martino",
         "phrva"
       ],
-      "days": []
+      "days": [
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
     },
     "seismic-9": {
-      "frozenAt": "2026-08-27",
+      "frozenAt": "2026-10-19",
       "id": "seismic-9",
       "names": [
         "1TBSP",
@@ -464,14 +470,17 @@
         "Benwal",
         "Brunello",
         "Brutalismus 3000",
+        "Chris Liebing",
         "Chris Lorenzo",
         "Cole Knight b2b Dreya V",
         "Conrad Taylor",
         "Devault",
         "Diffrent",
         "Fallon",
+        "Frederic.",
         "HNTR",
         "Hills",
+        "Jenna Shaw",
         "Joss Dean",
         "KI/KI",
         "Kamino",
@@ -479,19 +488,34 @@
         "Layton Giordani",
         "Luke Alessi",
         "MPH",
+        "Maddix",
+        "Marco Strous",
+        "Marie Vaunt",
         "Max Styler",
         "Mestiza",
         "Notion",
+        "OZA",
+        "Paige Tomlinson",
         "Porter Robinson",
         "SG Lewis",
+        "SPFDJ",
+        "STÜM",
         "Sara Landry",
         "Smokey Bubblin' B",
         "Starjunk 95",
+        "TWOFACED",
+        "Toccororo",
         "VTSS",
+        "Volkoder",
         "Welker",
-        "horsegiirl"
+        "horsegiirl",
+        "ØTTA"
       ],
-      "days": []
+      "days": [
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
     },
     "tomorrowland-winter-2027": {
       "frozenAt": "2026-08-27",

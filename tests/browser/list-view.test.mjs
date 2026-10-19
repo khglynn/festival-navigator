@@ -93,6 +93,17 @@ const cardTop = (page, artist, occ) => page.evaluate(([a, o]) => {
   const c = [...document.querySelectorAll('#wall-root .card[data-artist]')].find((x) => x.dataset.artist === a && x.dataset.occ === o);
   return c ? c.getBoundingClientRect().top : null;
 }, [artist, occ]);
+// A view switch at rest: the wall drawn as that view (the List marks the
+// wall, the Board draws its grids). Bounded, and silent on a timeout: the
+// assertion after it says what the page holds instead.
+const atRestIn = (page, view) => page.waitForFunction((v) => {
+  const root = document.getElementById('wall-root');
+  return v === 'list' ? root.dataset.view === 'list' : root.dataset.view !== 'list' && !!root.querySelector('.times-grid');
+}, view, { timeout: 8000 }).catch(() => {});
+const viewState = (page, wrap) => page.evaluate((w) => JSON.stringify({
+  wall: document.getElementById('wall-root').dataset.view || 'board',
+  menu: [...document.querySelectorAll(`${w} .view-row [data-view]`)].map((b) => `${b.dataset.view}:${b.getAttribute('aria-selected')}`).join(' '),
+}), wrap);
 const rgb = (page, sel, prop = 'color') => page.evaluate(([s, p]) => getComputedStyle(document.querySelector(s))[p], [sel, prop]);
 const brandRgb = (page) => page.evaluate(() => `rgb(${getComputedStyle(document.documentElement).getPropertyValue('--brand').trim().split(/\s*,\s*/).join(', ')})`);
 const festRgb = (page) => page.evaluate(() => `rgb(${getComputedStyle(document.body).getPropertyValue('--fest').trim().split(/\s*,\s*/).join(', ')})`);
@@ -157,18 +168,26 @@ for (const [name, get, width] of ENGINES) {
       await sleep(450);
       await press(page, phone, `${wrap} .view-row [data-view="board"]`);
       await sleep(900);
+      // The switch lands in the fade's onfinish (app.js switchView), which a
+      // busy runner delivers late, after nothing is moving any more: wait for
+      // the view the app sets at rest before reading it. On Playwright 1.63
+      // Linux WebKit read the List's absence a beat early in 3 of 4 full-suite
+      // runs (#85, #93; 2026-10-19), never alone. A tap that never arrived
+      // still fails below, now saying which choice the menu holds.
+      await atRestIn(page, 'board');
       // The new view's rooms arrive from 6px below: measure once they are in.
       // (Linux WebKit on a loaded CI runner measured Mike D mid-arrival,
       // 45.6 -> 52, after this same 900ms; run 36247465311, 2026-09-26.)
       await motionDone(page, { within: '#wall-root' });
-      assert.ok(await page.locator('#wall-root .times-grid').count(), 'the Board');
+      assert.ok(await page.locator('#wall-root .times-grid').count(), `the Board: ${await viewState(page, wrap)}`);
       const onBoard = await cardTop(page, before.artist, before.occ);
       assert.ok(onBoard != null && Math.abs(onBoard - before.top) < 2, `${before.artist} held on the Board: ${before.top} → ${onBoard}`);
       assert.equal(await page.locator(door).getAttribute('aria-expanded'), 'true', 'the menu stayed up');
       await press(page, phone, `${wrap} .view-row [data-view="list"]`);
       await sleep(900);
+      await atRestIn(page, 'list');
       await motionDone(page, { within: '#wall-root' });
-      assert.equal(await page.locator('#wall-root[data-view="list"]').count(), 1, 'the List again');
+      assert.equal(await page.locator('#wall-root[data-view="list"]').count(), 1, `the List again: ${await viewState(page, wrap)}`);
       const back = await cardTop(page, before.artist, before.occ);
       assert.ok(back != null && Math.abs(back - before.top) < 2, `and held back in the List: ${before.top} → ${back}`);
       assert.equal(await page.evaluate(() => localStorage.getItem('fn_view_v1_portola-2026')), 'list');

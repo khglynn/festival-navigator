@@ -8,336 +8,470 @@
   "dates": "November 6-8, 2026 (Friday-Sunday)",
   "accent": "244, 114, 182",
   "status": "lineup",
+  "timezone": "America/New_York",
   "artists": [
     {
-      "name": "A Little Sound"
+      "name": "A Little Sound",
+      "day": "Sunday"
     },
     {
-      "name": "Aaron Hibell"
+      "name": "Aaron Hibell",
+      "day": "Saturday"
     },
     {
-      "name": "AAT"
+      "name": "AAT",
+      "day": "Friday"
     },
     {
-      "name": "ACRAZE B2B CID"
+      "name": "ACRAZE B2B CID",
+      "day": "Saturday"
     },
     {
-      "name": "Adrián Mills"
+      "name": "Adrián Mills",
+      "day": "Sunday"
     },
     {
-      "name": "Adventure Club (Sunset Set)"
+      "name": "Adventure Club (Sunset Set)",
+      "day": "Friday"
     },
     {
-      "name": "Afrojack"
+      "name": "Afrojack",
+      "day": "Friday"
     },
     {
-      "name": "Alan Walker (Sunset Set)"
+      "name": "Alan Walker (Sunset Set)",
+      "day": "Saturday"
     },
     {
-      "name": "Alesso (Sunset Set)"
+      "name": "Alesso (Sunset Set)",
+      "day": "Friday"
     },
     {
-      "name": "Alison Wonderland"
+      "name": "Alison Wonderland",
+      "day": "Saturday"
     },
     {
-      "name": "ALLEYCVT"
+      "name": "ALLEYCVT",
+      "day": "Saturday"
     },
     {
-      "name": "Alok"
+      "name": "Alok",
+      "day": "Sunday"
     },
     {
-      "name": "Alves"
+      "name": "Alves",
+      "day": "Saturday"
     },
     {
-      "name": "AR/CO"
+      "name": "AR/CO",
+      "day": "Sunday"
     },
     {
-      "name": "ATLiens"
+      "name": "ATLiens",
+      "day": "Sunday"
     },
     {
-      "name": "AVELLO"
+      "name": "AVELLO",
+      "day": "Saturday"
     },
     {
-      "name": "AYYBO"
+      "name": "AYYBO",
+      "day": "Saturday"
     },
     {
-      "name": "Azzecca"
+      "name": "Azzecca",
+      "day": "Friday"
     },
     {
-      "name": "Benda B2B Vastive"
+      "name": "Benda B2B Vastive",
+      "day": "Friday"
     },
     {
-      "name": "Big Florida"
+      "name": "Big Florida",
+      "day": "Friday"
     },
     {
-      "name": "Boogie T"
+      "name": "Boogie T",
+      "day": "Sunday"
     },
     {
-      "name": "Bou B2B Kanine"
+      "name": "Bou B2B Kanine",
+      "day": "Friday"
     },
     {
-      "name": "Boys Noize B2B Brutalismus 3000"
+      "name": "Boys Noize B2B Brutalismus 3000",
+      "day": "Sunday"
     },
     {
-      "name": "Brunello (Sunset Set)"
+      "name": "Brunello (Sunset Set)",
+      "day": "Friday"
     },
     {
-      "name": "Bullet Tooth B2B Sidney Charles"
+      "name": "Bullet Tooth B2B Sidney Charles",
+      "day": "Friday"
     },
     {
-      "name": "ChaseWest"
+      "name": "ChaseWest",
+      "day": "Saturday"
     },
     {
-      "name": "Chef Boyarbeatz"
+      "name": "Chef Boyarbeatz",
+      "day": "Sunday"
     },
     {
-      "name": "Chris Lorenzo"
+      "name": "Chris Lorenzo",
+      "day": "Friday"
     },
     {
-      "name": "CØNTRA"
+      "name": "CØNTRA",
+      "day": "Sunday"
     },
     {
-      "name": "David Guetta"
+      "name": "David Guetta",
+      "day": "Friday"
     },
     {
-      "name": "Dennis Cruz"
+      "name": "Dennis Cruz",
+      "day": "Saturday"
     },
     {
-      "name": "Deorro B2B DJ Diesel"
+      "name": "Deorro B2B DJ Diesel",
+      "day": "Sunday"
     },
     {
-      "name": "Devault (Sunset Set)"
+      "name": "Devault (Sunset Set)",
+      "day": "Saturday"
     },
     {
-      "name": "Discip"
+      "name": "Discip",
+      "day": "Saturday"
     },
     {
-      "name": "Disco Lines"
+      "name": "Disco Lines",
+      "day": "Saturday"
     },
     {
-      "name": "Discovery Project"
+      "name": "Discovery Project",
+      "day": "Sunday"
     },
     {
-      "name": "ESSE"
+      "name": "ESSE",
+      "day": "Sunday"
     },
     {
-      "name": "Fallon"
+      "name": "Fallon",
+      "day": "Saturday"
     },
     {
-      "name": "Franky Rizardo"
+      "name": "Franky Rizardo",
+      "day": "Saturday"
     },
     {
-      "name": "Fury with MC Dino"
+      "name": "Fury with MC Dino",
+      "day": "Saturday"
     },
     {
-      "name": "Gabss"
+      "name": "Gabss",
+      "day": "Saturday"
     },
     {
-      "name": "Greg 99"
+      "name": "Greg 99",
+      "day": "Saturday"
     },
     {
-      "name": "Hardwell"
+      "name": "Hardwell",
+      "day": "Sunday"
     },
     {
-      "name": "HAYLA"
+      "name": "HAYLA",
+      "day": "Friday"
     },
     {
-      "name": "Holy Priest"
+      "name": "Holy Priest",
+      "day": "Sunday"
     },
     {
-      "name": "I Hate Models"
+      "name": "I Hate Models",
+      "day": "Sunday"
     },
     {
-      "name": "Ian Asher"
+      "name": "Ian Asher",
+      "day": "Sunday"
     },
     {
-      "name": "IDEMI"
+      "name": "IDEMI",
+      "day": "Friday"
     },
     {
-      "name": "Inbal"
+      "name": "Inbal",
+      "day": "Friday"
     },
     {
-      "name": "Interplanetary Criminal"
+      "name": "Interplanetary Criminal",
+      "day": "Friday"
     },
     {
-      "name": "Jessica Audiffred"
+      "name": "Jessica Audiffred",
+      "day": "Sunday"
     },
     {
-      "name": "Jkyl & Hyde"
+      "name": "Jkyl & Hyde",
+      "day": "Saturday"
     },
     {
-      "name": "JOA"
+      "name": "JOA",
+      "day": "Friday"
     },
     {
-      "name": "Joshwa"
+      "name": "Josh Baker",
+      "day": "Friday"
     },
     {
-      "name": "Kaivon"
+      "name": "Joshwa",
+      "day": "Friday"
     },
     {
-      "name": "Kaskade"
+      "name": "Kaivon",
+      "day": "Sunday"
     },
     {
-      "name": "KI/KI"
+      "name": "Kaskade",
+      "day": "Saturday"
     },
     {
-      "name": "KinAhau"
+      "name": "KI/KI",
+      "day": "Sunday"
     },
     {
-      "name": "Klangkuenstler"
+      "name": "KinAhau",
+      "day": "Saturday"
     },
     {
-      "name": "Know Good"
+      "name": "Klangkuenstler",
+      "day": "Sunday"
     },
     {
-      "name": "Kompany"
+      "name": "Know Good",
+      "day": "Sunday"
     },
     {
-      "name": "KREAM"
+      "name": "Kompany",
+      "day": "Friday"
     },
     {
-      "name": "LAYZ"
+      "name": "KREAM",
+      "day": "Friday"
     },
     {
-      "name": "Level Up"
+      "name": "LAYZ",
+      "day": "Saturday"
     },
     {
-      "name": "Levity"
+      "name": "Level Up",
+      "day": "Friday"
     },
     {
-      "name": "Luke Dean B2B Max Dean"
+      "name": "Levity",
+      "day": "Friday"
     },
     {
-      "name": "M81!"
+      "name": "Luke Dean B2B Max Dean",
+      "day": "Saturday"
     },
     {
-      "name": "Maddix"
+      "name": "M81!",
+      "day": "Sunday"
     },
     {
-      "name": "MADVKTM"
+      "name": "Maddix",
+      "day": "Sunday"
     },
     {
-      "name": "Mai Iachetti"
+      "name": "MADVKTM",
+      "day": "Saturday"
     },
     {
-      "name": "MALUGI (Sunset Set)"
+      "name": "Mai Iachetti",
+      "day": "Saturday"
     },
     {
-      "name": "Marlon Hoffstadt"
+      "name": "MALUGI (Sunset Set)",
+      "day": "Friday"
     },
     {
-      "name": "Martin Garrix"
+      "name": "Marlon Hoffstadt",
+      "day": "Sunday"
     },
     {
-      "name": "Matthias"
+      "name": "Martin Garrix",
+      "day": "Sunday"
     },
     {
-      "name": "Mau P"
+      "name": "Matthias",
+      "day": "Friday"
     },
     {
-      "name": "Me n ü"
+      "name": "Mau P",
+      "day": "Friday"
     },
     {
-      "name": "Meduza"
+      "name": "Me n ü",
+      "day": "Saturday"
     },
     {
-      "name": "Miguelle & Tons"
+      "name": "Meduza",
+      "day": "Sunday"
     },
     {
-      "name": "Monoky"
+      "name": "Miguelle & Tons",
+      "day": "Saturday"
     },
     {
-      "name": "MPH"
+      "name": "Monoky",
+      "day": "Saturday"
     },
     {
-      "name": "Nico Moreno"
+      "name": "MPH",
+      "day": "Friday"
     },
     {
-      "name": "Of The Trees (Sunset Set)"
+      "name": "Nico Moreno",
+      "day": "Saturday"
     },
     {
-      "name": "Omar+"
+      "name": "Of The Trees (Sunset Set)",
+      "day": "Sunday"
     },
     {
-      "name": "Pegassi"
+      "name": "Omar+",
+      "day": "Friday"
     },
     {
-      "name": "phrva"
+      "name": "Pegassi",
+      "day": "Friday"
     },
     {
-      "name": "Prospa B2B Josh Baker"
+      "name": "phrva",
+      "day": "Sunday"
     },
     {
-      "name": "RAJE"
+      "name": "Prospa B2B Josh Baker",
+      "day": "Friday"
     },
     {
-      "name": "Ravenscoon"
+      "name": "Prospa",
+      "day": "Friday"
     },
     {
-      "name": "Ray Volpe"
+      "name": "RAJE",
+      "day": "Friday"
     },
     {
-      "name": "Roddy Lima"
+      "name": "Ravenscoon",
+      "day": "Sunday"
     },
     {
-      "name": "Rossi. (Sunset Set)"
+      "name": "Ray Volpe",
+      "day": "Saturday"
     },
     {
-      "name": "San Holo (Wholesome Riddim Set)"
+      "name": "Roddy Lima",
+      "day": "Saturday"
     },
     {
-      "name": "SHDW"
+      "name": "Rossi. (Sunset Set)",
+      "day": "Saturday"
     },
     {
-      "name": "Sippy"
+      "name": "San Holo (Wholesome Riddim Set)",
+      "day": "Sunday"
     },
     {
-      "name": "Skull Machine (Black Tiger Sex Machine x Kai Wachi)"
+      "name": "SHDW",
+      "day": "Sunday"
     },
     {
-      "name": "SLANDER (Sunset Set)"
+      "name": "Sippy",
+      "day": "Sunday"
     },
     {
-      "name": "Sloth"
+      "name": "Skull Machine (Black Tiger Sex Machine x Kai Wachi)",
+      "day": "Saturday"
     },
     {
-      "name": "Steve Aoki"
+      "name": "SLANDER (Sunset Set)",
+      "day": "Sunday"
     },
     {
-      "name": "Subsonic"
+      "name": "Sloth",
+      "day": "Friday"
     },
     {
-      "name": "Taiki Nulight"
+      "name": "Steve Aoki",
+      "day": "Saturday"
     },
     {
-      "name": "TroyBoi"
+      "name": "Subsonic",
+      "day": "Saturday"
     },
     {
-      "name": "Twinsick"
+      "name": "Taiki Nulight",
+      "day": "Sunday"
     },
     {
-      "name": "Ultrathem"
+      "name": "TroyBoi",
+      "day": "Sunday"
     },
     {
-      "name": "Whethan"
+      "name": "Twinsick",
+      "day": "Saturday"
     },
     {
-      "name": "Wooli"
+      "name": "Ultrathem",
+      "day": "Sunday"
     },
     {
-      "name": "Zack Martino"
+      "name": "Whethan",
+      "day": "Friday"
+    },
+    {
+      "name": "Wooli",
+      "day": "Friday"
+    },
+    {
+      "name": "Zack Martino",
+      "day": "Friday"
     }
   ],
   "meta": {
-    "announcementStatus": "lineup-only",
-    "researchedAt": "2026-07-07",
+    "announcementStatus": "lineup-with-days",
+    "researchedAt": "2026-10-19",
     "sources": [
       "https://orlando.edc.com/lineup/",
       "https://orlando.edc.com/",
       "https://orlando.edc.com/experience/the-world-of-edc/",
       "https://orlando.edc.com/experience/stages/",
-      "https://press.insomniac.com/blog/edc-orlando-announces-artists-lineup-for-2026-edition-november-6-8"
+      "https://press.insomniac.com/blog/edc-orlando-announces-artists-lineup-for-2026-edition-november-6-8",
+      "https://d3vhc53cl8e8km.cloudfront.net/hello-staging/wp-content/uploads/sites/44/2026/07/07124613/edco_2026_mk_lu_lubd_soc_1080x1350_r01.png",
+      "https://edmidentity.com/2025/11/05/edc-orlando-2025-set-times-essential-info/"
     ],
-    "note": "Official live lineup page (orlando.edc.com/lineup, checked 2026-07-07) lists 106 billing slots presented A-Z — this is everything shown, not a truncated sample. Several slots are two-artist B2B pairings (e.g., ACRAZE B2B CID, Boys Noize B2B Brutalismus 3000, Deorro B2B DJ Diesel), so the count of distinct performing artists is somewhat higher than 106. One slot (\"Discovery Project\") is Insomniac's recurring emerging-artist/fan-contest showcase rather than a single named act. Note a discrepancy between sources: the initial June 23, 2026 press release (press.insomniac.com) and the Orlando Weekly recap both list a slightly different ~105-entry set that includes generic brand-takeover placeholders not tied to named artists (Bassrush Experience, Factory 93 Presents, Insomniac Records Takeover) and a standalone \"Prospa\" entry, but is missing ChaseWest, Holy Priest, M81!, Maddix, Monoky, and Ravenscoon, which now appear on the current live official page. This output uses the current live official page as the more up-to-date, authoritative list per the task's \"current state\" instruction."
+    "note": "2026-10-19 refresh: day tags for all 108 billing slots, from the By Day tab of the official lineup page (orlando.edc.com/lineup), read three ways that agree slot for slot: the page's HTML, a Firecrawl render of it, and the by-day poster image on the same page (edco_2026_mk_lu_lubd, uploaded 2026-07-07, read visually). 36 slots a day, no act on two days, nothing cancelled or removed since July. Changes from the 2026-07-07 file: (1) two new Friday slots, \"Josh Baker\" and \"Prospa\", billed solo on the poster beside \"Prospa B2B Josh Baker\" (all three are separate lines on the poster and the page, so all three are entries here); (2) two acts the official billing now spells differently keep their frozen pick keys, because a rename would orphan every pick on them: \"Marlon Hoffstadt\" is billed \"Marlon Hoffstadt (Sunset Set)\" (Sunday), and \"Luke Dean B2B Max Dean\" is billed \"Max Dean B2B Luke Dean\" (Saturday). Billing extras already inside older names (\"(Sunset Set)\", \"(Wholesome Riddim Set)\") stay as they were frozen. Dates unchanged: November 6-8, 2026 at Tinker Field (site header, 2026-10-19). No stages or set times yet: orlando.edc.com/set-times is a 404 and the lineup page has no times. When to expect them: for 2025 (Nov 7-9) Insomniac posted the three daily set-time graphics in late October (EDM Identity re-hosted them from its 2025/10 uploads; its guide ran 2025-11-05) and listed hours of 1 PM to midnight daily, so the 2026 times should land on orlando.edc.com and the Insomniac app around the last week of October. When they do, follow docs/fest-update-runbook.md: freeze first, keep these spellings, stages from the official map. History: the 2026-07-07 research read the A-Z tab only (106 slots); it noted that the June 23 press release differed slightly (brand placeholders, and a then-missing ChaseWest, Holy Priest, M81!, Maddix, Monoky, Ravenscoon) and trusted the live page. \"Discovery Project\" is Insomniac's emerging-artist showcase slot, not one act."
+  },
+  "dayMeta": {
+    "Friday": {
+      "wd": "Fri",
+      "date": "Nov 6",
+      "iso": "2026-11-06"
+    },
+    "Saturday": {
+      "wd": "Sat",
+      "date": "Nov 7",
+      "iso": "2026-11-07"
+    },
+    "Sunday": {
+      "wd": "Sun",
+      "date": "Nov 8",
+      "iso": "2026-11-08"
+    }
   }
 }
