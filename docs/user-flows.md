@@ -12,10 +12,12 @@
 
 **Created 2026-07-11 · maintained as part of every design/UX change.**
 This is the canonical inventory of what a user can do and what correct looks
-like. The design-audit workflow walks these flows in a real browser at 390px /
-768px / 1440px and diffs reality against this doc — **a mismatch is always a
-finding**: either the build is wrong or this doc is stale, and the audit run
-fixes whichever it is. That rule is what keeps this doc from rotting.
+like. Before a release, the browser contracts (`tests/browser/`) and a
+real-input walk check these flows at 390px / 768px / 1440px (until July 2026
+a design-audit workflow did this; it is archived in
+`claude-plans/archive/2026/`). **A mismatch is always a finding**: either
+the build is wrong or this doc is stale, and whoever finds it fixes
+whichever it is. That rule is what keeps this doc from rotting.
 
 Conventions: "mobile" = ≤719px, "desktop" = ≥720px. Every screen must look
 *intentional* at both — desktop is a designed experience, not stretched mobile.
