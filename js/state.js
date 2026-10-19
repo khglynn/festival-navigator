@@ -108,6 +108,16 @@ export function activateCrew(token, doc, festHint, { festival = null } = {}) {
 export function setActiveFestivalId(fid) {
   activeFestivalId = fid;
   shownForNow = null; // a festival chosen is no longer a stand-in
+  // Chosen, a stand-in's own festival is a real one (LEDGER 42, v116): its
+  // row made only to render it goes, so ensureFestivalState makes it again
+  // and queues the membership like any festival added. A row with a pick or
+  // a note on it is already real — those writes went out as writes — and is
+  // simply un-marked.
+  const row = crewDoc && crewDoc.festivals ? crewDoc.festivals[fid] : null;
+  if (row && madeForNow.has(row)) {
+    madeForNow.delete(row);
+    if (madeRowIsEmpty(row)) delete crewDoc.festivals[fid];
+  }
   saveLS(LS.fest(crewToken), fid);
 }
 
@@ -144,13 +154,17 @@ export function festivalNameForLinks() {
 
 // A stand-in's empty row stays off the disk too: the cached doc is what the
 // landing and Settings list a crew's festivals from, and the crew never had
-// this one (v107 review). A pick or note on it is real, and is kept.
+// this one (v107 review). A pick or note on it is real, and is kept. EVERY
+// such row, not only the current stand-in's (LEDGER 42, v116): a switch in
+// Settings to another festival left the last one's made row behind, and the
+// next save put it on disk.
+const madeRowIsEmpty = (row) => !Object.keys(row.selections || {}).length && !row.notes;
 export function persist() {
   let d = crewDoc;
-  const standIn = shownForNow && d.festivals ? d.festivals[shownForNow] : null;
-  if (standIn && madeForNow.has(standIn) && !Object.keys(standIn.selections || {}).length && !standIn.notes) {
+  const made = Object.entries(d.festivals || {}).filter(([, row]) => row && madeForNow.has(row) && madeRowIsEmpty(row));
+  if (made.length) {
     d = { ...d, festivals: { ...d.festivals } };
-    delete d.festivals[shownForNow];
+    for (const [fid] of made) delete d.festivals[fid];
   }
   saveLS(LS.doc(crewToken), JSON.stringify(d));
 }
