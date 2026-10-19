@@ -18,7 +18,6 @@ export const COLOR_PALETTE = [
   '168, 85, 247', '236, 72, 153', '249, 115, 22', '20, 184, 166',
   '99, 102, 241', '132, 204, 22', '244, 63, 94', '14, 165, 233'
 ];
-export const opacities = [0.5, 0.75, 1.0]; // index = level-1
 
 export const LS = {
   doc: (t) => `fn_crew_doc_v3_${t}`,
@@ -41,7 +40,6 @@ export let activeFestivalId = null;
 // no cached index — then nothing is known and everything would look dropped).
 export let missingFestivalId = null;
 export let currentDay = null;
-export let selectedPerson = null;
 let editSeq = 0; // bumped on every local edit; guards the push/clear race
 const dayCache = {}; // `${fid}|${day}` -> computed artists
 
@@ -60,7 +58,6 @@ export function mayWrite() {
 }
 export function getEditSeq() { return editSeq; }
 export function setCurrentDay(d) { currentDay = d; }
-export function setSelectedPerson(p) { selectedPerson = p; }
 
 // Load a crew into the active slot (from cache; sync refreshes it after).
 // NOTE: callers must `await loadFestival(state.activeFestivalId)` before
@@ -100,7 +97,6 @@ export function activateCrew(token, doc, festHint, { festival = null } = {}) {
   activeFestivalId = festival || ((savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId()));
   if (!festival && hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
   currentDay = null;
-  selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);
   ensureFestivalState(activeFestivalId);
 }
@@ -221,12 +217,6 @@ export function ensureFestivalState(fid) {
     editSeq++; persistPending();
   }
   if (!crewDoc.festivals[fid].selections) crewDoc.festivals[fid].selections = {};
-}
-
-export function nextColor(peopleObj) {
-  const used = new Set(Object.values(peopleObj).filter(p => !p.removed).map(p => p.color));
-  const open = COLOR_PALETTE.find(c => !used.has(c));
-  return open || COLOR_PALETTE[Object.keys(peopleObj).length % COLOR_PALETTE.length];
 }
 
 // ---- pending-change recorders (each also applies to the local doc) -----------
