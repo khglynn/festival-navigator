@@ -21,8 +21,8 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 - **The same pass:** server functions on Node 24 with neon 1.2 (#93); a
   Dependabot cooldown and, on npm 11.10+, a 7-day wait for new
   resolutions (#89); EDC Orlando and Seismic by day (#92);
-  Dependabot on Thursdays (#88); the docs and README (#94). The LICENSE
-  (#91) waits on Kevin.
+  Dependabot on Thursdays (#88); the docs and README (#94). No open
+  license: Kevin declined MIT (#91 closed, #98).
 - **Smoke check for a release:** `node ops/prod-smoke.mjs` (all three hosts,
   build and asset stamp).
 - **Alerts:** PostHog → Slack for a new error and one that came back
