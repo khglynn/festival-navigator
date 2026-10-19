@@ -259,7 +259,7 @@ SeatGeek becomes a real candidate.
    > "Current members earn an average of $11 per sale generated."
    Source: https://seatgeek.com/build — read 2026-09-24 (live fetch).
    Signup funnels through the same Impact program below (see next bullet) or an
-   Impact-publisher-account email (`seatgeek_affiliate@newengen.com`).
+   Impact-publisher-account email (a named contact's, not recorded in this public repo).
 2. **Affiliate program via Impact / FlexOffers** — standard cost-per-acquisition
    affiliate marketing, run by newengen.com on SeatGeek's behalf.
    > "please visit our affiliate provider Impact to sign up as a publisher"

@@ -141,7 +141,7 @@ Confidence key: **high** = read directly off the vendor's own current page; **me
 
 ## 9. 19hz
 
-- **Who runs it:** Volunteer-run. Contact is a Gmail address (`19hzinfo@gmail.com`); the sources page credits "Avery" for technical work and "Kyle and David" for UI support — reads as a small volunteer crew, not a company.
+- **Who runs it:** Volunteer-run. Contact is a volunteer's Gmail address (not recorded in this public repo); the sources page credits "Avery" for technical work and "Kyle and David" for UI support — reads as a small volunteer crew, not a company.
   Source: [19hz — Sources page](https://19hz.info/sources.html), fetched directly, read 2026-09-24, quoted: *"the site is volunteer run"* and new geographic sections get added "when people are willing to put in time to review all the data that comes in." Confidence: high on "volunteer-run," but the page as fetched did **not** contain a terms-of-use, scraping policy, or API/feed mention at all — this is a real gap, not just a low-confidence guess. **Flag: no ToS surfaced — before scraping or building on 19hz, someone needs to look for a ToU/robots.txt directly, because none turned up in this pass.**
 - **Texas/Austin coverage:** 19hz does have a dedicated Texas section (`19hz.info/eventlisting_Texas.php`, `pastEvents_Texas.php`) — but it is explicitly **electronic-music-focused** (same genre-scope caveat as Edmtrain and RA), so likely weak on MUNA-style indie/pop coverage specifically, though it may have broader Austin utility depending how the Texas page is organized (didn't fetch the actual listing page this pass to check breadth).
 - **API/terms:** No API found; this is a hand-maintained HTML listings site. No terms-of-use page was found in this pass (see flag above).

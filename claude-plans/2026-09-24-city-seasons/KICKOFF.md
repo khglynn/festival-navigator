@@ -229,7 +229,7 @@ decide whether this project goes well.
   Friends' real picks live there. Test with throwaway crews and delete them
   afterwards; never write to a real crew.
 - **This is a personal project.** Use personal accounts and a personal Slack
-  workspace. Codex was signed in as kevin@trimm.co (personal) at 13:13 CT on
+  workspace. Codex was signed in as Kevin's personal account at 13:13 CT on
   2026-09-24, with fresh usage.
 - **This Mac has 16 GB, and on 2026-09-24 at about 12:55 PT it
   kernel-panicked from memory with nine Claude sessions open.** Run one

@@ -194,7 +194,7 @@ missing data.
 - ~6:40 PM PT: I looked at the phone sections once (intro, A, B, "Your
   call"), softened one freshness line to what was measured, and published
   the page as https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL (owned by
-  kevn.hg@gmail.com; `build.mjs` now also writes a wrapper-free publish
+  Kevin's personal Gmail login; `build.mjs` now also writes a wrapper-free publish
   copy outside the repo).
 - ~11:00 PM PT: Kevin's ten notes on the direction page, pieced together
   from his screenshots: `KEVIN-NOTES-ROUND1.md` (the page's login had
