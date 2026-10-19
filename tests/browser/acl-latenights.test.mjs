@@ -137,15 +137,46 @@ for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
 
 // The landing again is the open's, never a hand's: a person who has already
 // moved the page when the fonts arrive keeps the page where they put it.
+//
+// The hand's move must really have happened before the fonts are let in.
+// WebKit (Playwright 1.63, 2026-10-19) scrolls a wheel asynchronously and in
+// steps: the first step can come more than a second after mouse.wheel
+// returns, with a pause of 300ms or more before the rest (probe on CI run
+// 39205941607). The old wait (scrollY unchanged for 300ms) could be met
+// before the scroll began on a loaded runner. Then the fonts landed with the
+// wheel's scroll still pending, and it never arrived: "the room at 50px, 50px
+// after the wheel" in every full-suite run on #85. So the test waits for the
+// state the hand leaves (the room well down the screen, then still), sends
+// the wheel once more only if the first never moved the page (still before
+// the fonts), and fails on its own line if no wheel ever did. That keeps the
+// harness's miss apart from the app's: the app taking the page back to the
+// chrome's line still fails the assertion at the end.
+const roomTop = (page) => page.evaluate(() => document.querySelector('#wall-root .room[data-iso="2026-09-29"]').getBoundingClientRect().top);
+async function wheelUntilMoved(page, { tries = 2, within = 6000 } = {}) {
+  for (let i = 0; i < tries; i += 1) {
+    await page.mouse.wheel(0, -600);
+    const moved = await page.waitForFunction(() => {
+      const top = document.querySelector('#wall-root .room[data-iso="2026-09-29"]').getBoundingClientRect().top;
+      const w = window.__hand || (window.__hand = { top: NaN, n: 0 });
+      if (top !== w.top) { w.top = top; w.n = 0; return false; }
+      w.n += 1;
+      return top > 400 && w.n >= 8; // down where a 600px wheel puts it, and still for 400ms
+    }, null, { polling: 50, timeout: within }).then(() => true, () => false);
+    if (moved) return;
+  }
+  throw new Error(`no wheel moved the page in ${tries} tries: the room still at ${await roomTop(page)}px`);
+}
 for (const [engine, name] of [[chromium, 'Chromium'], [webkit, 'WebKit']]) {
   const skip = engine ? false : NO_BROWSER;
   test(`${name} 1280: a wheel before the fonts land keeps the page where the hand put it`, { skip }, async () => {
     const { ctx, page, errors, letFontsIn } = await open(engine, { at: CDT('2026-09-29T16:00:00'), width: 1280, fontsLate: 1, hold: true });
     try {
+      // The open's landing is in place: the room on the chrome's line.
+      assert.ok(Math.abs((await landing(page, '2026-09-29', true)).gap) <= 2, 'the open landed before the hand moved');
       await page.mouse.move(640, 450);
-      await page.mouse.wheel(0, -600);
-      await page.waitForFunction(() => { const w = window.__still || (window.__still = { y: -1, n: 0 }); if (scrollY !== w.y) { w.y = scrollY; w.n = 0; return false; } w.n += 1; return w.n > 5; }, null, { polling: 50, timeout: 5000 });
-      const handTop = await page.evaluate(() => document.querySelector('#wall-root .room[data-iso="2026-09-29"]').getBoundingClientRect().top);
+      await wheelUntilMoved(page);
+      assert.equal(await page.evaluate(() => document.fonts.status), 'loading', 'the hand moved the page before the fonts landed');
+      const handTop = await roomTop(page);
       letFontsIn();
       await page.waitForFunction(() => document.fonts.status === 'loaded', null, { timeout: 8000 });
       await fontsIn(page);
