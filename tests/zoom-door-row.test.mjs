@@ -139,7 +139,9 @@ test('the note door opens the notes, as the chip did', async () => {
   // is driving) and focus goes back to the card — quietly: no zoom grows on
   // a focus the app handed back (the independent walk of b29aac0).
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-  await settle(80);
+  // The sheet leaves when its close lands, not after a fixed beat: under the
+  // full suite's load an 80 ms settle read it mid-close (v116's local run).
+  for (let t = 0; document.getElementById('artist-sheet') && t < 2000; t += 10) await settle(10);
   assert.equal(document.getElementById('artist-sheet'), null, 'Escape closed the notes');
   assert.equal(document.activeElement, cardOf('Robyn'), 'focus is back on the card');
   assert.equal(zoomCard(), null, 'and no zoom grew there');
