@@ -130,9 +130,13 @@ test('a lineup-only fest still exports by billing group', () => {
 // wall for its plan, and the plan called itself nothing at all when no day and
 // no dated section survived — so EDC Orlando drew 106 cards on the wall while
 // Settings said "No lineup yet — nothing to export."
-test('a fest with no days at all still exports: the shipped EDC Orlando file', () => {
-  const edc = JSON.parse(readFileSync(join(ROOT, 'data/festivals/edc-orlando-2026.json'), 'utf8'));
-  assert.ok(edc.artists.length > 0 && edc.artists.every((a) => !a.day), 'the file really is one dayless lineup');
+// The shipped file gained its days on 2026-10-19, so the dayless shape the bug
+// lived in is rebuilt from it: same 108 names, days and dates taken off.
+test('a fest with no days at all still exports: EDC Orlando as it shipped before its days', () => {
+  const shipped = JSON.parse(readFileSync(join(ROOT, 'data/festivals/edc-orlando-2026.json'), 'utf8'));
+  const { dayMeta, timezone, ...rest } = shipped;
+  const edc = { ...rest, id: 'edc-dayless', artists: shipped.artists.map(({ day, ...a }) => a) };
+  assert.ok(edc.artists.length > 0 && edc.artists.every((a) => !a.day), 'the fixture really is one dayless lineup');
   FESTIVAL_INDEX.push({ id: edc.id, status: 'lineup' });
   state.FESTIVALS[edc.id] = edc;
   state.setActiveFestivalId(edc.id);
@@ -141,6 +145,25 @@ test('a fest with no days at all still exports: the shipped EDC Orlando file', (
     const rows = dayArtistsFor('');
     assert.equal(rows.length, edc.artists.length, 'every billed name is in the image');
     assert.equal(rows[0].name, edc.artists[0].name, 'in billing order, as the wall shows them');
+  } finally {
+    state.setActiveFestivalId('portola-2026');
+  }
+});
+
+// The shipped EDC Orlando file is a lineup split by day (no grid yet): the
+// image offers each billed day, the wall's own label, and holds that day's 36.
+test('a lineup with days exports day by day: EDC Orlando, as shipped', () => {
+  const edc = JSON.parse(readFileSync(join(ROOT, 'data/festivals/edc-orlando-2026.json'), 'utf8'));
+  FESTIVAL_INDEX.push({ id: edc.id, status: 'lineup' });
+  state.FESTIVALS[edc.id] = edc;
+  state.setActiveFestivalId(edc.id);
+  try {
+    const choices = dayImageChoices(edc);
+    assert.deepEqual(choices.map((c) => c.key), ['Friday', 'Saturday', 'Sunday'], 'one choice per billed day, no dayless block');
+    for (const { key } of choices) {
+      const billed = edc.artists.filter((a) => a.day === key);
+      assert.deepEqual(dayArtistsFor(key).map((r) => r.name), billed.map((a) => a.name), `${key}: every name billed that day, in billing order`);
+    }
   } finally {
     state.setActiveFestivalId('portola-2026');
   }
