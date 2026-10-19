@@ -4480,8 +4480,14 @@ function leaveWallForSettings() {
 // The other half, on EVERY way out of Settings, not only its Back (v116
 // review): Switch crew, Forget this crew, Add a festival, another crew's board
 // and Add yourself all leave Settings without closeSettings, and used to leave
-// the tab on 'manual' — no scroll restore on Back, Forward or reload for the
-// rest of its life — and a stale wall place for the next close to misread.
+// the current history entry on 'manual' — and every entry pushed after it
+// copies that, so nothing the person went on to open had its scroll restored
+// — and a stale wall place for the next close to misread. scrollRestoration
+// belongs to ONE history entry: this hands back the current one. On those
+// exits the wall's own entry, left behind in history, keeps 'manual' until a
+// boot runs on it (Back to it is a popstate in this same page, which runs
+// none) — known and accepted (v116 review, round 3); closeSettings' Back is
+// the one exit standing on the wall's entry, so it hands that one back.
 // renderLanding and boot call it too, as the backstop for an exit added later.
 // `later`: closeSettings' own Back, whose skipped restore runs after popstate.
 function letGoOfWallPlace({ later = false } = {}) {
