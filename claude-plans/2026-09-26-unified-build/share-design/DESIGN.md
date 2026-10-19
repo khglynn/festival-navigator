@@ -7,7 +7,7 @@ sharing with shelf open should share shelf open." Nothing here is built to ship;
 runs on `live/plan-share` so the frames are the real app.
 
 Review page (the frames, the five calls, answers saved on the page):
-https://claude.ai/artifact/D2fJQFmUfhgQ9bq9bqdmsh (login kevin.hq@tecovas.com).
+https://claude.ai/artifact/D2fJQFmUfhgQ9bq9bqdmsh (from Kevin's other claude.ai login).
 Source: `review.html` beside this. Frames: `node frames.mjs` (the rig in `rig.mjs`: the
 production app over the real Portola file, the made-up nine from round two, every write
 refused, nothing off the machine), `python3 sheet.py` for contact sheets, `node texts.mjs`
