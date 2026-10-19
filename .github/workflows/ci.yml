@@ -49,11 +49,25 @@ jobs:
   browser:
     runs-on: ubuntu-latest
     steps:
+      # Full history: tests/browser/release-upgrade.test.mjs walks the real
+      # deploy skew (the live build's worker and cached modules meeting this
+      # build's page) from the previous build's own files, a git archive of
+      # PREV_BUILD. A one-commit checkout could only walk a pair dressed from
+      # this tree, which cannot show that skew (v116 review).
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
+      # The previous build: main for a pull request or a branch (what is live
+      # when this merges), the commit before for a push to main itself. The
+      # same build on both sides (version and stamp) skips the real pair; the
+      # same version over other app files fails it (a released version
+      # reused); the dressed pair always runs.
       - run: npm run test:browser
+        env:
+          PREV_BUILD: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'HEAD^' || 'origin/main' }}

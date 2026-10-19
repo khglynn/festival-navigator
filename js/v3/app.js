@@ -390,6 +390,7 @@ function toggleFoldFlow(key) {
   // gives back.
   const daysBefore = planDayKeys();
   ctx.folded = next;
+  keepWallAddress(); // the address says the rooms it is showing (wallUrl)
   const daysAfter = planDayKeys();
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
   // Where the person is standing, read before anything moves: the element at
@@ -460,6 +461,7 @@ function unfoldAll() {
   const place = takeWallPlace();
   saveFolded(ctx.fid, []);
   ctx.folded = [];
+  keepWallAddress();
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
   repaintWall({ place });
@@ -1337,15 +1339,22 @@ function lookAround(token, doc) {
 // even then only the parts it has no choice of its own for; so the reload
 // shows no "Opened as a list." and never undoes a Board chosen since (which
 // also rewrote the address without the view).
+//
+// And the ROOMS (v116, LEDGER follow-up 10): `&show=` when this phone hides
+// some, exactly as shareView puts them on the crew link, read from this
+// festival's own fold for the same reason the view is.
 function wallUrl(token) {
   // A festival standing in for this open is never the address: a reload or a
   // copied link asks for the one this phone wanted (v107).
   const fid = state.festivalForLinks();
-  const list = !!fid && !state.isShownForNow() && listOffered(state.fest()) && loadView(fid) === LIST;
-  return crew.crewLink(token, fid, null, null, list ? LIST : null);
+  const own = !!fid && !state.isShownForNow();
+  const list = own && listOffered(state.fest()) && loadView(fid) === LIST;
+  const show = own ? showOf(roomsOnWall(), loadFolded(fid)) : null;
+  return crew.crewLink(token, fid, null, show, list ? LIST : null);
 }
 
 function joinFromLayer() {
+  letGoOfWallPlace(); // Add yourself from Settings: the wall again, by another door
   router.reset();
   history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
@@ -3118,7 +3127,7 @@ function noteOpen(screen) {
     : screen === 'screen-error' ? (o.offline ? 'offline' : 'fatal')
       : OPEN_PATHS[screen];
   if (path) track('app_open', { path, page_load: o.pageLoad, build_changed: buildChanged() });
-  // How often an OPEN lands on Your crews, and with how many crews (the
+  // How often an OPEN lands on Your festivals (the landing), and with how many crews (the
   // find-your-crew question, 2026-10-01) — never a trip back to it from
   // Settings, Create or an error screen (Copilot's review of v108).
   if (path === 'landing') {
@@ -3145,7 +3154,7 @@ let paintedOnce = false;
 function noteFirstPaint(warm) {
   if (paintedOnce) return;
   paintedOnce = true;
-  // A wall reached from Your crews, a join or Create is minutes of a person
+  // A wall reached from Your festivals, a join or Create is minutes of a person
   // in between, not load time (the Claude review of v108).
   if (!wallFirst) return;
   let nav = null;
@@ -4433,7 +4442,59 @@ let settingsActions = null;
 // fresh open.
 // A welcome that could not show (a refresh restored Settings over the wall)
 // gets its turn here, v92; the offer still waits for its "Got it".
-function closeSettings() { show('screen-app'); keepWallAddress(); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+function closeSettings() {
+  const back = settingsLeftWall;
+  show('screen-app');
+  keepWallAddress();
+  // The wall Settings was opened from comes back where it stood — the same
+  // crew on the same festival only: a festival switched in there is a new
+  // wall, and maybeOpenOnDay lands it.
+  const same = back && back.token === state.getCrewToken() && back.fid === state.activeFestivalId;
+  repaintWall({ place: same ? back.place : null });
+  if (same && !back.place && Math.abs(window.scrollY - back.y) >= 1) window.scrollTo({ top: back.y, behavior: 'auto' });
+  // The browser's own restore for this entry again, once this Back is done
+  // with it (a later task: the restore it skips runs right after popstate).
+  letGoOfWallPlace({ later: true });
+  maybeOpenOnDay();
+  safely('welcome', maybeWelcome);
+}
+// Settings is a screen of its own over a wall that scrolls the PAGE, and
+// showing it used to leave the page's scroll where the wall had it: opened
+// from the middle of a day, Settings came up at its own bottom, title and back
+// chevron above the fold (the off-season walk, v116). So it opens at its top,
+// and the wall's place is kept here for the way back.
+let settingsLeftWall = null;
+function leaveWallForSettings() {
+  settingsLeftWall = null;
+  if ($('screen-app').style.display === 'none') return;
+  let place = null;
+  try { place = takeWallPlace(); } catch { place = null; } // a place is never worth a Settings that won't open
+  settingsLeftWall = { token: state.getCrewToken(), fid: state.activeFestivalId, place, y: window.scrollY };
+  // The browser keeps a scroll for the wall's history entry and puts it back
+  // AFTER the popstate that closes Settings — the Settings page's 0, written
+  // over the place closeSettings just restored. The wall's entry is still the
+  // current one here (the router pushes Settings after this), so it alone
+  // stops restoring until the wall is back (closeSettings hands it back).
+  try { history.scrollRestoration = 'manual'; } catch { /* a history that will not say: the place still lands without Back */ }
+}
+// The other half, on EVERY way out of Settings, not only its Back (v116
+// review): Switch crew, Forget this crew, Add a festival, another crew's board
+// and Add yourself all leave Settings without closeSettings, and used to leave
+// the current history entry on 'manual' — and every entry pushed after it
+// copies that, so nothing the person went on to open had its scroll restored
+// — and a stale wall place for the next close to misread. scrollRestoration
+// belongs to ONE history entry: this hands back the current one. On those
+// exits the wall's own entry, left behind in history, keeps 'manual' until a
+// boot runs on it (Back to it is a popstate in this same page, which runs
+// none) — known and accepted (v116 review, round 3); closeSettings' Back is
+// the one exit standing on the wall's entry, so it hands that one back.
+// renderLanding and boot call it too, as the backstop for an exit added later.
+// `later`: closeSettings' own Back, whose skipped restore runs after popstate.
+function letGoOfWallPlace({ later = false } = {}) {
+  settingsLeftWall = null;
+  const auto = () => { try { if (history.scrollRestoration !== 'auto') history.scrollRestoration = 'auto'; } catch { /* as above */ } };
+  if (later) setTimeout(auto, 0); else auto();
+}
 // The wall's address follows its festival (v96 — Sol's review of 3599950):
 // a festival switched in Settings is no boot, so nothing rewrote the address,
 // and it kept the old one — a link copied from the bar previewed the old
@@ -4453,6 +4514,10 @@ function keepWallAddress() {
 function openSettings() {
   closeSheet();
   refreshCtx();
+  // Arriving, as against re-rendering in place (a toggle, Back from a drill):
+  // only an arrival takes the page to the top.
+  const arriving = $('screen-settings').style.display === 'none';
+  if (arriving) leaveWallForSettings();
   show('screen-settings');
   settingsActions = {
     close: () => { if (!router.requestClose()) closeSettings(); },
@@ -4541,6 +4606,7 @@ function openSettings() {
     addMember: () => { openAddMember(); router.push('sheet:add-member'); },
     // FLOW-6: the landing is the crew switcher; the current crew stays remembered.
     switchCrew: () => {
+      letGoOfWallPlace();
       router.reset();
       history.replaceState(null, '', '/');
       renderLanding();
@@ -4548,6 +4614,7 @@ function openSettings() {
     // Fest-first: settings lists YOUR boards; adding goes to the shared
     // multi-pick page, and a board in another circle opens like a landing row.
     addFestival: () => {
+      letGoOfWallPlace();
       router.reset();
       location.hash = '#new';
       boot();
@@ -4560,6 +4627,7 @@ function openSettings() {
         showToast($('toast-root'), 'This device’s storage is blocked — couldn’t point the board at that festival.', 6000);
         return;
       }
+      letGoOfWallPlace();
       router.reset();
       location.hash = `#g=${token}`;
       boot();
@@ -4567,6 +4635,7 @@ function openSettings() {
     leaveCrew: () => {
       const t = state.getCrewToken();
       crew.forgetCrew(t);
+      letGoOfWallPlace();
       router.reset();
       history.replaceState(null, '', '/');
       renderLanding();
@@ -4629,6 +4698,7 @@ function openSettings() {
     },
   };
   renderSettings($('settings-root'), ctx, settingsActions);
+  if (arriving && window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 // Union a fetched person doc into this device: remember every crew, claim
@@ -4677,6 +4747,7 @@ async function restoreFromMeLink(token, current = () => true) {
 }
 
 function renderLanding() {
+  letGoOfWallPlace();
   show('screen-landing');
   document.title = 'Festival Navigator';
 
@@ -5535,6 +5606,7 @@ function freshenFromNetwork(token, catalog, current) {
 // open happened to ask (Codex round 3, new B: A's answer landed while B was
 // on screen, and B's identical answer then changed nothing).
 function refreshFestivalFile(fid) {
+  festAskedAt = Date.now();
   fetchFestivalFile(fid).then((fest) => {
     if (!fest || JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
     state.FESTIVALS[fid] = fest;
@@ -5542,6 +5614,28 @@ function refreshFestivalFile(fid) {
     if (state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
   }).catch((e) => { console.warn('warm open: festival file', e); record('warm-open:fest-file', e); });
 }
+
+// The same refresh when a phone left open comes back to the page (v116,
+// LEDGER follow-up 52): a pocket phone stays open on the wall for days, and
+// a set-times drop used to reach it only once it was closed and opened
+// again. At most once in five minutes (every boot asks for the file it
+// opens, so the clock starts at load); never under Stay offline; never while
+// something is in progress (a crew being made, a join, a share) — the next
+// resume asks instead. A crew's own festival has no file to ask for: its
+// list is the crew's (applyFreshCustoms).
+const FEST_REFRESH_MS = 5 * 60 * 1000;
+let festAskedAt = Date.now();
+function refreshFestivalOnResume() {
+  if (document.visibilityState !== 'visible') return;
+  if (Date.now() - festAskedAt < FEST_REFRESH_MS) return;
+  if (appSettings().stayOffline) return;
+  const fid = state.activeFestivalId;
+  if (!fid || !state.getCrewToken() || $('screen-app').style.display === 'none') return;
+  if (document.body.dataset.busy || document.body.dataset.sharing) return;
+  if (!FESTIVAL_INDEX.some((f) => f.id === fid && !f.custom)) return;
+  refreshFestivalFile(fid);
+}
+document.addEventListener('visibilitychange', refreshFestivalOnResume);
 
 // The crew's own festivals, fresh from the server. One that changed is a data
 // push like any other: its computed days go, and if it is on screen the wall
@@ -5606,7 +5700,7 @@ function renderFatal({ offline = null } = {}) {
     // The buttons first: if anything below throws, the last-resort screen
     // still has working buttons.
     $('error-retry').onclick = () => location.reload();
-    // Your crews means it: an automatic retry already under way is cancelled
+    // Your festivals means it: an automatic retry already under way is cancelled
     // with the timer, or it would land its wall — or the calm screen — over
     // the crews a moment later (v107 final review).
     $('error-home').onclick = () => { stopOfflineRetry(); bootGeneration++; history.replaceState(null, '', '/'); renderLanding(); };
@@ -5706,6 +5800,7 @@ export async function boot() {
   firstBoot = false;
   openPending = { pageLoad: isFirst, warm: false, offline: false };
   festViewPending = true;
+  letGoOfWallPlace(); // no Settings survives a boot (router.reset, next line)
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();

@@ -41,7 +41,7 @@ test('a reply arriving BEFORE its root passes the server — sync order is not a
 // A nested reply is not a cosmetic problem: threadsFor buckets it exactly like
 // a reply to a TOMBSTONED root, so it renders as "X removed this note" sitting
 // over a note that is very much alive (survey, 2026-08-30). The shipped client
-// cannot produce one — the second client (Ray Perfetti's fork) is who this is
+// cannot produce one — the second client, the fork by Ray (raypp2), is who this is
 // for.
 test('the server refuses a reply that answers another reply, when it can see both', () => {
   const [nestedId, nested] = note('Dev', 12, 'me too', { re: r1Id });

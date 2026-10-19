@@ -2,8 +2,8 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v115'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
-const ASSET_STAMP = 'ffa70e4b'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const CACHE_VERSION = 'festival-nav-v116'; // bumped by node scripts/sw-stamp.mjs; what each build shipped is in DEVLOG.md
+const ASSET_STAMP = '0e226b0a'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -146,9 +146,125 @@ self.addEventListener('activate', (event) => {
 // answers, and the page falls back to the cache names.
 self.addEventListener('message', (event) => {
   const d = event.data;
-  if (!d || d.fn !== 'build?' || !event.source) return;
+  if (!d) return;
+  if (d.fn === 'repair') { answerRepair(event); return; }
+  if (d.fn !== 'build?' || !event.source) return;
   try { event.source.postMessage({ fnBuild: CACHE_VERSION, fnStamp: ASSET_STAMP }); } catch { /* the page is gone */ }
 });
+
+// "Repair your copy" (v116, review round 3), asked by index.html's watchdog
+// when a page this worker serves cannot link on a reload: this cache holds a
+// copy that cannot work, and a plain reload would serve it again. The repair
+// is whole or nothing, and only ever THIS build:
+//   1. the page ('/') first, no-cache: a page that names another build in its
+//      fn-build means the network serves another release, whose own worker is
+//      the fix (the page asks the browser for it) — nothing more is fetched
+//      and nothing is written ("newer"). A page with no fn-build at all is not
+//      our server answering (a Wi-Fi login page): "failed", the signal's;
+//   2. every other APP_CORE file, no-cache, and the set checked against
+//      ASSET_STAMP exactly as scripts/sw-stamp.mjs computes it — so a deploy
+//      landing mid-fetch, or two CDN edges on two deployments, can never write
+//      a mixed copy ("mismatch");
+//   3. only then every entry overwritten in this build's own cache, the page
+//      included. Never another cache: not a newer worker's, not the festival
+//      data cache.
+// One run at a time (a second ask joins it), with a deadline that ABORTS the
+// run — every fetch is cancelled and every write checks first — so a hung
+// network ends in a "timeout" answer, and a second bound a moment later
+// answers even when storage itself hangs. Nothing unproven is ever written;
+// a write already under way at the deadline may still finish, and it is
+// this build's proven bytes. "repaired" means every write is done.
+// A worker from before v116 ignores the ask and never answers; the page
+// waits only a moment for the first word ("started") before saying so.
+const BUILD = CACHE_VERSION.replace('festival-nav-', '');
+const REPAIR_MS = 20000; // the whole copy (~1.5 MB) on a slow bar; past it, the signal is the problem
+function answerRepair(event) {
+  const port = event.ports && event.ports[0];
+  if (!port) return;
+  const say = (word) => { try { port.postMessage({ fnRepair: word }); } catch { /* the page is gone */ } };
+  say('started');
+  event.waitUntil(repair().then(say));
+}
+let repairing = null;
+function repair() {
+  if (!repairing) {
+    // The run's own deadline cancels every fetch; this one bounds the whole
+    // run, storage included, so an open or a write that never settles still
+    // ends in an answer and frees the next ask. A write already under way may
+    // finish after it: it can only be this build's proven bytes.
+    let timer;
+    const late = new Promise((resolve) => { timer = setTimeout(() => resolve('timeout'), REPAIR_MS + 1000); });
+    repairing = Promise.race([repairShell().catch(() => 'failed'), late])
+      .finally(() => { clearTimeout(timer); repairing = null; });
+  }
+  return repairing;
+}
+// The files ASSET_STAMP covers, in its order: every APP_CORE path but '/'
+// (sw-stamp's pattern skips it; it is the same page as /index.html, which it
+// hashes — the repair proves the two are byte for byte the same).
+const STAMPED = APP_CORE.filter((p) => p !== '/' && p !== '/service-worker.js');
+const CORE_PATHS = new Set(APP_CORE);
+const TEXT_RE = /\.(?:js|mjs|css|html|json|svg|txt|md)$/i;
+// scripts/sw-stamp.mjs assetStamp, over bytes in hand: sha1 of each path then
+// its bytes — text decoded as UTF-8 (a BOM kept, as Node keeps it) with CRLF
+// made LF, binaries (the fonts) as they are — the first 8 hex digits.
+// tests/sw-data-network-first.test.mjs holds this equal to ASSET_STAMP over
+// the real files: if the two ever drifted, every repair would say "mismatch".
+async function stampOf(bodies) {
+  const enc = new TextEncoder();
+  const dec = new TextDecoder('utf-8', { ignoreBOM: true });
+  const parts = [];
+  STAMPED.forEach((p, i) => {
+    const b = bodies[i];
+    const raw = ArrayBuffer.isView(b) ? new Uint8Array(b.buffer, b.byteOffset, b.byteLength) : new Uint8Array(b);
+    parts.push(enc.encode(p), TEXT_RE.test(p) ? enc.encode(dec.decode(raw).replace(/\r\n/g, '\n')) : raw);
+  });
+  const all = new Uint8Array(parts.reduce((n, x) => n + x.byteLength, 0));
+  let at = 0;
+  for (const x of parts) { all.set(x, at); at += x.byteLength; }
+  const sum = new Uint8Array(await crypto.subtle.digest('SHA-1', all));
+  return Array.from(sum, (x) => x.toString(16).padStart(2, '0')).join('').slice(0, 8);
+}
+async function repairShell() {
+  const reg = self.registration;
+  if (reg && (reg.installing || reg.waiting)) return 'newer'; // its install replaces this copy
+  const ac = new AbortController();
+  const { signal } = ac;
+  const deadline = setTimeout(() => ac.abort(), REPAIR_MS);
+  // The deadline ends the run even where an engine is slow to fail an
+  // aborted fetch: every wait on the network races it.
+  const stopped = new Promise((resolve, reject) => { signal.addEventListener('abort', () => reject(new Error('timeout'))); });
+  stopped.catch(() => {});
+  const until = (p) => Promise.race([p, stopped]);
+  try {
+    const cache = await caches.open(CACHE_VERSION); // opened first: an activate that deletes it mid-run takes these writes with it
+    const get = async (p) => {
+      const r = await fetch(new Request(new URL(p, location.origin).href, { cache: 'no-cache', signal }));
+      if (!r.ok) throw new Error('server');
+      return { p, r, bytes: await r.clone().arrayBuffer() };
+    };
+    const page = await until(get('/'));
+    const build = /<meta name="fn-build" content="([^"]+)"/.exec(new TextDecoder().decode(page.bytes));
+    if (!build) return 'failed';
+    if (build[1] !== BUILD) return 'newer';
+    const rest = await until(Promise.all(STAMPED.map(get)));
+    const index = new Uint8Array(rest[STAMPED.indexOf('/index.html')].bytes);
+    const top = new Uint8Array(page.bytes);
+    if (index.length !== top.length || index.some((x, i) => x !== top[i])) return 'mismatch';
+    if (await stampOf(rest.map((x) => x.bytes)) !== ASSET_STAMP) return 'mismatch';
+    for (const { p, r } of [page, ...rest]) {
+      if (signal.aborted) return 'timeout';
+      await cache.put(p, r);
+    }
+    return 'repaired';
+  } catch (e) {
+    if (signal.aborted) return 'timeout';
+    return e && e.message === 'server' ? 'server' : 'failed';
+  } finally {
+    ac.abort(); // whatever is still in flight goes with the answer
+    clearTimeout(deadline);
+  }
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -205,7 +321,7 @@ self.addEventListener('fetch', (event) => {
   // (a background refresh did exactly that, and a failed install then left
   // half of two builds' modules to boot offline). Only this worker's own
   // cache answers: caches.match() would search an older version first. A
-  // miss (an asset outside the install lists) is fetched and kept, and the
+  // miss outside APP_CORE (an icon, an extra) is fetched and kept, and the
   // write lands before the response is handed back, so nothing needs a late
   // waitUntil. A miss with a dead network is an honest network error, never
   // respondWith(undefined).
@@ -214,6 +330,13 @@ self.addEventListener('fetch', (event) => {
       .then((cache) => cache.match(request))
       .then((hit) => {
         if (hit) return hit;
+        // An install-list file is written only whole: by install's addAll or a
+        // proved repair, never one file at a time here, where a lone write
+        // could be another build's bytes and put two builds in this cache (the
+        // v116 review, round three). A miss on one is served as the network
+        // has it; the set comes back whole with the next install, or with a
+        // repair when the copy fails to link.
+        if (CORE_PATHS.has(url.pathname)) return fetch(request);
         const miss = fetchAndStore(request, CACHE_VERSION);
         return miss.response.then((resp) => miss.done.then(() => resp));
       })

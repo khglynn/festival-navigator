@@ -25,7 +25,7 @@
     <meta name="theme-color" content="#0C0A14">
     <!-- A fork sets ITS host here, once — js/spotify.js and js/v3/settings.js
          derive the Spotify OAuth hop and every on-screen string that names the
-         host from this tag (Ray Perfetti's issue #6: the value used to live in
+         host from this tag (issue #6, from Ray (raypp2): the value used to live in
          shipped source, so a fork's users were handed to OUR domain with their
          tokens in the hash). docs/fork-setup.md is the fork runbook. -->
     <meta name="fn-canonical-host" content="fest.kevinhg.com">
@@ -42,7 +42,7 @@
     <!-- This page's own build, the same number as the worker's CACHE_VERSION
          — written by node scripts/sw-stamp.mjs, never by hand. A crash report
          from a page no worker controls names its build from here. -->
-    <meta name="fn-build" content="v115">
+    <meta name="fn-build" content="v116">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -118,6 +118,10 @@
 <body>
     <noscript><div style="padding:40px;text-align:center;font-weight:600;">Festival Navigator needs JavaScript.</div></noscript>
 
+    <!-- The screens are the page's main content, one shown at a time: the
+         landmark a screen reader jumps to (Lighthouse landmark-one-main,
+         v116). A plain block, so it adds no box of its own to any screen. -->
+    <main id="screens">
     <!-- Landing (atlas 21a) -->
     <div id="screen-landing" class="entry-screen" style="display:none">
       <div class="center-col">
@@ -199,7 +203,7 @@
     <div id="screen-app" style="display:none">
       <div class="shell">
         <header class="app-header">
-          <button class="back-btn" id="fest-list-btn" title="Your crews" aria-label="Your crews">‹</button>
+          <button class="back-btn" id="fest-list-btn" title="Your festivals" aria-label="Your festivals">‹</button>
           <span class="title"><span id="fest-name"></span><span class="yr" id="fest-year"></span></span>
           <span class="sub" id="fest-sub"></span>
           <button class="gear-btn" id="gear-btn" title="Settings" aria-label="Settings">
@@ -290,7 +294,7 @@
           <button id="badlink-open" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Open</button>
         </div>
         <div id="badlink-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
-        <button id="badlink-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your crews</button>
+        <button id="badlink-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
       </div>
     </div>
     <div id="screen-error" class="entry-screen" style="display:none">
@@ -299,9 +303,10 @@
         <div id="error-msg" style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
           The app hit an error while loading. Your picks are safe on this device.</div>
         <button id="error-retry" class="btn-tonal" style="font-size: 14px; padding: 12px 24px; align-self: center;">Try again</button>
-        <button id="error-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your crews</button>
+        <button id="error-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
       </div>
     </div>
+    </main>
 
     <div id="toast-root"></div>
     <!-- What NOW landed on, said to a screen reader (focus stays on NOW). Here
@@ -329,11 +334,37 @@
            from the whole snapshot it just installed (the glue below).
          - Nothing at all after 10 s (a download that hangs rather than
            fails): the same screen, worded as still loading; a slow app that
-           then arrives takes the screen over as usual. -->
+           then arrives takes the screen over as usual.
+         - A worker-served page whose app cannot LINK on a reload — the second
+           try, or the person's own Try again — has a copy in the worker's
+           cache that cannot work: a plain reload serves it again (v116,
+           LEDGER follow-up 17). So the page asks the worker that serves it to
+           REPAIR its copy (service-worker.js repair) and reloads only when
+           the worker says "repaired": every file fetched again and proved to
+           be the worker's own build, page and all, before any of it is
+           written over the old copy — never a newer worker's cache, never
+           the festival data. Anything else leaves the copy as it was and
+           shows the panel: the network serving another release (the browser
+           is asked for that release's worker, whose claim reloads the page),
+           a set that does not prove out, a file that does not arrive, a
+           network that hangs past the worker's deadline, or a worker too old
+           to know the ask. Not while a new build is installing or waiting:
+           its claim reloads the page anyway (the glue below). Under Stay
+           offline the automatic paths never fetch; the person's own Try
+           again on the panel is their yes to one repair. The worker itself
+           stays registered on purpose: WebKit empties the origin's whole
+           Cache Storage once a registration is gone (measured, Playwright
+           WebKit, 2026-10-19), which would take every festival saved for a
+           field with it. The loop guard is a stamp in this tab's
+           sessionStorage, written just before the repaired reload, because
+           that load is a reload too: a build that cannot link even repaired
+           would otherwise repair itself forever. No stamp to write or read
+           (storage blocked): no repair. -->
     <script>
       (function () {
         var done = false;
         var sawError = false;
+        var linked = false; // a file arrived and could not link to the rest: the copy's fault, not the signal's
         // The app is running once app.js says so, or once its script's load
         // fires with no error seen first — the proof an OLDER app.js gives too
         // (none says __fnAppRan): a returning phone's first open after a
@@ -346,13 +377,99 @@
         function servedByWorker() {
           try { return !!(navigator.serviceWorker && navigator.serviceWorker.controller); } catch (e) { return false; }
         }
-        function secondTryAllowed() {
-          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
+        function navType() {
           var nav = null;
           try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) { nav = null; }
-          if (!nav || nav.type !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
+          return nav ? nav.type : null;
+        }
+        function secondTryAllowed() {
+          if (!servedByWorker()) return false; // a reload on a dead network could lose this page
+          if (navType() !== 'navigate') return false; // a reload already (the second try, or the person's own) — or no way to tell
           return navigator.onLine !== false && !stayingOffline();
         }
+        // Read once and gone: a mark the last load left for this one.
+        function takeMark(key) {
+          try {
+            var v = window.sessionStorage.getItem(key) === '1';
+            if (v) window.sessionStorage.removeItem(key);
+            return v;
+          } catch (e) { return false; }
+        }
+        // The person's Try again on the panel under Stay offline: their yes to
+        // one repair (Stay offline is a choice not to use the network, and
+        // the panel is the one place left to say otherwise — its switch lives
+        // in Settings, which needs the app that will not start).
+        var CONSENT_KEY = 'fn_fetch_once';
+        var consented = takeMark(CONSENT_KEY);
+        // A repair: only where a worker's copy failed to link on a reload,
+        // online, and not within ten minutes of this tab's last repaired
+        // reload.
+        var REPAIRED_KEY = 'fn_repaired_at';
+        // `unread`: the answer when there is no stamp to read (storage blocked).
+        function justRepaired(unread) {
+          try {
+            var at = Number(window.sessionStorage.getItem(REPAIRED_KEY)) || 0;
+            return !!at && Math.abs(Date.now() - at) < 10 * 60 * 1000;
+          } catch (e) { return unread; }
+        }
+        function repairAllowed() {
+          if (!linked || !servedByWorker() || navType() !== 'reload') return false;
+          if (navigator.onLine === false || (stayingOffline() && !consented)) return false;
+          return !justRepaired(true); // no loop guard to read: no repair
+        }
+        // Ask the controlling worker to repair its copy (comment above). Its
+        // first word ("started") must come quickly — a worker from before
+        // v116 never answers, and that is "no answer" in three seconds — then
+        // the result, which the worker sends by its own deadline (20 s, see
+        // service-worker.js REPAIR_MS); this wait is only the backstop.
+        function askRepair() {
+          return new Promise(function (resolve) {
+            var c = null;
+            try { c = navigator.serviceWorker.controller; } catch (e) { c = null; }
+            if (!c || typeof MessageChannel !== 'function') { resolve('no answer'); return; }
+            var ch = new MessageChannel();
+            var over = false;
+            var t = setTimeout(function () { end('no answer'); }, 3000);
+            function end(word) {
+              if (over) return;
+              over = true;
+              clearTimeout(t);
+              try { ch.port1.close(); } catch (e) { /* closed */ }
+              resolve(word);
+            }
+            ch.port1.onmessage = function (e) {
+              var word = e.data && e.data.fnRepair;
+              if (typeof word !== 'string') return;
+              if (word !== 'started') { end(word); return; }
+              clearTimeout(t);
+              t = setTimeout(function () { end('no answer'); }, 25000);
+            };
+            try { c.postMessage({ fn: 'repair' }, [ch.port2]); } catch (e) { end('no answer'); }
+          });
+        }
+        function repairCopy() {
+          var reg = null;
+          Promise.resolve().then(function () { return navigator.serviceWorker.getRegistration(); }).then(function (r) {
+            reg = r || null;
+            // A new build on its way: its claim reloads this page, and its
+            // own install replaces this copy.
+            if (reg && (reg.installing || reg.waiting)) return 'arriving';
+            return askRepair();
+          }).then(function (word) {
+            window.__fnRepair = word; // what the worker said, for the tests and a look from the console
+            if (word === 'repaired') {
+              window.sessionStorage.setItem(REPAIRED_KEY, String(Date.now())); // throws: no reload (the guard could not hold)
+              location.reload();
+              return;
+            }
+            // Another release is live: its worker is the fix, so ask for it now.
+            if (word === 'newer' && reg) { try { reg.update().catch(function () {}); } catch (e) { /* the next navigation asks */ } }
+            panel(word === 'failed' || word === 'timeout' ? NEEDS_SIGNAL : ON_US);
+          }).catch(function () { panel(ON_US); });
+        }
+        var WEAK = 'The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.';
+        var ON_US = 'The app didn\u2019t finish loading \u2014 not your signal this time, a hiccup on our side. Try again in a minute.';
+        var NEEDS_SIGNAL = 'The app didn\u2019t finish loading \u2014 this phone needs a fresh copy of it, and that needs signal. Try again once you have some.';
         function panel(words) {
           var screen = document.getElementById('screen-error');
           if (!screen) return;
@@ -361,7 +478,10 @@
           var home = document.getElementById('error-home');
           if (home) home.style.display = 'none'; // it needs the app that has not started
           var retry = document.getElementById('error-retry');
-          if (retry) retry.onclick = function () { location.reload(); };
+          if (retry) retry.onclick = function () {
+            if (stayingOffline()) { try { window.sessionStorage.setItem(CONSENT_KEY, '1'); } catch (e) { /* then Stay offline holds */ } }
+            location.reload();
+          };
           screen.style.display = '';
         }
         function stuck() {
@@ -369,7 +489,13 @@
           done = true;
           window.__fnAppFailed = true; // the worker's first claim reloads this page (below)
           if (secondTryAllowed()) { location.reload(); return; }
-          panel('The app didn\u2019t finish loading \u2014 usually a weak signal. Try again, or wait for a better one.');
+          if (repairAllowed()) { repairCopy(); return; }
+          // A file lost on the way is the signal's; one that arrived and
+          // cannot link is the copy's, which signal only fixes by repairing
+          // it — unless this tab just did, and the repaired copy did not
+          // link either.
+          panel(!linked ? WEAK : justRepaired(false) ? ON_US
+            : (navigator.onLine === false || (stayingOffline() && !consented)) ? NEEDS_SIGNAL : ON_US);
         }
         function isApp(t) {
           return !!t && t.tagName === 'SCRIPT' && t.type === 'module' && /\/js\/v3\/app\.js(?:[?#]|$)/.test(t.src || '');
@@ -399,7 +525,7 @@
           var linking = syntax && /import|export|module|binding/i.test(m);
           if (!linking && !own) return;
           sawError = true;
-          if (linking) setTimeout(stuck, 1500);
+          if (linking) { linked = true; setTimeout(stuck, 1500); }
         });
         document.addEventListener('load', function (e) {
           if (!isApp(e.target)) return;

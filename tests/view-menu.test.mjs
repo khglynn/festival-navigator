@@ -140,6 +140,21 @@ test('Copy the crew link: the invite link as this phone shows the wall, said und
   assert.equal(JSON.stringify(state.crewDoc), docBefore, 'the crew document is untouched');
 });
 
+// The address bar is a link too: a friend who copies it, or sends it with the
+// browser's own Share, sends what this phone shows — the rooms as well as the
+// view, the way the crew link does (LEDGER follow-up 10, v116).
+test('the address carries the rooms it shows, as the crew link does — and drops them when everything shows', async () => {
+  const hist = dom.window.history.length;
+  click(menu().querySelector('[data-room="Afters"]'));
+  await settle(30);
+  assert.equal(loc.pathname, `/f/${FID}`);
+  assert.equal(loc.hash, `#g=${TOKEN}&f=${FID}&show=fest,folsom&view=list`, `the rooms ride the address, before the view (${loc.hash.replace(TOKEN, '<token>')})`);
+  assert.equal(dom.window.history.length, hist, 'rewritten in place, no history entry');
+  click(menu().querySelector('[data-room="Afters"]'));
+  await settle(30);
+  assert.equal(loc.hash, `#g=${TOKEN}&f=${FID}&view=list`, 'everything showing: no rooms in the address');
+});
+
 test('the invite link carries the List, and says so', async () => {
   click(menu().querySelector('.settings'));
   await settle(30);

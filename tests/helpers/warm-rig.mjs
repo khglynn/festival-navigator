@@ -30,6 +30,10 @@ export const json = (body, status = 200) => new Response(JSON.stringify(body), {
 export function heldNetwork() {
   const held = [];
   const calls = [];
+  // Every request the app gave up on (its signal aborted: a budget ran out,
+  // or it was superseded), in order — so a test can say what happened BEFORE
+  // something else did, instead of how many milliseconds it took.
+  const gaveUp = [];
   const fetch = (url, opts = {}) => {
     const u = String(url);
     const method = opts.method || 'GET';
@@ -37,7 +41,10 @@ export function heldNetwork() {
     return new Promise((resolve, reject) => {
       held.push({ u, method, resolve });
       if (opts.signal) {
-        opts.signal.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+        opts.signal.addEventListener('abort', () => {
+          gaveUp.push(`${method} ${u}`);
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
       }
     });
   };
@@ -59,7 +66,9 @@ export function heldNetwork() {
     return 1;
   };
   const asked = (prefix) => calls.some((c) => c.includes(` ${prefix}`));
-  return { fetch, release, releaseFirst, calls, asked };
+  // How many held requests are still waiting for an answer.
+  const pending = () => held.length;
+  return { fetch, release, releaseFirst, calls, asked, gaveUp, pending };
 }
 
 export function cachesHolding(files) {

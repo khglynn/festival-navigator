@@ -49,6 +49,10 @@ const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((
 await settle(60);
 
 test('the share moment comes up first — no welcome and no offer under it', async () => {
+  // Portola is archived since v116: its row sits in the picker's Past
+  // festivals fold, which opens first.
+  const past = [...$('create-fests').querySelectorAll('button')].find((b) => /^Past festivals/.test(b.textContent));
+  if (past) past.click();
   const portola = [...$('create-fests').querySelectorAll('button')].find((b) => /^PORTOLA/.test(b.textContent));
   portola.click();
   $('create-go-multi').click();
