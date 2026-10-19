@@ -55,6 +55,10 @@ offline/
 !icon-maskable-512.png
 !apple-touch-icon.png
 !assets/og/*.jpg
+# The README's picture: gallery.html's fixture Saturday wall (fictional crew,
+# no token), rendered 2026-10-19. Named exactly, so the deny still holds for
+# anything else that lands in docs/.
+!docs/img/wall.jpg
 
 # Phase 1 builder frames (claude-plans/2026-09-26-unified-build/LIST-BUILD.md)
 list-shots/
