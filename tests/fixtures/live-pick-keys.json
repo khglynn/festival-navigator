@@ -397,6 +397,7 @@
         "JOA",
         "Jessica Audiffred",
         "Jkyl & Hyde",
+        "Josh Baker",
         "Joshwa",
         "KI/KI",
         "KREAM",
@@ -428,6 +429,7 @@
         "Of The Trees (Sunset Set)",
         "Omar+",
         "Pegassi",
+        "Prospa",
         "Prospa B2B Josh Baker",
         "RAJE",
         "Ravenscoon",
@@ -451,7 +453,11 @@
         "Zack Martino",
         "phrva"
       ],
-      "days": []
+      "days": [
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
     },
     "seismic-9": {
       "frozenAt": "2026-10-19",
