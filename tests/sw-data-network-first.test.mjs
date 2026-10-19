@@ -63,6 +63,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
         match: async (req) => (store.has(keyOf(req)) ? new Response(store.get(keyOf(req))) : undefined),
         put: async (req, resp) => {
           const body = await resp.text();
+          if (putDelay === Infinity) await new Promise(() => {}); // storage that never settles
           if (putDelay) await sleep(putDelay);
           puts.push(`${name} ${keyOf(req)}`); store.set(keyOf(req), body);
         },
@@ -223,6 +224,16 @@ test('shell assets: a miss goes to the network and is kept in this worker\'s cac
   assert.equal(body, 'icon bytes');
   assert.equal(w.cachedBody(CURRENT, '/icon-maskable-512.png'), 'icon bytes', 'stored by the time the response was handed back — no late waitUntil');
   assert.deepEqual(w.puts, [`${CURRENT} ${ORIGIN}/icon-maskable-512.png`]);
+});
+
+test('shell assets: a miss on an install-list file is served from the network and never stored on its own', async () => {
+  // One file at a time could be another build's bytes in this build's cache;
+  // only install's addAll and a proved repair write the install list.
+  const w = bootWorker({ fetchImpl: () => delayed('export const wall = "live";', 5) });
+  const { body } = await dispatch(w, '/js/v3/wall.js');
+  assert.equal(body, 'export const wall = "live";');
+  assert.deepEqual(w.puts, [], 'nothing written');
+  assert.equal(w.cachedBody(CURRENT, '/js/v3/wall.js'), undefined);
 });
 
 test('the platform\'s own scripts (/_vercel/) are never ours to cache — the browser fetches them untouched', async () => {
@@ -540,6 +551,29 @@ test('repair: a fetch that ignores the abort and answers after the deadline stil
   release(); // the late answer: the whole, correct set
   assert.deepEqual(await answer, ['timeout']);
   assert.deepEqual(w.puts, []);
+});
+
+test('repair: the deadline landing in the middle of the writes — "timeout", no reload, and only proven bytes written', async () => {
+  // 10 ms per write (real time) against the 20 s deadline scaled to 200 ms:
+  // the run is proved and starts writing, and the deadline lands partway.
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree(), putDelay: 10 });
+  assert.deepEqual(await askRepair(w), ['timeout']);
+  assert.ok(w.puts.length > 0 && w.puts.length < 1 + STAMPED.length, `partway: ${w.puts.length} of ${1 + STAMPED.length}`);
+  for (const x of w.puts) {
+    const p = new URL(x.split(' ')[1]).pathname;
+    assert.equal(w.cachedBody(CURRENT, p), fileOf(p).toString('utf8'), `${p} is this tree's own bytes`);
+  }
+});
+
+test('repair: storage that never settles still answers "timeout" in time, and the next ask is a fresh run', async () => {
+  const seen = [];
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen }), putDelay: Infinity });
+  const t0 = Date.now();
+  assert.deepEqual(await askRepair(w), ['timeout']);
+  assert.ok(Date.now() - t0 < 2000, 'bounded: the run\'s deadline plus a moment, scaled');
+  const firstBatch = seen.length;
+  assert.deepEqual(await askRepair(w), ['timeout'], 'the next ask is answered too, not stuck behind the first');
+  assert.ok(seen.length > firstBatch, 'a fresh run fetched again');
 });
 
 test('repair: a second ask while one runs is the same run, and both pages hear its answer', async () => {
