@@ -23,7 +23,45 @@ const { FID, INDEX, FEST, crewDoc, heldNetwork, cachesHolding, within, SCREENS }
 const TOKEN = 'updaterow_0123456789abcd'; // a made-up crew, never a real link
 globalThis.caches = cachesHolding({ '/data/festivals/index.json': INDEX, [`/data/festivals/${FID}.json`]: FEST });
 const net = heldNetwork();
+// The page's CacheStorage, as the page reaches it: every delete is counted.
+let cacheDeletes = 0;
+// A service-worker container with the real one's shape, in control from the
+// first instant as on a phone (errlog.js asks it which build this is at boot).
+let win = null;
+let container = null;
+let Worker = null;
+let v89 = null;
+let reg = null;
+let online = true;
+function phone(dom) {
+  win = dom.window;
+  win.caches = {
+    keys: async () => ['festival-nav-v89', 'festival-nav-data-v1'],
+    delete: async () => { cacheDeletes += 1; return true; },
+    open: async () => ({ keys: async () => [], match: async () => undefined, delete: async () => { cacheDeletes += 1; return true; } }),
+    match: async () => undefined,
+  };
+  container = new win.EventTarget();
+  container.startMessages = () => {};
+  Worker = class extends win.EventTarget {
+    constructor(build, state = 'activated') { super(); this.build = build; this.state = state; }
+    postMessage(m) {
+      if (!m || m.fn !== 'build?') return;
+      const data = { fnBuild: `festival-nav-${this.build}`, fnStamp: '0123abcd' };
+      setTimeout(() => container.dispatchEvent(new win.MessageEvent('message', { data })), 1);
+    }
+    to(state) { this.state = state; this.dispatchEvent(new win.Event('statechange')); }
+  };
+  v89 = new Worker('v89');
+  reg = { active: v89, installing: null, waiting: null, updates: 0, next: null };
+  reg.update = async () => { reg.updates += 1; if (reg.next) reg.next(); };
+  container.controller = v89;
+  container.getRegistration = async () => reg;
+  Object.defineProperty(win.navigator, 'serviceWorker', { value: container, configurable: true });
+  Object.defineProperty(win.navigator, 'onLine', { get: () => online, configurable: true });
+}
 const shell = await bootShell({
+  setup: phone,
   url: `https://fest.kevinhg.com/#g=${TOKEN}`,
   storage: {
     fn_crews_v3: JSON.stringify([{ token: TOKEN, name: '' }]),
@@ -34,38 +72,7 @@ const shell = await bootShell({
   fetch: net.fetch,
 });
 test.after(() => { shell.close(); delete globalThis.caches; mock.timers.reset(); });
-const { $, dom } = shell;
-const win = dom.window;
-
-// The page's CacheStorage, as the page reaches it: every delete is counted.
-let cacheDeletes = 0;
-win.caches = {
-  keys: async () => ['festival-nav-v89', 'festival-nav-data-v1'],
-  delete: async () => { cacheDeletes += 1; return true; },
-  open: async () => ({ keys: async () => [], match: async () => undefined, delete: async () => { cacheDeletes += 1; return true; } }),
-  match: async () => undefined,
-};
-
-// A service-worker container with the real one's shape.
-const container = new win.EventTarget();
-container.startMessages = () => {};
-class Worker extends win.EventTarget {
-  constructor(build, state = 'activated') { super(); this.build = build; this.state = state; }
-  postMessage(m) {
-    if (!m || m.fn !== 'build?') return;
-    const data = { fnBuild: `festival-nav-${this.build}`, fnStamp: '0123abcd' };
-    setTimeout(() => container.dispatchEvent(new win.MessageEvent('message', { data })), 1);
-  }
-  to(state) { this.state = state; this.dispatchEvent(new win.Event('statechange')); }
-}
-const v89 = new Worker('v89');
-const reg = { active: v89, installing: null, waiting: null, updates: 0, next: null };
-reg.update = async () => { reg.updates += 1; if (reg.next) reg.next(); };
-container.controller = v89;
-container.getRegistration = async () => reg;
-Object.defineProperty(win.navigator, 'serviceWorker', { value: container, configurable: true });
-let online = true;
-Object.defineProperty(win.navigator, 'onLine', { get: () => online, configurable: true });
+const { $ } = shell;
 
 // What the phone keeps that a reload must never lose, read key by key.
 const KEYS = ['fn_crews_v3', `fn_me_v3_${TOKEN}`, `fn_crew_doc_v3_${TOKEN}`, `fn_crew_fest_v3_${TOKEN}`];

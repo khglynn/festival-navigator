@@ -13,8 +13,11 @@
 // test of the whole week run at 9:30 PM on Portola Saturday (the CI night
 // clock) would see two of its four days. It wins over tests/helpers/
 // night-clock.mjs, as a test's own pin always does. `reportKey` fills index.html's fn-report-key meta, as a build
-// with crash reports switched on ships it (js/errlog.js). Browser primitives
-// jsdom lacks are supplied, never app behaviour.
+// with crash reports switched on ships it (js/errlog.js). `setup(dom)` runs
+// after the page exists and before app.js loads — for what a real phone has
+// from the first instant, such as the worker in control (js/errlog.js asks
+// it which build this is at boot). Browser primitives jsdom lacks are
+// supplied, never app behaviour.
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -22,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch, reportKey = '', now = null } = {}) {
+export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch, reportKey = '', now = null, setup = null } = {}) {
   if (now) pinClock(now);
   // The shipped key is overwritten either way: a test sends reports only when
   // it asks to, and never with the real project's key.
@@ -74,6 +77,7 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   const realSetInterval = globalThis.setInterval;
   globalThis.setInterval = (...a) => { const h = realSetInterval(...a); intervals.add(h); return h; };
   const close = () => { for (const h of intervals) clearInterval(h); dom.window.close(); };
+  if (setup) await setup(dom);
   await import('../../js/v3/app.js');
   return { dom, close, $: (id) => dom.window.document.getElementById(id) };
 }
