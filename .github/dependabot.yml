@@ -4,6 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: thursday
     # Stamped from repo-standards: nothing newer than 7 days (majors 30), matching .npmrc.
     cooldown:
       default-days: 7
@@ -17,6 +18,7 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: thursday
     # Stamped from repo-standards: nothing newer than 7 days. The github-actions
     # ecosystem supports only default-days (the semver-*-days keys are npm-only).
     cooldown:
