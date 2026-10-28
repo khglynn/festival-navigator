@@ -2,6 +2,24 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-28 — Ray's season email, and the project goes on ice
+
+- **Ray got his reply.** Kevin's last email to him was Aug 3 and Ray's
+  Aug 6 checkpoint had waited since; two drafts (Sep 1, Oct 19) never went
+  out. The one sent on Oct 28 was rewritten after a fact-check of the
+  Oct 19 draft and a Codex read from Ray's side: what shipped, matched to
+  his July list (shows around town on the festival board, map pins and
+  ticket prices, Our picks, the artist sheet, screenshot import on his
+  Gemini fix), and what's next (an iOS app, photos in notes, his Discover).
+  Left out on purpose: the Oct 19 license change, for a line of its own
+  before he sends code (NOW.md).
+- **A count corrected.** AGENTS.md said Folsom weekend was "68 one-party
+  rooms"; the data has 64 parties in 34 venues, Fri to Sun (9 of the 54
+  venue-nights hold more than one party). The 68 was MODEL-V4's research
+  list, which now notes what shipped.
+- **Iced** with EDC Orlando's set times not yet out and Dependabot #97 red
+  on a jsdom-sensitive test; both are in NOW.md.
+
 ## 2026-10-19 — the off-season polish pass: v116, the front door and the docs
 
 The season is over (Portola Sep 26–27, ACL Oct 2–11) and Ray, who forked

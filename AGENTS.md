@@ -301,7 +301,7 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   with `venue`. The validator errors on both, on neither, and on one
   section whose entries disagree. **A third presentation is DECLARED, never
   inferred** (v94, MODEL-V4 §3e): a section whose `dayMeta` entry says
-  `"layout": "by-time"` (Folsom weekend, 68 one-party rooms) shows each
+  `"layout": "by-time"` (Folsom weekend, 64 parties in 34 venues) shows each
   night's cards in start order under fixed time bands, each card saying its
   own place; the same card, the same now window except that a party's
   printed end wins, the same doors. On a phone it keeps the shell's two

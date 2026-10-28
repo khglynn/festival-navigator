@@ -1,8 +1,9 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-19 · mode: off-season** (Portola and ACL are done;
-the next festivals friends have crews for are EDC Orlando, Nov 6–8, and
-Seismic, Nov 13–15: full by-day lineups, no set times yet)
+**last-updated: 2026-10-28 · mode: off-season, iced** (Portola and ACL are
+done, and Kevin is pausing the project; the next festivals friends have crews
+for are EDC Orlando, Nov 6–8, and Seismic, Nov 13–15: full by-day lineups,
+no set times as of Oct 28)
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
@@ -32,12 +33,13 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Off-season: what still moves
 
-- **Set-time drops.** EDC Orlando (expected around the last week of
-  October) and Seismic (around Nov 9) have crews with picks. When a
+- **Set-time drops.** EDC Orlando (not out on Oct 28; FestiPlannr guessed
+  around Oct 30) and Seismic (around Nov 9) have crews with picks. When a
   festival posts its times, it is a data-only push under the standing OK
   (validator + freeze + tests): `docs/fest-update-runbook.md`. Nothing
-  watches for the drop yet; a phone left open picks it up when it comes
-  back to the app (v116).
+  watches for the drop, so while the project is iced a drop waits for Kevin
+  to open a session and say "EDC set times are out"; a phone left open
+  picks the data up when it comes back to the app (v116).
 - **ACL's weekend 2** ran on the Aug 27 posters; it was never re-read. It
   is history now.
 
@@ -85,9 +87,7 @@ Each has a default; "3: yes" is enough.
    Diagnostics says v116 from the worker; and v115's unconfirmed checks
    (Camera scans the Invite QR; long-press Save keeps the card; Pick for a
    friend → add a name). Default: whenever convenient.
-6. **Ray's email**: the reply is a draft in Gmail (thread "Forked
-   festival-navigator"); the September draft beside it can go.
-7. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
+6. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
    closed, `UNLICENSED`), GitHub Pages off, branch auto-delete on, the
    `browser` job required beside `checks`, email addresses redacted on the
    kept `seasons/kickoff` and `live/plan-share` branches, and 91 merged and
@@ -96,8 +96,15 @@ Each has a default; "3: yes" is enough.
    the `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
    (his login); in Neon, the test-walk crews, duplicate person rows and older
    backups (production data: a backup branch, then a reviewed plan).
-8. **Dependabot #97** (pglite, jsdom, Playwright) came in red on its first
-   run; the required checks keep it from merging. Look before it does.
+7. **Dependabot #97** (pglite, jsdom, Playwright) is red: one unit test
+   fails, "the show menu's rows are real buttons, and still options in the
+   listbox" ("a keyboard can stand on a row"), most likely the jsdom bump
+   (CI run 39714208542, Oct 22). The required checks keep it from merging,
+   so it waits safely for the thaw.
+8. **Ray** (the July fork) got the season update on 2026-10-28: what
+   shipped from his list, and an invite to send work over. Not told yet:
+   the repo went all-rights-reserved on Oct 19 (#98), worth one honest
+   line before he sends code.
 
 ## Next, when there is time
 

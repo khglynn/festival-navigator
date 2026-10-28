@@ -455,7 +455,8 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
 ## 3e. A section can read by time, 2026-09-25 (v94)
 
 Folsom weekend: 68 verified public parties, Fri Sep 25 to Mon Sep 28, in 39
-venues. On any night only two or three rooms host more than one (The Stud,
+venues. (What shipped, counted 2026-10-27 from `portola-2026.json`: 64
+parties in 34 venues, Fri to Sun.) On any night only two or three rooms host more than one (The Stud,
 SF Eagle; Powerhouse three on Sunday), so §1.2's stacks would be 18 to 20
 one-card columns a night. Ten parties start in Saturday's 9 PM hour and
 sixteen run at once on Friday, so a clock would pile up on a phone. Kevin
