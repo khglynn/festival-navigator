@@ -15,7 +15,9 @@
 // Rules with teeth, all enforced here rather than trusted to callers:
 //   - Nothing leaves that this file did not write. No SDK, no autocapture,
 //     no page URL, no referrer, no DOM text. The report is built field by
-//     field from the list in buildReport().
+//     field from the list in buildReport(). The one outside script is
+//     Vercel's page-view counter (countVisits, v117), held by the same
+//     switch, whose every event visitEvent() cuts to origin and path.
 //   - Every string that can leave the phone (the message, each frame's
 //     function and path, and the journal too, which Diagnostics hands to a
 //     person to paste) goes through scrubText(): never a crew token, the
@@ -535,6 +537,51 @@ function maySend() {
   if (!reporting()) return false;
   if (settings().stayOffline === true) return false;
   return online();
+}
+
+// ---- visit counts (Vercel Web Analytics, v117; Kevin, 2026-10-28) ---------------
+// Vercel's cookie-free page-view counter, loaded through this door and held
+// by this switch: only on the three production hosts, only while reports are
+// on and Stay offline is off, and only once the page is idle. Its script
+// sends `location.href` whole, and here the hash is `#g=<crew token>`, so
+// every event passes visitEvent() first: origin and path only, never the
+// query or hash, re-checked against the switch at send time. A path that the
+// scrubber would touch is dropped, not sent. Page views only: no custom
+// events, and never identify or group (the only calls that write storage).
+const VISIT_SCRIPT = '/_vercel/insights/script.js';
+const VISIT_HOSTS = ['fest', 'festival', 'crew'];
+const VISIT_IDLE_MS = 2000;
+
+export function visitEvent(event) {
+  try {
+    if (!reporting() || settings().stayOffline === true) return null;
+    const u = new URL(String(event && event.url));
+    if (scrubText(u.pathname) !== u.pathname) return null;
+    return Object.assign({}, event, { url: u.origin + u.pathname });
+  } catch { return null; }
+}
+
+let visitsAsked = false;
+export function countVisits() {
+  if (visitsAsked) return;
+  visitsAsked = true;
+  try {
+    if (VISIT_HOSTS.indexOf(hostKind()) < 0 || !maySend()) return;
+    const start = () => {
+      try {
+        if (!maySend()) return;
+        const w = window;
+        if (typeof w.va !== 'function') w.va = function () { (w.vaq = w.vaq || []).push(arguments); };
+        w.va('beforeSend', visitEvent);
+        const s = w.document.createElement('script');
+        s.defer = true;
+        s.src = VISIT_SCRIPT;
+        w.document.head.appendChild(s);
+      } catch { /* a visit uncounted is fine; a throw is not */ }
+    };
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(start, { timeout: VISIT_IDLE_MS * 2 });
+    else setTimeout(start, VISIT_IDLE_MS);
+  } catch { /* a journal must never be the thing that throws */ }
 }
 
 // ---- the queue --------------------------------------------------------------------

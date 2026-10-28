@@ -833,13 +833,15 @@ export function renderSettings(root, ctx, actions) {
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
-  // Crash reports and usage (v88; usage since v108, Kevin 2026-10-01): on by
-  // default, the line beside it says what goes, name included. This phone's
-  // choice alone — it lives in this device's settings, never the crew doc.
-  // Off drops whatever was waiting, and nothing leaves after that. A build
-  // with no report key sends nothing, so it offers nothing to switch.
+  // Crash reports and usage (v88; usage since v108, Kevin 2026-10-01; Vercel's
+  // visit count since v117, which adds the rough location Vercel works out
+  // from each visit): on by default, the line beside it says what goes, name
+  // included. This phone's choice alone — it lives in this device's
+  // settings, never the crew doc. Off drops whatever was waiting, and nothing
+  // leaves after that. A build with no report key sends nothing, so it
+  // offers nothing to switch.
   if (reportKey()) {
-    list.appendChild(toggleRow('Send crash reports and usage to Kevin', 'with your name, phone type and what you tap · never notes or crew links', reportsOn(), (on) => {
+    list.appendChild(toggleRow('Send crash reports and usage to Kevin', 'with your name, phone type, rough location and what you tap · never notes or crew links', reportsOn(), (on) => {
       saveAppSettings({ ...appSettings(), crashReports: on });
       if (!on) clearReports();
     }));

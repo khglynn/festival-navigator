@@ -2,6 +2,29 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-28 — v117: Vercel's visit count, through the one door
+
+- **Why.** Kevin asked for Vercel Web Analytics on his live sites (the
+  rollout brief in the voting-guide workbench). This app's law is that
+  `js/errlog.js` is the only door out, because every analytics script
+  records `location.href` and here the hash is the crew token; the Sep 24
+  design removed a dead Vercel tag for that reason.
+- **What.** `countVisits()` in errlog.js loads `/_vercel/insights/script.js`
+  once the page is idle, on fest, festival and crew.kevinhg.com only, and
+  only while "Send crash reports and usage to Kevin" is on and Stay offline
+  is off. Every event passes `visitEvent()`, which keeps origin and path
+  and re-reads the switch at send time. Page views only. index.html starts
+  it beside the error hook; the Settings line and the README's privacy
+  section now name the rough location Vercel works out.
+- **Proof.** `tests/visit-count.test.mjs` (red with the URL passed
+  through). A one-off Chrome walk served the page as crew.kevinhg.com with
+  `#g=<fake token>` and Vercel's real production script: the view POST
+  carried `{"o":"https://crew.kevinhg.com/"}`, and with reports Off the
+  script was never requested.
+- **Kevin's side.** Flip Web Analytics on for the `festival-navigator`
+  project in Vercel; until then the script 404s quietly (a classic script,
+  so the module-load hook never journals it).
+
 ## 2026-10-28 — the project goes on ice
 
 - **Ray (raypp2)** got the season update; the correspondence lives in
