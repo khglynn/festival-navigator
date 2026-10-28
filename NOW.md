@@ -1,8 +1,9 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-10-19 · mode: off-season** (Portola and ACL are done;
-the next festivals friends have crews for are EDC Orlando, Nov 6–8, and
-Seismic, Nov 13–15: full by-day lineups, no set times yet)
+**last-updated: 2026-10-28 · mode: off-season, iced** (Portola and ACL are
+done, and Kevin is pausing the project; the next festivals friends have crews
+for are EDC Orlando, Nov 6–8, and Seismic, Nov 13–15: full by-day lineups,
+no set times as of Oct 28)
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
@@ -32,12 +33,13 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Off-season: what still moves
 
-- **Set-time drops.** EDC Orlando (expected around the last week of
-  October) and Seismic (around Nov 9) have crews with picks. When a
+- **Set-time drops.** EDC Orlando (not out on Oct 28; FestiPlannr guessed
+  around Oct 30) and Seismic (around Nov 9) have crews with picks. When a
   festival posts its times, it is a data-only push under the standing OK
   (validator + freeze + tests): `docs/fest-update-runbook.md`. Nothing
-  watches for the drop yet; a phone left open picks it up when it comes
-  back to the app (v116).
+  watches for the drop, so while the project is iced a drop waits for Kevin
+  to open a session and say "EDC set times are out"; a phone left open
+  picks the data up when it comes back to the app (v116).
 - **ACL's weekend 2** ran on the Aug 27 posters; it was never re-read. It
   is history now.
 
@@ -59,11 +61,10 @@ session on that Mac:
 
 Each has a default; "3: yes" is enough.
 
-1. **Staging** (stage.fest.kevinhg.com, a July build on the production
-   database): retire it (Kevin, 2026-10-19). Pausing the Vercel project
-   needs his hand, since the auto-mode checker refuses it from an agent:
-   vercel.com/kevinhg/festival-navigator-staging/settings, then Pause; then
-   drop AGENTS.md's staging bullet.
+1. **Staging is paused** (2026-10-28, Kevin's ask): stage.fest.kevinhg.com
+   answers 503 and its Vercel project skips every build (Ignored Build
+   Step `exit 0`). Both undo from
+   vercel.com/kevinhg/festival-navigator-staging/settings.
 2. **Two List-view calls from Oct 4, never recorded** (his ring note and
    Pen checklist): "Default to list", and "in the List, highlighting should
    still just highlight" plus an always-reachable Picks view, which would
@@ -85,19 +86,27 @@ Each has a default; "3: yes" is enough.
    Diagnostics says v116 from the worker; and v115's unconfirmed checks
    (Camera scans the Invite QR; long-press Save keeps the card; Pick for a
    friend → add a name). Default: whenever convenient.
-6. **Ray's email**: the reply is a draft in Gmail (thread "Forked
-   festival-navigator"); the September draft beside it can go.
-7. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
+6. **Housekeeping (Kevin: yes, 2026-10-19).** Done: no open license (#91
    closed, `UNLICENSED`), GitHub Pages off, branch auto-delete on, the
    `browser` job required beside `checks`, email addresses redacted on the
    kept `seasons/kickoff` and `live/plan-share` branches, and 91 merged and
    throwaway branches deleted (six kept as `archive/*` tags; left: main,
-   `seasons/*`, `live/plan-share`, the open Dependabot branch). Still to do:
-   the `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
-   (his login); in Neon, the test-walk crews, duplicate person rows and older
-   backups (production data: a backup branch, then a reviewed plan).
-8. **Dependabot #97** (pglite, jsdom, Playwright) came in red on its first
-   run; the required checks keep it from merging. Look before it does.
+   `seasons/*`, `live/plan-share`, the open Dependabot branch). Neon,
+   2026-10-28 (backup `backup-2026-10-28-pre-cleanup` first, plan reviewed
+   by Codex): 39 single-member test crews and 54 orphaned test persons
+   deleted, the 39 surviving crews byte-identical, 4 older backup branches
+   deleted. Still for Kevin's hand: the `hg-vibe-code-test-festival-nav`
+   Vercel project in the codercom team (his login; it deploys every push),
+   and the 2026-08-27 and 2026-09-23 backup branches (auto mode refused
+   those two deletes): console.neon.tech, project floral-meadow-70237530.
+7. **Dependabot #97** (pglite, jsdom, Playwright) is red: one unit test
+   fails, "the show menu's rows are real buttons, and still options in the
+   listbox" ("a keyboard can stand on a row"), most likely the jsdom bump
+   (CI run 39714208542, Oct 22). The required checks keep it from merging,
+   so it waits safely for the thaw.
+8. **Ray's fork (raypp2)**: before any of his code comes over, say in one
+   line that the repo is all rights reserved since Oct 19 (#98); he forked
+   under MIT.
 
 ## Next, when there is time
 

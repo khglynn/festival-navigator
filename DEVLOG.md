@@ -2,6 +2,27 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-28 — the project goes on ice
+
+- **Ray (raypp2)** got the season update; the correspondence lives in
+  Kevin's own notes, as of 2026-10-19.
+- **A count corrected.** AGENTS.md said Folsom weekend was "68 one-party
+  rooms"; the data has 64 parties in 34 venues, Fri to Sun (9 of the 54
+  venue-nights hold more than one party). The 68 was MODEL-V4's research
+  list, which now notes what shipped.
+- **Housekeeping, at Kevin's ask.** Staging paused, its builds skipped.
+  Neon: a backup branch, then a plan Codex reviewed (it asked for a
+  reverse check that no deleted person's id is still a member in a
+  surviving crew, and for shape guards on every delete). Deleted 39
+  single-member test crews (members named Test or HG Test, the zz- fixture
+  crews, and Kevin's empty crews for festivals that are over) and 54 test
+  persons left with no live crew; pruned the deleted crews out of Kevin's 5
+  real person rows; the 39 surviving crews hash the same before and after.
+  Kept every multi-member crew, everyone else's solo crews, Kevin's solo
+  crews with picks, and his empty crews for festivals still ahead.
+- **Iced** with EDC Orlando's set times not yet out and Dependabot #97 red
+  on a jsdom-sensitive test; both are in NOW.md.
+
 ## 2026-10-19 — the off-season polish pass: v116, the front door and the docs
 
 The season is over (Portola Sep 26–27, ACL Oct 2–11) and Ray, who forked
