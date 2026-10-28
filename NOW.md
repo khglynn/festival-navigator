@@ -101,10 +101,9 @@ Each has a default; "3: yes" is enough.
    listbox" ("a keyboard can stand on a row"), most likely the jsdom bump
    (CI run 39714208542, Oct 22). The required checks keep it from merging,
    so it waits safely for the thaw.
-8. **Ray** (the July fork) got the season update on 2026-10-28: what
-   shipped from his list, and an invite to send work over. Not told yet:
-   the repo went all-rights-reserved on Oct 19 (#98), worth one honest
-   line before he sends code.
+8. **Ray's fork (raypp2)**: before any of his code comes over, say in one
+   line that the repo is all rights reserved since Oct 19 (#98); he forked
+   under MIT.
 
 ## Next, when there is time
 
