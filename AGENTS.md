@@ -142,8 +142,8 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
   staging was deleted through the prod Neon connection). Staging writes are
   prod writes; test with throwaway crews/persons and delete them after. The
-  staging host itself is frozen at v35 (curl, 2026-10-19); whether to retire
-  it or give it its own database branch is Kevin's call (NOW.md).
+  staging project is paused and skips builds (2026-10-28); give it its own
+  database branch before anyone unpauses it.
 - **Node tests are blind to two browser rules** (both bit on 2026-08-27,
   three Codex rounds and 256 green tests deep): (1) WebIDL receivers — a DOM
   global stored on an object or record and called as a method

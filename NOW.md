@@ -61,11 +61,10 @@ session on that Mac:
 
 Each has a default; "3: yes" is enough.
 
-1. **Staging** (stage.fest.kevinhg.com, a July build on the production
-   database): retire it (Kevin, 2026-10-19). Pausing the Vercel project
-   needs his hand, since the auto-mode checker refuses it from an agent:
-   vercel.com/kevinhg/festival-navigator-staging/settings, then Pause; then
-   drop AGENTS.md's staging bullet.
+1. **Staging is paused** (2026-10-28, Kevin's ask): stage.fest.kevinhg.com
+   answers 503 and its Vercel project skips every build (Ignored Build
+   Step `exit 0`). Both undo from
+   vercel.com/kevinhg/festival-navigator-staging/settings.
 2. **Two List-view calls from Oct 4, never recorded** (his ring note and
    Pen checklist): "Default to list", and "in the List, highlighting should
    still just highlight" plus an always-reachable Picks view, which would
@@ -92,10 +91,14 @@ Each has a default; "3: yes" is enough.
    `browser` job required beside `checks`, email addresses redacted on the
    kept `seasons/kickoff` and `live/plan-share` branches, and 91 merged and
    throwaway branches deleted (six kept as `archive/*` tags; left: main,
-   `seasons/*`, `live/plan-share`, the open Dependabot branch). Still to do:
-   the `hg-vibe-code-test-festival-nav` Vercel project in the codercom team
-   (his login); in Neon, the test-walk crews, duplicate person rows and older
-   backups (production data: a backup branch, then a reviewed plan).
+   `seasons/*`, `live/plan-share`, the open Dependabot branch). Neon,
+   2026-10-28 (backup `backup-2026-10-28-pre-cleanup` first, plan reviewed
+   by Codex): 39 single-member test crews and 54 orphaned test persons
+   deleted, the 39 surviving crews byte-identical, 4 older backup branches
+   deleted. Still for Kevin's hand: the `hg-vibe-code-test-festival-nav`
+   Vercel project in the codercom team (his login; it deploys every push),
+   and the 2026-08-27 and 2026-09-23 backup branches (auto mode refused
+   those two deletes): console.neon.tech, project floral-meadow-70237530.
 7. **Dependabot #97** (pglite, jsdom, Playwright) is red: one unit test
    fails, "the show menu's rows are real buttons, and still options in the
    listbox" ("a keyboard can stand on a row"), most likely the jsdom bump
