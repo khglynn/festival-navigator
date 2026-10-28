@@ -57,6 +57,7 @@ test('the toggle sits with the other device switches, on by default, saying what
   assert.equal(row.querySelector('.row-title').textContent, LABEL);
   assert.match(row.querySelector('.row-sub').textContent, /your name/, 'the line beside it says the name goes');
   assert.match(row.querySelector('.row-sub').textContent, /what you tap/, 'and that taps go too');
+  assert.match(row.querySelector('.row-sub').textContent, /rough location/, 'and the rough location Vercel\'s visit count works out (v117)');
   assert.match(row.querySelector('.row-sub').textContent, /never notes or crew links/);
   const rows = [...$('settings-root').querySelectorAll('button[role="switch"]')].map((b) => b.getAttribute('aria-label'));
   assert.deepEqual(rows, ['Low power', 'Stay offline', LABEL], 'the same component as its neighbours, right after them');

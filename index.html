@@ -42,7 +42,7 @@
     <!-- This page's own build, the same number as the worker's CACHE_VERSION
          — written by node scripts/sw-stamp.mjs, never by hand. A crash report
          from a page no worker controls names its build from here. -->
-    <meta name="fn-build" content="v116">
+    <meta name="fn-build" content="v117">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -543,10 +543,13 @@
          app.js: a module that fails to parse (syntax an older Safari doesn't
          know) stops every module in app.js's graph from running, errlog.js
          included, and leaves a blank page no hook installed from app.js could
-         ever see. This graph is errlog.js alone. -->
+         ever see. This graph is errlog.js alone. It also starts the visit
+         count (v117), looked up rather than imported by name, so an
+         errlog.js from an older build can never stop the hook. -->
     <script type="module">
-      import { hookGlobalErrors } from '/js/errlog.js';
-      hookGlobalErrors();
+      import * as errlog from '/js/errlog.js';
+      errlog.hookGlobalErrors();
+      if (typeof errlog.countVisits === 'function') errlog.countVisits();
     </script>
     <script type="module" src="/js/v3/app.js"></script>
     <script>

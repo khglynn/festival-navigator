@@ -192,7 +192,10 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   the phone, sent through `/fn-i/batch` (a vercel.json rewrite, key in
   index.html's `fn-report-key` meta). No analytics SDK, no autocapture, no
   replay: every SDK records `location.href`, which here carries
-  `#g=<crew token>`, and click text, which carries names. An error goes
+  `#g=<crew token>`, and click text, which carries names. The one outside
+  script, Vercel's page-view count (v117, `countVisits`), loads from there
+  on the production hosts only, and `visitEvent` cuts every URL it sends to
+  origin and path. An error goes
   through `record()`, whose scrubber cuts tokens, queries, hashes and quoted
   snippets; usage (v108) goes through `track(name, props)`, which takes only
   what its allowlist `USAGE` names — every value a boolean, a bounded number
@@ -200,7 +203,7 @@ incidents behind these rules are in DEVLOG.md; search it by the date.
   `tests/usage-track.test.mjs` fails if a `track()` call and the list
   disagree. A new event is a line on that list, never a string from the
   page. The public pid and the name in the crew may ride along (Kevin,
-  2026-09-24); note text and artist names never. One switch covers both
+  2026-09-24); note text and artist names never. One switch covers all three
   ("Send crash reports and usage to Kevin"); Off and Stay offline are read
   inside errlog.js, so they hold even when app.js never loaded. Why each
   rule: `claude-plans/2026-09-24-analytics/BUILD.md`.

@@ -80,6 +80,11 @@ Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   and its screen size and app build, all from an allowlist of fields and
   words. Never note text, artist names or crew links; links and tokens are
   scrubbed out of error messages.
+- The same file also counts visits with Vercel's cookie-free Web Analytics,
+  on the hosted app only: the page's address with everything after `?` or
+  `#` cut off (so never a crew link), plus the rough location, browser and
+  device type Vercel works out itself. No cookie, and no IP is kept with
+  the count.
 - One switch in Settings, "Send crash reports and usage to Kevin", turns it
   all off. A fork on its own domain reports nowhere until it sets its own
   key; run locally, it still reports upstream until that key is changed or
