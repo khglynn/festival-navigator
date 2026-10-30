@@ -2,6 +2,25 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-30 — v118: the research add brings set times back
+
+- **Why.** Kevin wanted Freaky Deaky (Austin, Oct 30–31) on the board the
+  night before for a friend going Saturday. The add path's prompt only ever
+  asked Gemini for a lineup (name and day per artist), so stages and set
+  times had nowhere to land even when the schedule was on the page it read.
+- **What.** The prompt moved to `api/_lib/festival-research.mjs` and now
+  asks for `days{}`, `dayMeta` and `timezone` when a published schedule
+  prints set times, never estimated. `settleGrid` settles the grid before
+  validation: a case-only grid spelling takes the lineup's (no one has picked
+  in a preview), an act only the schedule shows joins `artists[]` on its day,
+  and the grid stands whole or is dropped back to the lineup with a one-line
+  `gridNote`. A half grid is no grid, because uncovered days' artists would
+  read as sections with no night or venue. The Settings preview says how many
+  sets came back on how many stages, folds every set for review, or shows
+  the note.
+- **Proof.** `tests/festival-research.test.mjs` (the module did not exist;
+  red on the old code by import).
+
 ## 2026-10-28 — v117: Vercel's visit count, through the one door
 
 - **Why.** Kevin asked for Vercel Web Analytics on his live sites (the

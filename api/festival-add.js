@@ -1,4 +1,5 @@
-// Crew-scoped festival add via LLM lineup research.
+// Crew-scoped festival add via LLM lineup research (and its set times, when a
+// published schedule prints them — _lib/festival-research.mjs).
 //
 //   POST /api/festival-add?t=<crew token>  {name}
 //       -> Gemini (search-grounded) researches the festival, returns a
@@ -18,23 +19,9 @@ import { neon } from '@neondatabase/serverless';
 import { rateLimited, crossSite, callGemini, GEMINI_MODEL } from './_lib/guard.mjs';
 import { TOKEN_RE, LIMITS } from './_lib/crew-shared.mjs';
 import { validateFestivalDoc, SLUG_RE } from './_lib/festival-rules.mjs';
+import { researchPrompt, settleGrid } from './_lib/festival-research.mjs';
 
 const NAME_RE = /^[^\x00-\x1f<>"'`\\]{2,80}$/;
-
-function researchPrompt(name) {
-  return `Research the music festival "${name}" using web search. Return ONLY a JSON object (no markdown fence, no prose before or after) with this exact shape:
-{
-  "id": "<lowercase-slug-with-year, e.g. bonnaroo-2026>",
-  "name": "<festival display name, no year>",
-  "year": "<'YY with apostrophe, e.g. '26>",
-  "subtitle": "<venue name>",
-  "location": "<City, ST or City, Country>",
-  "dates": "<human-readable dates>",
-  "status": "<lineup if artists are announced but not set times; archived if the festival already happened; lineup if unsure>",
-  "artists": [{"name": "<official spelling>", "day": "<Friday etc, omit if unknown>"}]
-}
-Rules: artist names must use the artist's own official spelling/casing. Include the COMPLETE announced lineup, not a sample. If a field is unknown, omit it rather than guessing — never invent dates or artists. If you cannot find this festival at all, return {"notFound": true, "closest": ["<candidate names you did find>"]}.`;
-}
 
 // Extract the first top-level JSON object from grounded (prose-capable) output.
 function extractJson(text) {
@@ -114,9 +101,12 @@ export default async function handler(req, res) {
     for (const a of Array.isArray(candidate.artists) ? candidate.artists : []) {
       if (a && typeof a === 'object') { delete a.page; delete a.tickets; }
     }
+    // A researched stage grid stands whole or falls back to the lineup, with
+    // the reason riding along for the preview (_lib/festival-research.mjs).
+    const { gridNote } = settleGrid(candidate);
     const { errors, warnings } = validateFestivalDoc(candidate);
     if (errors.length) return res.status(502).json({ error: `Research result failed validation: ${errors[0]}` });
-    return res.status(200).json({ candidate, warnings, sources: result.sources || [] });
+    return res.status(200).json({ candidate, warnings, sources: result.sources || [], gridNote });
   } catch (error) {
     console.error('festival-add error:', error);
     return res.status(500).json({ error: 'Internal server error' });
