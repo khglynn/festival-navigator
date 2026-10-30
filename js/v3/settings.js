@@ -307,10 +307,17 @@ function openAddFestival(actions) {
       const gridDays = c.days && typeof c.days === 'object' ? Object.entries(c.days) : [];
       const setCount = gridDays.reduce((n, [, d]) => n + (Array.isArray(d && d.artists) ? d.artists.length : 0), 0);
       const stageCount = new Set(gridDays.flatMap(([, d]) => (Array.isArray(d && d.stages) ? d.stages : []))).size;
+      // The clock the times are read in rides along: a wrong zone or year
+      // would move the now line, and this is the only place to see it.
       card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; margin-top: 6px;',
         setCount
-          ? `Set times for ${setCount} sets on ${stageCount} stage${stageCount === 1 ? '' : 's'}`
+          ? `Set times for ${setCount} sets on ${stageCount} stage${stageCount === 1 ? '' : 's'}${c.timezone ? ` · times in ${c.timezone}` : ''}`
           : (body.gridNote || 'No set times found, so this is the lineup only.')));
+      const added = Array.isArray(body.added) ? body.added.filter((n) => typeof n === 'string') : [];
+      if (added.length) {
+        card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; margin-top: 4px; line-height: 1.5;',
+          `Added from the schedule: ${added.join(' · ')}`));
+      }
       if (setCount) {
         const fold = document.createElement('details');
         const sum = document.createElement('summary');
@@ -319,7 +326,9 @@ function openAddFestival(actions) {
         fold.appendChild(sum);
         for (const [label, d] of gridDays) {
           const sets = Array.isArray(d && d.artists) ? d.artists : [];
-          fold.appendChild(el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 700; margin-top: 8px;', label));
+          const meta = c.dayMeta && c.dayMeta[label];
+          const when = meta && typeof meta.iso === 'string' ? meta.iso : (meta && typeof meta.date === 'string' ? meta.date : '');
+          fold.appendChild(el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 700; margin-top: 8px;', when ? `${label} · ${when}` : label));
           for (const stage of (Array.isArray(d && d.stages) ? d.stages : [])) {
             const line = sets.filter((s) => s && s.stage === stage).map((s) => `${String(s.time || '').split(' - ')[0]} ${s.name}`).join(' · ');
             if (line) fold.appendChild(el('div', 'color: var(--text-body); font-size: 11.5px; line-height: 1.6; margin-top: 3px;', `${stage}: ${line}`));

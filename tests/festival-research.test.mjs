@@ -107,6 +107,54 @@ test('a grid the validator refuses falls back to the lineup, with the reason', (
   assert.deepEqual(validateFestivalDoc(c).errors, []);
 });
 
+test('a lineup day or dayMeta key that differs from the grid by case or spacing takes the grid spelling (the wall matches labels exactly)', () => {
+  const c = withGrid();
+  c.artists[0].day = 'friday';
+  c.artists[2].day = ' SATURDAY ';
+  c.dayMeta = { friday: c.dayMeta.Friday, Sat: c.dayMeta.Saturday, Sunday: { wd: 'Sun' } };
+  const { gridNote } = settleGrid(c);
+  assert.equal(gridNote, null);
+  assert.equal(c.artists[0].day, 'Friday');
+  assert.equal(c.artists[2].day, 'Saturday');
+  assert.deepEqual(Object.keys(c.dayMeta).sort(), ['Friday', 'Saturday']);
+  assert.deepEqual(validateFestivalDoc(c).errors, []);
+});
+
+test('accents, spacing and a billing extra never mint a second act; only a truly new name joins, and is listed', () => {
+  const c = withGrid();
+  c.artists.push({ name: 'Tiësto', day: 'Saturday' });
+  c.days.Saturday.artists.push({ name: 'Tiesto (DJ Set)', stage: 'The Lab', time: '8 PM - 9:30 PM' });
+  c.days.Saturday.artists.push({ name: 'Lazy K (Live)', stage: 'The Circuit', time: '8 PM - 9 PM' });
+  const { gridNote, added } = settleGrid(c);
+  assert.equal(gridNote, null);
+  assert.equal(c.artists.filter((a) => /ti[eë]sto/i.test(a.name)).length, 1);
+  assert.equal(c.days.Saturday.artists.at(-2).name, 'Tiësto');
+  assert.deepEqual(added, ['Lazy K']);
+  assert.deepEqual(c.artists.at(-1), { name: 'Lazy K', day: 'Saturday' });
+  assert.deepEqual(validateFestivalDoc(c).errors, []);
+});
+
+test('the validator refuses a grid or dayMeta field of the wrong type, so a saved file cannot throw in the wall', () => {
+  const numericWd = withGrid();
+  numericWd.dayMeta.Friday.wd = 5;
+  assert.ok(validateFestivalDoc(numericWd).errors.some((e) => /wd must be a short string/.test(e)));
+  const numericStage = withGrid();
+  numericStage.days.Friday.stages.push(7);
+  assert.ok(validateFestivalDoc(numericStage).errors.some((e) => /every stage must be a non-empty string/.test(e)));
+  const numericName = withGrid();
+  numericName.days.Friday.artists[0].name = 42;
+  assert.ok(validateFestivalDoc(numericName).errors.some((e) => /name must be a string/.test(e)));
+  const c = withGrid();
+  c.dayMeta.Friday.wd = 5;
+  assert.match(settleGrid(c).gridNote, /did not check out/);
+});
+
+test('the lineup-only fallback prompt is the pre-v118 ask', () => {
+  const p = researchPrompt('Big Fest 2026', { grid: false });
+  assert.ok(!p.includes('"days"'));
+  assert.match(p, /COMPLETE announced lineup/);
+});
+
 test('an archived festival keeps its status when its grid stands', () => {
   const c = { ...withGrid(), status: 'archived' };
   settleGrid(c);

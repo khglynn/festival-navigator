@@ -87,9 +87,17 @@ export default async function handler(req, res) {
     const name = (body.name || '').toString().trim();
     if (!NAME_RE.test(name)) return res.status(400).json({ error: 'Give the festival a plausible name (2-80 characters)' });
 
-    const result = await callGemini(researchPrompt(name), { grounded: true });
+    let result = await callGemini(researchPrompt(name), { grounded: true });
     if (result.error) return res.status(result.status).json({ error: result.error });
-    const candidate = extractJson(result.text);
+    let candidate = extractJson(result.text);
+    // A full lineup plus a grid is a long reply. If it came back cut off or
+    // unparseable, ask once more for the lineup alone (the pre-v118 ask), so
+    // a big festival never does worse than it did before set times.
+    if (!candidate) {
+      result = await callGemini(researchPrompt(name, { grid: false }), { grounded: true });
+      if (result.error) return res.status(result.status).json({ error: result.error });
+      candidate = extractJson(result.text);
+    }
     if (!candidate) return res.status(502).json({ error: 'Research returned no usable data — try again or add manually' });
     if (candidate.notFound) return res.status(404).json({ error: 'Could not find that festival', closest: (candidate.closest || []).slice(0, 5) });
 
@@ -103,10 +111,10 @@ export default async function handler(req, res) {
     }
     // A researched stage grid stands whole or falls back to the lineup, with
     // the reason riding along for the preview (_lib/festival-research.mjs).
-    const { gridNote } = settleGrid(candidate);
+    const { gridNote, added } = settleGrid(candidate);
     const { errors, warnings } = validateFestivalDoc(candidate);
     if (errors.length) return res.status(502).json({ error: `Research result failed validation: ${errors[0]}` });
-    return res.status(200).json({ candidate, warnings, sources: result.sources || [], gridNote });
+    return res.status(200).json({ candidate, warnings, sources: result.sources || [], gridNote, added });
   } catch (error) {
     console.error('festival-add error:', error);
     return res.status(500).json({ error: 'Internal server error' });

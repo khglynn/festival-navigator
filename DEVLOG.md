@@ -18,8 +18,20 @@ Newest first. One entry per meaningful unit of work.
   read as sections with no night or venue. The Settings preview says how many
   sets came back on how many stages, folds every set for review, or shows
   the note.
+- **Review (Opus, on the PR head) and what it changed.** Day labels and
+  dayMeta keys now take the grid's exact spelling (the wall matches labels
+  exactly, so "friday" beside "Friday" drew two Fridays); grid names match
+  the lineup through `searchFold` with billing extras set aside, so
+  "Tiesto (DJ Set)" never mints a second Tiësto, and the acts research did
+  add are listed in the preview; the validator now refuses a non-string
+  grid name or stage and a non-string `dayMeta` wd/date/sub (a numeric `wd`
+  threw in `eventModelOf` for the whole crew once saved); an unparseable
+  reply retries once with the lineup-only ask; the preview names the
+  timezone and each day's date. Left for Kevin: re-researching a festival
+  the crew already saved upserts over it, and a respelled name there would
+  strand its picks.
 - **Proof.** `tests/festival-research.test.mjs` (the module did not exist;
-  red on the old code by import).
+  red on the old code by import), plus a test per review fix.
 
 ## 2026-10-28 — v117: Vercel's visit count, through the one door
 
