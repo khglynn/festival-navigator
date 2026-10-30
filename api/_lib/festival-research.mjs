@@ -57,9 +57,16 @@ const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const SPLIT_DAY = /\s*[&+/]\s*|\s+and\s+/i;
 const GRID_KEYS = ['days', 'dayMeta', 'timezone'];
 // A billing extra the schedule prints after a name ("Tiësto (DJ Set)"): never
-// part of the name (docs/add-a-festival.md), so never a new act.
-const BILLING = /\s*\((?:dj set|dj|live|live set|hybrid set|b2b[^)]*|extended set|sunrise set|sunset set|special guest)\)\s*$/i;
-const nameKey = (s) => searchFold(String(s).replace(BILLING, '').replace(/\s+/g, ' ').trim());
+// part of the name (docs/add-a-festival.md), so never a new act. A B2B is NOT
+// one: "John Summit (b2b Dom Dolla)" is its own act, never John Summit's set,
+// so the key keeps it and only drops the parentheses, which lets a schedule's
+// "X (B2B Y)" find the lineup's "X B2B Y".
+const BILLING = /\s*\((?:dj set|dj|live|live set|hybrid set|extended set|sunrise set|sunset set)\)\s*$/i;
+const cutBilling = (s) => {
+  const cut = String(s).replace(BILLING, '').replace(/\s+/g, ' ').trim();
+  return cut || String(s).trim();
+};
+const nameKey = (s) => searchFold(cutBilling(s).replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim());
 const labelKey = (s) => String(s).replace(/\s+/g, ' ').trim().toLowerCase();
 
 // Back to a lineup: no grid, no grid dates, and never "scheduled" without one.
@@ -136,7 +143,7 @@ export function settleGrid(candidate) {
       if (!plain(s) || typeof s.name !== 'string' || !s.name.trim()) continue;
       const same = byKey.get(nameKey(s.name));
       if (same) { s.name = same; continue; }
-      s.name = s.name.replace(BILLING, '').replace(/\s+/g, ' ').trim();
+      s.name = cutBilling(s.name);
       candidate.artists.push({ name: s.name, day: label });
       byKey.set(nameKey(s.name), s.name);
       added.push(s.name);

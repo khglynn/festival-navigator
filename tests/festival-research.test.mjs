@@ -134,6 +134,23 @@ test('accents, spacing and a billing extra never mint a second act; only a truly
   assert.deepEqual(validateFestivalDoc(c).errors, []);
 });
 
+test('a B2B is its own act: never folded into a solo set, and its parentheses still find the lineup billing', () => {
+  const c = withGrid();
+  c.artists.push({ name: 'John Summit', day: 'Saturday' }, { name: 'Odd Mob B2B Omnom', day: 'Saturday' });
+  c.days.Saturday.stages.push('The Reactor');
+  c.days.Saturday.artists.push(
+    { name: 'John Summit', stage: 'The Reactor', time: '6 PM - 7 PM' },
+    { name: 'John Summit (b2b Dom Dolla)', stage: 'The Reactor', time: '7 PM - 8 PM' },
+    { name: 'Odd Mob (B2B Omnom)', stage: 'The Reactor', time: '8 PM - 9 PM' },
+  );
+  const { gridNote, added } = settleGrid(c);
+  assert.equal(gridNote, null);
+  assert.deepEqual(added, ['John Summit (b2b Dom Dolla)']);
+  assert.equal(c.days.Saturday.artists.at(-1).name, 'Odd Mob B2B Omnom');
+  assert.ok(!c.artists.some((a) => a.name === 'Odd Mob'));
+  assert.deepEqual(validateFestivalDoc(c).errors, []);
+});
+
 test('the validator refuses a grid or dayMeta field of the wrong type, so a saved file cannot throw in the wall', () => {
   const numericWd = withGrid();
   numericWd.dayMeta.Friday.wd = 5;
