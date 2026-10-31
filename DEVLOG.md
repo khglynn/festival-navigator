@@ -2,6 +2,21 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-10-30 — v119: a researched festival has a door
+
+- **Why.** Adding Freaky Deaky through v118's research worked end to end
+  (66 sets on four stages, every one matching Festival Dust), and then there
+  was no way to open it. Settings' Your festivals lists what the crew doc
+  names, and the doc names a festival only once someone picks in it, so a
+  custom saved a moment ago had no row: "Saved — find it under Your
+  festivals" pointed at nothing. It was opened by hand.
+- **What.** Your festivals also lists this crew's own researched festivals
+  (`cachedCustomFestivals`), each a row that switches to it. A save makes
+  the new festival current: the switch closes the research drill, so
+  Settings comes back with it on top, one Back from its wall.
+- **Proof.** `tests/browser/custom-fest-door.test.mjs`, real clicks, red on
+  v118 (no row; the save left the old festival current).
+
 ## 2026-10-30 — v118: the research add brings set times back
 
 - **Why.** Kevin wanted Freaky Deaky (Austin, Oct 30–31) on the board the
