@@ -198,6 +198,22 @@ export async function fetchFestivalFile(id) {
   } catch { return null; }
 }
 
+// A festival this crew just saved, kept on this phone even when the read
+// that follows the save fails (v119 review): the server stores exactly what
+// was sent, so the sent doc is the stored one. Without this, a flaky network
+// after "Looks right" left the fest with no row and no switch.
+export function rememberCustomFestival(token, fest) {
+  if (!token || !fest || typeof fest.id !== 'string') return;
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(LS_CUSTOM(token))) || []; } catch { list = []; }
+  if (!Array.isArray(list)) list = [];
+  if (!list.some((f) => f && f.id === fest.id)) {
+    list.push(fest);
+    try { localStorage.setItem(LS_CUSTOM(token), JSON.stringify(list)); } catch { /* quota */ }
+  }
+  mergeCustoms([fest]);
+}
+
 // The crew's customs as last stored on this phone, without asking.
 export function cachedCustomFestivals(token) {
   try {

@@ -27,7 +27,7 @@ const custom = (id, name) => ({
   artists: [{ name: 'Restricted', day: 'Saturday' }, { name: 'Hannah Laing', day: 'Friday' }],
 });
 
-async function wallPhone({ saved = [], research = null } = {}) {
+async function wallPhone({ saved = [], research = null, readFailsAfterSave = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -38,13 +38,17 @@ async function wallPhone({ saved = [], research = null } = {}) {
   }, [TOKEN, FID]);
   const doc = { v: 4, meta: { name: 'Door Crew', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
   const stored = [...saved];
+  let savedOnce = false;
   await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
   await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await ctx.route('**/api/festival-add**', async (route) => {
     const req = route.request();
-    if (req.method() === 'GET') return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ festivals: stored }) });
+    if (req.method() === 'GET') {
+      if (readFailsAfterSave && savedOnce) return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ festivals: stored }) });
+    }
     const body = JSON.parse(req.postData() || '{}');
-    if (body.confirm) { stored.push(body.festival); return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ saved: true, id: body.festival.id }) }); }
+    if (body.confirm) { stored.push(body.festival); savedOnce = true; return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ saved: true, id: body.festival.id }) }); }
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ candidate: research, warnings: [], sources: [], gridNote: null, added: [] }) });
   });
   const page = await ctx.newPage();
@@ -94,5 +98,20 @@ test('saving a researched festival makes it the current one: Settings comes back
     }, null, { timeout: 6000 });
     await page.click('#settings-main .back-btn');
     await onWallOf(page, 'Fresh Fest');
+  } finally { await ctx.close(); }
+});
+
+test('a save whose follow-up read fails still lands on the festival it saved (v119 review)', { skip }, async () => {
+  const { ctx, page } = await wallPhone({ research: custom('flaky-fest-2026', 'Flaky Fest'), readFailsAfterSave: true });
+  try {
+    await openSettings(page);
+    await page.locator('#settings-main button', { hasText: /Research \+ add it to this board/ }).first().click();
+    await page.fill('#settings-subview input[aria-label="Festival name"]', 'Flaky Fest 2026');
+    await page.locator('#settings-subview button', { hasText: /^Research$/ }).click();
+    await page.locator('#settings-subview button', { hasText: /Looks right/ }).click();
+    await page.waitForFunction(() => {
+      const cur = document.querySelector('#settings-main .settings-card.current');
+      return cur && /FLAKY FEST/.test(cur.textContent);
+    }, null, { timeout: 6000 });
   } finally { await ctx.close(); }
 });
