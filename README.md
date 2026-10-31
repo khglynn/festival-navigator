@@ -197,7 +197,7 @@ js/name-rules.mjs             name validation SHARED with the server
 api/crew.js                   the crew store: create, read, atomic merge
 api/person.js                 the me link: one person across crews (public pid, secret token)
 api/access.js                 Spotify access requests (Slack approve flow)
-api/festival-add.js           AI lineup research: returns a candidate; saves it as the crew's own festival once confirmed
+api/festival-add.js           AI lineup research (set times too, once published): returns a candidate; saves it as the crew's own festival once confirmed
 api/import-schedule.js        reads a schedule image; returns only what is printed, stores nothing
 api/share.js                  per-festival link previews: index.html with its OG tags swapped
 api/_lib/                     validation + guards shared by client and server

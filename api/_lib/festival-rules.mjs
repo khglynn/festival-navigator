@@ -582,10 +582,16 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       // reach .includes() below (a throw here is a 500 for an API candidate).
       const stages = Array.isArray(day.stages) ? day.stages : [];
       if (!stages.length) err(`${safeKey(label)}: missing stages[]`);
+      // Types, not just presence (v118 review): researched grids come from a
+      // model, and a number where the wall expects a string throws inside the
+      // render — for the whole crew, every open — once it is saved.
+      if (stages.some((s) => typeof s !== 'string' || !s.trim())) err(`${safeKey(label)}: every stage must be a non-empty string`);
       if (!Array.isArray(day.artists) || !day.artists.length) { err(`${safeKey(label)}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
         if (!isPlain(a)) { err(`${safeKey(label)}.artists[${i}]: must be an object`); return; }
         if (!a.name) err(`${safeKey(label)}.artists[${i}]: missing name`);
+        else if (typeof a.name !== 'string') err(`${safeKey(label)}.artists[${i}]: name must be a string`);
+        if (a.stage && typeof a.stage !== 'string') err(`${safeKey(label)}.artists[${i}]: stage must be a string`);
         // Two-weekend fests tag sets with the weekend they play; untagged or
         // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
         // notes are keyed by day label, and renamed keys strand them.
@@ -704,6 +710,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     };
     for (const [label, meta] of Object.entries(fest.dayMeta)) {
       if (!isPlain(meta)) { err(`dayMeta.${safeKey(label)}: must be an object`); continue; }
+      // The heads and tabs slice and print these (events.js eventModelOf): a
+      // number here throws at render time, not at save time (v118 review).
+      for (const k of ['wd', 'date', 'sub']) {
+        if (meta[k] !== undefined && (typeof meta[k] !== 'string' || meta[k].length > 60)) err(`dayMeta.${safeKey(label)}.${k} must be a short string`);
+      }
       if (meta.iso !== undefined && meta.isos !== undefined) err(`dayMeta.${safeKey(label)}: iso OR isos, not both`);
       if (meta.iso !== undefined) {
         if (!realDate(meta.iso)) err(`dayMeta.${safeKey(label)}.iso must be a real YYYY-MM-DD date`);

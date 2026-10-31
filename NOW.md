@@ -10,7 +10,11 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 
 ## Live on production
 
-- **Live:** v116 from `main` on all three hosts, checked 2026-10-19.
+- **Live:** v118 from `main` on all three hosts, checked 2026-10-30.
+- **v118** (PR #102, 2026-10-30): the Settings research add brings back
+  stages and set times when a published schedule prints them, else the
+  lineup with a note (`api/_lib/festival-research.mjs`). v117 (#101) was
+  Vercel's visit count.
 - **v116** (PR #96, 2026-10-19): Portola and ACL are archived, so a
   newcomer lands on EDC Orlando and an old crew reads "this wall is the
   memory"; Settings opens at the top; and a phone whose saved copy cannot
