@@ -11,6 +11,8 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 ## Live on production
 
 - **Live:** v118 from `main` on all three hosts, checked 2026-10-30.
+- **v119** (2026-10-30): a researched festival gets a row under Your
+  festivals, and saving one makes it current.
 - **v118** (PR #102, 2026-10-30): the Settings research add brings back
   stages and set times when a published schedule prints them, else the
   lineup with a note (`api/_lib/festival-research.mjs`). v117 (#101) was

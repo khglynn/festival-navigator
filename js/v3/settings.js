@@ -7,7 +7,7 @@ import * as crew from '../crew.js';
 import * as spotify from '../spotify.js';
 import * as sync from '../sync.js';
 import * as model from './model.js';
-import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
+import { FESTIVAL_INDEX, FESTIVALS, cachedCustomFestivals } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
@@ -209,6 +209,21 @@ function festivalsSection(ctx, actions) {
       onPick: () => (sameCrew ? actions.switchFestival(p.fid) : actions.openBoard(p.token, p.fid)),
     }));
   }
+  // This crew's own researched festivals (v119, 2026-10-30). The rows above
+  // come from the crew doc, which names a festival only once someone picks in
+  // it, so a custom saved a moment ago had no row anywhere and "Saved — find
+  // it under Your festivals" pointed at nothing (found adding Freaky Deaky).
+  const token = state.getCrewToken();
+  const shown = new Set(pairs.filter((p) => p.token === token).map((p) => p.fid));
+  for (const f of token ? cachedCustomFestivals(token) : []) {
+    if (!f || typeof f.id !== 'string' || f.id === state.activeFestivalId || shown.has(f.id)) continue;
+    if (!FESTIVAL_INDEX.some((x) => x.id === f.id && x.custom)) continue; // not merged here (a canonical id it may not shadow)
+    if (typeof f.name !== 'string') continue;
+    shown.add(f.id);
+    // The row reads this crew's own copy, not the shared catalog entry, which
+    // another crew's custom with the same id may have written first.
+    wrap.appendChild(festRow(f, { muted: f.status === 'archived', chev: true, sub: f.dates || '', onPick: () => actions.switchFestival(f.id) }));
+  }
 
   const add = el('button', '', '+ Add a festival');
   add.className = 'dashed-row';
@@ -360,9 +375,16 @@ function openAddFestival(actions) {
           if (!r2.ok) { status.textContent = b2.error || 'Save failed.'; save.disabled = false; return; }
           // Pull the crew's customs into the live catalog right now — the fest
           // appears under Your Festivals immediately (Codex P3 trail, P0).
-          const { loadCustomFestivals } = await import('../festivals.js');
-          await loadCustomFestivals(state.getCrewToken());
+          const { loadCustomFestivals, rememberCustomFestival } = await import('../festivals.js');
+          const back = await loadCustomFestivals(state.getCrewToken());
+          if (!back.some((f) => f && f.id === c.id)) rememberCustomFestival(state.getCrewToken(), c);
           status.textContent = 'Saved — find it under Your festivals.';
+          // …and make it the current festival (v119): the one you just
+          // approved is the one you came to plan. The switch closes this
+          // drill, so Settings comes back with it on top, one Back from its
+          // wall. A switch that cannot load it (offline) says so in its own
+          // toast and leaves you here; its row is under Your festivals.
+          if (FESTIVAL_INDEX.some((f) => f.id === c.id && f.custom) && actions.switchFestival) actions.switchFestival(c.id);
         } catch {
           // No try/finally used to exist here — one network error wedged the
           // button disabled forever (CORE-11).
