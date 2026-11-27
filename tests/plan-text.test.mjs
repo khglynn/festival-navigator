@@ -23,7 +23,7 @@ paintFree(dom.window); // the sweep draws the plan thousands of times and reads 
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const P = await import('../js/v3/plan.js');
-const { planText, planPicks, planDays, stopKey } = await import('../js/v3/plan-rows.js');
+const { planText, planPicks, planDays, rowsKey, stopKey } = await import('../js/v3/plan-rows.js');
 const { passesPeople } = await import('../js/v3/filters.js');
 const state = await import('../js/state.js');
 const NINE = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/plan-crew-nine.json'), 'utf8'));
@@ -236,7 +236,14 @@ test('the Share only ever names what the open plan shows, and "now" only while i
           if (!peek || !peek.today) continue;
           const now = P.planAt(hp, rig.fest, date);
           const nowMin = now && now.night.id === peek.night.id ? now.minutes : null;
-          const key = [hl.join(','), peek.night.id, nowMin, peek.tag, peek.stop.from, peek.stop.place.id].join('|');
+          // Drawn once per repaint, as the shelf draws them: it redraws only
+          // when its signature moves (plan-shelf.js signature: rowsKey on the
+          // peek's night, and the peek's row), so a minute that keeps the key
+          // shows the rows drawn at the first minute of it.
+          // plan-stop-ends.test.mjs test 6 holds the key to that, and keying
+          // on the minute instead redrew the whole plan at every step: 483 s
+          // of this sweep on Kevin's Air, nearly all of it jsdom (2026-11-27).
+          const key = [hl.join(','), peek.night.id, peek.tag, stopKey(peek.stop), peek.count, rowsKey(peek.night, { plan: hp, peek, nowMin })].join('|');
           if (!shown.has(key)) {
             shown.set(key, nightRows(peek.night, { ctx: cx, plan: hp, peek, nowMin })
               .filter((r) => !r.classList.contains('past') && !r.classList.contains('earlier')).map((r) => r.textContent));
