@@ -49,11 +49,18 @@ class SignalledRequest extends Request {
 // `older` seeds an older version's cache, created first. Timeouts are scaled
 // down so the 4 s budget becomes ~40 ms — the ratio between "network" delays
 // and the budget is what the strategy is about, not the wall-clock number.
-function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0, registration = undefined }) {
+// `scale: 1` keeps the worker's own clock: the repair tests whose subject is
+// the ANSWER, not the deadline, take it, because the real work they drive
+// (fetching ~50 files, hashing them, proving them) takes longer than the 20 s
+// deadline scaled to 200 ms on a slow machine (Kevin's Air, 2026-11-27: four
+// of them answered "timeout" there on main, alone or in the suite).
+// `putHangAfter: n` makes every write after the n-th never settle.
+function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0, putHangAfter = Infinity, registration = undefined, scale = 100 }) {
   const handlers = {};
   const buckets = new Map();
   const puts = [];
   let fetches = 0;
+  let writes = 0;
   const keyOf = (req) => (typeof req === 'string' ? new URL(req, ORIGIN).href : req.url);
   const bucket = (name) => {
     if (!buckets.has(name)) {
@@ -63,7 +70,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
         match: async (req) => (store.has(keyOf(req)) ? new Response(store.get(keyOf(req))) : undefined),
         put: async (req, resp) => {
           const body = await resp.text();
-          if (putDelay === Infinity) await new Promise(() => {}); // storage that never settles
+          if (putDelay === Infinity || ++writes > putHangAfter) await new Promise(() => {}); // storage that never settles
           if (putDelay) await sleep(putDelay);
           puts.push(`${name} ${keyOf(req)}`); store.set(keyOf(req), body);
         },
@@ -91,7 +98,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
     },
     fetch: (...args) => { fetches += 1; return fetchImpl(...args); },
     location: { origin: ORIGIN },
-    setTimeout: (fn, ms) => setTimeout(fn, Math.round(ms / 100)),
+    setTimeout: (fn, ms) => setTimeout(fn, Math.round(ms / scale)),
     clearTimeout,
     URL, Request: SignalledRequest, Response, Promise, console, AbortController, TextEncoder, TextDecoder, crypto: globalThis.crypto,
   };
@@ -481,7 +488,7 @@ test('repair: the worker\'s stamp matches sw-stamp.mjs on a CRLF file, a byte-or
 
 test('repair: the network serving this build — every file fetched fresh, proved, and written over the old copy', async () => {
   const seen = [];
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen }) });
+  const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ seen }) });
   assert.deepEqual(await askRepair(w), ['repaired']);
   assert.equal(seen[0].p, '/', 'the page first');
   assert.equal(seen.length, 1 + STAMPED.length, 'then every other file, once');
@@ -495,7 +502,7 @@ test('repair: the network serving this build — every file fetched fresh, prove
 
 test('repair: the network serving ANOTHER build — only the page is fetched, nothing is written, the answer is "newer"', async () => {
   const seen = [];
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, swap: { '/': pageOf('v99999') } }) });
+  const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ seen, swap: { '/': pageOf('v99999') } }) });
   assert.deepEqual(await askRepair(w), ['newer']);
   assert.deepEqual(seen.map((r) => r.p), ['/']);
   assert.deepEqual(w.puts, []);
@@ -503,7 +510,7 @@ test('repair: the network serving ANOTHER build — only the page is fetched, no
 
 test('repair: a page that is not ours at all (no fn-build: a Wi-Fi login page) is the signal\'s — nothing written', async () => {
   const seen = [];
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, swap: { '/': '<html>Log in to Pier 80 Wi-Fi</html>' } }) });
+  const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ seen, swap: { '/': '<html>Log in to Pier 80 Wi-Fi</html>' } }) });
   assert.deepEqual(await askRepair(w), ['failed']);
   assert.equal(seen.length, 1);
   assert.deepEqual(w.puts, []);
@@ -511,7 +518,7 @@ test('repair: a page that is not ours at all (no fn-build: a Wi-Fi login page) i
 
 test('repair: one file that is not this build\'s bytes, or a page that is not /index.html, and nothing is written', async () => {
   for (const swap of [{ '/js/v3/wall.js': 'export const wall = "another deploy";' }, { '/': `${pageOf(BUILD)}\n<!-- edge -->` }]) {
-    const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ swap }) });
+    const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ swap }) });
     assert.deepEqual(await askRepair(w), ['mismatch'], Object.keys(swap)[0]);
     assert.deepEqual(w.puts, []);
     assert.equal(w.cachedBody(CURRENT, '/js/v3/wall.js'), 'old /js/v3/wall.js');
@@ -521,7 +528,7 @@ test('repair: one file that is not this build\'s bytes, or a page that is not /i
 test('repair: a file that does not arrive, or a server error, and nothing is written', async () => {
   for (const [swap, word] of [[{ '/js/v3/qr.js': new TypeError('Failed to fetch') }, 'failed'], [{ '/assets/v3.css': 503 }, 'server']]) {
     const seen = [];
-    const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ swap, seen }) });
+    const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ swap, seen }) });
     assert.deepEqual(await askRepair(w), [word]);
     assert.deepEqual(w.puts, []);
     assert.ok(seen.every((r) => r.signal.aborted), 'the rest of the batch is cancelled');
@@ -554,9 +561,12 @@ test('repair: a fetch that ignores the abort and answers after the deadline stil
 });
 
 test('repair: the deadline landing in the middle of the writes — "timeout", no reload, and only proven bytes written', async () => {
-  // 10 ms per write (real time) against the 20 s deadline scaled to 200 ms:
-  // the run is proved and starts writing, and the deadline lands partway.
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree(), putDelay: 10 });
+  // The run is proved and starts writing; three writes land and the fourth
+  // never settles, so the deadline lands partway whatever the machine's
+  // speed. (It was 10 ms a write against the deadline scaled to 200 ms, and
+  // on a slow machine the proof alone outran 200 ms: "partway: 0 of 50".)
+  // Scaled by 10, not 100: the proof itself must finish inside the deadline.
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree(), putHangAfter: 3, scale: 10 });
   assert.deepEqual(await askRepair(w), ['timeout']);
   assert.ok(w.puts.length > 0 && w.puts.length < 1 + STAMPED.length, `partway: ${w.puts.length} of ${1 + STAMPED.length}`);
   for (const x of w.puts) {
@@ -580,7 +590,7 @@ test('repair: a second ask while one runs is the same run, and both pages hear i
   let release;
   const gate = new Promise((r) => { release = r; });
   const seen = [];
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree({ seen, hold: '/', gate }) });
+  const w = bootWorker({ shell: oldShell(), scale: 1, fetchImpl: serveTree({ seen, hold: '/', gate }) });
   const first = askRepair(w);
   const second = askRepair(w);
   release();
