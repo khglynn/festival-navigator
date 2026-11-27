@@ -15,7 +15,7 @@ node_modules
 node_modules/
 .vercel
 .vercel/
-# `npm run coverage`'s report (coverage/lcov.info), read by the nightly Map.
+# `npm run coverage`'s report (coverage/lcov.info), what Gabby's nightly Map reads.
 coverage/
 
 # Claude Code: local state is ignored, but settings.json SHIPS — it holds the

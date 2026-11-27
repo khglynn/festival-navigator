@@ -8,6 +8,7 @@
 // (plan-rows.js markEnds flushes there), so the night read is drawn exactly
 // as the whole list draws it. planDays is the only reader of `nights` in
 // the drawing; the rest of the plan is the same object's.
+// plan-stop-ends.test.mjs's last test holds the two drawings equal.
 export function through(plan, id) {
   const at = plan.nights.findIndex((n) => n.id === id);
   return at < 0 ? plan : { ...plan, nights: plan.nights.slice(0, at + 1) };

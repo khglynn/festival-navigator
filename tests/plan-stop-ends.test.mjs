@@ -344,3 +344,27 @@ test('6. the same repaint key draws the same rows — every run of minutes with 
   assert.ok(runs > 300, `${runs} runs of one key drawn at both ends`);
   assert.ok(lines > 20, `the drop-in lines were among them (${lines})`);
 });
+
+// The sweeps above draw the plan cut after the night they read
+// (helpers/plan-through.mjs), for speed. That is only the open plan if a
+// later night never changes the night read: the same rows, byte for byte,
+// as the whole list draws them. Every night of three rigs, every three hours
+// of the festival clock, whatever the peek says there.
+test('the plan cut after a night draws that night as the whole plan does — every three hours, three rigs', () => {
+  const problems = [];
+  let draws = 0;
+  for (const r of RIGS.slice(0, 3)) {
+    const pl = plans.get(r);
+    const cx = { picks: r.picks };
+    const rows = (p, { peek, nowMin, route }) => [...planDays(p, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
+      .filter((e) => e.dataset.night === route.id).map((e) => e.outerHTML);
+    for (const m of moments(r, pl)) {
+      if (m.t % 180) continue;
+      draws++;
+      const whole = rows(pl, m).join('\n');
+      if (whole !== rows(through(pl, m.route.id), m).join('\n') && problems.length < 6) problems.push(`${r.fest.id}, ${r.name}, ${m.iso} ${at(m.t)}: night ${m.route.id}`);
+    }
+  }
+  assert.deepEqual(problems, []);
+  assert.ok(draws > 100, `${draws} nights drawn both ways`);
+});

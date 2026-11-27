@@ -102,7 +102,8 @@ build step: the CSS is hand-written and the JS ships as ES modules.
 2. `npm test` runs the unit suite on a pinned clock. It needs no database
    and no secrets: it runs the real merge SQL in-process (PGlite).
    `npm run coverage` is the same suite counting which lines of the app it
-   ran, into `coverage/lcov.info` (Gabby's nightly Map reads it).
+   ran, into `coverage/lcov.info`, the report Gabby's nightly Map reads
+   (once its time limit fits this suite on the Air: about 11 minutes there).
 3. `npx playwright install chromium webkit` once, then
    `npm run test:browser` for the real-input contracts in Chromium and
    WebKit.

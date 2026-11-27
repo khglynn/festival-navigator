@@ -29,6 +29,7 @@ const SW_SRC = readFileSync(join(ROOT, 'service-worker.js'), 'utf8');
 const ORIGIN = 'https://fest.kevinhg.com';
 const CURRENT = SW_SRC.match(/CACHE_VERSION = '([^']+)'/)[1];
 const DATA = SW_SRC.match(/DATA_CACHE = '([^']+)'/)[1];
+const REPAIR_MS = Number(SW_SRC.match(/const REPAIR_MS = (\d+)/)[1]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // A Request that keeps the signal it was GIVEN: Node 24's Request.signal is a
@@ -52,15 +53,19 @@ class SignalledRequest extends Request {
 // `scale: 1` keeps the worker's own clock: the repair tests whose subject is
 // the ANSWER, not the deadline, take it, because the real work they drive
 // (fetching ~50 files, hashing them, proving them) takes longer than the 20 s
-// deadline scaled to 200 ms on a slow machine (Kevin's Air, 2026-11-27: four
-// of them answered "timeout" there on main, alone or in the suite).
-// `putHangAfter: n` makes every write after the n-th never settle.
-function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0, putHangAfter = Infinity, registration = undefined, scale = 100 }) {
+// deadline scaled to 200 ms on a slow machine (Kevin's Air, 2026-11-27: up to
+// four of them answered "timeout" there on main, alone or in the suite).
+// `putHangAfter: n` makes every write after the n-th never settle, and
+// `deadlineAtWrite: n` holds the repair's own deadlines (its 20 s abort and
+// the backstop after it) until the n-th write lands, then fires them: the
+// deadline lands mid-writes on any machine, never racing its speed.
+function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay = 0, putHangAfter = Infinity, deadlineAtWrite = 0, registration = undefined, scale = 100 }) {
   const handlers = {};
   const buckets = new Map();
   const puts = [];
   let fetches = 0;
   let writes = 0;
+  const held = new Set(); // the repair deadlines deadlineAtWrite holds
   const keyOf = (req) => (typeof req === 'string' ? new URL(req, ORIGIN).href : req.url);
   const bucket = (name) => {
     if (!buckets.has(name)) {
@@ -73,6 +78,7 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
           if (putDelay === Infinity || ++writes > putHangAfter) await new Promise(() => {}); // storage that never settles
           if (putDelay) await sleep(putDelay);
           puts.push(`${name} ${keyOf(req)}`); store.set(keyOf(req), body);
+          if (puts.length === deadlineAtWrite) for (const h of [...held]) { held.delete(h); h.fn(); }
         },
         keys: async () => [], add: async () => {}, addAll: async () => {},
       });
@@ -98,8 +104,11 @@ function bootWorker({ cached = {}, shell = {}, older = null, fetchImpl, putDelay
     },
     fetch: (...args) => { fetches += 1; return fetchImpl(...args); },
     location: { origin: ORIGIN },
-    setTimeout: (fn, ms) => setTimeout(fn, Math.round(ms / scale)),
-    clearTimeout,
+    setTimeout: (fn, ms) => {
+      if (deadlineAtWrite && ms >= REPAIR_MS) { const h = { fn }; held.add(h); return h; }
+      return setTimeout(fn, Math.round(ms / scale));
+    },
+    clearTimeout: (h) => (held.has(h) ? held.delete(h) : clearTimeout(h)),
     URL, Request: SignalledRequest, Response, Promise, console, AbortController, TextEncoder, TextDecoder, crypto: globalThis.crypto,
   };
   vm.runInNewContext(SW_SRC, ctx);
@@ -561,12 +570,12 @@ test('repair: a fetch that ignores the abort and answers after the deadline stil
 });
 
 test('repair: the deadline landing in the middle of the writes — "timeout", no reload, and only proven bytes written', async () => {
-  // The run is proved and starts writing; three writes land and the fourth
-  // never settles, so the deadline lands partway whatever the machine's
-  // speed. (It was 10 ms a write against the deadline scaled to 200 ms, and
-  // on a slow machine the proof alone outran 200 ms: "partway: 0 of 50".)
-  // Scaled by 10, not 100: the proof itself must finish inside the deadline.
-  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree(), putHangAfter: 3, scale: 10 });
+  // The run is proved and starts writing; three writes land, the fourth
+  // never settles, and the deadline fires as the third lands, so it lands
+  // partway whatever the machine's speed. (It was 10 ms a write against the
+  // deadline scaled to 200 ms, and on a slow machine the proof alone outran
+  // 200 ms: "partway: 0 of 50".)
+  const w = bootWorker({ shell: oldShell(), fetchImpl: serveTree(), putHangAfter: 3, deadlineAtWrite: 3, scale: 1 });
   assert.deepEqual(await askRepair(w), ['timeout']);
   assert.ok(w.puts.length > 0 && w.puts.length < 1 + STAMPED.length, `partway: ${w.puts.length} of ${1 + STAMPED.length}`);
   for (const x of w.puts) {
