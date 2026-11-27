@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { paintFree } from './helpers/paint-free.mjs';
+import { through } from './helpers/plan-through.mjs';
 
 // plan-rows.js draws rows too, so it reads a document and storage at import.
 const dom = new JSDOM('<!doctype html><html><body></body></html>');
@@ -41,8 +42,9 @@ const linkFor = (night) => `https://fest.kevinhg.com/f/portola-2026#g=${TOKEN}&f
 const LINK = linkFor('2026-09-26');
 
 // The open plan's rows for the night it lands on (plan-rows.js planDays, the
-// list the shelf draws): the rows that night carries, the Earlier line included.
-const nightRows = (route, { ctx: cx, plan: pl, peek = null, nowMin = null }) => [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin })
+// list the shelf draws): the rows that night carries, the Earlier line
+// included, drawn through that night only (helpers/plan-through.mjs).
+const nightRows = (route, { ctx: cx, plan: pl, peek = null, nowMin = null }) => [...planDays(through(pl, route.id), { ctx: cx, peek, from: route.id, nowMin })
   .querySelectorAll('.plan-row')].filter((r) => r.dataset.night === route.id);
 
 // What app.js hands planText for a moment: the peek's night, the clock on it.
