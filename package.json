@@ -6,7 +6,8 @@
     "build": "echo 'No build step needed for static site'",
     "brand": "node scripts/brand-assets.mjs",
     "test": "node --import ./tests/helpers/night-clock.mjs --test tests/*.test.mjs",
-    "test:browser": "BROWSER_TEST_REQUIRED=1 node --test tests/browser/*.test.mjs"
+    "test:browser": "BROWSER_TEST_REQUIRED=1 node --test tests/browser/*.test.mjs",
+    "coverage": "mkdir -p coverage && node --import ./tests/helpers/night-clock.mjs --test --experimental-test-coverage --test-coverage-exclude='tests/**' --test-coverage-exclude='vendor/**' --test-reporter=dot --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0"
