@@ -20,10 +20,12 @@ const HELPER = './tests/helpers/night-clock.mjs';
 const realNow = () => performance.timeOrigin + performance.now();
 const near = (a, b, what) => assert.ok(Math.abs(a - b) < 60_000, `${what}: ${new Date(a).toISOString()} is not near ${new Date(b).toISOString()}`);
 
-test('npm test loads the clock into every test file’s own process', () => {
+test('npm test and npm run coverage load the clock into every test file’s own process', () => {
   const { scripts } = JSON.parse(read('package.json'));
   assert.match(scripts.test, /^node --import \.\/tests\/helpers\/night-clock\.mjs --test tests\/\*\.test\.mjs$/,
     'the unit suite runs through the clock (node --test hands --import to each file’s process)');
+  assert.match(scripts.coverage, /^mkdir -p coverage && node --import \.\/tests\/helpers\/night-clock\.mjs --test .* tests\/\*\.test\.mjs$/,
+    'the coverage run is the same suite on the same clock, counting');
 });
 
 test('CI runs the unit suite only through npm test, so no step steps around the pin', () => {

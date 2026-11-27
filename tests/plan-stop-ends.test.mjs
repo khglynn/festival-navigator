@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { paintFree } from './helpers/paint-free.mjs';
+import { through } from './helpers/plan-through.mjs';
 
 // plan-rows.js draws rows too, so it reads a document and storage at import.
 const dom = new JSDOM('<!doctype html><html><body></body></html>');
@@ -119,7 +120,8 @@ function* moments(r, pl) {
 }
 
 // The open plan's rows for the peek's night, as the shelf draws them
-// (plan-rows.js planDays, Earlier closed), cached on the shelf's own repaint
+// (plan-rows.js planDays, Earlier closed, through that night only:
+// helpers/plan-through.mjs), cached on the shelf's own repaint
 // signature (rowsKey, the drop-in lines' clock included) plus the peek's row:
 // the same key draws the same rows (test 6 holds it to that).
 const drawn = new Map(); // rig -> key -> rows
@@ -128,7 +130,7 @@ function rowsOf(pl, r, cx, { peek, nowMin, route }) {
   const cache = drawn.get(r);
   const key = [route.id, peek.tag, peek.stop ? stopKey(peek.stop) : '', peek.count, rowsKey(route, { plan: pl, peek, nowMin })].join('~');
   if (!cache.has(key)) {
-    const rows = [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
+    const rows = [...planDays(through(pl, route.id), { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
       .filter((e) => e.dataset.night === route.id)
       .map((e) => ({ stop: e.dataset.stop, text: e.textContent, live: e.classList.contains('live'), past: e.classList.contains('past'),
         or: e.classList.contains('or'), earlier: e.classList.contains('earlier'), till: (e.querySelector('.plan-when .t') || {}).textContent || '' }));
@@ -316,7 +318,7 @@ test('6. the same repaint key draws the same rows — every run of minutes with 
     const pl = plans.get(r) || P.planOf(r.fest, { picks: r.picks, members: r.members });
     const cx = { picks: r.picks };
     const keyOf = ({ peek, nowMin, route }) => [route.id, peek.tag, peek.stop ? stopKey(peek.stop) : '', peek.count, rowsKey(route, { plan: pl, peek, nowMin })].join('~');
-    const draw = ({ peek, nowMin, route }) => [...planDays(pl, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
+    const draw = ({ peek, nowMin, route }) => [...planDays(through(pl, route.id), { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
       .filter((e) => e.dataset.night === route.id).map((e) => `${[...e.classList].sort().join('.')} ${e.textContent}`);
     let run = null;
     const close = () => {
@@ -341,4 +343,28 @@ test('6. the same repaint key draws the same rows — every run of minutes with 
   assert.deepEqual(problems, []);
   assert.ok(runs > 300, `${runs} runs of one key drawn at both ends`);
   assert.ok(lines > 20, `the drop-in lines were among them (${lines})`);
+});
+
+// The sweeps above draw the plan cut after the night they read
+// (helpers/plan-through.mjs), for speed. That is only the open plan if a
+// later night never changes the night read: the same rows, byte for byte,
+// as the whole list draws them. Every night of three rigs, every three hours
+// of the festival clock, whatever the peek says there.
+test('the plan cut after a night draws that night as the whole plan does — every three hours, three rigs', () => {
+  const problems = [];
+  let draws = 0;
+  for (const r of RIGS.slice(0, 3)) {
+    const pl = plans.get(r);
+    const cx = { picks: r.picks };
+    const rows = (p, { peek, nowMin, route }) => [...planDays(p, { ctx: cx, peek, from: route.id, nowMin }).querySelectorAll('.plan-row')]
+      .filter((e) => e.dataset.night === route.id).map((e) => e.outerHTML);
+    for (const m of moments(r, pl)) {
+      if (m.t % 180) continue;
+      draws++;
+      const whole = rows(pl, m).join('\n');
+      if (whole !== rows(through(pl, m.route.id), m).join('\n') && problems.length < 6) problems.push(`${r.fest.id}, ${r.name}, ${m.iso} ${at(m.t)}: night ${m.route.id}`);
+    }
+  }
+  assert.deepEqual(problems, []);
+  assert.ok(draws > 100, `${draws} nights drawn both ways`);
 });

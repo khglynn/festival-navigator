@@ -26,13 +26,28 @@ const pad = (n) => String(n).padStart(2, '0');
 // The wall-clock parts of `date` in `timeZone`, via Intl — the one way a
 // browser exposes another zone's clock without a library. Any failure
 // (no Intl, an unknown zone) reads the device clock instead.
+//
+// One formatter per zone, made once: building an Intl.DateTimeFormat is the
+// expensive part (ICU resolves the locale, the zone and a pattern), and the plan asks the clock
+// at every tick for every night. Made fresh each call, it was 45% of
+// tests/plan-stop-ends.test.mjs (2026-11-27). An unknown zone throws as it
+// is built, so it is never kept, and the next call tries it again.
+const zoneFormats = new Map();
+function zoneFormat(timeZone) {
+  let f = zoneFormats.get(timeZone);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    });
+    zoneFormats.set(timeZone, f);
+  }
+  return f;
+}
 export function wallClock(date, timeZone) {
   const device = () => ({ y: date.getFullYear(), mo: date.getMonth() + 1, d: date.getDate(), h: date.getHours(), mi: date.getMinutes() });
   if (!timeZone) return device();
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-    }).formatToParts(date);
+    const parts = zoneFormat(timeZone).formatToParts(date);
     const num = (type) => Number((parts.find((p) => p.type === type) || {}).value);
     const out = { y: num('year'), mo: num('month'), d: num('day'), h: num('hour') % 24, mi: num('minute') };
     return Object.values(out).some(Number.isNaN) ? device() : out;

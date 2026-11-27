@@ -11,6 +11,8 @@ how we got here belongs in DEVLOG.md, and the long list in BACKLOG.md.
 ## Live on production
 
 - **Live:** v118 from `main` on all three hosts, checked 2026-10-30.
+- **v120** (2026-11-27): the festival clock keeps one time-zone formatter;
+  the unit suite runs in about half the time, and `npm run coverage` is new.
 - **v119** (2026-10-30): a researched festival gets a row under Your
   festivals, and saving one makes it current.
 - **v118** (PR #102, 2026-10-30): the Settings research add brings back

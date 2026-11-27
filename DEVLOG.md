@@ -2,6 +2,34 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-11-27 — v120: the suite in half the time, and a cheaper festival clock
+
+- **Why.** Gabby's nightly Map reads how much of the month's changed code the
+  tests ran, from a coverage run on Kevin's Air capped at 8 minutes. On the
+  Air `npm test` took 19 min 52 s (3 min on GitHub's runners), and three or
+  four of the worker's repair tests failed there on main.
+- **Causes, from CPU profiles.** (1) `tests/plan-text.test.mjs`'s Share
+  sweep cached its drawn rows by the minute, so it redrew the whole open
+  plan in jsdom at every five-minute step: 483 s of one test on the Air,
+  57 s on GitHub. (2) The sweeps in it and `plan-stop-ends.test.mjs` drew
+  every night after the one they read and threw those rows away. (3) The
+  app's `wallClock` (`js/v3/now.js`) built a new `Intl.DateTimeFormat` at
+  every call: 45% of plan-stop-ends. (4) The worker's repair tests ran its
+  20 s deadline 100x fast, 200 ms, which fetching and hashing ~50 real files
+  outruns on a slow machine.
+- **What.** The Share sweep keys on the shelf's own repaint signature
+  (`rowsKey` and the peek's row, as plan-stop-ends already did); both sweeps
+  draw through the night they read (`tests/helpers/plan-through.mjs`); the
+  clock keeps one formatter per zone (phones ask it every tick); the repair
+  tests about the answer keep the worker's real clock, and the mid-writes one
+  holds its writes instead of racing them. `npm run coverage` is new: the
+  same suite on the same pin, Node's coverage into `coverage/lcov.info`.
+- **Proof.** One-off copies compared the old and new drawing at every step:
+  12,349 repaint-keyed reads and 2,500 cut-plan draws, identical. On the
+  Air: the suite 19:52 to under 11 min, CPU 1,698 s to under 1,200 s; the
+  coverage run 11 to 12 min, still past the Map's 8-minute cap, so the
+  Map's reading of this app changes on Gabby's side (her ledger).
+
 ## 2026-10-30 — v119: a researched festival has a door
 
 - **Why.** Adding Freaky Deaky through v118's research worked end to end
